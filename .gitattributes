@@ -1,0 +1,8 @@
+# 仓库内统一用 LF(脚本要在 WSL/Linux 里跑,CRLF 会出错)
+* text=auto eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.docx binary
