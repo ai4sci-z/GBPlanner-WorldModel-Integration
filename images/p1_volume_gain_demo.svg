@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 400" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+  <rect width="760" height="400" fill="#ffffff"/>
+  <text x="380" y="34" text-anchor="middle" font-size="21" font-weight="bold" fill="#1a1a1a">P1 体积增益演示(gbplanner_core 核心逻辑验证)</text>
+
+  <!-- 左图:开阔未知 -->
+  <text x="180" y="68" text-anchor="middle" font-size="15" fill="#333">① 开阔未知环境</text>
+  <rect x="60" y="84" width="240" height="200" fill="#e9e9ec" stroke="#bbb"/>
+  <text x="300" y="100" text-anchor="end" font-size="11" fill="#999">灰=未知体素</text>
+  <!-- rays -->
+  <g stroke="#3b82f6" stroke-width="1.6" opacity="0.8">
+    <line x1="180" y1="184" x2="60"  y2="84"/>
+    <line x1="180" y1="184" x2="180" y2="84"/>
+    <line x1="180" y1="184" x2="300" y2="84"/>
+    <line x1="180" y1="184" x2="300" y2="184"/>
+    <line x1="180" y1="184" x2="300" y2="284"/>
+    <line x1="180" y1="184" x2="180" y2="284"/>
+    <line x1="180" y1="184" x2="60"  y2="284"/>
+    <line x1="180" y1="184" x2="60"  y2="184"/>
+  </g>
+  <rect x="160" y="164" width="40" height="40" fill="#bbf7d0" stroke="#16a34a"/>
+  <circle cx="180" cy="184" r="6" fill="#ef4444"/>
+  <text x="180" y="208" text-anchor="middle" font-size="10" fill="#16a34a">空闲</text>
+  <text x="180" y="312" text-anchor="middle" font-size="15" font-weight="bold" fill="#1d4ed8">增益 = 6.300 m³</text>
+
+  <!-- 右图:一侧加墙 -->
+  <text x="580" y="68" text-anchor="middle" font-size="15" fill="#333">② 一侧加墙(已占据)</text>
+  <rect x="460" y="84" width="240" height="200" fill="#e9e9ec" stroke="#bbb"/>
+  <rect x="648" y="84" width="14" height="200" fill="#374151"/>
+  <text x="655" y="300" text-anchor="middle" font-size="10" fill="#374151">墙</text>
+  <g stroke="#3b82f6" stroke-width="1.6" opacity="0.8">
+    <line x1="560" y1="184" x2="460" y2="84"/>
+    <line x1="560" y1="184" x2="560" y2="84"/>
+    <line x1="560" y1="184" x2="648" y2="120"/>
+    <line x1="560" y1="184" x2="648" y2="184"/>
+    <line x1="560" y1="184" x2="648" y2="248"/>
+    <line x1="560" y1="184" x2="560" y2="284"/>
+    <line x1="560" y1="184" x2="460" y2="284"/>
+    <line x1="560" y1="184" x2="460" y2="184"/>
+  </g>
+  <rect x="540" y="164" width="40" height="40" fill="#bbf7d0" stroke="#16a34a"/>
+  <circle cx="560" cy="184" r="6" fill="#ef4444"/>
+  <text x="580" y="312" text-anchor="middle" font-size="15" font-weight="bold" fill="#1d4ed8">增益 = 5.104 m³</text>
+
+  <!-- 图例 + 结论 -->
+  <circle cx="320" cy="344" r="6" fill="#ef4444"/><text x="332" y="348" font-size="12" fill="#333">视点</text>
+  <line x1="380" y1="344" x2="410" y2="344" stroke="#3b82f6" stroke-width="2"/><text x="416" y="348" font-size="12" fill="#333">视线(数沿途未知体素,遇墙停)</text>
+  <text x="380" y="382" text-anchor="middle" font-size="13" fill="#b91c1c">结论:挡住一侧 → 看不见那侧未知 → 增益下降(6.300 → 5.104),算法逻辑正确 ✓</text>
+</svg>
