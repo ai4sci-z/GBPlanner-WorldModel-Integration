@@ -1,0 +1,9 @@
+# 编译产物(操作手册让用户在 code/gbplanner_core 下 build,避免污染仓库)
+build/
+**/build/
+*.o
+*.obj
+# 临时/系统
+*.tmp
+.DS_Store
+Thumbs.db
