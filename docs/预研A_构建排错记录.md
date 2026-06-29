@@ -55,3 +55,9 @@ humble 修好了 fast-lio(Livox 在 jazzy 编不过、humble 过了),但**自检
 **关键洞察(防后续再踩)**:编排器的 SDK 构建用的是**经典构建器**,凡 Dockerfile 用 `--mount` 的都会挂;**改用 `DOCKER_BUILDKIT=1 docker build` CLI 直建**即可。这不是代码问题,是构建器配置问题。
 
 **当前**:gazebo-headless、gazebo-sensor(补丁版)正用 CLI BuildKit 后台重建;完成后建 official-baseline,再自检 9/9。
+
+## 7. 进展更新(2026-06-29 深夜)
+- ✅ **gazebo-sensor**:补丁版(跳过仿真用不到的 ydlidar 硬件驱动)**构建成功**。
+- 🔧 **gazebo-headless**:第一次 CLI BuildKit 重建仍失败 —— `gz sim` 报 exit 127(命令找不到)。**真因**:humble 默认 `ros-gz` 装的是 **Fortress**(用 `ign gazebo`),没有 Harmonic 的 `gz sim`。**修法**:patch 最后阶段从 OSRF 仓库显式装 `gz-harmonic`(提供 `gz sim`)+ 尽力装 `ros-gzharmonic` 桥。**正在重建并自动验证 `gz sim`**(未验证完不算成功)。
+- ⏳ **official-baseline**:自动接力链(`chain2`:等 gazebo-headless 好 → BuildKit CLI 建 → 自检 9/9)。
+- **铁律重申**:后台任务报"exit 0"≠成功——脚本外层 echo 会掩盖真实失败;必须看真正的 `BUILD_EXIT` + `gz sim` 验证 + `docker images` 核对真实产物。这一条已让我连续抓出 3 次假成功。
