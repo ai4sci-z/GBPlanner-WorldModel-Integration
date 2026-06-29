@@ -73,4 +73,8 @@ gazebo-headless 修好后到 **8/9**,official-baseline 仍失败(apt exit 100)�
 | fast-lio | jazzy GCC13 编不过 Livox | 换 humble 自动解决 |
 | gazebo-sensor | ydlidar 驱动 declare_parameter 不兼容 | 补丁:跳过 ydlidar(仿真用 ros-gz-bridge) |
 | gazebo-headless | humble 缺 Harmonic `gz sim` | 补丁:装 `gz-harmonic`+`ros-gzharmonic` |
-| official-baseline | `ros-gz`(Fortress)与 base 的 Harmonic 冲突 | 补丁:`ros-gz`→`ros-gzharmonic` |
+| official-baseline | ① `ros-gz`(Fortress)与 base 的 Harmonic 冲突;② `pip install --break-system-packages` 在 humble 旧 pip 上**无此选项**(jazzy/24.04 才有) | ① `ros-gz`→`ros-gzharmonic`;② 去掉 `--break-system-packages` |
+
+> ⏳ **official-baseline 状态(如实)**:已应用上面两处补丁,正在重建;apt 已过,接下来 ardupilot 递归克隆 + colcon 编译(较久)**尚未验证完**——`docker images` 真出现该镜像前,不算成功。可能还会在 colcon 阶段遇到新问题,遇到我继续修+如实报。
+>
+> **规律总结**:这套栈是为 **jazzy(Ubuntu24.04)** 写死的,搬到 humble(22.04)需逐个补 jazzy-ism(新 pip 选项、新 Gazebo 默认版本、新编译器宽容度…)。每个都实测真因、对症修,已 5 处。
