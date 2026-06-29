@@ -1,46 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 430" font-family="Segoe UI, Microsoft YaHei, sans-serif">
-  <rect width="780" height="430" fill="#ffffff"/>
-  <text x="390" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#1a1a1a">集成策略:GBPlanner(ROS1) 接入 world-model(ROS2)的两条路</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+  <rect width="800" height="440" fill="#ffffff"/>
+  <text x="400" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#1a1a1a">集成方案:GBPlanner(ROS1)接入 world-model(ROS2)</text>
+  <text x="400" y="54" text-anchor="middle" font-size="13" fill="#6b7280">(两个"复现任务"叫预研A/预研B;这里是"集成方案",用文字名,不用字母)</text>
 
-  <!-- GBPlanner ROS1 box -->
-  <rect x="280" y="56" width="220" height="64" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
-  <text x="390" y="84" text-anchor="middle" font-size="15" font-weight="bold" fill="#991b1b">GBPlanner(本体)</text>
-  <text x="390" y="104" text-anchor="middle" font-size="12" fill="#991b1b">ROS1 · catkin · voxblox · 已证实</text>
+  <!-- 桥接方案(已选定) -->
+  <rect x="50" y="80" width="330" height="250" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/>
+  <rect x="50" y="80" width="330" height="34" rx="10" fill="#16a34a"/>
+  <text x="215" y="103" text-anchor="middle" font-size="16" font-weight="bold" fill="#ffffff">桥接方案(ros1_bridge)　✔ 已选定</text>
+  <text x="215" y="140" text-anchor="middle" font-size="13" fill="#166534">官方 GBPlanner+PCI+voxblox 跑 ROS1 容器</text>
+  <text x="215" y="162" text-anchor="middle" font-size="13" fill="#166534">↓ 用 ros1_bridge 转接话题 ↓</text>
+  <text x="215" y="184" text-anchor="middle" font-size="13" fill="#166534">world-model 的 ROS2(发到 /navlab/exploration/*)</text>
+  <line x1="70" y1="200" x2="360" y2="200" stroke="#bbf7d0"/>
+  <text x="215" y="222" text-anchor="middle" font-size="12.5" fill="#15803d">✓ 作者官方做法(Unified Autonomy Stack)</text>
+  <text x="215" y="242" text-anchor="middle" font-size="12.5" fill="#15803d">✓ 算法原版不改、最快;复用 voxblox</text>
+  <text x="215" y="262" text-anchor="middle" font-size="12.5" fill="#15803d">✓ 预研 B 的 ROS1 容器直接当运行件</text>
+  <text x="215" y="284" text-anchor="middle" font-size="12.5" fill="#ca8a04">✗ 两套 ROS + 一座桥要维护</text>
+  <text x="215" y="312" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#15803d">→ P1 据此规划:做"喂数据/桥接/航点回流"适配</text>
 
-  <!-- world-model ROS2 box -->
-  <rect x="280" y="330" width="220" height="64" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
-  <text x="390" y="358" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e40af">world-model 平台</text>
-  <text x="390" y="378" text-anchor="middle" font-size="12" fill="#1e40af">ROS2 Humble · exploration 任务</text>
+  <!-- 重写方案(备选) -->
+  <rect x="420" y="80" width="330" height="250" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4"/>
+  <rect x="420" y="80" width="330" height="34" rx="10" fill="#94a3b8"/>
+  <text x="585" y="103" text-anchor="middle" font-size="16" font-weight="bold" fill="#ffffff">重写方案(gbplanner_core)　备选</text>
+  <text x="585" y="140" text-anchor="middle" font-size="13" fill="#475569">把算法抽成纯 C++ 核心(无框架)</text>
+  <text x="585" y="162" text-anchor="middle" font-size="13" fill="#475569">+ ROS2 外壳 + 换 octomap/nvblox 建图</text>
+  <line x1="440" y1="200" x2="730" y2="200" stroke="#e2e8f0"/>
+  <text x="585" y="222" text-anchor="middle" font-size="12.5" fill="#475569">✓ 单一 ROS2 栈,干净长远</text>
+  <text x="585" y="242" text-anchor="middle" font-size="12.5" fill="#b91c1c">✗ 工作量大,要重写 RRG/增益/建图</text>
+  <text x="585" y="270" text-anchor="middle" font-size="12.5" fill="#475569">P1 已起步的核心代码 → 转为</text>
+  <text x="585" y="290" text-anchor="middle" font-size="12.5" fill="#475569">"加深理解 + 备选实现",不浪费</text>
 
-  <!-- Strategy A (left) -->
-  <rect x="60" y="170" width="280" height="120" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="200" y="194" text-anchor="middle" font-size="15" font-weight="bold" fill="#15803d">策略 A:ros1_bridge 桥接</text>
-  <text x="200" y="218" text-anchor="middle" font-size="12" fill="#166534">原版 GBPlanner 不改,跑 ROS1 容器</text>
-  <text x="200" y="238" text-anchor="middle" font-size="12" fill="#166534">用 ros1_bridge 把话题转给 ROS2</text>
-  <text x="200" y="262" text-anchor="middle" font-size="11.5" fill="#16a34a">✓ 作者官方做法(Unified Autonomy Stack)</text>
-  <text x="200" y="280" text-anchor="middle" font-size="11.5" fill="#16a34a">✓ 复用 voxblox,快;✗ 多一座桥/两套 ROS</text>
-
-  <!-- Strategy B (right) -->
-  <rect x="440" y="170" width="280" height="120" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-  <text x="580" y="194" text-anchor="middle" font-size="15" font-weight="bold" fill="#1d4ed8">策略 B:抽核心 + ROS2 重写</text>
-  <text x="580" y="218" text-anchor="middle" font-size="12" fill="#1e3a8a">抽 gbplanner_core(纯 C++,无框架)</text>
-  <text x="580" y="238" text-anchor="middle" font-size="12" fill="#1e3a8a">+ ROS2 外壳 + 换 octomap/nvblox</text>
-  <text x="580" y="262" text-anchor="middle" font-size="11.5" fill="#2563eb">✓ 单一 ROS2 栈,干净长远</text>
-  <text x="580" y="280" text-anchor="middle" font-size="11.5" fill="#2563eb">✓ P1 已起步;✗ 工作量大,要重写建图</text>
-
-  <!-- arrows -->
-  <g stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#ag)">
-    <path d="M300,120 Q150,140 200,170"/>
-    <path d="M200,290 Q150,320 300,346"/>
-  </g>
-  <g stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#ab)">
-    <path d="M480,120 Q630,140 580,170"/>
-    <path d="M580,290 Q630,320 480,346"/>
-  </g>
-  <defs>
-    <marker id="ag" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#16a34a"/></marker>
-    <marker id="ab" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563eb"/></marker>
-  </defs>
-
-  <text x="390" y="420" text-anchor="middle" font-size="13" fill="#b45309">待决策:A 快但要维护桥,B 干净但工作量大 —— 你这一问挖出了 A 这条官方捷径</text>
+  <text x="400" y="368" text-anchor="middle" font-size="14" font-weight="bold" fill="#15803d">决策:采用「桥接方案」(作者官方捷径)。P1 改为围绕桥接做适配工作。</text>
+  <text x="400" y="396" text-anchor="middle" font-size="12.5" fill="#6b7280">仍需:给仿真无人机加 3D 雷达(GBPlanner 要 3D 点云);建议向 mentor 确认"接受 ros1_bridge 方案"。</text>
+  <text x="400" y="422" text-anchor="middle" font-size="11.5" fill="#9ca3af">EOL 提示:ROS1 Noetic 已停止维护,但容器内仍可正常运行。</text>
 </svg>
