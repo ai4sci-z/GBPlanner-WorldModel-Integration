@@ -48,3 +48,5 @@
 - 2026-06-29 PNG 中文豆腐块 → 装 Noto CJK 字体重转,已修复。
 - 2026-06-29 P1 代码 cmake+ctest 1/1 通过。
 - 2026-06-29 预研B docker build BUILD_OK,镜像 gbplanner-ref(10.7GB)。
+- 2026-06-29 ⚠️ 预研A 构建"假成功":报 BUILD_OK 但 `docker images` 只 5/9 → 自检抓出。诊断非 OOM,是 jazzy(24.04)编译不兼容(uint8_t/cstdint、declare_parameter)→ 切 humble 重建中。详见 [docs/预研A_构建排错记录.md]。
+  - **铁律**:命令退出码=0 ≠ 成功,必须自检真实产物(镜像数/文件/测试)。
