@@ -13,7 +13,7 @@
 |---|---|
 | 克隆 world-model 仓库 | ✅ |
 | 拉取子模块(ardupilot/Livox-SDK2/YDLidar-SDK 等) | ✅ exit 0 |
-| 构建镜像集(navlab-sim build / docker) | ⬜ 待启动(需处理容器内 github 代理) |
+| 构建镜像集(navlab-sim build all,9 个镜像) | 🔵 后台构建中(已启动;bridge 直连 github 可行,无需代理) |
 | 运行 exploration 任务 | ⬜ |
 | 截图 + 覆盖率/用时数据留痕 | ⬜ |
 | 论证 frontier_lite 不足(小 demo) | ⬜ |
@@ -31,3 +31,12 @@
 ## 五、风险/注意
 - 镜像构建重(1–2h)、容器内拉 github 需代理(参照预研B 的 `--build-arg HTTPS_PROXY`)。
 - WSL2 跑 Gazebo GUI 用 WSLg;吃力则用 headless + rosbag + 截图。
+
+## 六、已验证(本机真实运行,留痕)2026-06-29
+- **平台自检(真跑)**:`navlab-sim doctor` → OK config loaded / OK task registry configured / backend=docker / **task_count=5**(Go 1.24)。
+- **任务清单(真跑)**:exploration / hover / hover-slam-only / navigation / scan-robustness(共 5)。
+- **构建计划(dry-run)**:全套 **9 个镜像**,distro=**jazzy**:ros-base、ardupilot-sitl、mavlink-router、gazebo-headless、fast-lio、companion、slam(cartographer)、gazebo-sensor、official-baseline。
+- **网络验证(留痕)**:构建容器默认 bridge 网络**直连 github = HTTP/2 200**(无需代理);host 网络经 127.0.0.1:7897 代理也通;Docker Hub 基础镜像由守护进程代理拉取。
+- **Go 修正**:Go 1.24 在 `/usr/local/go/bin`,需置于 PATH 前(apt 旧 1.18 会盖住)。
+- **构建已后台启动**:`navlab-sim build all`,日志 `~/navlab_build.log`;完成后回收结果、补截图。
+- 📸 截图待补:`navlab-sim doctor/list-tasks` 终端、构建日志、后续 Gazebo/RViz 画面 → 存 `images/预研A_*.png`。

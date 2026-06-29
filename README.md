@@ -144,17 +144,24 @@ gbplanner_core 核心库 + 两个抽象接口 + ROS2 外壳节点 + ROS2 的 3D 
 | 编译工具链 | gcc/g++11、cmake3.22、**Go 1.24** | ✅ |
 | 项目仓库 | `~/ws/world-model` 已下载 | ✅ |
 
-**关键结果(可截图放报告):**
+**关键结果(2026-06-29 本机真实运行验证,Go 1.24):**
 ```
-$ go run ./cmd/navlab-sim list-tasks     # 列出平台内置任务
-exploration   sim   Official-maze exploration gate over Gazebo/SITL.   ← 我们要改的
-hover / hover-slam-only / navigation / scan-robustness
 $ go run ./cmd/navlab-sim doctor          # 平台自检
-OK config loaded / OK task registry / backend=docker / task_count=5
+NavLab Sim Doctor
+OK config loaded
+OK task registry configured
+backend=docker   task_count=5
+$ go run ./cmd/navlab-sim list-tasks      # 列出平台内置 5 个任务
+exploration       sim  Official-maze exploration gate over Gazebo/SITL.   ← 我们要改的
+hover             sim  SITL hover gate over Gazebo with SLAM and landing checks.
+hover-slam-only   sim  SLAM-only hover preflight ...
+navigation        sim  Nav2 indoor navigation gate over Gazebo/SITL.
+scan-robustness   sim  Airframe disturbance and scan robustness gate.
 ```
+> 诚实纠错:本表此前是从仓库源码读来的、并非实跑;现已在本机**真实运行**得到上述输出。
 - **遇到并解决的坑(报告加分项,体现工程能力):**
   1. Windows 自带的 `python` 是应用商店占位假货,装了真 Python 3.12。
-  2. Ubuntu 自带的 Go 是 1.18 太老,项目要 1.24,手动装了 Go 1.24。
+  2. Go 版本:装了 Go 1.24(在 `/usr/local/go/bin`),但 apt 的旧 Go 1.18 在 PATH 前面把它盖住 → `go run` 报版本错;**把 `/usr/local/go/bin` 置于 PATH 前**(写进 `~/.bashrc`)才生效。
   3. **Docker 后台服务(守护进程)不走代理** → 单独给它配代理,才能下载镜像。
   4. WSL 没把 Windows 的代理共享进去 → 开启 WSL"镜像网络"模式。
 - **产物:** [环境搭建 runbook(操作手册)](runbooks/01_环境搭建_WSL2_Docker_P0.md)、[环境就绪状态](notes/环境就绪状态_2026-06-29.md)。
