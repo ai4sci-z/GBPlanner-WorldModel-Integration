@@ -60,4 +60,17 @@ humble 修好了 fast-lio(Livox 在 jazzy 编不过、humble 过了),但**自检
 - ✅ **gazebo-sensor**:补丁版(跳过仿真用不到的 ydlidar 硬件驱动)**构建成功**。
 - 🔧 **gazebo-headless**:第一次 CLI BuildKit 重建仍失败 —— `gz sim` 报 exit 127(命令找不到)。**真因**:humble 默认 `ros-gz` 装的是 **Fortress**(用 `ign gazebo`),没有 Harmonic 的 `gz sim`。**修法**:patch 最后阶段从 OSRF 仓库显式装 `gz-harmonic`(提供 `gz sim`)+ 尽力装 `ros-gzharmonic` 桥。**正在重建并自动验证 `gz sim`**(未验证完不算成功)。
 - ⏳ **official-baseline**:自动接力链(`chain2`:等 gazebo-headless 好 → BuildKit CLI 建 → 自检 9/9)。
-- **铁律重申**:后台任务报"exit 0"≠成功——脚本外层 echo 会掩盖真实失败;必须看真正的 `BUILD_EXIT` + `gz sim` 验证 + `docker images` 核对真实产物。这一条已让我连续抓出 3 次假成功。
+- **铁律重申**:后台任务报"exit 0"≠成功——脚本外层 echo 会掩盖真实失败;必须看真正的 `BUILD_EXIT` + `gz sim` 验证 + `docker images` 核对真实产物。这一条已让我连续抓出多次假成功。
+
+## 8. official-baseline 的 Gazebo 版本冲突(最后一关)
+gazebo-headless 修好后到 **8/9**,official-baseline 仍失败(apt exit 100)。精确原因(实证):base(gazebo-headless)装了 **Harmonic 版 `ros-gzharmonic-*`**,而 official-baseline 的 apt 列表又要装 **Fortress 版 `ros-gz-*`** → 两者 **Conflicts**(`ros-gzharmonic-bridge` Conflicts `ros-gz-bridge`,等 5 个)。**修法**:把 official-baseline 的 `ros-${ROS_DISTRO}-ros-gz` 也改成 `ros-gzharmonic`(全栈统一 Harmonic)。**正在重建**(ardupilot 递归克隆+编译较久)。
+> 教训:humble 上用 Gazebo Harmonic,**所有镜像的 ros_gz 必须统一 Harmonic 版**,混入任何 Fortress 版都会冲突。这是"为 jazzy 设计的栈搬到 humble"的核心代价。
+
+## 9. 完整修复清单(humble 跑通 9 镜像所需的全部改动)
+| 镜像 | 问题 | 修法 |
+|---|---|---|
+| 全部 | 编排器 SDK 用经典构建器,不支持 `--mount` | 改用 `DOCKER_BUILDKIT=1 docker build` CLI |
+| fast-lio | jazzy GCC13 编不过 Livox | 换 humble 自动解决 |
+| gazebo-sensor | ydlidar 驱动 declare_parameter 不兼容 | 补丁:跳过 ydlidar(仿真用 ros-gz-bridge) |
+| gazebo-headless | humble 缺 Harmonic `gz sim` | 补丁:装 `gz-harmonic`+`ros-gzharmonic` |
+| official-baseline | `ros-gz`(Fortress)与 base 的 Harmonic 冲突 | 补丁:`ros-gz`→`ros-gzharmonic` |
