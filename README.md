@@ -29,7 +29,7 @@
 
 **① 已核实:GBPlanner 确为 ROS1**(`package.xml` 用 catkin/roscpp;仓库 16 个分支无任何 ROS2 分支)。**并挖到关键事实:算法作者自己用 `ros1_bridge` 把 GBPlanner 接进 ROS2 系统(其 Unified Autonomy Stack),于是集成出现两条路** —— 这条"官方捷径"是你追问 ROS 版本时挖出来的:
 
-![集成策略:ROS1 接入 ROS2 的两条路](images/integration_strategy_ros1_ros2.svg)
+![集成策略:ROS1 接入 ROS2 的两条路](images/integration_strategy_ros1_ros2.png)
 
 **② P1 核心库第一块完成**:写出 `gbplanner_core`(纯 C++、无框架),实现算法心脏"光线投射 + 体积增益",并**编译 + 单元测试全部通过**。演示验证了"挡住一侧 → 增益下降"的正确逻辑:
 
@@ -39,7 +39,7 @@
 | 一侧加墙(已占据) | **5.104 m³** | 被挡侧看不见 → 增益下降 ✓ |
 | 单元测试 | **1/1 通过** | 射线遇障停止、加墙增益下降等断言全过 |
 
-![体积增益演示](images/p1_volume_gain_demo.svg)
+![体积增益演示](images/p1_volume_gain_demo.png)
 
 > 📌 当前还有一个**待决策点**:集成走**策略 A(ros1_bridge,作者官方捷径,快)**还是**策略 B(抽 gbplanner_core 重写,干净长远,P1 已起步)**。详细当日进展见 [notes/进展_2026-06-29.md](notes/进展_2026-06-29.md)。GBPlanner 参考环境(预研 B)正在后台编译。
 
