@@ -42,3 +42,16 @@ humble = Ubuntu 22.04,正是这些机器人上游代码的目标平台,预期可
 ## 5. 状态
 - 当前:humble 全套重建后台进行中(任务 bf7d69x5m)。
 - 完成后:再次自检 `docker images`(必须 9 个全绿),再 `--live-preflight` 确认 exploration 可跑,然后真跑 exploration + 截图。
+
+## 6. humble 重建结果:6/9,深挖 3 个失败的真因(2026-06-29 晚)
+humble 修好了 fast-lio(Livox 在 jazzy 编不过、humble 过了),但**自检 `docker images` 发现仍 6/9**。逐个查真因(**三个各不相同**):
+
+| 镜像 | 真因(实证) | 修法 |
+|---|---|---|
+| gazebo-headless | Dockerfile 用 `RUN --mount=type=cache`(需 BuildKit),但编排器 `navlab-sim build` 的 docker SDK 用**旧版构建器**,报 `the --mount option requires BuildKit` | 改用 `DOCKER_BUILDKIT=1 docker build` CLI 直接重建 |
+| official-baseline | 同样 `# syntax=dockerfile:1.7`+`--mount` 需 BuildKit;且它 `FROM gazebo-headless` → gazebo-headless 挂导致它**级联失败** | gazebo-headless 好后用 CLI BuildKit 重建 |
+| gazebo-sensor | `ydlidar_ros2_driver` 的 `declare_parameter`(无默认值形式)在 humble rclcpp **模板推导失败** | 仿真用 gz 雷达经 ros-gz-bridge,**不需要 ydlidar 硬件驱动** → 补丁版 Dockerfile 跳过它,保留 YDLidar-SDK + ros-gz-bridge |
+
+**关键洞察(防后续再踩)**:编排器的 SDK 构建用的是**经典构建器**,凡 Dockerfile 用 `--mount` 的都会挂;**改用 `DOCKER_BUILDKIT=1 docker build` CLI 直建**即可。这不是代码问题,是构建器配置问题。
+
+**当前**:gazebo-headless、gazebo-sensor(补丁版)正用 CLI BuildKit 后台重建;完成后建 official-baseline,再自检 9/9。
