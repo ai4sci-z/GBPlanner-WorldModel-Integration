@@ -1,0 +1,86 @@
+# 🔄 恢复文档 · 新窗口无损接管本任务
+
+> 用途:本会话上下文将满。在**新窗口/新对话**里,让新的 Claude 读本文件 + `MEMORY.md`(自动加载)+ `README.md`(蓝图)+ `TASKS.md`(任务台账),即可**基本无损接管**。最后更新 2026-06-30。
+
+## 0. 新会话第一步(必做)
+1. 在**同一项目目录 `C:\CCproject`** 打开新 Claude Code 对话(记忆会自动加载)。
+2. ⚠️ **后台构建任务不跨会话**——新会话**先用 `docker images` 核对真实状态**,别信任何"之前说成功"。核对命令见 §6。
+3. **铁律**:退出码/任务"completed"≠成功,**只认 `docker images` 真实镜像**(本任务已抓出 6 次假成功)。
+
+## 1. 任务 + 权威资料
+- **任务**:把 **GBPlanner**(ROS1 图搜索体积增益探索)集成进 **world-model**(ROS2 无人机仿真平台),替换其占位探索 `frontier_lite`,并论证缺陷 + 对比突出 GBPlanner 优势。
+- ⚠️ "world-model" 只是维护者起的项目名,**不是具身智能"世界模型"**。
+- **权威资料仅 3 个**:world-model 仓库(github.com/SZ-surveying/world-model)、GBPlanner(arXiv:2201.07067 + github.com/ntnu-arl/gbplanner_ros 的 `gbplanner2` 分支)、桌面 `自主探索决策(GBPlanner算法).md`(mentor 发)。
+
+## 2. 已定决策:**桥接方案(ros1_bridge)**
+GBPlanner=ROS1,world-model=ROS2;作者官方栈(Unified Autonomy Stack)就用 `ros1_bridge` 接。**原 P1(抽 gbplanner_core 重写)降为备选**。路线:跑通 gbplanner-ref → 搭 ros1_bridge 把 world-model 的点云/里程计喂给 GBPlanner、航点回流 `/navlab/exploration/*` → 给无人机加 3D 雷达 → 替换 frontier_lite → 对比。
+
+## 3. 当前总状态(2026-06-30)
+| 阶段 | 状态 |
+|---|---|
+| 预研B·GBPlanner 官方仿真复现 | ✅ 镜像 `gbplanner-ref` 已建(10.7GB) |
+| 调研·ros1_bridge | ✅ 确认 |
+| P1·gbplanner_core 核心(光线投射+体积增益) | ✅ 编译+ctest 通过(`code/gbplanner_core/`) |
+| 桥接接口规格 | ✅ 精确锁定(`docs/桥接接口规格.md`) |
+| 对比实验设计 | ✅ (`docs/对比实验与缺陷论证设计.md`) |
+| 图文实跑手册 | ✅ (`docs/实跑操作手册_图文版.md`,真截图待补) |
+| **预研A·world-model 9 镜像** | 🔵 **8/9**,official-baseline 未建(见 §5) |
+| GUI 实操 / 跑 exploration / 对比 | ⬜ 待 9/9 或走预研B |
+
+## 4. 环境关键事实(照抄即用)
+- WSL2:`Ubuntu-22.04`,用户 **`ai4s`**(可用 docker)。Win11 家庭版。
+- **Go 1.24 在 `/usr/local/go/bin`**(apt 旧 1.18 会盖住,PATH 要前置):`export PATH=/usr/local/go/bin:$PATH`。
+- **代理**:Windows clash 在 `127.0.0.1:7897`;`.wslconfig` 已设 mirrored networking + autoProxy。
+- **Docker 守护进程代理**已配(`/etc/systemd/system/docker.service.d/http-proxy.conf`→7897),否则拉不动 Docker Hub。
+- **git push**:Windows 端用 `git config http.sslBackend openssl` + local `http(s).proxy=127.0.0.1:7897`(schannel 走代理会握手失败)。
+- 项目仓库克隆在 WSL:`~/ws/world-model`(子模块已拉全)。distro 已在 `orchestration/sim/config.toml` 改为 **humble**。
+- GitHub 私有仓:`ai4sci-z/GBPlanner-WorldModel-Integration`(gh 已登录)。本机权威源:`C:\CCproject\GBPlanner-WorldModel-Integration`。
+
+## 5. 预研A 构建详情(关键,8/9)
+**已建 8 个**(humble):ros-base、ardupilot-sitl、mavlink-router、gazebo-headless、fast-lio、companion、slam-cartographer、gazebo-sensor。
+**未建**:`official-baseline`(ArduPilot 全家桶,最重)。
+**这栈是为 jazzy 写的,搬 humble 已补 6 处**(补丁脚本固化在 `runbooks/world-model-humble-fixes/`):
+1. 编排器经典构建器不支持 `--mount` → 改用 `DOCKER_BUILDKIT=1 docker build` CLI。
+2. fast-lio(Livox)jazzy GCC13 编不过 → humble 解决。
+3. gazebo-sensor ydlidar 不兼容 → 跳过 ydlidar(`gazebo-sensor-humble.Dockerfile`)。
+4. gazebo-headless 缺 Harmonic `gz sim` → 装 `gz-harmonic`+`ros-gzharmonic`(`gazebo-headless-humble.Dockerfile`)。
+5. official-baseline `ros-gz`(Fortress)与 Harmonic 冲突 → 改 `ros-gzharmonic`;`--break-system-packages` humble pip 不支持 → 去掉(`build_official4.sh` 的 sed)。
+6. official-baseline git 克隆 ardupilot GnuTLS 断连 → 走代理(`--network=host --build-arg HTTPS_PROXY`,见 `build_official4.sh`)。
+**当前卡点(第 6 次)**:走代理后克隆成功,但 **colcon 编译 ardupilot_gz/ardupilot_cartographer/micro_ros_agent 失败(exit 2)**——下一步要看 `~/build_official4.log` 里 colcon 的真实编译错误(可能又是 humble vs jazzy 的 API 不兼容,如 declare_parameter),对症打补丁或考虑该镜像是否必需。
+**重建命令**:`bash runbooks/world-model-humble-fixes/build_official4.sh`(在 WSL,会自动 patch + 走代理构建)。
+
+## 6. 新会话立即执行(恢复动作)
+```bash
+# A) 核对 9 镜像真实状态
+bash /mnt/c/CCproject/GBPlanner-WorldModel-Integration/runbooks/world-model-humble-fixes/verify_humble.sh
+# B) 若 official-baseline 仍缺:看 colcon 真实错误
+grep -aiE 'error:|Failed|did not complete' /home/ai4s/build_official4.log | tail -20
+# C) 修好后重建
+bash /mnt/c/CCproject/GBPlanner-WorldModel-Integration/runbooks/world-model-humble-fixes/build_official4.sh
+```
+
+## 7. GUI 实操(用户强调:必须能亲自看/验证)
+- **优先用预研B(已就绪)看 GBPlanner**:
+  ```bash
+  cp -r /mnt/c/CCproject/GBPlanner-WorldModel-Integration/runbooks/gbplanner_ref ~/gbplanner_ref
+  cd ~/gbplanner_ref && bash build_and_run.sh   # WSLg 弹出 Gazebo+RViz
+  ```
+  跑通后用 computer-use 截真图,补进 `docs/实跑操作手册_图文版.md` 的"真截图位"。
+- world-model 的 exploration GUI 需 official-baseline 建成(9/9)后:`cd ~/ws/world-model/orchestration/sim && go run ./cmd/navlab-sim run exploration`。
+- 注:GUI 经 WSLg 弹到 Windows 桌面;若卡用 headless + rosbag/Foxglove。
+
+## 8. 工作铁律(用户反复强调,必须遵守)
+1. **四处同步**:每步收尾 →① 改权威源 `C:\CCproject\GBPlanner-WorldModel-Integration` ②刷桌面 md(README→`桌面\GBPlanner项目_蓝图与进展.md`)③`git add/commit/push`(桌面"传送门"junction 自动跟随)。
+2. **自纠错**:只信 `docker images`/文件/测试,不信退出码;每步自检。
+3. **留痕**:仿真截图、图、表存 `images/`,文档写清"做了什么"。
+4. **命名**:预研A/B=复现任务;桥接/重写=集成方案(不用字母)。
+5. **Typora 渲染**:桌面 md 用**绝对路径**引 PNG,**禁用 base64**;图用 SVG 写→`rsvg-convert`转 PNG(WSL 已装 fonts-noto-cjk)。
+6. **重活先问**;被打断后读 TASKS.md 自动接续,不再征求"要不要继续"。
+
+## 9. 文件地图
+- 权威源 `C:\CCproject\GBPlanner-WorldModel-Integration\`:`README.md`(蓝图主报告)、`TASKS.md`(任务台账)、`RESUME_恢复文档.md`(本文)、`code/gbplanner_core/`(P1代码)、`docs/`(桥接规格/对比设计/排错记录/操作手册/实跑图文/预研A·B/仓库导览/手机RemoteControl)、`images/`(图)、`runbooks/`(环境搭建、gbplanner_ref、world-model-humble-fixes 补丁)。
+- 桌面:各 md 副本(绝对路径引图)+ `GBPlanner项目`(junction→权威源)+ 两个`源码浏览`夹。
+- WSL:`~/ws/world-model`(仓库)、`~/gbp_core_build`(P1 build)、`~/*.log`(构建日志)。
+
+## 10. 待办(任务台账 #3-#7)
+#3 预研A(差 official-baseline)/ #4 桥接落地 / #5 论证 frontier_lite 缺陷(跑+数据)/ #6 GBPlanner vs frontier_lite 对比 / #7 预研A·B 独立报告(已建初稿)。
