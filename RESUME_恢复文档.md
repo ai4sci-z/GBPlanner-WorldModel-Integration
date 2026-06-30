@@ -48,7 +48,20 @@ state_2026_06_30:
   REAL_BUG_FOUND: |
     world-model 的 exploration 生成脚本本来就**无法编译**:模板用 text/template 渲染(无 Sprintf),
     pattern[goal_index %% len(pattern)] 的 %% 原样落盘 → python3 -m py_compile 报 SyntaxError(line147)。
-    sed 改单 % 后 py_compile 通过 = 根因确证。疑似 exploration 运行时起不来的根因之一。这是给作者的高含金量贡献。
+    sed 改单 % 后 py_compile 通过 = 根因确证。是给作者的有价值贡献(但**不是**运行时头号根因,见下)。
+  RUNTIME_ROOT_CAUSE_tomllib: |
+    🔴 头号根因(读 artifacts_sample/exploration_summary.json L404 实锤):SLAM 后端崩于
+    "ModuleNotFoundError: No module named 'tomllib'"。tomllib 是 Py3.11+ 标准库,humble=Ubuntu22.04=Py3.10 没有
+    (此栈原为 jazzy/Py3.12 写)。SLAM 死 → 无 /slam/odom、/tf、/scan → 飞控永远 waiting_for_pose、探针全 rc=20。
+    修法:SLAM CLI(navlab.common.slam.cli)的 import tomllib 加 try/except 兜底用 tomli;humble pip install tomli。
+    ⚠️ 订正:之前把 %% 说成"运行时根因之一"夸大了权重——tomllib 在其上游,才是头号。PR/Issue 措辞待改。
+  STAGE4_BRIDGE_STARTED: |
+    用户拍板"直接上阶段4真版GBPlanner(ros1_bridge)"。已从 gbplanner-ref 镜像源码逐条证实真版 I/O 契约:
+    进=/pointcloud(sensor_msgs/PointCloud2,3D)+odometry(nav_msgs/Odometry)+TF world→navigation;
+    出=<robot>/command/trajectory(trajectory_msgs/MultiDOFJointTrajectory,PCI 发,pci_general.cpp:8)。
+    去风险关键:自定义 planner_msgs(13msg+24srv)只在 ROS1 内用、不跨桥 → ros1_bridge 只桥 4 类标准消息,开箱即用。
+    产物 integration/ros1_bridge/:bridge_topics.yaml + trajectory_to_intent.py(ROS2出口适配器,py_compile过)+ README。
+    剩余:①iq_quad加3D雷达出/pointcloud ②编译起ros1_bridge ③ROS1侧跑gbplanner_node+PCI ④端到端(受 tomllib 运行时阻塞)。
 next_actions:
   - 【最高优先,你来做】照 integration/world-model-PR/手动提交PR与Issue指南.md 提交 Issue+PR;链接发我存档=任务闭环
   - 调运行时让 exploration 真探起来 → 取 summary.json 的 coverage/path/goals 真实指标(注:先确认是否因这个编译bug)
