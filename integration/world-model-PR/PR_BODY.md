@@ -1,84 +1,64 @@
 ## Summary
 
-Two related changes to the exploration workflow (`orchestration/sim`):
+Three changes to the `exploration` workflow (`orchestration/sim` + `navlab` runtime),
+two bug fixes and one optional feature:
 
-1. **Bug fix** — the generated `exploration_workflow_runtime.py` does not compile.
-2. **Feature** — add an optional, map-aware exploration strategy `gbplanner_gain`,
-   alongside the existing default `frontier_lite` (which is left unchanged).
+1. **fix (primary):** SLAM crashes on Humble/Python 3.10 because `tomllib` is 3.11+.
+2. **fix:** the generated exploration runtime script does not compile (`%%`).
+3. **feat:** add an optional, map-aware `gbplanner_gain` strategy (default `frontier_lite`
+   is unchanged).
 
 Fixes #<ISSUE_NUMBER>.
 
-## 1. Bug: generated exploration script fails to compile
+The two fixes are independent of the feature and are the high-confidence part of this PR;
+they can be cherry-picked on their own. The feature is an intentionally simple prototype
+(details below).
 
-`exploration_workflow_runtime.py.tmpl` contains:
+## 1. fix: `import tomllib` → fall back to `tomli` on Python < 3.11  (primary runtime blocker)
 
-```python
-command = dict(pattern[goal_index %% len(pattern)])
-```
+On Humble (Ubuntu 22.04, Python 3.10), `navlab/common/toml_values.py` and
+`navlab/sim/companion/runtime/config.py` fail at import with
+`ModuleNotFoundError: No module named 'tomllib'` (it is 3.11+ stdlib).
+`navlab.common.slam.config` imports `toml_values`, so the SLAM backend dies on startup →
+no `/slam/odom`, `/tf`, `/scan` → controller stuck `waiting_for_pose` → all probes `rc=20`.
 
+Fix: `try: import tomllib / except ModuleNotFoundError: import tomli as tomllib`
+(`tomli` has the same `load`/`loads` API) and declare `tomli` for Python < 3.11.
+
+## 2. fix: generated exploration script compile bug (`%%` → `%`)
+
+`exploration_workflow_runtime.py.tmpl` renders `pattern[goal_index %% len(pattern)]`.
 The template is rendered with `text/template` and written straight to disk by
-`writeGeneratedScript` (no `fmt.Sprintf` pass), so the doubled percent reaches the
-generated file verbatim. The result is invalid Python:
+`writeGeneratedScript` (no `fmt.Sprintf` pass), so the generated script keeps `%%` and
+fails `python3 -m py_compile` (SyntaxError). Single `%` fixes it. This is independent of
+and downstream of #1.
 
-```
-$ python3 -m py_compile exploration_workflow_runtime.py
-  File "exploration_workflow_runtime.py", line 147
-    command = dict(pattern[goal_index %% len(pattern)])
-                                       ^
-SyntaxError: invalid syntax
-```
+## 3. feat: optional map-aware `gbplanner_gain` strategy
 
-Because the whole module fails to parse, the `navlab_exploration_workflow` node
-cannot start. Fix: use a single `%`. After the fix the generated script passes
-`python3 -m py_compile`.
+Today `frontier_lite` drives motion from a fixed 3-step pattern indexed by an elapsed-time
+counter and subscribes to no map (its review topic is labeled `bounded_lite_pattern`).
+This PR adds an **opt-in** strategy inspired by GBPlanner (Dang et al., arXiv:2201.07067):
+when `strategy == "gbplanner_gain"` the workflow subscribes to `map_topic`
+(`nav_msgs/OccupancyGrid`, default `/map`), ray-casts in 24 directions, counts reachable
+UNKNOWN cells as a 2D volumetric-gain proxy, applies a turn penalty, and steers toward the
+best heading.
 
-## 2. Feature: map-aware `gbplanner_gain` strategy
-
-Today the default `frontier_lite` strategy produces motion from a fixed 3-step
-pattern indexed by an elapsed-time counter (`pattern[goal_index % len(pattern)]`)
-and **does not subscribe to any map** — it is effectively an open-loop control-chain
-smoke test rather than an exploration policy (the review topic even labels its source
-`bounded_lite_pattern`).
-
-This PR adds an **optional** strategy that implements the core idea of GBPlanner
-(Dang et al., *Graph-based subterranean exploration path planning*, arXiv:2201.07067):
-read the SLAM occupancy grid and move toward the direction of highest information gain.
-
-When `strategy == "gbplanner_gain"`:
-- the workflow subscribes to `map_topic` (`nav_msgs/OccupancyGrid`, default `/map`);
-- it ray-casts in 24 directions (3-ray fan each), counts reachable **UNKNOWN** cells
-  as a 2D volumetric-gain proxy, applies a turn penalty `score = gain − k·Δheading`;
-- it steers toward the best-scoring heading via `setpoint/intent`, and reports the
-  chosen heading/gain on the existing review topics.
-
-### Design notes / scope
-- **Additive and opt-in.** The default `frontier_lite` path is unchanged; the new
-  helper code is rendered unconditionally but only *executed* when the strategy is
-  `gbplanner_gain`, and the map subscription is only created in that case.
-- This is a **2D, ROS2-native** first step (no `ros1_bridge`, no 3D voxblox). It is
-  intended as the decision-layer integration point; a full GBPlanner stack would
-  swap the gain evaluator for the upstream ROS1 planner over a bridge.
-- Acceptance gates (`min_accepted_goals`, `min_path_length_m`) are untouched.
-
-## New / changed config
-
-`ExplorationWorkflowSpec` gains `MapTopic` (default `/map`), surfaced in the rendered
-spec as `map_topic`. To use the new strategy, set in the exploration runtime config:
-
-```toml
-[exploration_gate.runtime]
-strategy  = "gbplanner_gain"
-map_topic = "/map"
-```
+**Scope / honesty:**
+- Additive and opt-in; default `frontier_lite` behaviour is unchanged (the new helper code
+  is rendered unconditionally but only executed when the strategy is `gbplanner_gain`, and
+  the map subscription is created only then).
+- This is a **2D occupancy-grid prototype**, **not** the full GBPlanner (no RRG graph
+  search, no 3D voxblox volumetric gain). It is the ROS 2-native decision-layer step; a
+  full integration would bridge the upstream ROS 1 planner.
+- `ExplorationWorkflowSpec` gains `MapTopic` (default `/map`), surfaced as `map_topic`.
 
 ## Verification
 
-- `go build ./...`, `go vet ./internal/tasks/helpers/`, `go test ./internal/tasks/helpers/` — all pass.
-- Both strategies render to scripts that pass `python3 -m py_compile`
-  (`frontier_lite` and `gbplanner_gain`).
-
-## Not included
-
-- End-to-end simulation run (requires the full ArduPilot + Gazebo stack). The change
-  is verified at the unit/render/compile level; reviewers with the full stack can
+- `go build ./...`, `go vet ./internal/tasks/helpers/`, `go test ./internal/tasks/helpers/` pass.
+- Both strategies render to scripts that pass `python3 -m py_compile`.
+- The `tomllib`→`tomli` fallback was checked in the Humble SLAM container: with the fix +
+  `tomli` available, `navlab.common.toml_values` and `navlab.common.slam.config` import
+  cleanly (previously `ModuleNotFoundError`).
+- Not yet verified end-to-end: a full Gazebo+SITL exploration run on this hardware (heavy;
+  the Humble migration has further environment gaps). Reviewers with the full stack can
   exercise `strategy = "gbplanner_gain"` directly.

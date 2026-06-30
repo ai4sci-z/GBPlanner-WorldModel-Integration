@@ -91,42 +91,46 @@ s.addText([
 ], { x:8.5, y:2.5, w:3.95, h:3.7, fontFace:F, lineSpacingMultiple:1.2, valign:"top" });
 
 s = p.addSlide(); s.background={ color:WHITE };
-title(s, "从演示到真集成:把决策内核接进 world-model", "ROS2 原生第一步——直接替换脚本决策,不必先搭 ros1_bridge");
-card(s, 0.6, 1.95, 7.5, 4.65, "F0FDF4");
-s.addText("在 world-model 真实代码里新增可选探索策略 gbplanner_gain", { x:0.85, y:2.15, w:7.0, h:0.5, fontFace:F, fontSize:16, bold:true, color:GREEN });
+title(s, "真集成进展:两条腿往前推", "决策层原型(ROS2 原生)+ 真版 GBPlanner 桥接地基(锁定方案)");
+card(s, 0.6, 1.75, 6.0, 4.0, "F0FDF4");
+s.addText("① 决策层原型:gbplanner_gain", { x:0.85, y:1.92, w:5.5, h:0.4, fontFace:F, fontSize:15, bold:true, color:GREEN });
 s.addText([
-  { text:"加法式,不动默认 frontier_lite。它做的事:\n", options:{ fontSize:14, color:INK } },
-  { text:"• 订阅 SLAM 占据栅格 /map(OccupancyGrid)\n", options:{ fontSize:14, color:INK } },
-  { text:"• 24 个方向光线投射,数沿途未知栅格 = 2D 体积增益\n", options:{ fontSize:14, color:INK } },
-  { text:"• 减转向惩罚,朝增益最高方向发运动意图\n", options:{ fontSize:14, color:INK } },
-  { text:"→ 把 pattern[i%3] 脚本循环换成看地图、挑未知最多的方向\n\n", options:{ fontSize:14, color:GREEN, bold:true } },
-  { text:"改 2 个文件:Go 侧透传 map_topic(+5 行);Python 决策模板加读图选向(+108 行)", options:{ fontSize:13.5, color:INK } },
-], { x:0.85, y:2.7, w:7.0, h:3.8, fontFace:F, lineSpacingMultiple:1.3, valign:"top" });
-card(s, 8.35, 1.95, 4.35, 2.15, "EFF6FF");
-s.addText("已验证(实测,非退出码)", { x:8.6, y:2.1, w:3.9, h:0.4, fontFace:F, fontSize:14, bold:true, color:NAVY });
-s.addText("• go build / vet / test 全过\n• 两种策略渲染脚本 py_compile 均通过", { x:8.6, y:2.55, w:3.9, h:1.5, fontFace:F, fontSize:13, color:INK, lineSpacingMultiple:1.25, valign:"top" });
-card(s, 8.35, 4.4, 4.35, 2.2, "FFF7ED");
-s.addText("诚实边界", { x:8.6, y:4.55, w:3.9, h:0.4, fontFace:F, fontSize:14, bold:true, color:AMBER });
-s.addText("• 是 2D、ROS2 原生「决策层」版,非完整 ROS1 GBPlanner(无 RRG 图搜索/3D voxblox)\n• 端到端仿真运行尚未验证;依赖 SLAM 发 /map", { x:8.6, y:5.0, w:3.9, h:1.6, fontFace:F, fontSize:12.5, color:INK, lineSpacingMultiple:1.2, valign:"top" });
+  { text:"在 world-model 真实代码里新增可选策略(加法,不动 frontier_lite):\n", options:{ fontSize:13, color:INK } },
+  { text:"• 订阅占据栅格 /map → 24 方向光线投射数未知栅格(2D 体积增益)→ 减转向惩罚选向\n", options:{ fontSize:13, color:INK } },
+  { text:"• 把 pattern[i%3] 脚本循环换成看地图挑未知最多方向\n", options:{ fontSize:13, color:GREEN, bold:true } },
+  { text:"验证:go build/vet/test + 两策略 py_compile 全过\n", options:{ fontSize:12.5, color:INK } },
+  { text:"边界:2D 原型,非完整 ROS1 GBPlanner", options:{ fontSize:12, color:AMBER, italic:true } },
+], { x:0.85, y:2.4, w:5.5, h:3.3, fontFace:F, lineSpacingMultiple:1.25, valign:"top" });
+card(s, 6.9, 1.75, 5.8, 4.0, "EFF6FF");
+s.addText("② 真版桥接地基:ros1_bridge", { x:7.15, y:1.92, w:5.3, h:0.4, fontFace:F, fontSize:15, bold:true, color:NAVY });
+s.addText([
+  { text:"从 gbplanner-ref 源码逐条证实真版 GBPlanner 的 I/O 契约:\n", options:{ fontSize:13, color:INK } },
+  { text:"• 进:点云 PointCloud2 + 里程计 + TF(标准类型)\n", options:{ fontSize:13, color:INK } },
+  { text:"• 出:command/trajectory(标准 MultiDOFJointTrajectory)\n", options:{ fontSize:13, color:INK } },
+  { text:"• 关键去风险:自定义 planner_msgs 留 ROS1 内,跨桥全是标准类型 → ros1_bridge 开箱\n", options:{ fontSize:13, color:NAVY, bold:true } },
+  { text:"已产出:桥接话题映射 + ROS2 出口适配器(轨迹→intent,py_compile 过)", options:{ fontSize:12.5, color:INK } },
+], { x:7.15, y:2.4, w:5.3, h:3.3, fontFace:F, lineSpacingMultiple:1.22, valign:"top" });
+card(s, 0.6, 5.95, 12.1, 0.7, "FFF7ED");
+s.addText("诚实边界:完整端到端(加 3D 雷达 + 起桥 + 两侧同跑)是后续重活,受 world-model 运行时阻塞(见下页)。", { x:0.85, y:6.05, w:11.6, h:0.5, fontFace:F, fontSize:13, color:AMBER, valign:"top" });
 
 s = p.addSlide(); s.background={ color:WHITE };
-title(s, "附带战果:修了一个真 bug,备好可提交的 PR / Issue");
-card(s, 0.6, 1.8, 6.0, 4.8, "0F172A");
-s.addText("发现并修复 world-model 一个真编译 bug", { x:0.85, y:2.0, w:5.5, h:0.4, fontFace:F, fontSize:15, bold:true, color:ICE });
+title(s, "工程战果:连修 3 个 humble 真 bug,把平台往前推", "只信真实产物(docker images / 日志 / py_compile),不信退出码");
+card(s, 0.6, 1.8, 7.4, 4.8, "0F172A");
+s.addText("给 world-model 作者的真实可提交修复(均有实测证据)", { x:0.85, y:1.98, w:6.9, h:0.4, fontFace:F, fontSize:14.5, bold:true, color:ICE });
 s.addText([
-  { text:"现象:生成的 exploration 运行脚本根本无法编译\n\n", options:{ fontSize:13.5, color:WHITE } },
-  { text:"根因:模板用 text/template 渲染(无 Sprintf),\ngoal_index %% len 的 %% 原样落盘 → Python 语法错\n\n", options:{ fontSize:13, color:"A7F3D0" } },
-  { text:"证据:渲染脚本 py_compile 报错(line 147)\n→ 改成单 % 后编译通过\n\n", options:{ fontSize:13.5, color:WHITE } },
-  { text:"影响:疑似 exploration 运行时起不来的原因之一", options:{ fontSize:13.5, color:ICE, bold:true } },
-], { x:0.85, y:2.5, w:5.5, h:4.0, fontFace:F, lineSpacingMultiple:1.25, valign:"top" });
-card(s, 6.9, 1.8, 5.8, 4.8, "EFF6FF");
-s.addText("整理成可提交的 PR + Issue", { x:7.15, y:2.0, w:5.3, h:0.4, fontFace:F, fontSize:15, bold:true, color:NAVY });
+  { text:"① tomllib(头号):SLAM 在 Py3.10 一启动就崩(tomllib 是 3.11+)\n   → 回退 tomli;实测重跑后 SLAM 越过此崩溃\n\n", options:{ fontSize:13, color:"A7F3D0" } },
+  { text:"② 空 launch 参数:humble 拒绝空值 name:= → SLAM 起不来\n   → 跳过空参;实测 cartographer 节点真正运行起来\n\n", options:{ fontSize:13, color:"A7F3D0" } },
+  { text:"③ 模板 %% 编译 bug:生成脚本无法编译 → 改单 %(独立次要)\n\n", options:{ fontSize:13, color:ICE } },
+  { text:"成效:world-model 从「装不起来」→ 9 镜像齐 → SLAM 从「一崩」推进到「cartographer 真运行,只差激光数据」", options:{ fontSize:13.5, color:WHITE, bold:true } },
+], { x:0.85, y:2.45, w:6.9, h:4.0, fontFace:F, lineSpacingMultiple:1.2, valign:"top" });
+card(s, 8.3, 1.8, 4.4, 4.8, "EFF6FF");
+s.addText("PR + Issue 已备好", { x:8.55, y:1.98, w:3.9, h:0.4, fontFace:F, fontSize:14.5, bold:true, color:NAVY });
 s.addText([
-  { text:"1 个 PR(2 个 commit:bugfix + feat)+ 1 个 Issue\n\n", options:{ fontSize:14, color:INK, bold:true } },
-  { text:"物料齐全(integration/world-model-PR/):\n", options:{ fontSize:13.5, color:INK } },
-  { text:"• PR / Issue 正文 + 改动补丁\n• 渲染脚本证据(两种策略都能编译)\n• 手动提交分步教程\n\n", options:{ fontSize:13.5, color:INK } },
-  { text:"状态:待亲自提交到作者仓库 → 任务闭环", options:{ fontSize:14, color:AMBER, bold:true } },
-], { x:7.15, y:2.5, w:5.3, h:4.0, fontFace:F, lineSpacingMultiple:1.3, valign:"top" });
+  { text:"1 个 PR(4 commit:3 fix + 1 feat)+ 1 个 Issue\n\n", options:{ fontSize:13, color:INK, bold:true } },
+  { text:"物料齐全(integration/world-model-PR/):\n", options:{ fontSize:12.5, color:INK } },
+  { text:"• PR/Issue 正文 + 补丁\n• 修复/渲染证据\n• 手动提交分步教程\n\n", options:{ fontSize:12.5, color:INK } },
+  { text:"状态:待亲自提交到作者仓库 → 任务闭环", options:{ fontSize:13, color:AMBER, bold:true } },
+], { x:8.55, y:2.45, w:3.9, h:4.0, fontFace:F, lineSpacingMultiple:1.25, valign:"top" });
 
 s = p.addSlide(); s.background={ color:WHITE };
 title(s, "一次探索:复现仿真平台(及时止损)");
@@ -141,10 +145,10 @@ s = p.addSlide(); s.background={ color:WHITE };
 title(s, "当前状态与下一步");
 card(s, 0.6, 1.8, 6.0, 4.8, "F0FDF4");
 s.addText("✓ 已完成(扎实)", { x:0.85, y:2.0, w:5.5, h:0.4, fontFace:F, fontSize:17, bold:true, color:GREEN });
-s.addText("• 摸清两个系统 + 三道鸿沟,定下桥接方案\n• 算法核心可运行:体积增益决策演示 + 单测\n• 真集成代码 gbplanner_gain 接进 world-model 结构\n  (读图选向替换脚本;build/test/py_compile 全过)\n• 修复 world-model 一个真编译 bug(%% → %)\n• 缺陷论证:frontier_lite 是脚本(代码铁证)\n• PR/Issue 物料备好 + 完整文档 + GitHub 私有仓", { x:0.85, y:2.5, w:5.5, h:3.9, fontFace:F, fontSize:13.5, color:INK, lineSpacingMultiple:1.35, valign:"top" });
+s.addText("• 摸清两个系统 + 三道鸿沟,定下桥接方案\n• 算法核心可运行:体积增益决策演示 + 单测\n• gbplanner_gain 决策层原型接进 world-model 结构\n• 阶段4 桥接地基:源码证实真版 I/O 契约 + ROS2 适配器\n• 连修 3 个 humble 真 bug,SLAM 从一崩→cartographer 真运行\n• 9/9 镜像构建成功;缺陷有代码铁证\n• PR/Issue 物料备好 + 完整文档 + GitHub 私有仓", { x:0.85, y:2.5, w:5.5, h:3.9, fontFace:F, fontSize:13, color:INK, lineSpacingMultiple:1.3, valign:"top" });
 card(s, 6.9, 1.8, 5.8, 4.8, "EFF6FF");
 s.addText("→ 进行中 / 下一步", { x:7.15, y:2.0, w:5.3, h:0.4, fontFace:F, fontSize:17, bold:true, color:NAVY });
-s.addText("• 把准备好的 PR + Issue 提交给作者(任务闭环)\n• 跑通 exploration 运行时,验证 /map 与 gbplanner_gain 真实行为\n• 完整路线:加 3D 雷达 + ros1_bridge 接真 GBPlanner\n• GBPlanner 与 frontier_lite 同场景量化对比", { x:7.15, y:2.5, w:5.3, h:3.9, fontFace:F, fontSize:13.5, color:INK, lineSpacingMultiple:1.4, valign:"top" });
+s.addText("• 接着剥运行时坑:让 /scan 到达 cartographer → SLAM healthy\n• 跑通 exploration,取 frontier_lite 真实指标 + 验证 gbplanner_gain\n• 完整路线:加 3D 雷达 + 起 ros1_bridge 接真版 GBPlanner\n• 同场景量化对比;把 PR + Issue 提交给作者(任务闭环)", { x:7.15, y:2.5, w:5.3, h:3.9, fontFace:F, fontSize:13, color:INK, lineSpacingMultiple:1.35, valign:"top" });
 
 s = p.addSlide(); s.background={ color:NAVY };
 s.addText("frontier_lite 闭眼按脚本动;\nGBPlanner 睁眼挑未知最多的路。", { x:0.9, y:2.4, w:11.6, h:1.8, fontFace:F, fontSize:32, bold:true, color:WHITE, lineSpacingMultiple:1.15 });

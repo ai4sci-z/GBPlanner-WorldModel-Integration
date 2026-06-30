@@ -3,14 +3,16 @@
 本目录是**准备提交给 `SZ-surveying/world-model` 作者**的完整材料。代码改动已在 WSL
 `~/ws/world-model` 的分支 **`feat/gbplanner-gain-exploration-strategy`** 上 commit 完毕并验证通过。
 
-## 这份 PR 做了两件事
+## 这份 PR 做了 4 件事(4 commit:3 fix + 1 feat)
 
-1. **修真 bug**:exploration 工作流模板渲染出的 Python **无法编译**(`pattern[goal_index %% len(pattern)]`,
-   `%%` 经 `text/template` 原样落盘 → `SyntaxError`)。改成单 `%`。
-   —— 这很可能是之前 exploration 运行时起不来的根因之一。
-2. **加真功能**:新增可选探索策略 `gbplanner_gain`,**读 SLAM 占据栅格、按体积增益选方向**
-   (GBPlanner 核心思想,arXiv:2201.07067),替代只会循环 3 个写死动作、不看地图的 `frontier_lite`。
-   加法式、可配置、不动默认行为。
+1. **fix(头号)tomllib**:humble=Py3.10 无 `tomllib`(3.11+ 才有),`navlab/common/toml_values.py` 等顶层
+   `import tomllib` → SLAM 一启动就崩 → exploration 整个起不来。改为回退 `tomli`。**这才是运行时起不来的头号根因**(实测:修后 SLAM 越过此崩溃)。
+2. **fix 空 launch 参数**:`CartographerBackend.command` 把空值参数也拼成 `name:=`,humble launch 拒绝 → SLAM 起不来。跳过空参。(实测:修后 cartographer 节点真正运行)
+3. **fix 模板 `%%`**:exploration 生成脚本 `pattern[goal_index %% len]` 经 `text/template` 原样落盘 → `SyntaxError` 无法编译。改单 `%`。(独立次要 bug,非运行时头号根因)
+4. **feat gbplanner_gain**:新增可选探索策略,**读占据栅格、按 2D 体积增益选方向**(GBPlanner 思想,arXiv:2201.07067),替代脚本式 `frontier_lite`。加法、可配置、不动默认;诚实:2D 原型,非完整 ROS1 GBPlanner。
+
+> ⚠️ 措辞订正:早期版本把 `%%` 说成"运行时起不来根因之一"是**夸大**;经查 `summary.json` 实证,头号是 tomllib。
+> **以 `ISSUE_BODY.md` / `PR_BODY.md` 为准**(已订正);`ISSUE_frontier_lite_and_compile_bug.md` / `PR_description.md` 为早期描述版,可能滞后。
 
 ## 文件清单
 

@@ -16,12 +16,13 @@
 | 接口规格 / 对比设计 / 图文手册 | ✅ 已出(真截图待跑通补) |
 | **预研A·world-model 9 镜像** | ✅ **9/9 全部构建成功(实测)**——排掉 6 个 jazzy→humble 兼容坑 |
 | **🟢 真集成代码(决策层,ROS2-native)** | ✅ **已接进 world-model 真实结构**——新增可选策略 `gbplanner_gain`(读 `/map`、体积增益选向),`go build/vet/test` + `py_compile` 全过 |
-| **🟢 发现并修复 world-model 真 bug** | ✅ exploration 生成脚本本来**无法编译**(`%%` → SyntaxError),已修;疑似运行时起不来根因之一 |
-| **PR + Issue 物料** | ✅ 全部备好([integration/world-model-PR/](integration/world-model-PR/));**待你照指南手动提交** |
-| **跑 exploration(看 frontier_lite)** | 🔵 能启动 9 个服务,但运行时 SLAM/探针未健康,**调试中**(先排查是否即上面那个编译 bug) |
-| 量化对比 | ⬜ 待运行时跑通后做 |
+| **🟢 阶段4 桥接地基(接真版 GBPlanner)** | ✅ 从源码逐条证实真版 I/O 契约(点云/里程计进、`MultiDOFJointTrajectory` 出、自定义 msg 留 ROS1 不跨桥)+ ROS2 出口适配器(`integration/ros1_bridge/`) |
+| **🟢 连修 3 个 humble 真 bug** | ✅ ① tomllib(SLAM 头号崩溃,Py3.10)② 空 launch 参数 ③ 模板 `%%`。实测:SLAM 从"一启动就崩"→ **cartographer 节点真正运行**(只差 `/scan`) |
+| **PR + Issue 物料** | ✅ 全部备好([integration/world-model-PR/](integration/world-model-PR/),4 commit:3 fix+1 feat);**待手动提交** |
+| **跑 exploration(看 frontier_lite)** | 🔵 9 服务能起;连修两坑后 SLAM cartographer 已运行,**待 `/scan` 链路**(见 [docs/运行时排错记录_humble.md](docs/运行时排错记录_humble.md)) |
+| 量化对比 | ⬜ 待运行时完全跑通后做 |
 
-- 🎯🎯 **任务终点(mentor 要的"可用 PR + Issue")**:GBPlanner 决策已作为可选策略 `gbplanner_gain` 接进 world-model 真实结构(替代脚本式 `frontier_lite`),并**抓到+修了一个真编译 bug**。PR/Issue 全文 + **手动提交分步教程**见 **[integration/world-model-PR/](integration/world-model-PR/)**。提交后把链接发我即闭环。
+- 🎯🎯 **任务终点(mentor 要的"可用 PR + Issue")**:GBPlanner 决策已作为可选策略 `gbplanner_gain` 接进 world-model 真实结构,阶段4 桥接真版 GBPlanner 的地基已落(源码证实契约+适配器),并**连修 3 个 humble 真 bug**把平台往前推。PR/Issue 全文 + **手动提交分步教程**见 **[integration/world-model-PR/](integration/world-model-PR/)**(以 `*_BODY.md` 为准)。提交后把链接发我即闭环。
 - **你怎么自己验证 9/9**:打开 WSL 敲 `docker images | grep navlab`(应数到 9 个)。详见 [docs/WSL使用与复现.md](docs/WSL使用与复现.md)。
 - **你怎么自己验证集成代码**:WSL `cd ~/ws/world-model && git log --oneline -2`(看到 fix+feat 两提交);渲染脚本证据在 `integration/world-model-PR/rendered_*.py`。
 - **看仿真画面**:[docs/实跑操作手册_图文版.md](docs/实跑操作手册_图文版.md)。

@@ -62,6 +62,17 @@ state_2026_06_30:
     去风险关键:自定义 planner_msgs(13msg+24srv)只在 ROS1 内用、不跨桥 → ros1_bridge 只桥 4 类标准消息,开箱即用。
     产物 integration/ros1_bridge/:bridge_topics.yaml + trajectory_to_intent.py(ROS2出口适配器,py_compile过)+ README。
     剩余:①iq_quad加3D雷达出/pointcloud ②编译起ros1_bridge ③ROS1侧跑gbplanner_node+PCI ④端到端(受 tomllib 运行时阻塞)。
+progress_2026_06_30_evening: |
+  运行时连修 2 个 humble 真 bug(均实测验证,world-model 分支 commit 0b85cea/49d3551):
+    坑#1 tomllib:Py3.10 无此库 → SLAM 一启动就崩(头号根因)。回退 tomli。重跑后 SLAM 日志 tomllib=0,越过。
+    坑#2 空 launch 参数:humble 拒绝 name:= 空值 → backends.py 跳过空参。重跑后 cartographer_node 真正运行。
+    现 world-model 分支共 4 commit(3 fix:tomllib/空参/%% + 1 feat:gbplanner_gain)。
+    下一个坑#3:cartographer 收不到 /scan(传感器链路,待续)。详见 docs/运行时排错记录_humble.md。
+  阶段4 桥接地基已落:从 gbplanner-ref 源码逐条证实真版 GBPlanner I/O 契约(点云/里程计进、command/trajectory
+    MultiDOFJointTrajectory 出、自定义 planner_msgs 留 ROS1 不跨桥=去风险),已写 ros1_bridge 话题映射 +
+    ROS2 出口适配器 trajectory_to_intent.py(py_compile 过)。见 integration/ros1_bridge/。
+  本机 tomli 已 vendor 到 /workspace 根(供挂载运行时 import;PR 里则是给镜像加 tomli 依赖)。
+  PPT(11页)与实操手册已结合最新工作更新;桌面同步。
 next_actions:
   - 【最高优先,你来做】照 integration/world-model-PR/手动提交PR与Issue指南.md 提交 Issue+PR;链接发我存档=任务闭环
   - 调运行时让 exploration 真探起来 → 取 summary.json 的 coverage/path/goals 真实指标(注:先确认是否因这个编译bug)
