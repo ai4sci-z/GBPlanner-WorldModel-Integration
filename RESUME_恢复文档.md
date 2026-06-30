@@ -46,8 +46,8 @@ GBPlanner=ROS1,world-model=ROS2;作者官方栈(Unified Autonomy Stack)就用 `r
 4. gazebo-headless 缺 Harmonic `gz sim` → 装 `gz-harmonic`+`ros-gzharmonic`(`gazebo-headless-humble.Dockerfile`)。
 5. official-baseline `ros-gz`(Fortress)与 Harmonic 冲突 → 改 `ros-gzharmonic`;`--break-system-packages` humble pip 不支持 → 去掉(`build_official4.sh` 的 sed)。
 6. official-baseline git 克隆 ardupilot GnuTLS 断连 → 走代理(`--network=host --build-arg HTTPS_PROXY`,见 `build_official4.sh`)。
-**当前卡点(第 6 次)**:走代理后克隆成功,但 **colcon 编译 ardupilot_gz/ardupilot_cartographer/micro_ros_agent 失败(exit 2)**——下一步要看 `~/build_official4.log` 里 colcon 的真实编译错误(可能又是 humble vs jazzy 的 API 不兼容,如 declare_parameter),对症打补丁或考虑该镜像是否必需。
-**重建命令**:`bash runbooks/world-model-humble-fixes/build_official4.sh`(在 WSL,会自动 patch + 走代理构建)。
+**关键修正(重要)**:这套栈**其实支持 humble**(Dockerfile `ARG ARDUPILOT_ROS_REF=humble` 默认就是 humble,ardupilot_gz/cartographer 在 humble 已编过),**不必回退 jazzy**。colcon 唯一失败的包是 `micro_ros_agent`,因 `ARG MICRO_ROS_AGENT_REF=jazzy`(默认指 jazzy 分支,要 Fast-CDR 2;humble 自带 Fast-CDR 1)。**修法:传 `--build-arg MICRO_ROS_AGENT_REF=humble`(humble 分支配 Fast-CDR 1)。**
+**最新重建命令(含全部修复)**:`bash runbooks/world-model-humble-fixes/build_official5.sh`(WSL;自动 patch ros-gz/pip + host网代理 + MICRO_ROS_AGENT_REF=humble)。后台任务 `b4zjojmcc` 正在跑此版本——新会话先 `verify_humble.sh` 看是否已 9/9,没好就看 `~/build_official5.log`。
 
 ## 6. 新会话立即执行(恢复动作)
 ```bash
