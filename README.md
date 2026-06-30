@@ -15,12 +15,16 @@
 | P1·算法核心(光线投射+体积增益) | ✅ 编译+ctest 通过 |
 | 接口规格 / 对比设计 / 图文手册 | ✅ 已出(真截图待跑通补) |
 | **预研A·world-model 9 镜像** | ✅ **9/9 全部构建成功(实测)**——排掉 6 个 jazzy→humble 兼容坑 |
-| **跑 exploration(看 frontier_lite)** | 🔵 能启动 9 个服务,但运行时 SLAM/探针未健康,**调试中** |
-| 桥接落地 / 论证缺陷 / 量化对比 | ⬜ 待运行时跑通后做 |
+| **🟢 真集成代码(决策层,ROS2-native)** | ✅ **已接进 world-model 真实结构**——新增可选策略 `gbplanner_gain`(读 `/map`、体积增益选向),`go build/vet/test` + `py_compile` 全过 |
+| **🟢 发现并修复 world-model 真 bug** | ✅ exploration 生成脚本本来**无法编译**(`%%` → SyntaxError),已修;疑似运行时起不来根因之一 |
+| **PR + Issue 物料** | ✅ 全部备好([integration/world-model-PR/](integration/world-model-PR/));**待你照指南手动提交** |
+| **跑 exploration(看 frontier_lite)** | 🔵 能启动 9 个服务,但运行时 SLAM/探针未健康,**调试中**(先排查是否即上面那个编译 bug) |
+| 量化对比 | ⬜ 待运行时跑通后做 |
 
+- 🎯🎯 **任务终点(mentor 要的"可用 PR + Issue")**:GBPlanner 决策已作为可选策略 `gbplanner_gain` 接进 world-model 真实结构(替代脚本式 `frontier_lite`),并**抓到+修了一个真编译 bug**。PR/Issue 全文 + **手动提交分步教程**见 **[integration/world-model-PR/](integration/world-model-PR/)**。提交后把链接发我即闭环。
 - **你怎么自己验证 9/9**:打开 WSL 敲 `docker images | grep navlab`(应数到 9 个)。详见 [docs/WSL使用与复现.md](docs/WSL使用与复现.md)。
+- **你怎么自己验证集成代码**:WSL `cd ~/ws/world-model && git log --oneline -2`(看到 fix+feat 两提交);渲染脚本证据在 `integration/world-model-PR/rendered_*.py`。
 - **看仿真画面**:[docs/实跑操作手册_图文版.md](docs/实跑操作手册_图文版.md)。
-- **接下来做什么**:让 exploration 真探起来(调运行时)→ 取 frontier_lite 真实指标 → 桥接 GBPlanner → 量化对比。
 - 🎯 **核心发现(任务准星)**:world-model 的 `frontier_lite` 经查证**是脚本预设动作**(前进+扭头按计时器循环,**不订阅地图**),**不是探索算法**;GBPlanner 的精确插入点 = 这个探索决策节点。详见 **[docs/集成机制与frontier_lite缺陷_核心发现.md](docs/集成机制与frontier_lite缺陷_核心发现.md)**。
 - ✅ **可运行成果(可演示·真能跑)**:`gbplanner_core` 决策演示——对每个方向算体积增益、选最高且避障,出俯视决策图(`images/gain_decision.png`)。30 秒可自己复现,详见 **[docs/算法核心演示_体积增益选路.md](docs/算法核心演示_体积增益选路.md)**。这是整个任务里**真正跑通、贴 mentor md 核心**的成果。
 - **新窗口无损接管**(给下一个 Claude 读):[RESUME_恢复文档.md](RESUME_恢复文档.md)。

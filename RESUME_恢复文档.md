@@ -37,11 +37,24 @@ key_env:
 state_2026_06_30:
   images: 9/9 全部构建成功(实测)  # 预研A 镜像阶段完成
   blocker: exploration 能启动9服务但运行时未健康(slam_runtime_unhealthy, probe rc=20, rosbag无mcap)
+  INTEGRATION_DONE: |
+    ✅ 真集成代码已接进 world-model 真实结构(不再是 integration/ 独立文件)。
+    WSL ~/ws/world-model 分支 feat/gbplanner-gain-exploration-strategy,2 个 commit:
+      ① fix: exploration_workflow_runtime.py.tmpl 的 %% → %(真 bug,见下)
+      ② feat: 新增可选策略 gbplanner_gain —— 读 /map(OccupancyGrid)、24方向光线投射数未知栅格(体积增益)、
+         减转向惩罚选向,替代脚本式 frontier_lite;加 ExplorationWorkflowSpec.MapTopic 透传 map_topic。
+    验证(实测):go build/vet/test ./internal/tasks/helpers/ 全过;两策略渲染脚本 py_compile 均过。
+    PR/Issue 物料全在 integration/world-model-PR/(含手动提交指南、纯正文 *_BODY.md、补丁、渲染证据)。
+  REAL_BUG_FOUND: |
+    world-model 的 exploration 生成脚本本来就**无法编译**:模板用 text/template 渲染(无 Sprintf),
+    pattern[goal_index %% len(pattern)] 的 %% 原样落盘 → python3 -m py_compile 报 SyntaxError(line147)。
+    sed 改单 % 后 py_compile 通过 = 根因确证。疑似 exploration 运行时起不来的根因之一。这是给作者的高含金量贡献。
 next_actions:
-  - 调运行时让 exploration 真探起来 → 取 summary.json 的 coverage/path/goals 真实指标
+  - 【最高优先,你来做】照 integration/world-model-PR/手动提交PR与Issue指南.md 提交 Issue+PR;链接发我存档=任务闭环
+  - 调运行时让 exploration 真探起来 → 取 summary.json 的 coverage/path/goals 真实指标(注:先确认是否因这个编译bug)
   - 跑 GUI(先 gbplanner_ref/build_and_run.sh 看 GBPlanner)截真图补 docs/实跑操作手册_图文版.md
-  - 桥接落地(给iq_quad加3D雷达见 docs/桥接接口规格.md) → 量化对比填 docs/对比实验与缺陷论证设计.md
-read_next: [README.md, TASKS.md, docs/排错记录, docs/桥接接口规格.md, docs/对比实验与缺陷论证设计.md, docs/WSL使用与复现.md]
+  - 量化对比填 docs/对比实验与缺陷论证设计.md
+read_next: [README.md, TASKS.md, integration/world-model-PR/README.md, docs/集成机制与frontier_lite缺陷_核心发现.md, docs/对比实验与缺陷论证设计.md]
 ```
 
 ## 0. 新会话第一步(必做)

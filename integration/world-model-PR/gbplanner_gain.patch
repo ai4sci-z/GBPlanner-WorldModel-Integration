@@ -1,0 +1,189 @@
+diff --git a/orchestration/sim/internal/tasks/helpers/runtime_specs.go b/orchestration/sim/internal/tasks/helpers/runtime_specs.go
+index 5bb6374..12defc1 100644
+--- a/orchestration/sim/internal/tasks/helpers/runtime_specs.go
++++ b/orchestration/sim/internal/tasks/helpers/runtime_specs.go
+@@ -1108,6 +1108,9 @@ type ExplorationWorkflowSpec struct {
+ 	SetpointOutputTopic    string
+ 	SlamOdomTopic          string
+ 	ExplorationStatusTopic string
++	// MapTopic carries the SLAM occupancy grid consumed by map-aware strategies
++	// such as "gbplanner_gain". The default "frontier_lite" strategy ignores it.
++	MapTopic string
+ }
+ 
+ func DefaultExplorationWorkflowSpec() ExplorationWorkflowSpec {
+@@ -1124,6 +1127,7 @@ func DefaultExplorationWorkflowSpec() ExplorationWorkflowSpec {
+ 		SetpointOutputTopic:    "/navlab/fcu/setpoint/output",
+ 		SlamOdomTopic:          "/slam/odom",
+ 		ExplorationStatusTopic: "/navlab/exploration/status",
++		MapTopic:               "/map",
+ 	}
+ }
+ 
+@@ -1162,6 +1166,7 @@ func ExplorationWorkflowRuntimeScript(spec ExplorationWorkflowSpec, durationSec
+ 		"setpoint_output_topic":    spec.SetpointOutputTopic,
+ 		"slam_odom_topic":          spec.SlamOdomTopic,
+ 		"exploration_status_topic": spec.ExplorationStatusTopic,
++		"map_topic":                spec.MapTopic,
+ 	})
+ 	if err != nil {
+ 		return "", err
+diff --git a/orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl b/orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl
+index a70c695..dcd9d10 100644
+--- a/orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl
++++ b/orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl
+@@ -10,7 +10,7 @@ def main() -> int:
+     import rclpy
+     from rclpy.parameter import Parameter
+     from rclpy.qos import qos_profile_sensor_data
+-    from nav_msgs.msg import Odometry
++    from nav_msgs.msg import Odometry, OccupancyGrid
+     from std_msgs.msg import String
+ 
+     rclpy.init()
+@@ -25,6 +25,9 @@ def main() -> int:
+         "controller_ready": False,
+         "odom_samples": 0,
+         "last_xyz": None,
++        "heading": 0.0,
++        "grid": None,
++        "last_theta": None,
+         "path_length_m": 0.0,
+         "accepted_goals": 0,
+         "last_goal_index": -1,
+@@ -63,9 +66,17 @@ def main() -> int:
+             if step <= 1.0:
+                 state["path_length_m"] += step
+         state["last_xyz"] = xyz
++        q = msg.pose.pose.orientation
++        siny = 2.0 * (q.w * q.z + q.x * q.y)
++        cosy = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
++        state["heading"] = math.atan2(siny, cosy)
+ 
+     node.create_subscription(String, SPEC["controller_status_topic"], on_controller_status, 10)
+     node.create_subscription(Odometry, SPEC["slam_odom_topic"], on_slam_odom, qos_profile_sensor_data)
++    if SPEC.get("strategy") == "gbplanner_gain":
++        def on_map(msg: OccupancyGrid) -> None:
++            state["grid"] = OccGrid(msg)
++        node.create_subscription(OccupancyGrid, SPEC.get("map_topic", "/map") or "/map", on_map, 1)
+     intent_pub = node.create_publisher(String, SPEC["setpoint_intent_topic"], 10)
+     status_pub = node.create_publisher(String, SPEC["exploration_status_topic"], 10)
+     goal_pub = node.create_publisher(String, "/navlab/exploration/goal", 10)
+@@ -138,13 +149,107 @@ def string_msg(payload: dict):
+     msg.data = json.dumps(payload, sort_keys=True)
+     return msg
+ 
++# --- gbplanner_gain: map-aware volumetric-gain direction selection -----------
++# Implements the core idea of GBPlanner (Dang et al., arXiv:2201.07067): instead of
++# replaying a fixed motion pattern, read the SLAM occupancy grid, ray-cast outward in
++# many directions, count reachable UNKNOWN cells (a 2D volumetric-gain proxy), penalise
++# turning, and steer toward the highest-gain direction. Active only when
++# SPEC["strategy"] == "gbplanner_gain"; the default frontier_lite path is untouched.
++GRID_UNKNOWN = -1
++GRID_OCC_MIN = 65
++
++class OccGrid:
++    def __init__(self, msg):
++        self.w = msg.info.width
++        self.h = msg.info.height
++        self.res = msg.info.resolution or 0.05
++        self.ox = msg.info.origin.position.x
++        self.oy = msg.info.origin.position.y
++        self.data = msg.data
++
++    def to_cell(self, x, y):
++        return int((x - self.ox) / self.res), int((y - self.oy) / self.res)
++
++    def val(self, i, j):
++        if 0 <= i < self.w and 0 <= j < self.h:
++            return self.data[j * self.w + i]
++        return GRID_UNKNOWN
++
++def ray_unknown_count(grid: OccGrid, x0: float, y0: float, theta: float, max_range: float) -> int:
++    step = grid.res * 0.5
++    dx, dy = math.cos(theta), math.sin(theta)
++    unknown = 0
++    last = None
++    t = step
++    while t <= max_range:
++        i, j = grid.to_cell(x0 + dx * t, y0 + dy * t)
++        if not (0 <= i < grid.w and 0 <= j < grid.h):
++            break
++        if (i, j) != last:
++            last = (i, j)
++            v = grid.val(i, j)
++            if v >= GRID_OCC_MIN:
++                break
++            if v == GRID_UNKNOWN:
++                unknown += 1
++        t += step
++    return unknown
++
++def best_direction(grid: OccGrid, x0: float, y0: float, heading: float,
++                   num_dirs: int = 24, max_range: float = 4.0, k_turn: float = 0.8):
++    best = None
++    for k in range(num_dirs):
++        theta = -math.pi + 2.0 * math.pi * k / num_dirs
++        gain = 0.0
++        for off in (-0.13, 0.0, 0.13):
++            gain += ray_unknown_count(grid, x0, y0, theta + off, max_range)
++        gain *= grid.res * grid.res
++        dh = abs(theta - heading)
++        if dh > math.pi:
++            dh = 2.0 * math.pi - dh
++        score = gain - k_turn * dh
++        if best is None or score > best[2]:
++            best = (theta, gain, score)
++    return best
++
++def gbplanner_gain_intent(goal_index: int, speed: float, state: dict) -> dict:
++    grid = state["grid"]
++    pose = state.get("last_xyz") or (0.0, 0.0, 0.0)
++    heading = float(state.get("heading", 0.0) or 0.0)
++    theta, gain, _ = best_direction(grid, pose[0], pose[1], heading)
++    dyaw = theta - heading
++    while dyaw > math.pi:
++        dyaw -= 2.0 * math.pi
++    while dyaw < -math.pi:
++        dyaw += 2.0 * math.pi
++    yaw_rate = max(-0.4, min(0.4, dyaw))
++    forward = speed if abs(dyaw) < 0.5 else speed * 0.3
++    state["last_theta"] = theta
++    return {
++        "ok": True,
++        "source": "exploration_workflow",
++        "strategy": "gbplanner_gain",
++        "goal_id": f"gbplanner_gain_{goal_index + 1}",
++        "goal_index": goal_index,
++        "linear_x_mps": forward,
++        "linear_y_mps": 0.0,
++        "yaw_rate_radps": yaw_rate,
++        "chosen_heading_deg": round(math.degrees(theta), 1),
++        "chosen_gain_m2": round(gain, 4),
++        "uses_gazebo_truth_as_input": False,
++        "odom_samples": state.get("odom_samples", 0),
++        "path_length_m": round(state.get("path_length_m", 0.0), 4),
++    }
++
+ def exploration_intent(goal_index: int, speed: float, state: dict) -> dict:
++    if SPEC.get("strategy") == "gbplanner_gain" and state.get("grid") is not None:
++        return gbplanner_gain_intent(goal_index, speed, state)
+     pattern = [
+         {"linear_x_mps": speed, "linear_y_mps": 0.0, "yaw_rate_radps": 0.0},
+         {"linear_x_mps": speed * 0.6, "linear_y_mps": 0.0, "yaw_rate_radps": 0.20},
+         {"linear_x_mps": speed, "linear_y_mps": 0.0, "yaw_rate_radps": -0.12},
+     ]
+-    command = dict(pattern[goal_index %% len(pattern)])
++    command = dict(pattern[goal_index % len(pattern)])
+     command.update({
+         "ok": True,
+         "source": "exploration_workflow",
+@@ -221,7 +326,7 @@ def publish_review_topics(goal_pub, coverage_pub, frontiers_pub, path_pub, marke
+     frontiers_payload = {
+         "strategy": SPEC.get("strategy", "frontier_lite"),
+         "candidate_count": max(0, int(status.get("min_accepted_goals", 3)) - int(status.get("accepted_goals", 0))),
+-        "source": "bounded_lite_pattern",
++        "source": "occupancy_grid_volumetric_gain" if SPEC.get("strategy") == "gbplanner_gain" else "bounded_lite_pattern",
+     }
+     path_payload = {
+         "path_length_m": status.get("path_length_m", 0.0),

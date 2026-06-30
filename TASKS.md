@@ -24,16 +24,18 @@
 - **预研 A / 预研 B** = 复现任务(A=复现 world-model,B=复现 GBPlanner)。
 - **集成方案** = 「桥接方案(ros1_bridge)」(已选定)/「重写方案(gbplanner_core)」(备选)。**不用字母指代方案。**
 
-## 三、当前任务表(2026-06-29)
+## 三、当前任务表(2026-06-30 更新)
 | ID | 任务 | 状态 | 备注 |
 |---|---|---|---|
 | 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | ✅ 完成 | `gbplanner-ref` 镜像构建成功;跑 rmf_sim 动画为下一步 |
 | 2 | 调研·确认 ros1_bridge 官方接入做法 | ✅ 完成 | 你已选「桥接方案」 |
-| 3 | 预研A·完整复现并**实际运行** world-model | 🔵 运行中 | 子模块已拉完;下一步构建镜像集→跑 exploration |
-| 4 | 桥接落地·ros1_bridge 接 GBPlanner 入 world-model | ⬜ 就绪 | 见第四节 |
-| 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | ⏸ 阻塞(依赖#3) | 实跑+数据+截图,**充分论证不空口** |
-| 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ⏸ 阻塞(依赖#3#4) | 覆盖率/用时/路径/卡死 → 表+图,突出优势 |
+| 3 | 预研A·完整复现并**实际运行** world-model | 🔵 运行中 | 9/9 镜像已建;exploration 运行时未健康(SLAM/probe) |
+| 4 | 集成落地·把 GBPlanner 决策接进 world-model | ✅ **代码完成,待你提交PR** | ROS2-native 决策层集成:新增 `gbplanner_gain` 策略读图选向,替代脚本式 frontier_lite。已在 `~/ws/world-model` 分支 `feat/gbplanner-gain-exploration-strategy` commit(2提交:bugfix+feat),go build/vet/test + py_compile 全过。物料见 `integration/world-model-PR/` |
+| 4.5 | **真 bug 发现**:exploration 生成脚本无法编译 | ✅ 已修并入PR | `%%` 经 text/template 原样落盘 → SyntaxError;`py_compile` 实测复现,改单 `%` 后通过。疑似 exploration 运行时起不来根因之一 |
+| 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | 🔵 进行中 | 代码层已铁证(只循环3动作、不订阅地图、source=bounded_lite_pattern);量化实跑待 #3 运行时修好 |
+| 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ⏸ 阻塞(依赖#3) | 覆盖率/用时/路径/卡死 → 表+图,突出优势 |
 | 7 | 文档·写预研A/预研B 独立报告(桌面+三处) | 🔵 进行中 | 两份初稿已建,随复现进展补截图/数据 |
+| 8 | **手动提交 PR + Issue 给 world-model 作者** | ⬜ **就绪(你来做)** | 照 `integration/world-model-PR/手动提交PR与Issue指南.md`;提交后把 Issue/PR 链接发我存档=任务闭环 |
 
 ## 四、决策 & 桥接路线(你已拍板)
 集成采用「桥接方案(ros1_bridge)」。原 P1 重规划为:① 跑通 gbplanner-ref 的 rmf_sim 确认 I/O ② 搭 ros1_bridge:world-model(ROS2)点云/里程计 → 喂 GBPlanner(ROS1),航点回流 `/navlab/exploration/*` ③ 给 iq_quad 加 3D 雷达 ④ 接 exploration 替换 frontier_lite。`gbplanner_core` 转备选/加深理解。
@@ -50,3 +52,5 @@
 - 2026-06-29 预研B docker build BUILD_OK,镜像 gbplanner-ref(10.7GB)。
 - 2026-06-29 ⚠️ 预研A 构建"假成功":报 BUILD_OK 但 `docker images` 只 5/9 → 自检抓出。诊断非 OOM,是 jazzy(24.04)编译不兼容(uint8_t/cstdint、declare_parameter)→ 切 humble 重建中。详见 [docs/预研A_构建排错记录.md]。
   - **铁律**:命令退出码=0 ≠ 成功,必须自检真实产物(镜像数/文件/测试)。
+- 2026-06-30 集成代码接进 world-model 真结构:`go build/vet/test ./internal/tasks/helpers/` 全过;两种策略渲染脚本 `python3 -m py_compile` 均通过(实测,非退出码)。
+- 2026-06-30 ⚠️ 真 bug 实证:渲染后 `exploration_workflow_runtime.py` `py_compile` **FAIL**(line147 `%%`)→ sed 改单 `%` 后 **OK**,证明 `%%` 是根因。已作为 PR 第1个 commit。
