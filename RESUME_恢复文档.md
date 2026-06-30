@@ -49,6 +49,24 @@ GBPlanner=ROS1,world-model=ROS2;作者官方栈(Unified Autonomy Stack)就用 `r
 **关键修正(重要)**:这套栈**其实支持 humble**(Dockerfile `ARG ARDUPILOT_ROS_REF=humble` 默认就是 humble,ardupilot_gz/cartographer 在 humble 已编过),**不必回退 jazzy**。colcon 唯一失败的包是 `micro_ros_agent`,因 `ARG MICRO_ROS_AGENT_REF=jazzy`(默认指 jazzy 分支,要 Fast-CDR 2;humble 自带 Fast-CDR 1)。**修法:传 `--build-arg MICRO_ROS_AGENT_REF=humble`(humble 分支配 Fast-CDR 1)。**
 **最新重建命令(含全部修复)**:`bash runbooks/world-model-humble-fixes/build_official5.sh`(WSL;自动 patch ros-gz/pip + host网代理 + MICRO_ROS_AGENT_REF=humble)。后台任务 `b4zjojmcc` 正在跑此版本——新会话先 `verify_humble.sh` 看是否已 9/9,没好就看 `~/build_official5.log`。
 
+### ✅✅ 重大更新(2026-06-30):9/9 镜像全部构建成功(docker images 实测,非假成功)!
+`navlab/official-baseline:humble-latest` 已生成,9 个 humble 镜像齐全。**预研A 的镜像构建阶段完成。**
+
+### 当前真正的卡点 → 运行时(不是构建了)
+跑 `go run ./cmd/navlab-sim run exploration --live-preflight`(注:它会**真启动 9 个服务**)→ `status=blocked`。summary 留痕在 `artifacts_sample/exploration_summary.json`,blockers:
+- `slam_runtime_error` / `slam_runtime_unhealthy`(SLAM 没起健康)
+- `probe_failed: exploration/frame_contract/imu (rc=20)`、`probe_output_not_ok`
+- `rosbag_profile_failed`(无 mcap/metadata.yaml)
+- `runtime_execution_failed`
+
+**即:容器能起,但 SLAM/传感器探针未就绪,没真正探起来(疑似首次运行就绪超时/配置/display)。**
+
+### 新会话下一步(运行时调试)
+1. 跑一次后 `docker ps -a` 看哪个容器退出/不健康;看 `artifacts/sim/exploration/<run_id>/` 下各服务/probe 日志。
+2. 重点查 SLAM(cartographer)为何 unhealthy、probe rc=20(可能要加就绪等待时间,或缺 display/topic)。
+3. 跑通后取 `coverage`/`path_length`/`accepted_goals` 真实指标 → 填 `docs/对比实验与缺陷论证设计.md`;用 Foxglove/RViz 出截图补 `docs/实跑操作手册_图文版.md`。
+4. **GUI 实操**(用户最看重):可先 `bash runbooks/gbplanner_ref/build_and_run.sh` 看 GBPlanner 仿真(预研B,镜像就绪),截真图。
+
 ## 6. 新会话立即执行(恢复动作)
 ```bash
 # A) 核对 9 镜像真实状态

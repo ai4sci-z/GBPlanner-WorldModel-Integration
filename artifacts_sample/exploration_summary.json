@@ -1,0 +1,2329 @@
+{
+  "schemaVersion": "navlab.orchestration.task_result.v1",
+  "ok": false,
+  "blocked": true,
+  "status": "TASK_STATUS_ERROR",
+  "exitCode": 1,
+  "summaryPath": "../../artifacts/sim/exploration/20260630T004434.612996205Z/summary.json",
+  "blockers": [
+    {
+      "code": "probe_failed",
+      "message": "probe_failed:exploration_probe:rc=20",
+      "source": "probe"
+    },
+    {
+      "code": "probe_failed",
+      "message": "probe_failed:frame_contract_probe:rc=20",
+      "source": "probe"
+    },
+    {
+      "code": "probe_failed",
+      "message": "probe_failed:imu_probe:rc=20",
+      "source": "probe"
+    },
+    {
+      "code": "probe_output_not_ok",
+      "message": "probe_output_not_ok:exploration_probe",
+      "source": "probe"
+    },
+    {
+      "code": "probe_output_not_ok",
+      "message": "probe_output_not_ok:frame_contract_probe",
+      "source": "probe"
+    },
+    {
+      "code": "probe_output_not_ok",
+      "message": "probe_output_not_ok:imu_probe",
+      "source": "probe"
+    },
+    {
+      "code": "return_home_required_before_landing_not_satisfied",
+      "message": "return_home_required_before_landing_not_satisfied",
+      "source": "landing"
+    },
+    {
+      "code": "rosbag_profile_failed",
+      "message": "rosbag_profile_failed:exploration_rosbag",
+      "source": "rosbag"
+    },
+    {
+      "code": "runtime_execution_failed",
+      "message": "runtime_execution_failed",
+      "source": "runtime"
+    },
+    {
+      "code": "runtime_execution_failed",
+      "message": "runtime_execution_failed:finalize rosbag exploration_rosbag: rosbag finalize timeout for exploration_rosbag: no metadata.yaml or mcap under /home/ai4s/ws/world-model/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag",
+      "source": "runtime"
+    },
+    {
+      "code": "slam_runtime_error",
+      "message": "slam_runtime_error",
+      "source": "gate"
+    },
+    {
+      "code": "slam_runtime_unhealthy",
+      "message": "slam_runtime_unhealthy",
+      "source": "gate"
+    },
+    {
+      "code": "task_completion_required_before_landing",
+      "message": "task_completion_required_before_landing",
+      "source": "landing"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/ap/v1/pose/filtered",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/imu",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/navlab/exploration/status",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/navlab/fcu/controller/status",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/navlab/fcu/setpoint/output",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/navlab/landing/status",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/navlab/slam/status",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/scan",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/slam/odom",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/tf",
+      "source": "gate"
+    },
+    {
+      "code": "topic_sample_missing",
+      "message": "topic_sample_missing:/tf_static",
+      "source": "gate"
+    }
+  ],
+  "blockerCodes": [
+    "probe_failed:exploration_probe:rc=20",
+    "probe_failed:frame_contract_probe:rc=20",
+    "probe_failed:imu_probe:rc=20",
+    "probe_output_not_ok:exploration_probe",
+    "probe_output_not_ok:frame_contract_probe",
+    "probe_output_not_ok:imu_probe",
+    "return_home_required_before_landing_not_satisfied",
+    "rosbag_profile_failed:exploration_rosbag",
+    "runtime_execution_failed",
+    "runtime_execution_failed:finalize rosbag exploration_rosbag: rosbag finalize timeout for exploration_rosbag: no metadata.yaml or mcap under /home/ai4s/ws/world-model/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag",
+    "slam_runtime_error",
+    "slam_runtime_unhealthy",
+    "task_completion_required_before_landing",
+    "topic_sample_missing:/ap/v1/pose/filtered",
+    "topic_sample_missing:/imu",
+    "topic_sample_missing:/navlab/exploration/status",
+    "topic_sample_missing:/navlab/fcu/controller/status",
+    "topic_sample_missing:/navlab/fcu/setpoint/output",
+    "topic_sample_missing:/navlab/landing/status",
+    "topic_sample_missing:/navlab/slam/status",
+    "topic_sample_missing:/scan",
+    "topic_sample_missing:/slam/odom",
+    "topic_sample_missing:/tf",
+    "topic_sample_missing:/tf_static"
+  ],
+  "warnings": [],
+  "acceptance_stage": "simulation",
+  "task_id": "exploration",
+  "run_id": "20260630T004434.612996205Z",
+  "artifact_dir": "../../artifacts/sim/exploration/20260630T004434.612996205Z",
+  "sourceEvidence": {
+    "imuSource": "official_gazebo_imu_bridge",
+    "rangefinderSimulationFidelity": "benewake_serial_emulated",
+    "rangefinderSource": "ardupilot_serial7_benewake_tfmini",
+    "runtimeDomain": "RUNTIME_DOMAIN_SIM",
+    "scanSource": "gazebo_x2_virtual_serial",
+    "slamSource": "cartographer",
+    "usesTruthAsControlInput": false
+  },
+  "metrics": {
+    "gate": {
+      "controller": {
+        "bootstrap": {
+          "ok": false,
+          "state": "not_started"
+        },
+        "bootstrap_ready": false,
+        "cmd_vel_publish_count": 0,
+        "control_route": "mavlink_bootstrap_plus_dds_cmd_vel",
+        "fcu_mode_window": {
+          "observed_mode": "UNKNOWN",
+          "ok": false,
+          "required_mode": "GUIDED",
+          "samples": 0,
+          "window_sec": 8
+        },
+        "mavlink_local_position_count": 0,
+        "mavlink_setpoint_count": 0,
+        "mavlink_setpoint_error": "",
+        "pose_samples": 0,
+        "ready": false,
+        "state": "waiting_for_pose",
+        "takeoff_alt_m": 0.5
+      },
+      "setpoint": {
+        "cmd_vel_publish_count": 0,
+        "cmd_vel_topic": "/ap/v1/cmd_vel",
+        "intent_topic": "/navlab/fcu/setpoint/intent",
+        "mavlink_local_position_count": 0,
+        "mavlink_setpoint_count": 0,
+        "mavlink_setpoint_error": "",
+        "min_path_length_m": 0.35,
+        "path_length_m": 0,
+        "ready": false,
+        "setpoint_intent_samples": 0,
+        "state": "waiting_for_pose"
+      },
+      "startup_readiness": {
+        "classification": "unknown",
+        "decision_rule": "startup_readiness_failure artifacts are excluded from hover span SLO percentiles and routed to Phase 51 startup/readiness.",
+        "height": {
+          "external_nav_height": null,
+          "external_nav_height_ready": false,
+          "rosbag_height_estimate_count": 0,
+          "rosbag_height_status_count": 0
+        },
+        "mission": {
+          "exists": false
+        },
+        "not_hover_span_slo": false,
+        "preflight_invalid": false,
+        "probe_semantics": {
+          "known_failure_kinds": [
+            "topic_type_missing",
+            "topic_sample_missing",
+            "sample_stdout_present_timeout",
+            "parsed_payload_not_ready"
+          ],
+          "samples": {
+            "exploration_probe:/navlab/exploration/status": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "exploration_probe",
+              "return_code": 124,
+              "sample_method": null,
+              "topic": "/navlab/exploration/status"
+            },
+            "exploration_probe:/navlab/fcu/controller/status": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": true,
+              "ok": false,
+              "parsed_ready": false,
+              "parsed_state": "waiting_for_pose",
+              "probe": "exploration_probe",
+              "return_code": 0,
+              "sample_method": null,
+              "topic": "/navlab/fcu/controller/status"
+            },
+            "exploration_probe:/navlab/fcu/setpoint/output": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": true,
+              "ok": false,
+              "parsed_ready": false,
+              "parsed_state": "waiting_for_pose",
+              "probe": "exploration_probe",
+              "return_code": 0,
+              "sample_method": null,
+              "topic": "/navlab/fcu/setpoint/output"
+            },
+            "exploration_probe:/navlab/landing/status": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": true,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": "waiting_for_task_completion",
+              "probe": "exploration_probe",
+              "return_code": 0,
+              "sample_method": null,
+              "topic": "/navlab/landing/status"
+            },
+            "exploration_probe:/slam/odom": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "exploration_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/slam/odom"
+            },
+            "frame_contract_probe:/ap/v1/pose/filtered": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/ap/v1/pose/filtered"
+            },
+            "frame_contract_probe:/navlab/slam/status": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": null,
+              "topic": "/navlab/slam/status"
+            },
+            "frame_contract_probe:/scan": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/scan"
+            },
+            "frame_contract_probe:/slam/odom": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/slam/odom"
+            },
+            "frame_contract_probe:/tf": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/tf"
+            },
+            "frame_contract_probe:/tf_static": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/tf_static"
+            },
+            "imu_probe:/imu": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "imu_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/imu"
+            }
+          }
+        },
+        "rangefinder": {
+          "input_count": 0,
+          "latest_distance_m": null,
+          "latest_input_age_sec": null,
+          "range_sample_failure_kind": "",
+          "range_sample_ok": true,
+          "range_sample_return_code": 0,
+          "range_topic": null,
+          "ready": true,
+          "rosbag_range_count": 0,
+          "rosbag_status_count": 0,
+          "scan_ideal_topic": null,
+          "serial": null,
+          "serial_byte_count": 0,
+          "serial_frame_count": 0,
+          "source": "fcu_pose_relay",
+          "state": null,
+          "status_sample_ok": true,
+          "virtual_serial_link": null
+        },
+        "reason_codes": [],
+        "rosbag_message_counts": {
+          "/external_nav/odom": 0,
+          "/height/estimate": 0,
+          "/height/status": 0,
+          "/navlab/fcu/local_position_pose": 0,
+          "/rangefinder/down/range": 0,
+          "/rangefinder/down/status": 0
+        },
+        "runtime_control_unchanged": true,
+        "valid_hover_body_sample": false
+      },
+      "slam_runtime_log": {
+        "cartographer_waiting_for_imu_queue_count": 0,
+        "cartographer_waiting_for_imu_queue_threshold": 20,
+        "dropped_earlier_points_count": 0,
+        "error_count": 1,
+        "exists": true,
+        "fatal_count": 0,
+        "last_problem_lines": [
+          "ModuleNotFoundError: No module named 'tomllib'"
+        ],
+        "ok": false,
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/slam_backend.runtime.log",
+        "quality": "unhealthy",
+        "rejected_odom_tf_log_count": 0,
+        "std_length_error_count": 0,
+        "warning_count": 0
+      },
+      "metric_evidence_sources": {
+        "controller": "/navlab/fcu/controller/status",
+        "setpoint": "/navlab/fcu/setpoint/output",
+        "slam_runtime_log": "runtime/logs/slam_backend.runtime.log",
+        "startup_readiness": "probe_outputs+mission_summary+rosbag_profiles"
+      }
+    }
+  },
+  "evidence": {
+    "landingEvidence": {
+      "acceptance_stage": "simulation",
+      "landing_claim": "not_evaluated",
+      "simulation_landing_claim": "not_evaluated",
+      "real_landing_claim": "not_evaluated",
+      "landing_config": {
+        "enabled": true,
+        "policy": "return_home_then_land",
+        "default_policy": "land_in_place",
+        "landing_status_topic": "/navlab/landing/status",
+        "landing_intent_topic": "/navlab/landing/intent",
+        "home_source": "post_takeoff_hover_pose",
+        "home_radius_m": 0.35,
+        "pre_land_hold_sec": 2,
+        "completion_grace_sec": 3,
+        "max_return_home_duration_sec": 45,
+        "max_landing_duration_sec": 35,
+        "max_descent_rate_mps": 0.6,
+        "landing_setpoint_lookahead_sec": 0,
+        "touchdown_altitude_m": 0.12,
+        "touchdown_vertical_speed_mps": 0.08,
+        "require_disarm": true,
+        "require_motors_safe": true,
+        "uses_gazebo_truth_as_input": false
+      },
+      "landing": {
+        "ok": false,
+        "claim": "not_evaluated",
+        "policy": "return_home_then_land",
+        "state": "waiting_for_task_completion",
+        "return_home": {
+          "required": true,
+          "ok": false,
+          "state": "not_started",
+          "distance_to_home_m": null,
+          "duration_sec": null
+        },
+        "land_command_accepted": false,
+        "landing_duration_sec": null,
+        "landed_confirmed": false,
+        "touchdown_confirmed": false,
+        "disarmed": false,
+        "motors_safe": false,
+        "require_disarm": false,
+        "require_motors_safe": false,
+        "uses_gazebo_truth_as_input": false,
+        "blockers": [
+          "task_completion_required_before_landing"
+        ]
+      },
+      "simulation_landing_acceptance": {
+        "ok": false,
+        "runtime_mode": "simulation",
+        "blockers": [
+          "simulation_landing_acceptance_not_passed"
+        ]
+      },
+      "real_landing_acceptance": {
+        "ok": false,
+        "runtime_mode": "real",
+        "state": "not_started",
+        "blockers": []
+      },
+      "blockers": [
+        "return_home_required_before_landing_not_satisfied",
+        "task_completion_required_before_landing"
+      ],
+      "blocked": true,
+      "ok": false
+    },
+    "probeOutputs": [
+      {
+        "name": "rangefinder_probe",
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/rangefinder_probe.txt",
+        "exists": true,
+        "ok": true,
+        "status": "sampled",
+        "payload": {
+          "blockers": [],
+          "node": "navlab_rangefinder_probe",
+          "ok": true,
+          "optional_blockers": [],
+          "optional_topics": [],
+          "samples": {
+            "/rangefinder/down/range": {
+              "attempts": 1,
+              "latency_sec": 0.222,
+              "ok": true,
+              "return_code": 0,
+              "sample_method": "rclpy_subscription",
+              "stdout": "{\"header\": {\"frame_id\": \"rangefinder_down_frame\", \"stamp_nanosec\": 0, \"stamp_sec\": 0}, \"radiation_type\": 1.0, \"range\": 0.5}",
+              "type": "sensor_msgs/msg/Range"
+            },
+            "/rangefinder/down/status": {
+              "data": "{\"current_distance_m\": 0.5, \"max_distance_m\": 8.0, \"min_distance_m\": 0.1, \"ok\": true, \"orientation\": 25, \"ready\": true, \"source\": \"fcu_pose_relay\"}",
+              "latency_sec": 4.882,
+              "ok": true,
+              "parsed": {
+                "current_distance_m": 0.5,
+                "max_distance_m": 8,
+                "min_distance_m": 0.1,
+                "ok": true,
+                "orientation": 25,
+                "ready": true,
+                "source": "fcu_pose_relay"
+              },
+              "return_code": 0,
+              "stdout": "data: {\"current_distance_m\": 0.5, \"max_distance_m\": 8.0, \"min_distance_m\": 0.1, \"ok\": true, \"orientation\": 25, \"ready\": true, \"source\": \"fcu_pose_relay\"}"
+            }
+          },
+          "spec": {
+            "probe_timeout_sec": 45,
+            "range_topic": "/rangefinder/down/range",
+            "status_topic": "/rangefinder/down/status"
+          },
+          "started_ms": 1782780283764,
+          "status": "sampled",
+          "topics": [
+            "/rangefinder/down/range",
+            "/rangefinder/down/status"
+          ]
+        }
+      },
+      {
+        "name": "imu_probe",
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/imu_probe.txt",
+        "exists": true,
+        "ok": false,
+        "status": "sampled",
+        "payload": {
+          "blockers": [
+            "topic_sample_missing:/imu"
+          ],
+          "node": "navlab_imu_probe",
+          "ok": false,
+          "optional_blockers": [],
+          "optional_topics": [],
+          "samples": {
+            "/imu": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.538,
+              "ok": false,
+              "rclpy_attempt": {
+                "error": "topic_type_missing",
+                "failure_kind": "topic_type_missing",
+                "latency_sec": 2.164,
+                "ok": false,
+                "return_code": 124
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            }
+          },
+          "spec": {
+            "source_route": "official_gazebo_imu_bridge",
+            "source_topic": "/imu",
+            "synthetic_fallback_enabled": false,
+            "topic": "/imu"
+          },
+          "started_ms": 1782780282377,
+          "status": "sampled",
+          "topics": [
+            "/imu"
+          ]
+        }
+      },
+      {
+        "name": "frame_contract_probe",
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/frame_contract_probe.json",
+        "exists": true,
+        "ok": false,
+        "status": "sampled",
+        "payload": {
+          "blockers": [
+            "topic_sample_missing:/navlab/slam/status",
+            "topic_sample_missing:/tf",
+            "topic_sample_missing:/tf_static",
+            "topic_sample_missing:/scan",
+            "topic_sample_missing:/ap/v1/pose/filtered",
+            "topic_sample_missing:/slam/odom"
+          ],
+          "node": "navlab_frame_contract_probe",
+          "ok": false,
+          "optional_blockers": [],
+          "optional_topics": [],
+          "samples": {
+            "/ap/v1/pose/filtered": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "attempts": 14,
+                "failure_kind": "topic_sample_missing",
+                "latency_sec": 1.595,
+                "ok": false,
+                "return_code": 124,
+                "sample_method": "rclpy_subscription",
+                "type": "geometry_msgs/msg/PoseStamped"
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            },
+            "/imu": {
+              "attempts": 1,
+              "latency_sec": 0.239,
+              "ok": true,
+              "return_code": 0,
+              "sample_method": "rclpy_subscription",
+              "stdout": "{\"header\": {\"frame_id\": \"imu_link\", \"stamp_nanosec\": 0, \"stamp_sec\": 0}}",
+              "type": "sensor_msgs/msg/Imu"
+            },
+            "/navlab/slam/status": {
+              "latency_sec": 8.752,
+              "ok": false,
+              "return_code": 124
+            },
+            "/rangefinder/down/range": {
+              "attempts": 1,
+              "latency_sec": 0.207,
+              "ok": true,
+              "return_code": 0,
+              "sample_method": "rclpy_subscription",
+              "stdout": "{\"header\": {\"frame_id\": \"rangefinder_down_frame\", \"stamp_nanosec\": 0, \"stamp_sec\": 0}, \"radiation_type\": 1.0, \"range\": 0.5}",
+              "type": "sensor_msgs/msg/Range"
+            },
+            "/scan": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "error": "topic_type_missing",
+                "failure_kind": "topic_type_missing",
+                "latency_sec": 1.495,
+                "ok": false,
+                "return_code": 124
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            },
+            "/slam/odom": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "attempts": 14,
+                "failure_kind": "topic_sample_missing",
+                "latency_sec": 1.501,
+                "ok": false,
+                "return_code": 124,
+                "sample_method": "rclpy_subscription",
+                "type": "nav_msgs/msg/Odometry"
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            },
+            "/tf": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "error": "topic_type_missing",
+                "failure_kind": "topic_type_missing",
+                "latency_sec": 1.533,
+                "ok": false,
+                "return_code": 124
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            },
+            "/tf_static": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "error": "topic_type_missing",
+                "failure_kind": "topic_type_missing",
+                "latency_sec": 1.497,
+                "ok": false,
+                "return_code": 124
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            }
+          },
+          "spec": {
+            "BaseFrameID": "base_link",
+            "CmdVelTopic": "/ap/v1/cmd_vel",
+            "ControllerStatusTopic": "/navlab/fcu/controller/status",
+            "FCUPoseTopic": "/ap/v1/pose/filtered",
+            "FCUStatusTopic": "/ap/v1/status",
+            "FCUTwistTopic": "/ap/v1/twist/filtered",
+            "IMUFrameID": "imu_link",
+            "IMUTopic": "/imu",
+            "LaserFrameID": "base_scan",
+            "MapFrameID": "map",
+            "MaxDirectionErrorRad": 0.8,
+            "MaxDynamicTFAgeSec": 3,
+            "MaxRangefinderHeightErr": 0.35,
+            "MinScanValidRatio": 0.05,
+            "OdomFrameID": "odom",
+            "OwnerStatusTopic": "/navlab/fcu/owner/status",
+            "ProbeDurationSec": 16,
+            "RangefinderFrameID": "rangefinder_down_frame",
+            "RangefinderRangeTopic": "/rangefinder/down/range",
+            "RangefinderStatusTopic": "/rangefinder/down/status",
+            "RequiredFrames": [
+              "map",
+              "odom",
+              "base_link",
+              "imu_link",
+              "base_scan",
+              "rangefinder_down_frame"
+            ],
+            "ScanTopic": "/scan",
+            "SetpointOutputTopic": "/navlab/fcu/setpoint/output",
+            "SlamOdomTopic": "/slam/odom",
+            "SlamStatusTopic": "/navlab/slam/status",
+            "StatusTopic": "/navlab/frame_contract/status",
+            "TruthDiagnosticTopic": "/odometry"
+          },
+          "started_ms": 1782780304395,
+          "status": "sampled",
+          "topics": [
+            "/tf",
+            "/tf_static",
+            "/scan",
+            "/imu",
+            "/rangefinder/down/range",
+            "/ap/v1/pose/filtered",
+            "/slam/odom",
+            "/navlab/slam/status"
+          ]
+        }
+      },
+      {
+        "name": "exploration_probe",
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/exploration_probe.json",
+        "exists": true,
+        "ok": false,
+        "status": "sampled",
+        "payload": {
+          "blockers": [
+            "topic_sample_missing:/navlab/fcu/controller/status",
+            "topic_sample_missing:/navlab/fcu/setpoint/output",
+            "topic_sample_missing:/navlab/exploration/status",
+            "topic_sample_missing:/navlab/landing/status",
+            "topic_sample_missing:/slam/odom"
+          ],
+          "node": "navlab_exploration_probe",
+          "ok": false,
+          "optional_blockers": [],
+          "optional_topics": [],
+          "samples": {
+            "/navlab/exploration/status": {
+              "latency_sec": 36.412,
+              "ok": false,
+              "return_code": 124
+            },
+            "/navlab/fcu/controller/status": {
+              "data": "{\"bootstrap\": {\"ok\": false, \"state\": \"not_started\"}, \"bootstrap_ready\": false, \"cmd_vel_publish_count\": 0, \"control_route\": \"mavlink_bootstrap_plus_dds_cmd_vel\", \"fcu_mode_window\": {\"observed_mode\": \"UNKNOWN\", \"ok\": false, \"required_mode\": \"GUIDED\", \"samples\": 0, \"window_sec\": 8}, \"fcu_pose_samples\": 0, \"mavlink_local_position_count\": 0, \"mavlink_setpoint_count\": 0, \"mavlink_setpoint_error\": \"\", \"ok\": false, \"pose_samples\": 0, \"pose_source\": \"\", \"ready\": false, \"ready_elapsed_sec\": 0.0, \"setpoint_intent_samples\": 0, \"slam_odom_samples\": 0, \"state\": \"waiting_for_pose\", \"takeoff_alt_m\": 0.5}",
+              "latency_sec": 36.412,
+              "ok": false,
+              "parsed": {
+                "bootstrap": {
+                  "ok": false,
+                  "state": "not_started"
+                },
+                "bootstrap_ready": false,
+                "cmd_vel_publish_count": 0,
+                "control_route": "mavlink_bootstrap_plus_dds_cmd_vel",
+                "fcu_mode_window": {
+                  "observed_mode": "UNKNOWN",
+                  "ok": false,
+                  "required_mode": "GUIDED",
+                  "samples": 0,
+                  "window_sec": 8
+                },
+                "fcu_pose_samples": 0,
+                "mavlink_local_position_count": 0,
+                "mavlink_setpoint_count": 0,
+                "mavlink_setpoint_error": "",
+                "ok": false,
+                "pose_samples": 0,
+                "pose_source": "",
+                "ready": false,
+                "ready_elapsed_sec": 0,
+                "setpoint_intent_samples": 0,
+                "slam_odom_samples": 0,
+                "state": "waiting_for_pose",
+                "takeoff_alt_m": 0.5
+              },
+              "return_code": 0,
+              "stdout": "data: {\"bootstrap\": {\"ok\": false, \"state\": \"not_started\"}, \"bootstrap_ready\": false, \"cmd_vel_publish_count\": 0, \"control_route\": \"mavlink_bootstrap_plus_dds_cmd_vel\", \"fcu_mode_window\": {\"observed_mode\": \"UNKNOWN\", \"ok\": false, \"required_mode\": \"GUIDED\", \"samples\": 0, \"window_sec\": 8}, \"fcu_pose_samples\": 0, \"mavlink_local_position_count\": 0, \"mavlink_setpoint_count\": 0, \"mavlink_setpoint_error\": \"\", \"ok\": false, \"pose_samples\": 0, \"pose_source\": \"\", \"ready\": false, \"ready_elapsed_sec\": 0.0, \"setpoint_intent_samples\": 0, \"slam_odom_samples\": 0, \"state\": \"waiting_for_pose\", \"takeoff_alt_m\": 0.5}"
+            },
+            "/navlab/fcu/setpoint/output": {
+              "data": "{\"accepted_goals\": 0, \"cmd_vel_publish_count\": 0, \"cmd_vel_topic\": \"/ap/v1/cmd_vel\", \"intent_topic\": \"/navlab/fcu/setpoint/intent\", \"linear_velocity_mps\": 0.1, \"mavlink_local_position_count\": 0, \"mavlink_setpoint_count\": 0, \"mavlink_setpoint_error\": \"\", \"min_accepted_goals\": 3, \"min_path_length_m\": 0.35, \"ok\": false, \"path_length_m\": 0.0, \"ready\": false, \"setpoint_intent_samples\": 0, \"source\": \"fcu_pose_relay\", \"state\": \"waiting_for_pose\"}",
+              "latency_sec": 36.412,
+              "ok": false,
+              "parsed": {
+                "accepted_goals": 0,
+                "cmd_vel_publish_count": 0,
+                "cmd_vel_topic": "/ap/v1/cmd_vel",
+                "intent_topic": "/navlab/fcu/setpoint/intent",
+                "linear_velocity_mps": 0.1,
+                "mavlink_local_position_count": 0,
+                "mavlink_setpoint_count": 0,
+                "mavlink_setpoint_error": "",
+                "min_accepted_goals": 3,
+                "min_path_length_m": 0.35,
+                "ok": false,
+                "path_length_m": 0,
+                "ready": false,
+                "setpoint_intent_samples": 0,
+                "source": "fcu_pose_relay",
+                "state": "waiting_for_pose"
+              },
+              "return_code": 0,
+              "stdout": "data: {\"accepted_goals\": 0, \"cmd_vel_publish_count\": 0, \"cmd_vel_topic\": \"/ap/v1/cmd_vel\", \"intent_topic\": \"/navlab/fcu/setpoint/intent\", \"linear_velocity_mps\": 0.1, \"mavlink_local_position_count\": 0, \"mavlink_setpoint_count\": 0, \"mavlink_setpoint_error\": \"\", \"min_accepted_goals\": 3, \"min_path_length_m\": 0.35, \"ok\": false, \"path_length_m\": 0.0, \"ready\": false, \"setpoint_intent_samples\": 0, \"source\": \"fcu_pose_relay\", \"state\": \"waiting_for_pose\"}"
+            },
+            "/navlab/landing/status": {
+              "data": "{\"blockers\": [\"task_completion_required_before_landing\"], \"claim\": \"not_evaluated\", \"completion_grace_sec\": 3, \"disarmed\": false, \"land_command_accepted\": false, \"landed_confirmed\": false, \"motors_safe\": false, \"ok\": false, \"policy\": \"return_home_then_land\", \"return_home\": {\"ok\": false, \"required\": true, \"state\": \"not_started\"}, \"state\": \"waiting_for_task_completion\", \"task_completed\": false, \"touchdown_confirmed\": false}",
+              "latency_sec": 36.412,
+              "ok": false,
+              "parsed": {
+                "blockers": [
+                  "task_completion_required_before_landing"
+                ],
+                "claim": "not_evaluated",
+                "completion_grace_sec": 3,
+                "disarmed": false,
+                "land_command_accepted": false,
+                "landed_confirmed": false,
+                "motors_safe": false,
+                "ok": false,
+                "policy": "return_home_then_land",
+                "return_home": {
+                  "ok": false,
+                  "required": true,
+                  "state": "not_started"
+                },
+                "state": "waiting_for_task_completion",
+                "task_completed": false,
+                "touchdown_confirmed": false
+              },
+              "return_code": 0,
+              "stdout": "data: {\"blockers\": [\"task_completion_required_before_landing\"], \"claim\": \"not_evaluated\", \"completion_grace_sec\": 3, \"disarmed\": false, \"land_command_accepted\": false, \"landed_confirmed\": false, \"motors_safe\": false, \"ok\": false, \"policy\": \"return_home_then_land\", \"return_home\": {\"ok\": false, \"required\": true, \"state\": \"not_started\"}, \"state\": \"waiting_for_task_completion\", \"task_completed\": false, \"touchdown_confirmed\": false}"
+            },
+            "/slam/odom": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 2.203,
+              "ok": false,
+              "rclpy_attempt": {
+                "attempts": 20,
+                "failure_kind": "topic_sample_missing",
+                "latency_sec": 2.256,
+                "ok": false,
+                "return_code": 124,
+                "sample_method": "rclpy_subscription",
+                "type": "nav_msgs/msg/Odometry"
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            }
+          },
+          "spec": {
+            "ControllerStatusTopic": "/navlab/fcu/controller/status",
+            "ExplorationStatusTopic": "/navlab/exploration/status",
+            "ExplorationWindowSec": 26,
+            "MinAcceptedGoals": 3,
+            "MinPathLengthM": 0.35,
+            "MotionSpeedMPS": 0.1,
+            "ProbeTimeoutSec": 35,
+            "SetpointIntentTopic": "/navlab/fcu/setpoint/intent",
+            "SetpointOutputTopic": "/navlab/fcu/setpoint/output",
+            "SlamOdomTopic": "/slam/odom",
+            "Strategy": "frontier_lite",
+            "YawRateRadPS": 0.18
+          },
+          "started_ms": 1782780319590,
+          "status": "sampled",
+          "topics": [
+            "/navlab/fcu/controller/status",
+            "/navlab/fcu/setpoint/output",
+            "/navlab/exploration/status",
+            "/slam/odom",
+            "/navlab/landing/status"
+          ]
+        }
+      }
+    ],
+    "rosbagHandles": [
+      {
+        "backend": "docker_sdk",
+        "service_name": "exploration_rosbag",
+        "identifier": "exploration_rosbag",
+        "command": [
+          "bash",
+          "-lc",
+          "rm -rf '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag' \u0026\u0026 mkdir -p '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag' \u0026\u0026 exec 'ros2' 'bag' 'record' '-s' 'mcap' '--compression-mode' 'file' '--compression-format' 'zstd' '-o' '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag' '--topics' '/tf' '/tf_static' '/ap/v1/pose/filtered' '/ap/v1/twist/filtered' '/navlab/fcu/local_position_pose' '/rangefinder/down/range' '/navlab/slam/imu' '/height/estimate' '/height/status' '/navlab/fcu/setpoint/intent' '/navlab/fcu/setpoint/output' '/navlab/fcu/controller/status' '/navlab/slam/status' '/external_nav/odom' '/external_nav/status' '/mavlink_external_nav/status' '/navlab/scan_reference_drift/odom' '/navlab/scan_reference_drift/status' '/slam/odom_corrected' '/navlab/scan_reference_correction/status' '/external_nav/odom_candidate' '/external_nav/source_selector/status' '/navlab/hover/status' '/slam/odom' '/lidar' '/scan' '/submap_list' '/trajectory_node_list' '/sim/x2/status' '/navlab/x2/scan_time_normalizer/status' '/map' '/navlab/official_maze/map' '/navlab/landing/status' '/navlab/exploration/status' '/navlab/exploration/goal' '/navlab/exploration/coverage' '/navlab/exploration/frontiers' '/navlab/exploration/path' '/navlab/exploration/markers'"
+        ],
+        "started_at": "2026-06-30T08:44:38.094598048+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/exploration_rosbag.log",
+        "container_name": "exploration_rosbag",
+        "stop_signal": "SIGINT",
+        "stop_timeout_sec": 15,
+        "output_path": "/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag",
+        "host_output_path": "/home/ai4s/ws/world-model/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag",
+        "stop_requested_at": "2026-06-30T00:45:24.654430812Z",
+        "stopped_at": "2026-06-30T00:45:24.655113503Z",
+        "wait_exit_code": 2,
+        "finalize_status": "finalize_timeout",
+        "finalize_timeout_sec": 10
+      }
+    ],
+    "rosbagProfiles": [
+      {
+        "name": "exploration_rosbag",
+        "metadata_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag/metadata.yaml",
+        "exists": false,
+        "ok": false,
+        "required_topics": [
+          "/tf",
+          "/tf_static",
+          "/ap/v1/pose/filtered",
+          "/ap/v1/twist/filtered",
+          "/rangefinder/down/range",
+          "/navlab/fcu/controller/status",
+          "/navlab/fcu/setpoint/intent",
+          "/navlab/fcu/setpoint/output",
+          "/navlab/exploration/status",
+          "/slam/odom",
+          "/scan",
+          "/map"
+        ],
+        "metadata_missing_or_unreadable": "open ../../artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag/metadata.yaml: no such file or directory; mcap_fallback=no mcap files found in ../../artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag"
+      }
+    ],
+    "runtimeHandles": [
+      {
+        "backend": "docker_sdk",
+        "service_name": "mavlink_router",
+        "identifier": "navlab-mavlink-router",
+        "command": [
+          "bash",
+          "-lc",
+          "exec /workspace/docker/entrypoints/start-mavlink-router.sh"
+        ],
+        "started_at": "2026-06-30T08:44:36.59775828+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/mavlink_router.start.log",
+        "container_name": "navlab-mavlink-router"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "official_baseline",
+        "identifier": "navlab-official-baseline",
+        "command": [
+          "bash",
+          "-lc",
+          "set -eo pipefail\nsource /opt/ros/${ROS_DISTRO:-humble}/setup.bash\nsource /opt/navlab_official_ws/install/setup.bash\nexport PYTHONPATH='/workspace':${PYTHONPATH:-}\nexport NAVLAB_OFFICIAL_SDF_ROOTS=/opt/navlab_official_ws/install/ardupilot_gazebo/share:/opt/navlab_official_ws/install/ardupilot_gz_description/share\nexport SDF_PATH=${NAVLAB_OFFICIAL_SDF_ROOTS}:${SDF_PATH:-}\nexport GZ_SIM_RESOURCE_PATH=${NAVLAB_OFFICIAL_SDF_ROOTS}:${GZ_SIM_RESOURCE_PATH:-}\nmkdir -p '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/sitl/scripts'\ncp '/workspace/docker/profiles/ahrs-set-origin.lua' '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/sitl/scripts/ahrs-set-origin.lua'\ntest -s '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/sitl/scripts/ahrs-set-origin.lua'\ncd '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/sitl'\npython3 -m navlab.sim.gazebo_sensor.benewake_tfmini_serial --virtual-serial-link '/tmp/navlab_benewake_tfmini' --log-file '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/benewake_tfmini_serial.runtime.log' \u0026\nbenewake_pid=$!\ntrap 'kill ${benewake_pid:-} 2\u003e/dev/null || true' EXIT\nfor _ in $(seq 1 200); do [ -e '/tmp/navlab_benewake_tfmini' ] \u0026\u0026 break; sleep 0.05; done\ntest -e '/tmp/navlab_benewake_tfmini'\nros2 launch ardupilot_gz_bringup iris_maze.launch.py serial7:=uart:/tmp/navlab_benewake_tfmini:115200 use_gz_sim_gui:=false rviz:=false use_dds_agent:=true use_gz_sim_server:=true spawn_robot:=true"
+        ],
+        "started_at": "2026-06-30T08:44:36.768970495+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/official_baseline.start.log",
+        "container_name": "navlab-official-baseline"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "official_maze_overlay",
+        "identifier": "navlab-official-maze-overlay",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 exec python3 '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/official_maze_overlay_runtime.py' \u003e '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/official_maze_overlay.runtime.log' 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:36.935802822+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/official_maze_overlay.start.log",
+        "container_name": "navlab-official-maze-overlay"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "gazebo_sensor",
+        "identifier": "navlab-official-maze-x2-sensor",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source /opt/navlab_sensor_ws/install/setup.bash \u0026\u0026 exec /opt/gazebo-sensor-venv/bin/python -m navlab.sim.gazebo_sensor.cli --runtime --log-file /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/gazebo_sensor.runtime.log"
+        ],
+        "started_at": "2026-06-30T08:44:37.1000323+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/gazebo_sensor.start.log",
+        "container_name": "navlab-official-maze-x2-sensor"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "slam_backend",
+        "identifier": "navlab-slam-backend",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source /opt/navlab_ws/install/setup.bash \u0026\u0026 exec python3 -m navlab.common.slam.cli launch --config /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/slam_runtime.toml --backend cartographer \u003e /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/slam_backend.runtime.log 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.268089872+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/slam_backend.start.log",
+        "container_name": "navlab-slam-backend"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "fcu_controller",
+        "identifier": "navlab-fcu-controller",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source ${OFFICIAL_WS:-/opt/navlab_official_ws}/install/setup.bash \u0026\u0026 python3 /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/fcu_controller_runtime.py \u003e /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/fcu_controller.runtime.log 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.451778145+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/fcu_controller.start.log",
+        "container_name": "navlab-fcu-controller"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "exploration_workflow",
+        "identifier": "navlab-exploration-workflow",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 python3 /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/exploration_workflow_runtime.py \u003e /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/exploration_workflow.runtime.log 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.619703878+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/exploration_workflow.start.log",
+        "container_name": "navlab-exploration-workflow"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "mavlink_external_nav",
+        "identifier": "navlab-mavlink-external-nav",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source ${OFFICIAL_WS:-/opt/navlab_official_ws}/install/setup.bash \u0026\u0026 exec python3 -m navlab.real.companion.nodes.external_nav --endpoint udpin:0.0.0.0:14553 --odom-topic /external_nav/odom --status-topic /mavlink_external_nav/status --rate-hz 20 --quality 100 --source-system 191 --use-fcu-roll-pitch --align-yaw-to-fcu --local-position-pose-topic /navlab/fcu/local_position_pose --max-local-position-age-ms 1000 --max-horizontal-speed-mps 0.25 --max-yaw-rate-radps 0.6 \u003e '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/mavlink_external_nav.runtime.log' 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.780583068+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/mavlink_external_nav.start.log",
+        "container_name": "navlab-mavlink-external-nav"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "height_estimator",
+        "identifier": "navlab-height-estimator",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source ${OFFICIAL_WS:-/opt/navlab_official_ws}/install/setup.bash \u0026\u0026 exec python3 -m navlab.real.companion.nodes.height_estimator --range-topic /rangefinder/down/range --height-topic /height/estimate --status-topic /height/status --source-type rangefinder_down_relative --max-vertical-speed-mps 0.5 --max-vertical-velocity-output-mps 0.25 --velocity-smoothing-alpha 0.25 --max-filter-dt-sec 0.1 \u003e '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/height_estimator.runtime.log' 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.950701518+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/height_estimator.start.log",
+        "container_name": "navlab-height-estimator"
+      }
+    ],
+    "runtimeProbes": [
+      {
+        "backend": "docker_sdk",
+        "name": "imu_probe",
+        "return_code": 20,
+        "stdout": "",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/imu_probe.log"
+      },
+      {
+        "backend": "docker_sdk",
+        "name": "rangefinder_probe",
+        "return_code": 0,
+        "stdout": "",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/rangefinder_probe.log"
+      },
+      {
+        "backend": "docker_sdk",
+        "name": "frame_contract_probe",
+        "return_code": 20,
+        "stdout": "",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/frame_contract_probe.log"
+      },
+      {
+        "backend": "docker_sdk",
+        "name": "exploration_probe",
+        "return_code": 20,
+        "stdout": "",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/exploration_probe.log"
+      }
+    ]
+  },
+  "details": {},
+  "startedAt": "2026-06-30T00:46:04Z",
+  "finishedAt": "2026-06-30T00:46:04Z",
+  "duration_sec": 150,
+  "simulation_profile": "ideal",
+  "stage1_profile_result": {
+    "profile": "ideal",
+    "ok": false,
+    "task_id": "exploration",
+    "run_id": "20260630T004434.612996205Z",
+    "artifact_dir": "../../artifacts/sim/exploration/20260630T004434.612996205Z",
+    "summary_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/summary.json",
+    "landing_policy": "return_home_then_land",
+    "landing_claim": "not_evaluated",
+    "simulation_landing_claim": "not_evaluated",
+    "landing_ok": false,
+    "blockers": [
+      "probe_failed:exploration_probe:rc=20",
+      "probe_failed:frame_contract_probe:rc=20",
+      "probe_failed:imu_probe:rc=20",
+      "probe_output_not_ok:exploration_probe",
+      "probe_output_not_ok:frame_contract_probe",
+      "probe_output_not_ok:imu_probe",
+      "return_home_required_before_landing_not_satisfied",
+      "rosbag_profile_failed:exploration_rosbag",
+      "runtime_execution_failed",
+      "runtime_execution_failed:finalize rosbag exploration_rosbag: rosbag finalize timeout for exploration_rosbag: no metadata.yaml or mcap under /home/ai4s/ws/world-model/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag",
+      "simulation_landing_acceptance_not_passed",
+      "slam_runtime_error",
+      "slam_runtime_unhealthy",
+      "task_completion_required_before_landing",
+      "topic_sample_missing:/ap/v1/pose/filtered",
+      "topic_sample_missing:/imu",
+      "topic_sample_missing:/navlab/exploration/status",
+      "topic_sample_missing:/navlab/fcu/controller/status",
+      "topic_sample_missing:/navlab/fcu/setpoint/output",
+      "topic_sample_missing:/navlab/landing/status",
+      "topic_sample_missing:/navlab/slam/status",
+      "topic_sample_missing:/scan",
+      "topic_sample_missing:/slam/odom",
+      "topic_sample_missing:/tf",
+      "topic_sample_missing:/tf_static"
+    ],
+    "metric_evidence_sources": {
+      "controller": "/navlab/fcu/controller/status",
+      "setpoint": "/navlab/fcu/setpoint/output",
+      "slam_runtime_log": "runtime/logs/slam_backend.runtime.log",
+      "startup_readiness": "probe_outputs+mission_summary+rosbag_profiles"
+    }
+  },
+  "runtime_mode": "simulation",
+  "backend": "docker",
+  "generated_runtime_artifacts": [
+    {
+      "type": "official_maze_overlay_script",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/official_maze_overlay_runtime.py"
+    },
+    {
+      "type": "bridge_override",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/bridge_override.yaml"
+    },
+    {
+      "type": "vendor_profile",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/vendor_profile.yaml"
+    },
+    {
+      "type": "model_overlay",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/model_overlay.sdf"
+    },
+    {
+      "type": "param_overlay",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/gazebo-iris-rangefinder.parm"
+    },
+    {
+      "type": "sensor_runtime_config",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/gazebo_sensor_runtime.toml"
+    },
+    {
+      "type": "rangefinder_probe_script",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/rangefinder_probe.py"
+    },
+    {
+      "type": "imu_probe_script",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/imu_probe.py"
+    },
+    {
+      "type": "slam_runtime_config",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/slam_runtime.toml"
+    },
+    {
+      "type": "external_nav_bridge_params_override",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/external_nav_bridge_params.yaml"
+    },
+    {
+      "type": "fcu_runtime_config",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/fcu_controller_runtime.toml"
+    },
+    {
+      "type": "fcu_runtime_script",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/fcu_controller_runtime.py"
+    },
+    {
+      "type": "frame_contract_runtime_config",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/frame_contract_runtime.toml"
+    },
+    {
+      "type": "frame_contract_probe_script",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/frame_contract_probe.py"
+    },
+    {
+      "type": "exploration_runtime_config",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/exploration_runtime.toml"
+    },
+    {
+      "type": "exploration_runtime_script",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/exploration_workflow_runtime.py"
+    },
+    {
+      "type": "exploration_probe_script",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/exploration_probe.py"
+    },
+    {
+      "type": "fsm",
+      "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/task_exploration_fsm.json"
+    }
+  ],
+  "runtime_spec_counts": {
+    "services": 9,
+    "probes": 4,
+    "rosbags": 1
+  },
+  "runtime_execution": {
+    "service_handles": [
+      {
+        "backend": "docker_sdk",
+        "service_name": "mavlink_router",
+        "identifier": "navlab-mavlink-router",
+        "command": [
+          "bash",
+          "-lc",
+          "exec /workspace/docker/entrypoints/start-mavlink-router.sh"
+        ],
+        "started_at": "2026-06-30T08:44:36.59775828+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/mavlink_router.start.log",
+        "container_name": "navlab-mavlink-router"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "official_baseline",
+        "identifier": "navlab-official-baseline",
+        "command": [
+          "bash",
+          "-lc",
+          "set -eo pipefail\nsource /opt/ros/${ROS_DISTRO:-humble}/setup.bash\nsource /opt/navlab_official_ws/install/setup.bash\nexport PYTHONPATH='/workspace':${PYTHONPATH:-}\nexport NAVLAB_OFFICIAL_SDF_ROOTS=/opt/navlab_official_ws/install/ardupilot_gazebo/share:/opt/navlab_official_ws/install/ardupilot_gz_description/share\nexport SDF_PATH=${NAVLAB_OFFICIAL_SDF_ROOTS}:${SDF_PATH:-}\nexport GZ_SIM_RESOURCE_PATH=${NAVLAB_OFFICIAL_SDF_ROOTS}:${GZ_SIM_RESOURCE_PATH:-}\nmkdir -p '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/sitl/scripts'\ncp '/workspace/docker/profiles/ahrs-set-origin.lua' '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/sitl/scripts/ahrs-set-origin.lua'\ntest -s '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/sitl/scripts/ahrs-set-origin.lua'\ncd '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/sitl'\npython3 -m navlab.sim.gazebo_sensor.benewake_tfmini_serial --virtual-serial-link '/tmp/navlab_benewake_tfmini' --log-file '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/benewake_tfmini_serial.runtime.log' \u0026\nbenewake_pid=$!\ntrap 'kill ${benewake_pid:-} 2\u003e/dev/null || true' EXIT\nfor _ in $(seq 1 200); do [ -e '/tmp/navlab_benewake_tfmini' ] \u0026\u0026 break; sleep 0.05; done\ntest -e '/tmp/navlab_benewake_tfmini'\nros2 launch ardupilot_gz_bringup iris_maze.launch.py serial7:=uart:/tmp/navlab_benewake_tfmini:115200 use_gz_sim_gui:=false rviz:=false use_dds_agent:=true use_gz_sim_server:=true spawn_robot:=true"
+        ],
+        "started_at": "2026-06-30T08:44:36.768970495+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/official_baseline.start.log",
+        "container_name": "navlab-official-baseline"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "official_maze_overlay",
+        "identifier": "navlab-official-maze-overlay",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 exec python3 '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/official_maze_overlay_runtime.py' \u003e '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/official_maze_overlay.runtime.log' 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:36.935802822+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/official_maze_overlay.start.log",
+        "container_name": "navlab-official-maze-overlay"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "gazebo_sensor",
+        "identifier": "navlab-official-maze-x2-sensor",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source /opt/navlab_sensor_ws/install/setup.bash \u0026\u0026 exec /opt/gazebo-sensor-venv/bin/python -m navlab.sim.gazebo_sensor.cli --runtime --log-file /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/gazebo_sensor.runtime.log"
+        ],
+        "started_at": "2026-06-30T08:44:37.1000323+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/gazebo_sensor.start.log",
+        "container_name": "navlab-official-maze-x2-sensor"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "slam_backend",
+        "identifier": "navlab-slam-backend",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source /opt/navlab_ws/install/setup.bash \u0026\u0026 exec python3 -m navlab.common.slam.cli launch --config /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/config/slam_runtime.toml --backend cartographer \u003e /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/slam_backend.runtime.log 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.268089872+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/slam_backend.start.log",
+        "container_name": "navlab-slam-backend"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "fcu_controller",
+        "identifier": "navlab-fcu-controller",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source ${OFFICIAL_WS:-/opt/navlab_official_ws}/install/setup.bash \u0026\u0026 python3 /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/fcu_controller_runtime.py \u003e /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/fcu_controller.runtime.log 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.451778145+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/fcu_controller.start.log",
+        "container_name": "navlab-fcu-controller"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "exploration_workflow",
+        "identifier": "navlab-exploration-workflow",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 python3 /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/scripts/exploration_workflow_runtime.py \u003e /workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/exploration_workflow.runtime.log 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.619703878+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/exploration_workflow.start.log",
+        "container_name": "navlab-exploration-workflow"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "mavlink_external_nav",
+        "identifier": "navlab-mavlink-external-nav",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source ${OFFICIAL_WS:-/opt/navlab_official_ws}/install/setup.bash \u0026\u0026 exec python3 -m navlab.real.companion.nodes.external_nav --endpoint udpin:0.0.0.0:14553 --odom-topic /external_nav/odom --status-topic /mavlink_external_nav/status --rate-hz 20 --quality 100 --source-system 191 --use-fcu-roll-pitch --align-yaw-to-fcu --local-position-pose-topic /navlab/fcu/local_position_pose --max-local-position-age-ms 1000 --max-horizontal-speed-mps 0.25 --max-yaw-rate-radps 0.6 \u003e '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/mavlink_external_nav.runtime.log' 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.780583068+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/mavlink_external_nav.start.log",
+        "container_name": "navlab-mavlink-external-nav"
+      },
+      {
+        "backend": "docker_sdk",
+        "service_name": "height_estimator",
+        "identifier": "navlab-height-estimator",
+        "command": [
+          "bash",
+          "-lc",
+          "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash \u0026\u0026 source ${OFFICIAL_WS:-/opt/navlab_official_ws}/install/setup.bash \u0026\u0026 exec python3 -m navlab.real.companion.nodes.height_estimator --range-topic /rangefinder/down/range --height-topic /height/estimate --status-topic /height/status --source-type rangefinder_down_relative --max-vertical-speed-mps 0.5 --max-vertical-velocity-output-mps 0.25 --velocity-smoothing-alpha 0.25 --max-filter-dt-sec 0.1 \u003e '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/height_estimator.runtime.log' 2\u003e\u00261"
+        ],
+        "started_at": "2026-06-30T08:44:37.950701518+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/height_estimator.start.log",
+        "container_name": "navlab-height-estimator"
+      }
+    ],
+    "rosbag_handles": [
+      {
+        "backend": "docker_sdk",
+        "service_name": "exploration_rosbag",
+        "identifier": "exploration_rosbag",
+        "command": [
+          "bash",
+          "-lc",
+          "rm -rf '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag' \u0026\u0026 mkdir -p '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag' \u0026\u0026 exec 'ros2' 'bag' 'record' '-s' 'mcap' '--compression-mode' 'file' '--compression-format' 'zstd' '-o' '/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag' '--topics' '/tf' '/tf_static' '/ap/v1/pose/filtered' '/ap/v1/twist/filtered' '/navlab/fcu/local_position_pose' '/rangefinder/down/range' '/navlab/slam/imu' '/height/estimate' '/height/status' '/navlab/fcu/setpoint/intent' '/navlab/fcu/setpoint/output' '/navlab/fcu/controller/status' '/navlab/slam/status' '/external_nav/odom' '/external_nav/status' '/mavlink_external_nav/status' '/navlab/scan_reference_drift/odom' '/navlab/scan_reference_drift/status' '/slam/odom_corrected' '/navlab/scan_reference_correction/status' '/external_nav/odom_candidate' '/external_nav/source_selector/status' '/navlab/hover/status' '/slam/odom' '/lidar' '/scan' '/submap_list' '/trajectory_node_list' '/sim/x2/status' '/navlab/x2/scan_time_normalizer/status' '/map' '/navlab/official_maze/map' '/navlab/landing/status' '/navlab/exploration/status' '/navlab/exploration/goal' '/navlab/exploration/coverage' '/navlab/exploration/frontiers' '/navlab/exploration/path' '/navlab/exploration/markers'"
+        ],
+        "started_at": "2026-06-30T08:44:38.094598048+08:00",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/exploration_rosbag.log",
+        "container_name": "exploration_rosbag",
+        "stop_signal": "SIGINT",
+        "stop_timeout_sec": 15,
+        "output_path": "/workspace/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag",
+        "host_output_path": "/home/ai4s/ws/world-model/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag",
+        "stop_requested_at": "2026-06-30T00:45:24.654430812Z",
+        "stopped_at": "2026-06-30T00:45:24.655113503Z",
+        "wait_exit_code": 2,
+        "finalize_status": "finalize_timeout",
+        "finalize_timeout_sec": 10
+      }
+    ],
+    "probe_results": [
+      {
+        "backend": "docker_sdk",
+        "name": "imu_probe",
+        "return_code": 20,
+        "stdout": "",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/imu_probe.log"
+      },
+      {
+        "backend": "docker_sdk",
+        "name": "rangefinder_probe",
+        "return_code": 0,
+        "stdout": "",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/rangefinder_probe.log"
+      },
+      {
+        "backend": "docker_sdk",
+        "name": "frame_contract_probe",
+        "return_code": 20,
+        "stdout": "",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/frame_contract_probe.log"
+      },
+      {
+        "backend": "docker_sdk",
+        "name": "exploration_probe",
+        "return_code": 20,
+        "stdout": "",
+        "log_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/exploration_probe.log"
+      }
+    ]
+  },
+  "fsm_artifacts": [
+    {
+      "fsm_name": "exploration_task",
+      "scope": "task",
+      "artifact_path": "runtime/task_exploration_fsm.json",
+      "state": "blocked",
+      "ok": false,
+      "blocked": true,
+      "failure_reason_code": "probe_failed"
+    },
+    {
+      "fsm_name": "rosbag_recorder",
+      "scope": "rosbag",
+      "artifact_path": "runtime/rosbag_exploration_rosbag_fsm.json",
+      "state": "finalize_timeout",
+      "ok": false,
+      "blocked": true,
+      "failure_reason_code": "rosbag_finalize_timeout"
+    }
+  ],
+  "runtime_error": "finalize rosbag exploration_rosbag: rosbag finalize timeout for exploration_rosbag: no metadata.yaml or mcap under /home/ai4s/ws/world-model/artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag",
+  "result_gates": [
+    {
+      "helper_id": "fcu-controller",
+      "name": "controller_summary",
+      "inputs": [
+        "/navlab/fcu/controller/status",
+        "/navlab/fcu/owner/status",
+        "/navlab/fcu/state"
+      ],
+      "outputs": [
+        "controller_summary.json",
+        "controller blockers"
+      ],
+      "status": "ported_partial"
+    },
+    {
+      "helper_id": "frame-contract",
+      "name": "frame_contract_doctor",
+      "inputs": [
+        "frame_contract_probe.json",
+        "rosbag/metadata.yaml"
+      ],
+      "outputs": [
+        "frame contract blockers"
+      ],
+      "status": "ported_partial"
+    },
+    {
+      "helper_id": "exploration-workflow",
+      "name": "exploration_acceptance",
+      "inputs": [
+        "exploration_probe.json",
+        "controller_summary.json",
+        "landing acceptance summary"
+      ],
+      "outputs": [
+        "exploration blockers",
+        "summary.json"
+      ],
+      "status": "ported_partial"
+    },
+    {
+      "helper_id": "landing",
+      "name": "landing_acceptance",
+      "inputs": [
+        "summary.json",
+        "controller_summary.json"
+      ],
+      "outputs": [
+        "landing acceptance blockers"
+      ],
+      "status": "ported_basic"
+    }
+  ],
+  "gate_parity": {
+    "status": "evaluated_from_runtime_artifacts",
+    "notes": [
+      "Go sim live runner executes runtime service/probe/rosbag specs.",
+      "Go sim evaluates runtime errors, probe outputs, rosbag metadata, task config checks, and landing acceptance from artifacts."
+    ]
+  },
+  "gate_evaluation": {
+    "ok": false,
+    "blocked": true,
+    "blockers": [
+      "probe_failed:exploration_probe:rc=20",
+      "probe_failed:frame_contract_probe:rc=20",
+      "probe_failed:imu_probe:rc=20",
+      "probe_output_not_ok:exploration_probe",
+      "probe_output_not_ok:frame_contract_probe",
+      "probe_output_not_ok:imu_probe",
+      "return_home_required_before_landing_not_satisfied",
+      "rosbag_profile_failed:exploration_rosbag",
+      "runtime_execution_failed",
+      "slam_runtime_error",
+      "slam_runtime_unhealthy",
+      "task_completion_required_before_landing",
+      "topic_sample_missing:/ap/v1/pose/filtered",
+      "topic_sample_missing:/imu",
+      "topic_sample_missing:/navlab/exploration/status",
+      "topic_sample_missing:/navlab/fcu/controller/status",
+      "topic_sample_missing:/navlab/fcu/setpoint/output",
+      "topic_sample_missing:/navlab/landing/status",
+      "topic_sample_missing:/navlab/slam/status",
+      "topic_sample_missing:/scan",
+      "topic_sample_missing:/slam/odom",
+      "topic_sample_missing:/tf",
+      "topic_sample_missing:/tf_static"
+    ],
+    "fsm_artifacts": [
+      {
+        "fsm_name": "exploration_task",
+        "scope": "task",
+        "artifact_path": "runtime/task_exploration_fsm.json",
+        "state": "blocked",
+        "ok": false,
+        "blocked": true,
+        "failure_reason_code": "probe_failed"
+      },
+      {
+        "fsm_name": "rosbag_recorder",
+        "scope": "rosbag",
+        "artifact_path": "runtime/rosbag_exploration_rosbag_fsm.json",
+        "state": "finalize_timeout",
+        "ok": false,
+        "blocked": true,
+        "failure_reason_code": "rosbag_finalize_timeout"
+      }
+    ],
+    "probe_outputs": [
+      {
+        "name": "rangefinder_probe",
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/rangefinder_probe.txt",
+        "exists": true,
+        "ok": true,
+        "status": "sampled",
+        "payload": {
+          "blockers": [],
+          "node": "navlab_rangefinder_probe",
+          "ok": true,
+          "optional_blockers": [],
+          "optional_topics": [],
+          "samples": {
+            "/rangefinder/down/range": {
+              "attempts": 1,
+              "latency_sec": 0.222,
+              "ok": true,
+              "return_code": 0,
+              "sample_method": "rclpy_subscription",
+              "stdout": "{\"header\": {\"frame_id\": \"rangefinder_down_frame\", \"stamp_nanosec\": 0, \"stamp_sec\": 0}, \"radiation_type\": 1.0, \"range\": 0.5}",
+              "type": "sensor_msgs/msg/Range"
+            },
+            "/rangefinder/down/status": {
+              "data": "{\"current_distance_m\": 0.5, \"max_distance_m\": 8.0, \"min_distance_m\": 0.1, \"ok\": true, \"orientation\": 25, \"ready\": true, \"source\": \"fcu_pose_relay\"}",
+              "latency_sec": 4.882,
+              "ok": true,
+              "parsed": {
+                "current_distance_m": 0.5,
+                "max_distance_m": 8,
+                "min_distance_m": 0.1,
+                "ok": true,
+                "orientation": 25,
+                "ready": true,
+                "source": "fcu_pose_relay"
+              },
+              "return_code": 0,
+              "stdout": "data: {\"current_distance_m\": 0.5, \"max_distance_m\": 8.0, \"min_distance_m\": 0.1, \"ok\": true, \"orientation\": 25, \"ready\": true, \"source\": \"fcu_pose_relay\"}"
+            }
+          },
+          "spec": {
+            "probe_timeout_sec": 45,
+            "range_topic": "/rangefinder/down/range",
+            "status_topic": "/rangefinder/down/status"
+          },
+          "started_ms": 1782780283764,
+          "status": "sampled",
+          "topics": [
+            "/rangefinder/down/range",
+            "/rangefinder/down/status"
+          ]
+        }
+      },
+      {
+        "name": "imu_probe",
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/imu_probe.txt",
+        "exists": true,
+        "ok": false,
+        "status": "sampled",
+        "payload": {
+          "blockers": [
+            "topic_sample_missing:/imu"
+          ],
+          "node": "navlab_imu_probe",
+          "ok": false,
+          "optional_blockers": [],
+          "optional_topics": [],
+          "samples": {
+            "/imu": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.538,
+              "ok": false,
+              "rclpy_attempt": {
+                "error": "topic_type_missing",
+                "failure_kind": "topic_type_missing",
+                "latency_sec": 2.164,
+                "ok": false,
+                "return_code": 124
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            }
+          },
+          "spec": {
+            "source_route": "official_gazebo_imu_bridge",
+            "source_topic": "/imu",
+            "synthetic_fallback_enabled": false,
+            "topic": "/imu"
+          },
+          "started_ms": 1782780282377,
+          "status": "sampled",
+          "topics": [
+            "/imu"
+          ]
+        }
+      },
+      {
+        "name": "frame_contract_probe",
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/frame_contract_probe.json",
+        "exists": true,
+        "ok": false,
+        "status": "sampled",
+        "payload": {
+          "blockers": [
+            "topic_sample_missing:/navlab/slam/status",
+            "topic_sample_missing:/tf",
+            "topic_sample_missing:/tf_static",
+            "topic_sample_missing:/scan",
+            "topic_sample_missing:/ap/v1/pose/filtered",
+            "topic_sample_missing:/slam/odom"
+          ],
+          "node": "navlab_frame_contract_probe",
+          "ok": false,
+          "optional_blockers": [],
+          "optional_topics": [],
+          "samples": {
+            "/ap/v1/pose/filtered": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "attempts": 14,
+                "failure_kind": "topic_sample_missing",
+                "latency_sec": 1.595,
+                "ok": false,
+                "return_code": 124,
+                "sample_method": "rclpy_subscription",
+                "type": "geometry_msgs/msg/PoseStamped"
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            },
+            "/imu": {
+              "attempts": 1,
+              "latency_sec": 0.239,
+              "ok": true,
+              "return_code": 0,
+              "sample_method": "rclpy_subscription",
+              "stdout": "{\"header\": {\"frame_id\": \"imu_link\", \"stamp_nanosec\": 0, \"stamp_sec\": 0}}",
+              "type": "sensor_msgs/msg/Imu"
+            },
+            "/navlab/slam/status": {
+              "latency_sec": 8.752,
+              "ok": false,
+              "return_code": 124
+            },
+            "/rangefinder/down/range": {
+              "attempts": 1,
+              "latency_sec": 0.207,
+              "ok": true,
+              "return_code": 0,
+              "sample_method": "rclpy_subscription",
+              "stdout": "{\"header\": {\"frame_id\": \"rangefinder_down_frame\", \"stamp_nanosec\": 0, \"stamp_sec\": 0}, \"radiation_type\": 1.0, \"range\": 0.5}",
+              "type": "sensor_msgs/msg/Range"
+            },
+            "/scan": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "error": "topic_type_missing",
+                "failure_kind": "topic_type_missing",
+                "latency_sec": 1.495,
+                "ok": false,
+                "return_code": 124
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            },
+            "/slam/odom": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "attempts": 14,
+                "failure_kind": "topic_sample_missing",
+                "latency_sec": 1.501,
+                "ok": false,
+                "return_code": 124,
+                "sample_method": "rclpy_subscription",
+                "type": "nav_msgs/msg/Odometry"
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            },
+            "/tf": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "error": "topic_type_missing",
+                "failure_kind": "topic_type_missing",
+                "latency_sec": 1.533,
+                "ok": false,
+                "return_code": 124
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            },
+            "/tf_static": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 1.536,
+              "ok": false,
+              "rclpy_attempt": {
+                "error": "topic_type_missing",
+                "failure_kind": "topic_type_missing",
+                "latency_sec": 1.497,
+                "ok": false,
+                "return_code": 124
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            }
+          },
+          "spec": {
+            "BaseFrameID": "base_link",
+            "CmdVelTopic": "/ap/v1/cmd_vel",
+            "ControllerStatusTopic": "/navlab/fcu/controller/status",
+            "FCUPoseTopic": "/ap/v1/pose/filtered",
+            "FCUStatusTopic": "/ap/v1/status",
+            "FCUTwistTopic": "/ap/v1/twist/filtered",
+            "IMUFrameID": "imu_link",
+            "IMUTopic": "/imu",
+            "LaserFrameID": "base_scan",
+            "MapFrameID": "map",
+            "MaxDirectionErrorRad": 0.8,
+            "MaxDynamicTFAgeSec": 3,
+            "MaxRangefinderHeightErr": 0.35,
+            "MinScanValidRatio": 0.05,
+            "OdomFrameID": "odom",
+            "OwnerStatusTopic": "/navlab/fcu/owner/status",
+            "ProbeDurationSec": 16,
+            "RangefinderFrameID": "rangefinder_down_frame",
+            "RangefinderRangeTopic": "/rangefinder/down/range",
+            "RangefinderStatusTopic": "/rangefinder/down/status",
+            "RequiredFrames": [
+              "map",
+              "odom",
+              "base_link",
+              "imu_link",
+              "base_scan",
+              "rangefinder_down_frame"
+            ],
+            "ScanTopic": "/scan",
+            "SetpointOutputTopic": "/navlab/fcu/setpoint/output",
+            "SlamOdomTopic": "/slam/odom",
+            "SlamStatusTopic": "/navlab/slam/status",
+            "StatusTopic": "/navlab/frame_contract/status",
+            "TruthDiagnosticTopic": "/odometry"
+          },
+          "started_ms": 1782780304395,
+          "status": "sampled",
+          "topics": [
+            "/tf",
+            "/tf_static",
+            "/scan",
+            "/imu",
+            "/rangefinder/down/range",
+            "/ap/v1/pose/filtered",
+            "/slam/odom",
+            "/navlab/slam/status"
+          ]
+        }
+      },
+      {
+        "name": "exploration_probe",
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/probes/exploration_probe.json",
+        "exists": true,
+        "ok": false,
+        "status": "sampled",
+        "payload": {
+          "blockers": [
+            "topic_sample_missing:/navlab/fcu/controller/status",
+            "topic_sample_missing:/navlab/fcu/setpoint/output",
+            "topic_sample_missing:/navlab/exploration/status",
+            "topic_sample_missing:/navlab/landing/status",
+            "topic_sample_missing:/slam/odom"
+          ],
+          "node": "navlab_exploration_probe",
+          "ok": false,
+          "optional_blockers": [],
+          "optional_topics": [],
+          "samples": {
+            "/navlab/exploration/status": {
+              "latency_sec": 36.412,
+              "ok": false,
+              "return_code": 124
+            },
+            "/navlab/fcu/controller/status": {
+              "data": "{\"bootstrap\": {\"ok\": false, \"state\": \"not_started\"}, \"bootstrap_ready\": false, \"cmd_vel_publish_count\": 0, \"control_route\": \"mavlink_bootstrap_plus_dds_cmd_vel\", \"fcu_mode_window\": {\"observed_mode\": \"UNKNOWN\", \"ok\": false, \"required_mode\": \"GUIDED\", \"samples\": 0, \"window_sec\": 8}, \"fcu_pose_samples\": 0, \"mavlink_local_position_count\": 0, \"mavlink_setpoint_count\": 0, \"mavlink_setpoint_error\": \"\", \"ok\": false, \"pose_samples\": 0, \"pose_source\": \"\", \"ready\": false, \"ready_elapsed_sec\": 0.0, \"setpoint_intent_samples\": 0, \"slam_odom_samples\": 0, \"state\": \"waiting_for_pose\", \"takeoff_alt_m\": 0.5}",
+              "latency_sec": 36.412,
+              "ok": false,
+              "parsed": {
+                "bootstrap": {
+                  "ok": false,
+                  "state": "not_started"
+                },
+                "bootstrap_ready": false,
+                "cmd_vel_publish_count": 0,
+                "control_route": "mavlink_bootstrap_plus_dds_cmd_vel",
+                "fcu_mode_window": {
+                  "observed_mode": "UNKNOWN",
+                  "ok": false,
+                  "required_mode": "GUIDED",
+                  "samples": 0,
+                  "window_sec": 8
+                },
+                "fcu_pose_samples": 0,
+                "mavlink_local_position_count": 0,
+                "mavlink_setpoint_count": 0,
+                "mavlink_setpoint_error": "",
+                "ok": false,
+                "pose_samples": 0,
+                "pose_source": "",
+                "ready": false,
+                "ready_elapsed_sec": 0,
+                "setpoint_intent_samples": 0,
+                "slam_odom_samples": 0,
+                "state": "waiting_for_pose",
+                "takeoff_alt_m": 0.5
+              },
+              "return_code": 0,
+              "stdout": "data: {\"bootstrap\": {\"ok\": false, \"state\": \"not_started\"}, \"bootstrap_ready\": false, \"cmd_vel_publish_count\": 0, \"control_route\": \"mavlink_bootstrap_plus_dds_cmd_vel\", \"fcu_mode_window\": {\"observed_mode\": \"UNKNOWN\", \"ok\": false, \"required_mode\": \"GUIDED\", \"samples\": 0, \"window_sec\": 8}, \"fcu_pose_samples\": 0, \"mavlink_local_position_count\": 0, \"mavlink_setpoint_count\": 0, \"mavlink_setpoint_error\": \"\", \"ok\": false, \"pose_samples\": 0, \"pose_source\": \"\", \"ready\": false, \"ready_elapsed_sec\": 0.0, \"setpoint_intent_samples\": 0, \"slam_odom_samples\": 0, \"state\": \"waiting_for_pose\", \"takeoff_alt_m\": 0.5}"
+            },
+            "/navlab/fcu/setpoint/output": {
+              "data": "{\"accepted_goals\": 0, \"cmd_vel_publish_count\": 0, \"cmd_vel_topic\": \"/ap/v1/cmd_vel\", \"intent_topic\": \"/navlab/fcu/setpoint/intent\", \"linear_velocity_mps\": 0.1, \"mavlink_local_position_count\": 0, \"mavlink_setpoint_count\": 0, \"mavlink_setpoint_error\": \"\", \"min_accepted_goals\": 3, \"min_path_length_m\": 0.35, \"ok\": false, \"path_length_m\": 0.0, \"ready\": false, \"setpoint_intent_samples\": 0, \"source\": \"fcu_pose_relay\", \"state\": \"waiting_for_pose\"}",
+              "latency_sec": 36.412,
+              "ok": false,
+              "parsed": {
+                "accepted_goals": 0,
+                "cmd_vel_publish_count": 0,
+                "cmd_vel_topic": "/ap/v1/cmd_vel",
+                "intent_topic": "/navlab/fcu/setpoint/intent",
+                "linear_velocity_mps": 0.1,
+                "mavlink_local_position_count": 0,
+                "mavlink_setpoint_count": 0,
+                "mavlink_setpoint_error": "",
+                "min_accepted_goals": 3,
+                "min_path_length_m": 0.35,
+                "ok": false,
+                "path_length_m": 0,
+                "ready": false,
+                "setpoint_intent_samples": 0,
+                "source": "fcu_pose_relay",
+                "state": "waiting_for_pose"
+              },
+              "return_code": 0,
+              "stdout": "data: {\"accepted_goals\": 0, \"cmd_vel_publish_count\": 0, \"cmd_vel_topic\": \"/ap/v1/cmd_vel\", \"intent_topic\": \"/navlab/fcu/setpoint/intent\", \"linear_velocity_mps\": 0.1, \"mavlink_local_position_count\": 0, \"mavlink_setpoint_count\": 0, \"mavlink_setpoint_error\": \"\", \"min_accepted_goals\": 3, \"min_path_length_m\": 0.35, \"ok\": false, \"path_length_m\": 0.0, \"ready\": false, \"setpoint_intent_samples\": 0, \"source\": \"fcu_pose_relay\", \"state\": \"waiting_for_pose\"}"
+            },
+            "/navlab/landing/status": {
+              "data": "{\"blockers\": [\"task_completion_required_before_landing\"], \"claim\": \"not_evaluated\", \"completion_grace_sec\": 3, \"disarmed\": false, \"land_command_accepted\": false, \"landed_confirmed\": false, \"motors_safe\": false, \"ok\": false, \"policy\": \"return_home_then_land\", \"return_home\": {\"ok\": false, \"required\": true, \"state\": \"not_started\"}, \"state\": \"waiting_for_task_completion\", \"task_completed\": false, \"touchdown_confirmed\": false}",
+              "latency_sec": 36.412,
+              "ok": false,
+              "parsed": {
+                "blockers": [
+                  "task_completion_required_before_landing"
+                ],
+                "claim": "not_evaluated",
+                "completion_grace_sec": 3,
+                "disarmed": false,
+                "land_command_accepted": false,
+                "landed_confirmed": false,
+                "motors_safe": false,
+                "ok": false,
+                "policy": "return_home_then_land",
+                "return_home": {
+                  "ok": false,
+                  "required": true,
+                  "state": "not_started"
+                },
+                "state": "waiting_for_task_completion",
+                "task_completed": false,
+                "touchdown_confirmed": false
+              },
+              "return_code": 0,
+              "stdout": "data: {\"blockers\": [\"task_completion_required_before_landing\"], \"claim\": \"not_evaluated\", \"completion_grace_sec\": 3, \"disarmed\": false, \"land_command_accepted\": false, \"landed_confirmed\": false, \"motors_safe\": false, \"ok\": false, \"policy\": \"return_home_then_land\", \"return_home\": {\"ok\": false, \"required\": true, \"state\": \"not_started\"}, \"state\": \"waiting_for_task_completion\", \"task_completed\": false, \"touchdown_confirmed\": false}"
+            },
+            "/slam/odom": {
+              "attempts": 1,
+              "failure_kind": "topic_sample_missing",
+              "latency_sec": 2.203,
+              "ok": false,
+              "rclpy_attempt": {
+                "attempts": 20,
+                "failure_kind": "topic_sample_missing",
+                "latency_sec": 2.256,
+                "ok": false,
+                "return_code": 124,
+                "sample_method": "rclpy_subscription",
+                "type": "nav_msgs/msg/Odometry"
+              },
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo"
+            }
+          },
+          "spec": {
+            "ControllerStatusTopic": "/navlab/fcu/controller/status",
+            "ExplorationStatusTopic": "/navlab/exploration/status",
+            "ExplorationWindowSec": 26,
+            "MinAcceptedGoals": 3,
+            "MinPathLengthM": 0.35,
+            "MotionSpeedMPS": 0.1,
+            "ProbeTimeoutSec": 35,
+            "SetpointIntentTopic": "/navlab/fcu/setpoint/intent",
+            "SetpointOutputTopic": "/navlab/fcu/setpoint/output",
+            "SlamOdomTopic": "/slam/odom",
+            "Strategy": "frontier_lite",
+            "YawRateRadPS": 0.18
+          },
+          "started_ms": 1782780319590,
+          "status": "sampled",
+          "topics": [
+            "/navlab/fcu/controller/status",
+            "/navlab/fcu/setpoint/output",
+            "/navlab/exploration/status",
+            "/slam/odom",
+            "/navlab/landing/status"
+          ]
+        }
+      }
+    ],
+    "rosbag_profiles": [
+      {
+        "name": "exploration_rosbag",
+        "metadata_path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag/metadata.yaml",
+        "exists": false,
+        "ok": false,
+        "required_topics": [
+          "/tf",
+          "/tf_static",
+          "/ap/v1/pose/filtered",
+          "/ap/v1/twist/filtered",
+          "/rangefinder/down/range",
+          "/navlab/fcu/controller/status",
+          "/navlab/fcu/setpoint/intent",
+          "/navlab/fcu/setpoint/output",
+          "/navlab/exploration/status",
+          "/slam/odom",
+          "/scan",
+          "/map"
+        ],
+        "metadata_missing_or_unreadable": "open ../../artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag/metadata.yaml: no such file or directory; mcap_fallback=no mcap files found in ../../artifacts/sim/exploration/20260630T004434.612996205Z/rosbag/exploration_rosbag"
+      }
+    ],
+    "landing_acceptance": {
+      "acceptance_stage": "simulation",
+      "landing_claim": "not_evaluated",
+      "simulation_landing_claim": "not_evaluated",
+      "real_landing_claim": "not_evaluated",
+      "landing_config": {
+        "enabled": true,
+        "policy": "return_home_then_land",
+        "default_policy": "land_in_place",
+        "landing_status_topic": "/navlab/landing/status",
+        "landing_intent_topic": "/navlab/landing/intent",
+        "home_source": "post_takeoff_hover_pose",
+        "home_radius_m": 0.35,
+        "pre_land_hold_sec": 2,
+        "completion_grace_sec": 3,
+        "max_return_home_duration_sec": 45,
+        "max_landing_duration_sec": 35,
+        "max_descent_rate_mps": 0.6,
+        "landing_setpoint_lookahead_sec": 0,
+        "touchdown_altitude_m": 0.12,
+        "touchdown_vertical_speed_mps": 0.08,
+        "require_disarm": true,
+        "require_motors_safe": true,
+        "uses_gazebo_truth_as_input": false
+      },
+      "landing": {
+        "ok": false,
+        "claim": "not_evaluated",
+        "policy": "return_home_then_land",
+        "state": "waiting_for_task_completion",
+        "return_home": {
+          "required": true,
+          "ok": false,
+          "state": "not_started",
+          "distance_to_home_m": null,
+          "duration_sec": null
+        },
+        "land_command_accepted": false,
+        "landing_duration_sec": null,
+        "landed_confirmed": false,
+        "touchdown_confirmed": false,
+        "disarmed": false,
+        "motors_safe": false,
+        "require_disarm": false,
+        "require_motors_safe": false,
+        "uses_gazebo_truth_as_input": false,
+        "blockers": [
+          "task_completion_required_before_landing"
+        ]
+      },
+      "simulation_landing_acceptance": {
+        "ok": false,
+        "runtime_mode": "simulation",
+        "blockers": [
+          "simulation_landing_acceptance_not_passed"
+        ]
+      },
+      "real_landing_acceptance": {
+        "ok": false,
+        "runtime_mode": "real",
+        "state": "not_started",
+        "blockers": []
+      },
+      "blockers": [
+        "return_home_required_before_landing_not_satisfied",
+        "task_completion_required_before_landing"
+      ],
+      "blocked": true,
+      "ok": false
+    },
+    "task_checks": {
+      "exploration_claim_evaluated": true,
+      "exploration_landing_policy_valid": true,
+      "exploration_min_goals_positive": true,
+      "exploration_window_positive": true
+    },
+    "metrics": {
+      "controller": {
+        "bootstrap": {
+          "ok": false,
+          "state": "not_started"
+        },
+        "bootstrap_ready": false,
+        "cmd_vel_publish_count": 0,
+        "control_route": "mavlink_bootstrap_plus_dds_cmd_vel",
+        "fcu_mode_window": {
+          "observed_mode": "UNKNOWN",
+          "ok": false,
+          "required_mode": "GUIDED",
+          "samples": 0,
+          "window_sec": 8
+        },
+        "mavlink_local_position_count": 0,
+        "mavlink_setpoint_count": 0,
+        "mavlink_setpoint_error": "",
+        "pose_samples": 0,
+        "ready": false,
+        "state": "waiting_for_pose",
+        "takeoff_alt_m": 0.5
+      },
+      "setpoint": {
+        "cmd_vel_publish_count": 0,
+        "cmd_vel_topic": "/ap/v1/cmd_vel",
+        "intent_topic": "/navlab/fcu/setpoint/intent",
+        "mavlink_local_position_count": 0,
+        "mavlink_setpoint_count": 0,
+        "mavlink_setpoint_error": "",
+        "min_path_length_m": 0.35,
+        "path_length_m": 0,
+        "ready": false,
+        "setpoint_intent_samples": 0,
+        "state": "waiting_for_pose"
+      },
+      "startup_readiness": {
+        "classification": "unknown",
+        "decision_rule": "startup_readiness_failure artifacts are excluded from hover span SLO percentiles and routed to Phase 51 startup/readiness.",
+        "height": {
+          "external_nav_height": null,
+          "external_nav_height_ready": false,
+          "rosbag_height_estimate_count": 0,
+          "rosbag_height_status_count": 0
+        },
+        "mission": {
+          "exists": false
+        },
+        "not_hover_span_slo": false,
+        "preflight_invalid": false,
+        "probe_semantics": {
+          "known_failure_kinds": [
+            "topic_type_missing",
+            "topic_sample_missing",
+            "sample_stdout_present_timeout",
+            "parsed_payload_not_ready"
+          ],
+          "samples": {
+            "exploration_probe:/navlab/exploration/status": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "exploration_probe",
+              "return_code": 124,
+              "sample_method": null,
+              "topic": "/navlab/exploration/status"
+            },
+            "exploration_probe:/navlab/fcu/controller/status": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": true,
+              "ok": false,
+              "parsed_ready": false,
+              "parsed_state": "waiting_for_pose",
+              "probe": "exploration_probe",
+              "return_code": 0,
+              "sample_method": null,
+              "topic": "/navlab/fcu/controller/status"
+            },
+            "exploration_probe:/navlab/fcu/setpoint/output": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": true,
+              "ok": false,
+              "parsed_ready": false,
+              "parsed_state": "waiting_for_pose",
+              "probe": "exploration_probe",
+              "return_code": 0,
+              "sample_method": null,
+              "topic": "/navlab/fcu/setpoint/output"
+            },
+            "exploration_probe:/navlab/landing/status": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": true,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": "waiting_for_task_completion",
+              "probe": "exploration_probe",
+              "return_code": 0,
+              "sample_method": null,
+              "topic": "/navlab/landing/status"
+            },
+            "exploration_probe:/slam/odom": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "exploration_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/slam/odom"
+            },
+            "frame_contract_probe:/ap/v1/pose/filtered": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/ap/v1/pose/filtered"
+            },
+            "frame_contract_probe:/navlab/slam/status": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": null,
+              "topic": "/navlab/slam/status"
+            },
+            "frame_contract_probe:/scan": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/scan"
+            },
+            "frame_contract_probe:/slam/odom": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/slam/odom"
+            },
+            "frame_contract_probe:/tf": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/tf"
+            },
+            "frame_contract_probe:/tf_static": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "frame_contract_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/tf_static"
+            },
+            "imu_probe:/imu": {
+              "failure_kind": "topic_sample_missing",
+              "has_stdout": false,
+              "ok": false,
+              "parsed_ready": null,
+              "parsed_state": null,
+              "probe": "imu_probe",
+              "return_code": 124,
+              "sample_method": "ros2_topic_echo",
+              "topic": "/imu"
+            }
+          }
+        },
+        "rangefinder": {
+          "input_count": 0,
+          "latest_distance_m": null,
+          "latest_input_age_sec": null,
+          "range_sample_failure_kind": "",
+          "range_sample_ok": true,
+          "range_sample_return_code": 0,
+          "range_topic": null,
+          "ready": true,
+          "rosbag_range_count": 0,
+          "rosbag_status_count": 0,
+          "scan_ideal_topic": null,
+          "serial": null,
+          "serial_byte_count": 0,
+          "serial_frame_count": 0,
+          "source": "fcu_pose_relay",
+          "state": null,
+          "status_sample_ok": true,
+          "virtual_serial_link": null
+        },
+        "reason_codes": [],
+        "rosbag_message_counts": {
+          "/external_nav/odom": 0,
+          "/height/estimate": 0,
+          "/height/status": 0,
+          "/navlab/fcu/local_position_pose": 0,
+          "/rangefinder/down/range": 0,
+          "/rangefinder/down/status": 0
+        },
+        "runtime_control_unchanged": true,
+        "valid_hover_body_sample": false
+      },
+      "slam_runtime_log": {
+        "cartographer_waiting_for_imu_queue_count": 0,
+        "cartographer_waiting_for_imu_queue_threshold": 20,
+        "dropped_earlier_points_count": 0,
+        "error_count": 1,
+        "exists": true,
+        "fatal_count": 0,
+        "last_problem_lines": [
+          "ModuleNotFoundError: No module named 'tomllib'"
+        ],
+        "ok": false,
+        "path": "../../artifacts/sim/exploration/20260630T004434.612996205Z/runtime/logs/slam_backend.runtime.log",
+        "quality": "unhealthy",
+        "rejected_odom_tf_log_count": 0,
+        "std_length_error_count": 0,
+        "warning_count": 0
+      },
+      "metric_evidence_sources": {
+        "controller": "/navlab/fcu/controller/status",
+        "setpoint": "/navlab/fcu/setpoint/output",
+        "slam_runtime_log": "runtime/logs/slam_backend.runtime.log",
+        "startup_readiness": "probe_outputs+mission_summary+rosbag_profiles"
+      }
+    }
+  },
+  "created_at": "2026-06-30T00:46:04Z"
+}
