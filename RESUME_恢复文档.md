@@ -2,6 +2,43 @@
 
 > 用途:本会话上下文将满。在**新窗口/新对话**里,让新的 Claude 读本文件 + `MEMORY.md`(自动加载)+ `README.md`(蓝图)+ `TASKS.md`(任务台账),即可**基本无损接管**。最后更新 2026-06-30。
 
+## ⚙️ AGENT DIRECTIVES（下一个 Claude 先读这段，机器友好）
+```yaml
+role: 接管本任务的 Claude Code（运行在用户 Windows + WSL2 上）
+language_to_user: 中文
+task: 把 GBPlanner(ROS1,图搜索体积增益探索) 集成进 world-model(ROS2 无人机仿真平台)，替换占位探索 frontier_lite，论证其缺陷并量化对比突出 GBPlanner 优势
+decision_locked: 桥接方案(ros1_bridge)  # 不是 gbplanner_core 重写
+authoritative_sources_only:
+  - github.com/SZ-surveying/world-model        # 注意:名字不是"世界模型"，只是项目名
+  - github.com/ntnu-arl/gbplanner_ros @ gbplanner2 分支 + arXiv:2201.07067
+  - 桌面 "自主探索决策(GBPlanner算法).md"(mentor 发)
+hard_rules:  # 用户反复强调，违反会被追责
+  - 只信真实产物(docker images / 文件 / 测试通过)，绝不信退出码或"completed"；已抓出 6+ 次假成功
+  - 每完成一步：①更新文档(尤其主报告 README 全景) ②git commit+push ③刷桌面 md 副本 —— 四处同步(权威源/桌面junction/桌面md/GitHub)
+  - 每个里程碑给用户全景报告：现在到哪/做了什么/下一步/用户怎么检查与演示(可视化)
+  - 桌面 md 禁用 base64 内嵌图(Typora 不渲染)；用绝对路径引 PNG；图用 SVG→rsvg-convert 转 PNG(已装 fonts-noto-cjk)
+  - 命名无歧义：预研A/预研B=复现任务；桥接/重写=集成方案(不用字母 A/B 指方案)
+  - 留痕：仿真截图、图、表存 images/，文档写清做了什么
+  - 重活(长构建)动手前简述；被打断后读 TASKS.md 自动接续，不再问"要不要继续"
+  - GUI/实操优先：用户不仅要看懂，还要能亲自打开仿真验证、用于组会演示
+key_env:
+  wsl: Ubuntu-22.04, user=ai4s
+  go: /usr/local/go/bin/go   # 裸 go 是旧1.18
+  proxy: clash 127.0.0.1:7897 (.wslconfig mirrored; docker daemon 也配了代理)
+  git_push: Windows端 http.sslBackend=openssl + local http(s).proxy=7897；偶发TLS瞬断→重试
+  repo_wsl: ~/ws/world-model    # distro 已改 humble
+  authoritative_src: C:\CCproject\GBPlanner-WorldModel-Integration  (= /mnt/c/CCproject/...)
+  github: ai4sci-z/GBPlanner-WorldModel-Integration (private, gh已登录)
+state_2026_06_30:
+  images: 9/9 全部构建成功(实测)  # 预研A 镜像阶段完成
+  blocker: exploration 能启动9服务但运行时未健康(slam_runtime_unhealthy, probe rc=20, rosbag无mcap)
+next_actions:
+  - 调运行时让 exploration 真探起来 → 取 summary.json 的 coverage/path/goals 真实指标
+  - 跑 GUI(先 gbplanner_ref/build_and_run.sh 看 GBPlanner)截真图补 docs/实跑操作手册_图文版.md
+  - 桥接落地(给iq_quad加3D雷达见 docs/桥接接口规格.md) → 量化对比填 docs/对比实验与缺陷论证设计.md
+read_next: [README.md, TASKS.md, docs/排错记录, docs/桥接接口规格.md, docs/对比实验与缺陷论证设计.md, docs/WSL使用与复现.md]
+```
+
 ## 0. 新会话第一步(必做)
 1. 在**同一项目目录 `C:\CCproject`** 打开新 Claude Code 对话(记忆会自动加载)。
 2. ⚠️ **后台构建任务不跨会话**——新会话**先用 `docker images` 核对真实状态**,别信任何"之前说成功"。核对命令见 §6。

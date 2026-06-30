@@ -6,6 +6,25 @@
 
 ---
 
+# 🔴 最新全景状态(2026-06-30)
+
+| 环节 | 状态 |
+|---|---|
+| 集成决策 | ✅ 「桥接方案(ros1_bridge)」 |
+| 预研B·GBPlanner 仿真镜像 | ✅ `gbplanner-ref` 已建 |
+| P1·算法核心(光线投射+体积增益) | ✅ 编译+ctest 通过 |
+| 接口规格 / 对比设计 / 图文手册 | ✅ 已出(真截图待跑通补) |
+| **预研A·world-model 9 镜像** | ✅ **9/9 全部构建成功(实测)**——排掉 6 个 jazzy→humble 兼容坑 |
+| **跑 exploration(看 frontier_lite)** | 🔵 能启动 9 个服务,但运行时 SLAM/探针未健康,**调试中** |
+| 桥接落地 / 论证缺陷 / 量化对比 | ⬜ 待运行时跑通后做 |
+
+- **你怎么自己验证 9/9**:打开 WSL 敲 `docker images | grep navlab`(应数到 9 个)。详见 [docs/WSL使用与复现.md](docs/WSL使用与复现.md)。
+- **看仿真画面**:[docs/实跑操作手册_图文版.md](docs/实跑操作手册_图文版.md)。
+- **接下来做什么**:让 exploration 真探起来(调运行时)→ 取 frontier_lite 真实指标 → 桥接 GBPlanner → 量化对比。
+- **新窗口无损接管**(给下一个 Claude 读):[RESUME_恢复文档.md](RESUME_恢复文档.md)。
+
+---
+
 # 第 0 部分 · 蓝图速览(一页看懂)
 
 **我们在做什么:** 给一个无人机仿真平台(world-model)换上一个更聪明的"自主探索大脑"(GBPlanner)。
