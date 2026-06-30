@@ -8,6 +8,11 @@ role: 接管本任务的 Claude Code（运行在用户 Windows + WSL2 上）
 language_to_user: 中文
 task: 把 GBPlanner(ROS1,图搜索体积增益探索) 集成进 world-model(ROS2 无人机仿真平台)，替换占位探索 frontier_lite，论证其缺陷并量化对比突出 GBPlanner 优势
 decision_locked: 桥接方案(ros1_bridge)  # 不是 gbplanner_core 重写
+key_finding_2026_06_30: |
+  frontier_lite 经查证是"脚本预设动作"(exploration_workflow_runtime.py.tmpl:142-147,pattern[goal_index%len(pattern)]按计时器循环 前进/左扭/右扭,且只订阅 /slam/odom+控制器状态、不订阅地图)，不是探索算法。
+  GBPlanner 集成的精确插入点 = 这个探索决策节点(navlab_exploration_workflow,输出 /navlab/fcu/setpoint/intent + /navlab/exploration/*)。
+  加法三步:①给仿真无人机加3D雷达(对齐OS064)+3D建图(octomap/voxblox) ②ros1_bridge把3D地图+位姿喂GBPlanner、回收航点 ③航点转 /navlab/fcu/setpoint/intent 替换脚本决策。
+  详见 docs/集成机制与frontier_lite缺陷_核心发现.md(任务准星,对应 mentor md)。frontier_lite 决策代码证据已存 artifacts_sample/。
 authoritative_sources_only:
   - github.com/SZ-surveying/world-model        # 注意:名字不是"世界模型"，只是项目名
   - github.com/ntnu-arl/gbplanner_ros @ gbplanner2 分支 + arXiv:2201.07067
