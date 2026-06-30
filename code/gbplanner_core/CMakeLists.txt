@@ -13,6 +13,10 @@ target_include_directories(gbplanner_core
 add_executable(gbp_demo src/demo_main.cpp)
 target_link_libraries(gbp_demo PRIVATE gbplanner_core)
 
+# 核心决策演示(体积增益选路 + SVG 可视化)
+add_executable(gbp_explore_demo src/exploration_demo.cpp)
+target_link_libraries(gbp_explore_demo PRIVATE gbplanner_core)
+
 # 单元测试
 enable_testing()
 add_executable(test_gain test/test_gain.cpp)
