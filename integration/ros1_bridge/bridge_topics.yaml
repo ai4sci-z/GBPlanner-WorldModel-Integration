@@ -1,0 +1,31 @@
+# ros1_bridge / parameter_bridge 话题映射(阶段4 桥接 GBPlanner 真版)
+#
+# 用法(在装有 ros1_bridge 的环境,同时 source ROS1 noetic + ROS2 humble):
+#   ros2 run ros1_bridge parameter_bridge __params:=bridge_topics.yaml
+# 或用动态桥 `ros2 run ros1_bridge dynamic_bridge`(自动桥接两侧都存在的话题)。
+#
+# 设计要点(源码证实,见 README_阶段4桥接设计.md):
+#   跨桥的全是【标准消息类型】→ ros1_bridge 开箱即用,无需移植 planner_msgs 自定义 srv。
+#   GBPlanner + PCI 原样在 ROS1 侧运行;规划触发(pci_trigger,kManual)留在 ROS1 内部。
+#
+# 机器人命名空间:原版 robot_name=rmf_obelix。下面用 <ROBOT> 占位,部署时替换。
+
+topics:
+  # ---- ROS2(world-model)→ ROS1(GBPlanner)输入 ----
+  - topic: /pointcloud                       # gbplanner_node 订阅(launch 里 remap 自 /<ROBOT>/velodyne_points)
+    type: sensor_msgs/msg/PointCloud2
+    queue_size: 5
+    # 注:world-model 当前无 3D 点云,需先给 navlab_iq_quad 加 3D 雷达(阶段4 步骤①)
+  - topic: /gbplanner/odometry               # gbplanner_node + PCI 订阅的 odometry
+    type: nav_msgs/msg/Odometry
+    queue_size: 50
+    # 来源:world-model 的 /slam/odom(可在 ROS2 侧重映射或加中继)
+
+  # ---- ROS1(GBPlanner/PCI)→ ROS2(world-model)输出 ----
+  - topic: /rmf_obelix/command/trajectory    # PCI 发布的规划轨迹(MultiDOFJointTrajectory)
+    type: trajectory_msgs/msg/MultiDOFJointTrajectory
+    queue_size: 10
+    # ROS2 侧由 trajectory_to_intent.py 消费,转成 /navlab/fcu/setpoint/intent
+
+# TF:world→navigation 静态变换由 ROS1 侧 static_transform_publisher 发布;
+# 若 world-model 需要,可用 dynamic_bridge 桥接 /tf_static,或在 ROS2 侧补发等价静态 TF。
