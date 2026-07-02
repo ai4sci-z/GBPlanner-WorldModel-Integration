@@ -44,6 +44,17 @@ PCI automatic_planning 调用 success:True → ✅
 一键复现:`run_light.sh` 起仿真 → 等 RViz 出现+建图 → `takeoff_and_explore.sh` 起飞并触发探索。
 (注:`pci_initialization_trigger` 服务不可用的问题未深究——绕道方案更简单可靠,存档即可。)
 
+## 实测量化数据(第二轮,2026-07-02)
+
+- **全任务周期**:探索(时间预算 480s)→ `REACHED TIME LIMIT: HOMING ENGAGED` → 自动返航至起飞点悬停;
+- **地图落盘**:`images/explored_map_lightboxes.vxblx`(4MB,voxblox `save_map` 服务);
+- **指标采样**(每 10s:仿真时刻/位置/tsdf 表面点数):`images/exploration_metrics_round2.csv`,
+  曲线 `images/exploration_metrics_round2.png` —— 采样窗口内累计飞行 **50.2m**,地图规模 **134,557 点**,返航事件被完整捕获。
+  ⚠️ 诚实标注:round2 采样从仿真 382s 才开始(只覆盖末段+返航);**全程曲线**由第三轮从 t=0 采集(`exploration_metrics_full.*`)。
+- 采样/画图工具已固化:`runbooks/gbplanner_ref/plot_metrics.py`(纯标准库出 SVG→rsvg-convert 转 PNG)。
+
+![探索实测曲线(第二轮末段)](../images/exploration_metrics_round2.png)
+
 ## 复现方法(一键)
 
 ```bash

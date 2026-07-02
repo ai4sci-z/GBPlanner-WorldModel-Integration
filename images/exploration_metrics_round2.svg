@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="640" font-family="Noto Sans CJK SC, sans-serif" font-size="20">
+<rect width="1400" height="640" fill="white"/>
+<text x="700.0" y="40" text-anchor="middle" font-size="26" font-weight="bold">GBPlanner 自主探索实测曲线(box 迷宫,时间预算 480s)</text>
+<rect x="90" y="70" width="1220" height="500" fill="none" stroke="#94a3b8"/>
+<line x1="90" y1="170.0" x2="1310" y2="170.0" stroke="#e2e8f0"/>
+<line x1="90" y1="270.0" x2="1310" y2="270.0" stroke="#e2e8f0"/>
+<line x1="90" y1="370.0" x2="1310" y2="370.0" stroke="#e2e8f0"/>
+<line x1="90" y1="470.0" x2="1310" y2="470.0" stroke="#e2e8f0"/>
+<polyline points="90.0,570.0 171.3,520.3 241.0,500.3 334.0,439.6 415.3,410.5 496.7,364.8 589.6,349.6 671.0,296.3 752.3,253.9 833.6,197.4 915.0,144.3 984.7,100.0 1077.6,70.0 1147.3,70.0 1228.7,70.0 1310.0,70.0" fill="none" stroke="#2563eb" stroke-width="3"/>
+<polyline points="90.0,76.3 171.3,76.3 241.0,76.3 334.0,70.7 415.3,70.5 496.7,70.5 589.6,70.2 671.0,70.2 752.3,70.2 833.6,70.1 915.0,70.0 984.7,70.0 1077.6,70.0 1147.3,70.0 1228.7,70.0 1310.0,70.0" fill="none" stroke="#16a34a" stroke-width="3"/>
+<line x1="833.6190476190477" y1="70" x2="833.6190476190477" y2="570" stroke="#dc2626" stroke-width="2" stroke-dasharray="8,5"/>
+<text x="841.6190476190477" y="96" fill="#dc2626">返航触发</text>
+<text x="90" y="615">0s</text>
+<text x="1270" y="615">105s</text>
+<text x="80" y="84" text-anchor="end" fill="#2563eb">50.2m</text>
+<text x="1320" y="84" fill="#16a34a">134557点</text>
+<text x="90" y="56" fill="#2563eb">━ 累计飞行路径长度(左轴)</text>
+<text x="520" y="56" fill="#16a34a">━ voxblox 地图规模/表面点数(右轴)</text>
+</svg>
