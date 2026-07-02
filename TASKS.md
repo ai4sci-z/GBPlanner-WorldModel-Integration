@@ -35,7 +35,7 @@
 | 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | 🔵 进行中 | 代码层已铁证(只循环3动作、不订阅地图、source=bounded_lite_pattern);量化实跑待 #3 运行时修好 |
 | 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ⏸ 阻塞(依赖#3) | 覆盖率/用时/路径/卡死 → 表+图,突出优势 |
 | 7 | 文档·写预研A/预研B 独立报告(桌面+三处) | 🔵 进行中 | 两份初稿已建,随复现进展补截图/数据 |
-| 8 | **手动提交 PR + Issue 给 world-model 作者** | ⏸ 暂缓 | 等运行时验证后再提(措辞需订正:%% 非运行时头号根因);可考虑追加 tomllib 修复 |
+| 8 | ~~手动提交 PR + Issue 给 world-model 作者~~ | ❌ **取消(你 2026-07-02 拍板)** | **不向别人仓库提交,成果只留自己账号**。PR/Issue 物料(`integration/world-model-PR/`)转为**留档证据**(证明改动可用、有含金量);world-model 的 4 个 commit 留在本地分支,可选推到自己账号私有镜像仓备份 |
 | 9 | **阶段4·ros1_bridge 接真版 GBPlanner** | 🔵 进行中 | ✅ I/O契约源码证实+ROS2出口适配器+bridge映射(`integration/ros1_bridge/`);⬜ 加3D雷达/编译起桥/ROS1侧跑/端到端(受运行时阻塞) |
 | 10 | **修运行时头号根因 tomllib** | ⬜ 就绪 | SLAM CLI `import tomllib`→加 `tomli` 兜底;humble 装 tomli。修好才能端到端验证#3#9 |
 

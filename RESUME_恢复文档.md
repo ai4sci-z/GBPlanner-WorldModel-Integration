@@ -84,8 +84,9 @@ progress_2026_07_02_GUI实操: |
   卡点:无人机没起飞(z=0.056),automatic_planning成功但不出轨迹;pci_initialization_trigger 服务not available。
   绕道候选:直接向 /rmf_obelix/command/pose 发升高位姿(lee控制器订阅)让它起飞,再触发探索。
   ⚠️ WSL keepalive 铁律:跑容器前必须有常驻WSL进程,否则发行版空闲关机、docker被优雅停掉、容器全死255。
+decision_2026_07_02: 【用户拍板】不向 world-model 作者仓库提交 PR/Issue;成果只留自己账号(ai4sci-z)。
+  integration/world-model-PR/ 物料转为留档证据;world-model 4个commit留本地分支(可选推自己账号私有镜像仓)。
 next_actions:
-  - 【最高优先,你来做】照 integration/world-model-PR/手动提交PR与Issue指南.md 提交 Issue+PR;链接发我存档=任务闭环
   - 预研B临门一脚:让无人机起飞(修init服务或向/rmf_obelix/command/pose发位姿)→自主探索→截真图
   - 调运行时让 exploration 真探起来 → 取 summary.json 的 coverage/path/goals 真实指标(注:先确认是否因这个编译bug)
   - 跑 GUI(先 gbplanner_ref/build_and_run.sh 看 GBPlanner)截真图补 docs/实跑操作手册_图文版.md
