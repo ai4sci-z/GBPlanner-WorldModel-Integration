@@ -27,7 +27,7 @@
 ## 三、当前任务表(2026-06-30 更新)
 | ID | 任务 | 状态 | 备注 |
 |---|---|---|---|
-| 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | 🔵 **实跑 95% 通** | 镜像✅;2026-07-02 GUI 实跑:排 6 坑后链路通到 **voxblox 3D 建图**(点云27876点/odometry 252Hz/TSDF 4.5Hz,RViz 在桌面)。差"起飞→自主探索"一步。详见 docs/预研B_仿真实跑排错记录.md,一键复现 runbooks/gbplanner_ref/run_light.sh |
+| 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | ✅ **完成:自主探索全闭环(2026-07-02 实测)** | 排 6 坑后:起飞→voxblox 3D建图→RRG规划→**无人机自主巡飞覆盖迷宫**(轨迹实测 (5.7,-1.3)→(4.4,6.4),RViz 可视化在桌面)。复现:`run_light.sh` + `takeoff_and_explore.sh`;全记录 docs/预研B_仿真实跑排错记录.md |
 | 2 | 调研·确认 ros1_bridge 官方接入做法 | ✅ 完成 | 你已选「桥接方案」 |
 | 3 | 预研A·完整复现并**实际运行** world-model | 🔵 运行中 | 9/9 镜像已建;exploration 运行时未健康(SLAM/probe) |
 | 4 | 集成落地·把 GBPlanner 决策接进 world-model | ✅ **代码完成,待你提交PR** | ROS2-native 决策层集成:新增 `gbplanner_gain` 策略读图选向,替代脚本式 frontier_lite。已在 `~/ws/world-model` 分支 `feat/gbplanner-gain-exploration-strategy` commit(2提交:bugfix+feat),go build/vet/test + py_compile 全过。物料见 `integration/world-model-PR/` |

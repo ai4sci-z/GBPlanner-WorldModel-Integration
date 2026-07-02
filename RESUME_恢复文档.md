@@ -81,13 +81,16 @@ progress_2026_07_02_GUI实操: |
     C 上游xacro真bug(OS0-128不接受gpu/organize_cloud)→sed删;D DARPA网格场景压垮llvmpipe软件渲染segfault
     →手搓纯box图元 light_boxes.world;E 自制世界缺 ros_interface_plugin→RotorS里程计不转ROS、voxblox丢光点云
     →补一行插件(官方7个世界都带);F WSL空闲自动关机杀docker(容器255)→挂keepalive常驻进程。
-  卡点:无人机没起飞(z=0.056),automatic_planning成功但不出轨迹;pci_initialization_trigger 服务not available。
-  绕道候选:直接向 /rmf_obelix/command/pose 发升高位姿(lee控制器订阅)让它起飞,再触发探索。
+  ✅✅ 临门一脚已进(同日):向 /rmf_obelix/command/pose 发 z=1.2 位姿→起飞(实测z 0.056→1.201)
+  →调 automatic_planning→**自主探索闭环**(轨迹实测 (5.7,-1.3)→(4.6,1.0)→(6.2,3.9)→(4.4,6.4) 持续巡飞覆盖)。
+  复现:run_light.sh 起仿真 → takeoff_and_explore.sh 起飞+触发。预研B 完成。
   ⚠️ WSL keepalive 铁律:跑容器前必须有常驻WSL进程,否则发行版空闲关机、docker被优雅停掉、容器全死255。
 decision_2026_07_02: 【用户拍板】不向 world-model 作者仓库提交 PR/Issue;成果只留自己账号(ai4sci-z)。
   integration/world-model-PR/ 物料转为留档证据;world-model 4个commit留本地分支(可选推自己账号私有镜像仓)。
 next_actions:
-  - 预研B临门一脚:让无人机起飞(修init服务或向/rmf_obelix/command/pose发位姿)→自主探索→截真图
+  - 截真图:用户在 RViz 看自主探索,Win+Shift+S 截图存 images/,补进实操手册与 PPT(组会硬料)
+  - 预研A运行时:接着剥 /scan 链路坑(gazebo-sensor venv 修复已写好,需重建该镜像验证)
+  - 量化对比:预研B跑通后可录制探索指标,与 frontier_lite 对照(docs/对比实验与缺陷论证设计.md)
   - 调运行时让 exploration 真探起来 → 取 summary.json 的 coverage/path/goals 真实指标(注:先确认是否因这个编译bug)
   - 跑 GUI(先 gbplanner_ref/build_and_run.sh 看 GBPlanner)截真图补 docs/实跑操作手册_图文版.md
   - 量化对比填 docs/对比实验与缺陷论证设计.md

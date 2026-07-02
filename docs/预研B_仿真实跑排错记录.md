@@ -27,11 +27,22 @@ PCI automatic_planning 调用 success:True → ✅
 无人机起飞/出探索轨迹 → 🔵 未通(见下)
 ```
 
-## 卡点(下一步)
+## ✅✅ 临门一脚已踢进(2026-07-02):自主探索完整闭环!
 
-- 无人机仍在地面(z=0.056),`/rmf_obelix/command/trajectory` 无消息 —— planner 触发成功但不出轨迹,疑因机器人未起飞/未做初始运动(PCI 配置 `init_motion_enable: false`,`trigger_mode: kManual`)。
-- `pci_initialization_trigger` 服务调用报 `is not available` + `Unable to load type [planner_msgs/pci_initialization]` —— RViz 面板的 **Initialization 按钮**走的就是它,待查:是服务名/类型加载问题,还是须经 RViz UI 触发。
-- **绕道方案**(若 init 服务难修):直接向 `/rmf_obelix/command/pose` 发一个升高的位姿(lee 控制器订阅它)让它起飞,再触发 automatic_planning。
+绕道方案成功:**向 `/rmf_obelix/command/pose` 发升高位姿(lee 控制器执行)→ 起飞 → 调 `automatic_planning` → 无人机自主探索**。实测数据:
+
+| 时刻 | 位置 | 说明 |
+|---|---|---|
+| 起飞前 | z=0.056 | 地面 |
+| 发 pose(z=1.2)后 8s | z=1.201 | 起飞 ✅ |
+| 触发探索后 10s | (4.98, 2.02, 1.68) | 自主飞出 5m+ ✅ |
+| 持续采样(每8s) | (5.7,-1.3)→(4.6,1.0)→(6.2,3.9)→(4.4,6.4) | **持续巡飞覆盖迷宫** ✅ |
+
+探索图可视化话题在发:`/vis/planning_graph`、`/vis/planning_global_graph`、`/vis/planning_projected_graph`。
+**即:起飞→激光建图(voxblox)→RRG 图搜索→体积增益选路→自主飞行,GBPlanner 官方仿真全链路真跑通。**
+
+一键复现:`run_light.sh` 起仿真 → 等 RViz 出现+建图 → `takeoff_and_explore.sh` 起飞并触发探索。
+(注:`pci_initialization_trigger` 服务不可用的问题未深究——绕道方案更简单可靠,存档即可。)
 
 ## 复现方法(一键)
 
