@@ -73,8 +73,20 @@ progress_2026_06_30_evening: |
     ROS2 出口适配器 trajectory_to_intent.py(py_compile 过)。见 integration/ros1_bridge/。
   本机 tomli 已 vendor 到 /workspace 根(供挂载运行时 import;PR 里则是给镜像加 tomli 依赖)。
   PPT(11页)与实操手册已结合最新工作更新;桌面同步。
+progress_2026_07_02_GUI实操: |
+  预研B·GBPlanner 官方仿真在 WSLg 上真跑起来了,链路通到 voxblox 3D 建图(实测):
+    激光点云 27876点/帧 10Hz → odometry 252Hz → voxblox TSDF 地图 4.5Hz → RViz+GbPlanner Control 面板弹窗在桌面。
+  连排 6 个坑(A~F,证据+修复全记在 docs/预研B_仿真实跑排错记录.md;一键复现 runbooks/gbplanner_ref/run_light.sh):
+    A bash -c 不读.bashrc→显式source;B 容器hostname只解析IPv6→ROS_HOSTNAME=localhost;
+    C 上游xacro真bug(OS0-128不接受gpu/organize_cloud)→sed删;D DARPA网格场景压垮llvmpipe软件渲染segfault
+    →手搓纯box图元 light_boxes.world;E 自制世界缺 ros_interface_plugin→RotorS里程计不转ROS、voxblox丢光点云
+    →补一行插件(官方7个世界都带);F WSL空闲自动关机杀docker(容器255)→挂keepalive常驻进程。
+  卡点:无人机没起飞(z=0.056),automatic_planning成功但不出轨迹;pci_initialization_trigger 服务not available。
+  绕道候选:直接向 /rmf_obelix/command/pose 发升高位姿(lee控制器订阅)让它起飞,再触发探索。
+  ⚠️ WSL keepalive 铁律:跑容器前必须有常驻WSL进程,否则发行版空闲关机、docker被优雅停掉、容器全死255。
 next_actions:
   - 【最高优先,你来做】照 integration/world-model-PR/手动提交PR与Issue指南.md 提交 Issue+PR;链接发我存档=任务闭环
+  - 预研B临门一脚:让无人机起飞(修init服务或向/rmf_obelix/command/pose发位姿)→自主探索→截真图
   - 调运行时让 exploration 真探起来 → 取 summary.json 的 coverage/path/goals 真实指标(注:先确认是否因这个编译bug)
   - 跑 GUI(先 gbplanner_ref/build_and_run.sh 看 GBPlanner)截真图补 docs/实跑操作手册_图文版.md
   - 量化对比填 docs/对比实验与缺陷论证设计.md

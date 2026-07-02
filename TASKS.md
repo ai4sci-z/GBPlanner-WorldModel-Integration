@@ -27,7 +27,7 @@
 ## 三、当前任务表(2026-06-30 更新)
 | ID | 任务 | 状态 | 备注 |
 |---|---|---|---|
-| 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | ✅ 完成 | `gbplanner-ref` 镜像构建成功;跑 rmf_sim 动画为下一步 |
+| 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | 🔵 **实跑 95% 通** | 镜像✅;2026-07-02 GUI 实跑:排 6 坑后链路通到 **voxblox 3D 建图**(点云27876点/odometry 252Hz/TSDF 4.5Hz,RViz 在桌面)。差"起飞→自主探索"一步。详见 docs/预研B_仿真实跑排错记录.md,一键复现 runbooks/gbplanner_ref/run_light.sh |
 | 2 | 调研·确认 ros1_bridge 官方接入做法 | ✅ 完成 | 你已选「桥接方案」 |
 | 3 | 预研A·完整复现并**实际运行** world-model | 🔵 运行中 | 9/9 镜像已建;exploration 运行时未健康(SLAM/probe) |
 | 4 | 集成落地·把 GBPlanner 决策接进 world-model | ✅ **代码完成,待你提交PR** | ROS2-native 决策层集成:新增 `gbplanner_gain` 策略读图选向,替代脚本式 frontier_lite。已在 `~/ws/world-model` 分支 `feat/gbplanner-gain-exploration-strategy` commit(2提交:bugfix+feat),go build/vet/test + py_compile 全过。物料见 `integration/world-model-PR/` |
@@ -58,3 +58,5 @@
 - 2026-06-30 ⚠️ 真 bug 实证:渲染后 `exploration_workflow_runtime.py` `py_compile` **FAIL**(line147 `%%`)→ sed 改单 `%` 后 **OK**。已作为 PR 第1个 commit。
 - 2026-06-30 🔴 **运行时头号根因实锤**(读 `artifacts_sample/exploration_summary.json` L404):SLAM 后端崩于 `ModuleNotFoundError: No module named 'tomllib'`(humble=Py3.10 无此库,栈为 jazzy/Py3.11+ 写)→ 无 `/slam/odom`/`/tf`/`/scan` → 全链 waiting_for_pose、探针 rc=20。**订正**:`%%` 不是"头号"根因(在它下游),之前 PR/Issue 措辞夸大了 `%%` 的权重,待改。修法:SLAM CLI `import tomllib` 加 `tomli` 兜底。
 - 2026-06-30 阶段4桥接·真版GBPlanner I/O契约**从gbplanner-ref源码逐条证实**;产出 ros1_bridge 映射 + ROS2 出口适配器(trajectory_to_intent.py,py_compile过)。去风险:仅标准消息跨桥,自定义planner_msgs留ROS1内。见 `integration/ros1_bridge/`。
+- 2026-07-02 预研B GUI 实跑排 6 坑(A~F),链路实测通到 **voxblox TSDF 3D 建图 4.5Hz**(点云 27876 点/odometry 252Hz,RViz 弹窗);发现上游 xacro 真 bug(OS0-128 传非法 gpu/organize_cloud 参数)。剩"起飞→探索"一步。证据:docs/预研B_仿真实跑排错记录.md;一键复现:runbooks/gbplanner_ref/run_light.sh。
+  - ⚠️ **环境铁律(新)**:WSL 下跑容器必须挂常驻 keepalive 进程——发行版空闲十几秒自动关机→docker 被优雅停止→容器全死 255(journalctl 实锤)。

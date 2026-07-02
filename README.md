@@ -12,6 +12,7 @@
 |---|---|
 | 集成决策 | ✅ 「桥接方案(ros1_bridge)」 |
 | 预研B·GBPlanner 仿真镜像 | ✅ `gbplanner-ref` 已建 |
+| **🟢 预研B·官方仿真 GUI 实跑(2026-07-02)** | 🔵 **95% 通**——排 6 坑后链路实测通到 **voxblox 3D 建图**(点云 27876 点/odometry 252Hz/TSDF 4.5Hz),RViz+GbPlanner 面板弹窗在桌面;差"起飞→自主探索"一步。[docs/预研B_仿真实跑排错记录.md](docs/预研B_仿真实跑排错记录.md),一键复现 `runbooks/gbplanner_ref/run_light.sh` |
 | P1·算法核心(光线投射+体积增益) | ✅ 编译+ctest 通过 |
 | 接口规格 / 对比设计 / 图文手册 | ✅ 已出(真截图待跑通补) |
 | **预研A·world-model 9 镜像** | ✅ **9/9 全部构建成功(实测)**——排掉 6 个 jazzy→humble 兼容坑 |

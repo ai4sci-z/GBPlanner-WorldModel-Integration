@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<!-- 轻量 box-图元场景:仅用 box 基本体(无网格文件),WSLg 软件渲染(llvmpipe)可稳定加载。
+     给无人机一组墙/障碍构成可探索的走廊+房间,用于 GBPlanner 探索演示。 -->
+<sdf version="1.6">
+  <world name="light_boxes">
+    <!-- RotorS 传感器插件(里程计等)发的是 Gazebo 内部消息,必须由该世界级插件转成 ROS 话题;
+         官方 7 个世界均带此行,缺它则 /ground_truth/odometry 无发布者。 -->
+    <plugin name="ros_interface_plugin" filename="librotors_gazebo_ros_interface_plugin.so"/>
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://ground_plane</uri></include>
+
+    <physics type="ode">
+      <max_step_size>0.004</max_step_size>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+
+    <!-- 用一个 model 装若干静态 box 墙,组成 井字/走廊 结构 -->
+    <model name="box_maze">
+      <static>true</static>
+
+      <!-- 外围四面墙(围出 ~16x16 空间,墙高3) -->
+      <link name="w_n"><pose>0 8 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>16 0.3 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>16 0.3 3</size></box></geometry></visual></link>
+      <link name="w_s"><pose>0 -8 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>16 0.3 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>16 0.3 3</size></box></geometry></visual></link>
+      <link name="w_e"><pose>8 0 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.3 16 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.3 16 3</size></box></geometry></visual></link>
+      <link name="w_w"><pose>-8 0 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.3 16 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.3 16 3</size></box></geometry></visual></link>
+
+      <!-- 内部隔墙,留缺口形成走廊,制造"未知区域"供探索 -->
+      <link name="i1"><pose>0 3 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>9 0.3 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>9 0.3 3</size></box></geometry></visual></link>
+      <link name="i2"><pose>2 -3 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>9 0.3 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>9 0.3 3</size></box></geometry></visual></link>
+      <link name="i3"><pose>-3.5 0 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.3 6 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.3 6 3</size></box></geometry></visual></link>
+
+      <!-- 几根柱子当障碍 -->
+      <link name="p1"><pose>4 4 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.6 0.6 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.6 3</size></box></geometry></visual></link>
+      <link name="p2"><pose>-4 -4 1.5 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.6 0.6 3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.6 3</size></box></geometry></visual></link>
+    </model>
+  </world>
+</sdf>
