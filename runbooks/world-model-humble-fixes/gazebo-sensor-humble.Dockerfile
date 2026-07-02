@@ -23,6 +23,10 @@ RUN apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https
     ros-${ROS_DISTRO}-rosbag2-storage-mcap && \
   rm -rf /var/lib/apt/lists/*
 COPY --from=gazebo-sensor-python-builder /opt/gazebo-sensor-venv /opt/gazebo-sensor-venv
+# NOTE(navlab-humble-fix 2026-06-30): venv 的解释器是 uv 托管的 python(/root/.local/share/uv/python/...),
+#   只 COPY venv 会让 /opt/gazebo-sensor-venv/bin/python 成为悬空软链 → 服务启动即 "No such file" → 无 /scan。
+#   必须把 uv 托管的 python 也从 builder 拷进最终镜像。
+COPY --from=gazebo-sensor-python-builder /root/.local/share/uv/python /root/.local/share/uv/python
 WORKDIR /opt/navlab_sensor_ws
 COPY third_party/YDLidar-SDK /opt/navlab_sensor_ws/YDLidar-SDK
 # NOTE(navlab-humble-fix 2026-06-29): 跳过 ydlidar_ros2_driver 的 colcon 构建。
