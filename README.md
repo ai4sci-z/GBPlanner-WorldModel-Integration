@@ -36,7 +36,7 @@
 | **跑 exploration(看 frontier_lite)** | 🔵 机器人生成链已修通(手动实证);编排环境还差最后一层:**baseline 话题对其他容器不可见(DDS 隔离嫌疑)**,探针已备好待验证 |
 | 量化对比 | ⬜ 待运行时完全跑通后做 |
 
-- 🎯🎯 **任务终点(mentor 要的"可用 PR + Issue")**:GBPlanner 决策已作为可选策略 `gbplanner_gain` 接进 world-model 真实结构,阶段4 桥接真版 GBPlanner 的地基已落(源码证实契约+适配器),并**连修 3 个 humble 真 bug**把平台往前推。PR/Issue 全文 + **手动提交分步教程**见 **[integration/world-model-PR/](integration/world-model-PR/)**(以 `*_BODY.md` 为准)。提交后把链接发我即闭环。
+- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器);连修 9 个 humble 真坑把平台推到最后一层。**按你拍板不对外提交**,[integration/world-model-PR/](integration/world-model-PR/) 物料仅留档(证明改动可用、有含金量)。
 - **你怎么自己验证 9/9**:打开 WSL 敲 `docker images | grep navlab`(应数到 9 个)。详见 [docs/WSL使用与复现.md](docs/WSL使用与复现.md)。
 - **你怎么自己验证集成代码**:WSL `cd ~/ws/world-model && git log --oneline -2`(看到 fix+feat 两提交);渲染脚本证据在 `integration/world-model-PR/rendered_*.py`。
 - **看仿真画面**:[docs/实跑操作手册_图文版.md](docs/实跑操作手册_图文版.md)。
@@ -57,7 +57,7 @@
 **整体路线:**
 | 阶段 | 名称 | 内容 | 状态 |
 |---|---|---|---|
-| P0-A | 复现 world-model | 跑通平台,看占位探索怎么工作 | 🔵 已读懂源码,待实跑 |
+| P0-A | 复现 world-model | 跑通平台,看占位探索怎么工作 | 🔵 **~80%**:9/9 镜像✅+运行时 9 坑修 8(总根因已破),差 DDS 可见性最后一层 |
 | P0-B | 复现 GBPlanner | 单独跑官方算法,看它怎么探索 | ✅ **完成(2026-07-02):自主探索全闭环实测**(291.3m/435s/地图落盘) |
 | P1→桥接 | 桥接路线落地 | 已选桥接方案:搭 ros1_bridge + 适配 + 加 3D 雷达 | 🟡 核心已起步(测试通过),路线改为桥接,见 TASKS.md |
 | P2 | ROS2 节点 | 把核心包成 ROS2 模块,接 world-model 数据 | ⚪ 未开始 |
