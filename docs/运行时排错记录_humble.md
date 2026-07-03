@@ -112,6 +112,26 @@
 - **修复**(world-model 分支 commit `c8bc866`):该 Env map 补一行 `CYCLONEDDS_URI: cycloneDDSParticipantEnv()`;`go build` 过。
 - **验证**:e2e run#15 进行中(观察 blockers 中 topic_sample_missing 是否批量消失)。
 
+## 坑 #11(待修):我的 `gz sdf -p` 展平补丁输出 SDF 1.11,humble libsdformat 只认 ≤1.9
+
+- **证据**:编排 run 日志 `[robot_state_publisher-2] Error [Converter.cc:156] Unable to convert from SDF version 1.11 to 1.9`。
+- 影响:RSP 进程活着但解析失败 → `/tf` 仍缺。**修法(待做)**:补丁里把展平输出的 `<sdf version=...>` 重写为 1.9。
+
+## 坑 #12(**编排环境真凶,今日最大战果**):`--user 1000:1000` 无 passwd 条目 → gz 分区错乱 → 同容器发现瘫痪
+
+- **侦破过程**(方法论教科书局):编排失败但手动全绿 → 网络四大假设(GZ_IP/GZ_RELAY/组播/接口漂移)
+  逐一实验**全部排除**(自写组播自测 3/3 收包、嗅探 412 包在飞)→ 冻结兄弟容器无效 → **`docker inspect` 逐字段 diff**
+  → 揪出唯一未复刻差异:**`User: 1000:1000`**。
+- **复现+治愈双实锤**:
+  - A 组(忠实 uid1000 复刻):iris=0,create 重试 8 次 → **完美复现编排死状**;
+  - B 组(仅加 `GZ_PARTITION=navlab`):**iris 生成成功,create 一次就通**。
+- **根因**:uid1000 在容器内无 passwd 条目 → gz-transport 默认分区(hostname:**username**)解析异常
+  → 各进程分区不一致 → **同容器内 gz 服务发现互相隐身** → `create` 永远拿不到 `/gazebo/worlds`
+  → 机器人永不生成 → 传感器/TF/SITL JSON 全链饿死。
+  (附带教训:此前所有 root 身份的 exec 探针与 server 天然不同分区,全是"测量假象"。)
+- **修复**(world-model commit `aa77fca`):`baselineEnv()` 与 baseline 内联 Env 显式加 `GZ_PARTITION=navlab`;`go build` 过。
+- **验证**:e2e run#28 进行中。
+
 ## 当前进度(用于汇报,2026-07-03)
 
 | 坑 | 一句话 | 状态 |
