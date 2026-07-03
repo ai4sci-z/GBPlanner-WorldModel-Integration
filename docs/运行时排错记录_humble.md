@@ -141,8 +141,11 @@
 - **根因**(上游默认值自带环,`helpers/slam.go`):IMU 净化桥读 `imu_source_topic` 写 `imu_topic`,
   **两者默认都是 `/imu`** → 桥订阅自己的输出 → 回声风暴(重复+微乱序)→ cartographer 时序断言崩。
   (旁证:exploration rosbag 本来就录 `/navlab/slam/imu` = 上游本意的净化输出名。)
-- **修复**(world-model commit `d3e73b7`):`IMUTopic` 改 `/navlab/slam/imu`(cartographer 经 bringup remap 消费它)。
-- **验证**:e2e run#30 进行中。
+- **修复**:两针——helpers 默认值(`d3e73b7`)+ **config 默认值**(`80c0fa8`,`config/defaults.go` 的
+  SlamBackend.IMUTopic 会覆盖 helpers 默认,run#30 因此仍崩,追到装配链才发现)。
+- **验证(实测 run#31)**:✅✅ **SLAM 闭环打通**——cartographer 全程运行,`slam quality: tight`(0 错误),
+  `slam_odom_missing`/`slam_runtime_*` blockers 全部消失,**`/slam/odom` 真实流动**。blockers 26→21。
+- **下一段链**(新前沿):`/slam/odom` → external_nav → ArduPilot EKF → `/ap/v1/pose/filtered`(仍缺)→ 控制器就绪。
 
 ## 当前进度(用于汇报,2026-07-03)
 
