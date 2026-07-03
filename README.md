@@ -2,11 +2,24 @@
 
 > 把 **GBPlanner 自主探索算法** 加入 **world-model 仿真平台**,替换其占位探索策略。
 > 本文 = 项目**蓝图 + 全景理解 + 集成方案 + 进展日志**,面向"看懂 + 做报告"。
-> 📖 **零基础友好**:正文里每个英文缩写第一次出现都就地解释;不懂的词也可直接翻到**文末第 5 部分·名词表**(按类别详解)。最后更新:2026-06-29。
+> 📖 **零基础友好**:正文里每个英文缩写第一次出现都就地解释;不懂的词也可直接翻到**文末第 5 部分·名词表**(按类别详解)。最后更新:2026-07-03。
 
 ---
 
-# 🔴 最新全景状态(2026-06-30)
+# 🗺️ 路线图·你在这里(2026-07-03)
+
+```
+线路1·预研B(复现GBPlanner)  ██████████ 100% ✅ 终点:自主探索全闭环+量化(291m/13万体素/地图落盘)
+线路2·预研A(跑通world-model) ████████░░ ~80%  ◉◉◉ ← 你在这里
+   9/9镜像✅ → 运行时剥洋葱 9 坑已修 8(含总根因:humble sdformat_urdf 不认 gpu_lidar
+   → RSP 崩 → 机器人从未生成;修复后手动验证四连全绿)
+   ◉ 当前站:编排环境下 baseline 的 ROS 话题对其他容器不可见(DDS 隔离嫌疑,探针已备)
+   ○ 下一站:SLAM healthy → frontier_lite 真实指标 → 终点
+线路3·集成                   ██████░░░░ ~60%  决策层原型✅+真版桥接地基✅;完整桥接等线路2通车
+线路4·量化对比               ███░░░░░░░ ~30%  GBPlanner侧实测✅入库;frontier_lite侧等线路2
+```
+
+# 🔴 最新全景状态(2026-07-03)
 
 | 环节 | 状态 |
 |---|---|
@@ -18,9 +31,9 @@
 | **预研A·world-model 9 镜像** | ✅ **9/9 全部构建成功(实测)**——排掉 6 个 jazzy→humble 兼容坑 |
 | **🟢 真集成代码(决策层,ROS2-native)** | ✅ **已接进 world-model 真实结构**——新增可选策略 `gbplanner_gain`(读 `/map`、体积增益选向),`go build/vet/test` + `py_compile` 全过 |
 | **🟢 阶段4 桥接地基(接真版 GBPlanner)** | ✅ 从源码逐条证实真版 I/O 契约(点云/里程计进、`MultiDOFJointTrajectory` 出、自定义 msg 留 ROS1 不跨桥)+ ROS2 出口适配器(`integration/ros1_bridge/`) |
-| **🟢 连修 3 个 humble 真 bug** | ✅ ① tomllib(SLAM 头号崩溃,Py3.10)② 空 launch 参数 ③ 模板 `%%`。实测:SLAM 从"一启动就崩"→ **cartographer 节点真正运行**(只差 `/scan`) |
-| **PR + Issue 物料** | ✅ 全部备好([integration/world-model-PR/](integration/world-model-PR/),4 commit:3 fix+1 feat);**待手动提交** |
-| **跑 exploration(看 frontier_lite)** | 🔵 9 服务能起;连修两坑后 SLAM cartographer 已运行,**待 `/scan` 链路**(见 [docs/运行时排错记录_humble.md](docs/运行时排错记录_humble.md)) |
+| **🟢 连修 9 个 humble 真坑(8 个已实证)** | ✅ ①tomllib ②空launch参数 ③模板`%%` ④venv悬空软链 ⑤setup.bash缺失 ⑥rclpy版本(Py3.14→3.10) ⑦ydlidar驱动必需+declare_parameter 26处补丁 ⑧QoS不兼容 ⑨**总根因:sdformat_urdf 不认 gpu_lidar→RSP崩→机器人从未生成**(修复后手动四连全绿:RSP活/iris在gz/激光出数据/SITL JSON接通)。全证据链:[docs/运行时排错记录_humble.md](docs/运行时排错记录_humble.md) |
+| **PR/bugfix 物料(留档)** | ✅ [integration/world-model-PR/](integration/world-model-PR/)——按你拍板**不对外提交**,作为"改动可用、有含金量"的证据存档 |
+| **跑 exploration(看 frontier_lite)** | 🔵 机器人生成链已修通(手动实证);编排环境还差最后一层:**baseline 话题对其他容器不可见(DDS 隔离嫌疑)**,探针已备好待验证 |
 | 量化对比 | ⬜ 待运行时完全跑通后做 |
 
 - 🎯🎯 **任务终点(mentor 要的"可用 PR + Issue")**:GBPlanner 决策已作为可选策略 `gbplanner_gain` 接进 world-model 真实结构,阶段4 桥接真版 GBPlanner 的地基已落(源码证实契约+适配器),并**连修 3 个 humble 真 bug**把平台往前推。PR/Issue 全文 + **手动提交分步教程**见 **[integration/world-model-PR/](integration/world-model-PR/)**(以 `*_BODY.md` 为准)。提交后把链接发我即闭环。

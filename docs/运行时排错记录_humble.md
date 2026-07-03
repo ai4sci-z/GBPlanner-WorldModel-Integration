@@ -3,7 +3,7 @@
 > 背景:world-model 这套栈原为 jazzy(Ubuntu 24.04 / Python 3.12)写,本机搬到 humble(Ubuntu 22.04 / Python 3.10)。
 > 9 个镜像已全部构建成功(预研A),但**运行时**还有一连串版本坑。本文按"只信真实产物"的铁律,逐个记录:
 > 每个坑都给【真实证据(日志原文)】+【根因】+【修复】+【验证】。证据来自 `artifacts/sim/exploration/<run_id>/`。
-> 最后更新 2026-06-30。
+> 最后更新 2026-07-03。
 
 ## 坑 #1(头号):SLAM 崩于 `ModuleNotFoundError: No module named 'tomllib'`
 
@@ -102,16 +102,23 @@
   ② RSP 的描述先 `gz sdf -p` 展平 include(sensor 藏在被 include 的 lidar_2d 里)再正则剥掉 `<sensor>` 块(TF 只需连杆/关节)。
 - **验证(实测四连全绿)**:RSP 死亡=0;`gz model --list` 有 iris;`/lidar` gz 侧真出数据;SITL JSON 停止刷屏(接通)。
 
-## 当前进度(用于汇报)
+## 当前进度(用于汇报,2026-07-03)
 
-| 坑 | 状态 | 实测证据 |
+| 坑 | 一句话 | 状态 |
 |---|---|---|
-| #1 tomllib(SLAM 头号崩溃) | ✅ 已修+验证 | run2 日志 tomllib 出现 0 次,SLAM 越过 |
-| #2 空 launch 参数 | ✅ 已修+验证 | run2 `malformed` 0 次,cartographer_node 真启动 |
-| #3 `/scan` 无发布者 | 🔵 根因锁定+修复已写,镜像重建中 | venv python 悬空软链实锤(见上);重建后需重跑 exploration 验证 |
+| #1 tomllib | Py3.10 无此库,SLAM 启动即崩 | ✅ 修+实证 |
+| #2 空 launch 参数 | humble 拒绝 `name:=` 空值 | ✅ 修+实证 |
+| #3 venv 悬空软链 | uv python 没拷进镜像,sensor 服务秒退 | ✅ 修+实证 |
+| #4 setup.bash 缺失 | 跳过的 ydlidar colcon 本该生成它 | ✅ 修+实证 |
+| #5 rclpy 版本 | venv Py3.14 无法 import humble rclpy | ✅ 修+实证(VENV_RCLPY=OK) |
+| #6 ydlidar 驱动必需 | 推翻"仿真不需要驱动"假设;declare_parameter 26 处补丁 | ✅ 修+实证(YDLIDAR_PKG=OK) |
+| #7 QoS 不兼容 | emulator 订阅 RELIABLE 拒收 best-effort | ✅ 修 |
+| #9 **总根因** | sdformat_urdf 不认 gpu_lidar→RSP 崩→**机器人从未生成** | ✅ 修+手动四连全绿 |
+| ◉ 当前 | 编排环境下 baseline 话题对其他容器不可见(DDS 隔离嫌疑:ROS_LOCALHOST_ONLY/RMW/域号) | 🔵 探针 v7 已备,待下轮 run 验证 |
 
-**一句话**:三个 humble 真坑逐个实锤——SLAM 从"一启动就崩"推进到"cartographer 真运行",`/scan` 断点也已定位到
-镜像构建 bug 并写好修复;重建镜像 → 重跑 exploration → 看 SLAM healthy 是下一步(注:重跑需等 GBPlanner 演示容器空出来,避免抢资源)。
+(编号无 #8:中途的"渲染引擎起不来"假设经实证**排除**,已并入 #9 的订正。)
 
-> 说明:这些 humble 兼容修复(tomllib、空 launch 参数,加上模板 `%%` 编译 bug)都是给 world-model 作者的真实、可提交贡献,
-> 已固化在 world-model 分支 `feat/gbplanner-gain-exploration-strategy`,物料见 `integration/world-model-PR/`。
+**一句话**:9 个 humble 真坑修 8、全部实锤;机器人生成链手动验证全绿;编排端到端只差"容器间 DDS 可见性"最后一层。
+
+> 说明:这批修复(代码 4 项 + 镜像 4 项)都是真实、可提交级的贡献,已固化在 world-model 本地分支与
+> `runbooks/world-model-humble-fixes/`;按用户拍板**不对外提交**,`integration/world-model-PR/` 物料仅留档。

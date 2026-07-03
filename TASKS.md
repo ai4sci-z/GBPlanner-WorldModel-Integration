@@ -29,7 +29,7 @@
 |---|---|---|---|
 | 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | ✅ **完成:自主探索全闭环(2026-07-02 实测)** | 排 6 坑后:起飞→voxblox 3D建图→RRG规划→**无人机自主巡飞覆盖迷宫**(轨迹实测 (5.7,-1.3)→(4.4,6.4),RViz 可视化在桌面)。复现:`run_light.sh` + `takeoff_and_explore.sh`;全记录 docs/预研B_仿真实跑排错记录.md |
 | 2 | 调研·确认 ros1_bridge 官方接入做法 | ✅ 完成 | 你已选「桥接方案」 |
-| 3 | 预研A·完整复现并**实际运行** world-model | 🔵 运行中 | 9/9 镜像已建;exploration 运行时未健康(SLAM/probe) |
+| 3 | 预研A·完整复现并**实际运行** world-model | 🔵 **~80%,剥洋葱到最后几层** | 9/9 镜像✅;运行时 9 坑修 8(实证),**总根因已破**(sdformat_urdf 不认 gpu_lidar→RSP崩→机器人从未生成;修后手动四连全绿)。当前:编排下 baseline 话题对其他容器不可见(DDS 隔离嫌疑)。全记录 docs/运行时排错记录_humble.md |
 | 4 | 集成落地·把 GBPlanner 决策接进 world-model | ✅ **代码完成,待你提交PR** | ROS2-native 决策层集成:新增 `gbplanner_gain` 策略读图选向,替代脚本式 frontier_lite。已在 `~/ws/world-model` 分支 `feat/gbplanner-gain-exploration-strategy` commit(2提交:bugfix+feat),go build/vet/test + py_compile 全过。物料见 `integration/world-model-PR/` |
 | 4.5 | **真 bug 发现**:exploration 生成脚本无法编译 | ✅ 已修并入PR | `%%` 经 text/template 原样落盘 → SyntaxError;`py_compile` 实测复现,改单 `%` 后通过。疑似 exploration 运行时起不来根因之一 |
 | 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | 🔵 进行中 | 代码层已铁证(脚本循环、不订阅地图);**GBPlanner 侧实测数据已到手**(291.3m/132,091点/自动返航,曲线+CSV 在 images/);frontier_lite 侧量化待 #3 运行时修好 |
@@ -60,3 +60,5 @@
 - 2026-06-30 阶段4桥接·真版GBPlanner I/O契约**从gbplanner-ref源码逐条证实**;产出 ros1_bridge 映射 + ROS2 出口适配器(trajectory_to_intent.py,py_compile过)。去风险:仅标准消息跨桥,自定义planner_msgs留ROS1内。见 `integration/ros1_bridge/`。
 - 2026-07-02 预研B GUI 实跑排 6 坑(A~F),链路实测通到 **voxblox TSDF 3D 建图 4.5Hz**(点云 27876 点/odometry 252Hz,RViz 弹窗);发现上游 xacro 真 bug(OS0-128 传非法 gpu/organize_cloud 参数)。剩"起飞→探索"一步。证据:docs/预研B_仿真实跑排错记录.md;一键复现:runbooks/gbplanner_ref/run_light.sh。
   - ⚠️ **环境铁律(新)**:WSL 下跑容器必须挂常驻 keepalive 进程——发行版空闲十几秒自动关机→docker 被优雅停止→容器全死 255(journalctl 实锤)。
+- 2026-07-02 预研B **自主探索全闭环**(起飞→建图→RRG→巡飞→480s 预算自动返航→地图落盘 4MB)+ 全程量化(291.3m/132,091 体素点/70 采样点曲线入库 images/)。
+- 2026-07-03 预研A 运行时剥洋葱:坑④~⑨ 逐个实锤修复(venv悬空/setup.bash缺失/rclpy版本/ydlidar必需+declare_parameter/QoS/**总根因 sdformat_urdf-gpu_lidar-RSP**)。方法论沉淀:"手动常驻容器从容取证"+"逐段模拟启动命令冒烟"+"活体探针"。当前卡:编排下 baseline DDS 隔离嫌疑。

@@ -1,6 +1,6 @@
 # 核心发现:frontier_lite 是脚本占位 + GBPlanner 精确集成机制
 
-> 本文是整个任务的"准星",对应 mentor 的《自主探索决策(GBPlanner算法).md》。全部基于**真实源码**(`orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl`),非臆造。最后更新 2026-06-30。
+> 本文是整个任务的"准星",对应 mentor 的《自主探索决策(GBPlanner算法).md》。全部基于**真实源码**(`orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl`),非臆造。最后更新 2026-07-03。
 
 ## 一、核心发现①:world-model 现有的 `frontier_lite` 不是探索算法,是"脚本预设动作"
 读它的真实决策代码,核心只有这几行:
@@ -38,6 +38,11 @@ world-model 里"做探索决策"的就是上面那个 Python 节点 `navlab_expl
 | ① 装"3D 的眼睛" | 给仿真无人机加 3D 雷达(对齐 GBPlanner 的 OS064:360°×90°/20m)+ 3D 建图(octomap/voxblox)产出 occ/free/unknown 体素图 | GBPlanner 要 3D 占据地图,现仅 2D |
 | ② 接"大脑" | `ros1_bridge`:把【3D 占据图 + 位姿】喂给 ROS1 的 GBPlanner;把它输出的【航点】接回 ROS2 | GBPlanner 是 ROS1,跨框架 |
 | ③ 换"决策" | 把航点转成 `/navlab/fcu/setpoint/intent`,替换 `exploration_intent` 里那段预设动作;`strategy` 标为 `gbplanner` | 让无人机真按 GBPlanner 决策飞,沿用现有验收闸门 |
+
+## 三·五、进展实证(2026-07-03 补)
+- **GBPlanner 侧已从"纸面"变"实证"**:官方仿真在本机自主探索全闭环(起飞→voxblox 建图→RRG→巡飞→时间预算自动返航→地图落盘),全程量化 291.3m/132,091 体素点(见 [预研B_复现GBPlanner.md](预研B_复现GBPlanner.md))。
+- **frontier_lite 侧**:代码级铁证已齐(上文);量化实跑等 world-model 运行时最后一层修通(9 坑已修 8,见 [运行时排错记录_humble.md](运行时排错记录_humble.md))。
+- 决策层原型 `gbplanner_gain` 与真版桥接地基(I/O 契约+适配器)已落地,见 `integration/`。
 
 ## 四、一句话总结(报告可直接用)
 > **frontier_lite = 闭着眼睛按脚本"前进+扭头";GBPlanner = 睁开 3D 的眼睛,看哪里没探过就往哪里去。**

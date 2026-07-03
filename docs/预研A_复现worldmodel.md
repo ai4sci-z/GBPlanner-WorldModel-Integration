@@ -1,22 +1,23 @@
 # 预研 A · 在本机完整复现并运行 world-model 仿真
 
 > 目的:**完整复现并实际运行** world-model(不止构建),亲眼跑通 exploration 任务,**用证据论证** frontier_lite 探索的不足,为引入 GBPlanner 提供实据。
-> 状态:🔵 进行中 —— 子模块已拉完;镜像构建待启动(重型,约 1–2h)。最后更新 2026-06-29。
+> 状态:🔵 **~80%,运行时剥洋葱到最后几层**(9 坑修 8,总根因已破)。最后更新 2026-07-03。
 
 ## 一、目标(精细度要求)
 1. 在本机把 world-model 仿真**完整跑起来**:Gazebo(无头)+ ArduPilot SITL + Cartographer SLAM + exploration 任务。
 2. **实跑 frontier_lite**,做小 demo 暴露其局限(2D 平面、覆盖不充分、易停),**用数据+截图充分论证"需要改进"**(不空口)。
 3. 为后续 GBPlanner vs frontier_lite 对比实验铺底。
 
-## 二、当前进度
+## 二、当前进度(2026-07-03)
 | 步骤 | 状态 |
 |---|---|
-| 克隆 world-model 仓库 | ✅ |
-| 拉取子模块(ardupilot/Livox-SDK2/YDLidar-SDK 等) | ✅ exit 0 |
-| 构建镜像集(navlab-sim build all,9 个镜像) | 🔵 后台构建中(已启动;bridge 直连 github 可行,无需代理) |
-| 运行 exploration 任务 | ⬜ |
-| 截图 + 覆盖率/用时数据留痕 | ⬜ |
-| 论证 frontier_lite 不足(小 demo) | ⬜ |
+| 克隆仓库 + 子模块 | ✅ |
+| **构建 9/9 镜像(humble)** | ✅ 全部实测存在(排掉 6 个 jazzy→humble 构建坑,见 [预研A_构建排错记录.md](预研A_构建排错记录.md)) |
+| **运行时排坑(9 个,jazzy→humble 迁移遗留)** | 🔵 **已修 8 个、全部实锤**:tomllib/空launch参数/模板`%%`/venv悬空/setup.bash缺失/rclpy版本/ydlidar驱动+declare_parameter/QoS/**总根因 sdformat_urdf-gpu_lidar→RSP崩→机器人从未生成**。全证据链:[运行时排错记录_humble.md](运行时排错记录_humble.md) |
+| 机器人生成链(spawn/传感器/SITL JSON) | ✅ **手动常驻验证四连全绿**(RSP 活/iris 在 gz/激光出数据/JSON 接通) |
+| 编排环境端到端(exploration 全绿) | ◉ **当前站**:baseline 话题对其他容器不可见(DDS 隔离嫌疑),探针已备 |
+| frontier_lite 真实指标 + 截图留痕 | ⬜ 等上一步 |
+| 论证 frontier_lite 不足(小 demo) | ⬜ 代码级铁证已有(脚本循环、不读图);量化等实跑 |
 
 ## 三、计划步骤 + 留痕清单
 1. `cd ~/ws/world-model/orchestration/sim && go run ./cmd/navlab-sim ...` 构建/启动 exploration。

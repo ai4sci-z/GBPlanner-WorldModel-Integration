@@ -1,6 +1,6 @@
 # 🔄 恢复文档 · 新窗口无损接管本任务
 
-> 用途:本会话上下文将满。在**新窗口/新对话**里,让新的 Claude 读本文件 + `MEMORY.md`(自动加载)+ `README.md`(蓝图)+ `TASKS.md`(任务台账),即可**基本无损接管**。最后更新 2026-06-30。
+> 用途:本会话上下文将满。在**新窗口/新对话**里,让新的 Claude 读本文件 + `MEMORY.md`(自动加载)+ `README.md`(蓝图)+ `TASKS.md`(任务台账),即可**基本无损接管**。最后更新 2026-07-03。
 
 ## ⚙️ AGENT DIRECTIVES（下一个 Claude 先读这段，机器友好）
 ```yaml
@@ -89,6 +89,20 @@ progress_2026_07_02_GUI实操: |
   voxblox 地图落盘 images/explored_map_lightboxes.vxblx(4MB,可 load_map 复用)。
   GBPlanner 侧对比数据已到手(填进 docs/对比实验与缺陷论证设计.md §3,口径=预研B独立环境,已诚实标注)。
   ⚠️ WSL keepalive 铁律:跑容器前必须有常驻WSL进程,否则发行版空闲关机、docker被优雅停掉、容器全死255。
+progress_2026_07_03_预研A剥洋葱: |
+  运行时 9 坑已修 8(全部实锤+固化,详见 docs/运行时排错记录_humble.md):
+    ④gazebo-sensor venv 悬空软链(uv python 没拷进镜像)⑤install/setup.bash 缺失(跳过的 ydlidar colcon 生成它)
+    ⑥venv Py3.14 无法 import humble rclpy→改系统 Py3.10+system-site-packages
+    ⑦X2 管线运行时必需 ydlidar 驱动(推翻 6/29 假设)→declare_parameter 26 处最小补丁在 humble 编译成功
+    ⑧emulator 订阅 QoS 不兼容→改 sensor-data
+    ⑨【总根因】humble sdformat_urdf 不认 gpu_lidar→RSP 崩→/robot_description 没了→create -topic 生成不了 iris
+      →gz 里从来没有机器人(传感器/ArduPilotPlugin JSON/TF 全是它下游)。
+      修复=薄层衍生镜像 patch robot.launch.py:spawn 改 -file 直读完整 SDF;RSP 描述先 gz sdf -p 展平再剥 <sensor>。
+      验证:手动常驻 baseline 四连全绿(RSP活/iris在gz/lidar出数据/SITL JSON接通)。
+  当前卡点:编排环境 run#12/13 血相未变——嫌疑=baseline 的 ROS 话题对其他容器不可见(DDS 隔离:
+    ROS_LOCALHOST_ONLY/RMW 不一致/域号类),活体探针 v7(对比各容器 pid1 的 DDS env)已写好待下轮 run 验证。
+  方法论(好用,沉淀):①手动常驻容器从容取证(gz model --list 一锤定音)②逐段模拟启动命令冒烟③活体探针(容器活着时抓)。
+  镜像注意:navlab/official-baseline:humble-latest 已被薄层补丁覆盖(含 navlab-humble-fix 标记,grep 可验)。
 decision_2026_07_02: 【用户拍板】不向 world-model 作者仓库提交 PR/Issue;成果只留自己账号(ai4sci-z)。
   integration/world-model-PR/ 物料转为留档证据;world-model 4个commit留本地分支(可选推自己账号私有镜像仓)。
 next_actions:
