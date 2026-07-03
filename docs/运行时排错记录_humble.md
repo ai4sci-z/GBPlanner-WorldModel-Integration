@@ -81,6 +81,27 @@
 - **方法教训**:同一条启动命令里已连剥 **3 个独立死点**(venv悬空→setup.bash缺失→rclpy版本),
   每修一个才暴露下一个。"逐段模拟启动命令"的冒烟法有效,继续沿用。
 
+## 坑 #7:模拟器订阅 `/scan_ideal` QoS 不兼容 → 收不到投影数据
+
+- **证据**:`New publisher discovered ... offering incompatible QoS ... RELIABILITY; No messages will be received`。
+- **根因**:emulator 订阅用默认 RELIABLE,cloud_scan_projection 发布用 best-effort(sensor QoS)→ 被拒。
+- **修复**:`navlab/sim/gazebo_sensor/cli.py` 订阅改 `qos_profile_sensor_data`(同时兼容 reliable/best-effort 两种发布者)。
+
+## 坑 #9(**真·总根因**):humble sdformat_urdf 不认 `gpu_lidar` → RSP 崩 → 机器人从未生成
+
+- **发现方法**:绕开编排器**手动常驻起 baseline** 从容取证 → `gz model --list` 里**根本没有 iris**(只有 maze/floor)!
+- **完整因果链(实锤)**:
+  `robot.launch.py` 用 `create -topic robot_description` 生成机器人,而该话题由 robot_state_publisher 发布;
+  humble 的 sdformat_urdf 解析 SDF 撞上 `gpu_lidar` sensor(urdf 只认 camera/ray)→ **RSP terminate**
+  → `/robot_description` 没了 → **iris 从未 spawn** → gz 无传感器实体(`/lidar` 出现在话题列表只是桥的订阅端)、
+  ArduPilotPlugin 不存在(SITL 无限刷 `No JSON sensor message received`)、TF 全无。
+  **此前所有 `/scan`、`/imu`、`/tf`、`/ap/v1/pose` 缺失,全是这一个根因的下游。**
+- **订正**:中途的"渲染引擎起不来(gpu_lidar 渲染)"假设**错误**——`Sensors.cc: Waiting for init` 只是"世界里没有渲染型传感器"的正常待机;修复后 gpu_lidar 在容器软件渲染下**真出数据**。
+- **修复**(薄层衍生镜像,秒级,不重建 17.9GB):patch `robot.launch.py` 两针:
+  ① spawn 改 `-file` 直读完整 SDF(传感器保留给 gz);
+  ② RSP 的描述先 `gz sdf -p` 展平 include(sensor 藏在被 include 的 lidar_2d 里)再正则剥掉 `<sensor>` 块(TF 只需连杆/关节)。
+- **验证(实测四连全绿)**:RSP 死亡=0;`gz model --list` 有 iris;`/lidar` gz 侧真出数据;SITL JSON 停止刷屏(接通)。
+
 ## 当前进度(用于汇报)
 
 | 坑 | 状态 | 实测证据 |
