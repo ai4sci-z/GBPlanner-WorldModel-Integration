@@ -15,11 +15,21 @@ docker build --network=host \
   -f "$DF" -t navlab/gazebo-sensor:humble-latest . >> "$LOG" 2>&1
 rc=$?
 echo "GS2_EXIT=$rc $(date)" >> "$LOG"
-# 真实产物自检:镜像里 venv python 能跑(不是悬空软链)才算成功
+# 真实产物自检:①venv python 能跑 ②venv python 能 import rclpy(坑#5 的关键验证)
 if docker run --rm navlab/gazebo-sensor:humble-latest /opt/gazebo-sensor-venv/bin/python --version >> "$LOG" 2>&1; then
   echo "VENV_PYTHON=OK" >> "$LOG"
 else
   echo "VENV_PYTHON=BROKEN" >> "$LOG"
 fi
+if docker run --rm navlab/gazebo-sensor:humble-latest bash -lc 'source /opt/ros/humble/setup.bash && /opt/gazebo-sensor-venv/bin/python -c "import rclpy, numpy, loguru, tomli, yaml, pymavlink; print(\"deps ok\")"' >> "$LOG" 2>&1; then
+  echo "VENV_RCLPY=OK" >> "$LOG"
+else
+  echo "VENV_RCLPY=BROKEN" >> "$LOG"
+fi
+if docker run --rm navlab/gazebo-sensor:humble-latest bash -lc 'source /opt/ros/humble/setup.bash && source /opt/navlab_sensor_ws/install/setup.bash && ros2 pkg prefix ydlidar_ros2_driver' >> "$LOG" 2>&1; then
+  echo "YDLIDAR_PKG=OK" >> "$LOG"
+else
+  echo "YDLIDAR_PKG=BROKEN" >> "$LOG"
+fi
 echo "DONE $(date)" >> "$LOG"
-tail -3 "$LOG"
+tail -7 "$LOG"

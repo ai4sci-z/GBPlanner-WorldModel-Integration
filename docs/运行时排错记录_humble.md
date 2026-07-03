@@ -58,6 +58,29 @@
   启动链首次完全打通。端到端 run#4 验证中。
 - **方法教训**:修"启动即死"类 bug,应**先在容器里逐段模拟完整启动命令**再烧整轮 e2e——本次已按此法执行。
 
+## 坑 #5:venv Python 3.14 无法 import humble 的 rclpy(第三死点)
+
+- **证据**(2026-07-03,1:1 复刻编排器命令实测):坑#4 修后服务**真正启动**了(X2 runtime、双 ros_gz_bridge、
+  投影/串口仿真子进程全拉起),随后三个子进程齐报 `requires ROS2 Python packages` → 主进程退出。
+- **根因**:uv 造的 venv 用**托管 Python 3.14**,而 humble 的 rclpy 是 **Python 3.10 的 C 扩展** → import 必败。
+  (上游 jazzy 同理存疑,但那是上游的事。)
+- **修复**(Dockerfile 第3版):venv 改用**系统 Python3.10 + `--system-site-packages`**(直接可见 rclpy),
+  pip 装依赖组(numpy 钉 `<2.3`,2.3+ 要 Py3.11;补 tomli/pyserial)。彻底甩掉 uv builder 阶段。
+- **验证(实测)**:`VENV_PYTHON=OK`(3.10.12)+ **`VENV_RCLPY=OK`**(rclpy+numpy+loguru+tomli+yaml+pymavlink 全 import 通)。
+
+## 坑 #6:X2 管线运行时必须有 ydlidar_ros2_driver ——【推翻 6/29 的假设】
+
+- **证据**(同日复刻实测):坑#5 修后管线走到最后一步:
+  `Starting ydlidar_ros2_driver: ros2 run ydlidar_ros2_driver ...` → 包不存在 → 主进程退出。
+- **翻案**:6/29 判断"仿真走 gz→ros-gz-bridge,不需要 ydlidar 硬件驱动"是**错的**。X2 管线的真实设计是
+  **硬件级保真仿真**:gz 雷达 → `/scan_ideal` → CLI 把数据打成 X2 硬件串口协议写入虚拟串口 →
+  **真 ydlidar 驱动**读串口 → `/navlab/x2/vendor_scan` → 时间归一化 → `/scan`。驱动是链路必经节点。
+- **humble 编译失败根因**:上游驱动用 `declare_parameter("name")` 无默认值形式(humble 已移除该重载)。
+- **修复**:构建时 sed 打最小补丁——26 处 declare 全部改为传入**前一行已赋默认值的同名变量**(语义不变;
+  float 参数 `static_cast<double>`,ROS2 参数无 float 型),恢复 colcon 构建。镜像重建+自检(`YDLIDAR_PKG=OK`)进行中。
+- **方法教训**:同一条启动命令里已连剥 **3 个独立死点**(venv悬空→setup.bash缺失→rclpy版本),
+  每修一个才暴露下一个。"逐段模拟启动命令"的冒烟法有效,继续沿用。
+
 ## 当前进度(用于汇报)
 
 | 坑 | 状态 | 实测证据 |
