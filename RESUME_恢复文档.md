@@ -84,6 +84,10 @@ progress_2026_07_02_GUI实操: |
   ✅✅ 临门一脚已进(同日):向 /rmf_obelix/command/pose 发 z=1.2 位姿→起飞(实测z 0.056→1.201)
   →调 automatic_planning→**自主探索闭环**(轨迹实测 (5.7,-1.3)→(4.6,1.0)→(6.2,3.9)→(4.4,6.4) 持续巡飞覆盖)。
   复现:run_light.sh 起仿真 → takeoff_and_explore.sh 起飞+触发。预研B 完成。
+  ✅ 全任务周期+量化(第三轮全程采集,70采样点):总路径 291.3m,地图峰值 132,091 体素点,
+  t=435s 时间预算(480s)触发 HOMING ENGAGED 自动返航;曲线/CSV images/exploration_metrics_full.*;
+  voxblox 地图落盘 images/explored_map_lightboxes.vxblx(4MB,可 load_map 复用)。
+  GBPlanner 侧对比数据已到手(填进 docs/对比实验与缺陷论证设计.md §3,口径=预研B独立环境,已诚实标注)。
   ⚠️ WSL keepalive 铁律:跑容器前必须有常驻WSL进程,否则发行版空闲关机、docker被优雅停掉、容器全死255。
 decision_2026_07_02: 【用户拍板】不向 world-model 作者仓库提交 PR/Issue;成果只留自己账号(ai4sci-z)。
   integration/world-model-PR/ 物料转为留档证据;world-model 4个commit留本地分支(可选推自己账号私有镜像仓)。

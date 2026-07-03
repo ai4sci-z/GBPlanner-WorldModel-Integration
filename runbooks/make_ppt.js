@@ -91,6 +91,20 @@ s.addText([
 ], { x:8.5, y:2.5, w:3.95, h:3.7, fontFace:F, lineSpacingMultiple:1.2, valign:"top" });
 
 s = p.addSlide(); s.background={ color:WHITE };
+title(s, "重磅:官方 GBPlanner 仿真在本机全闭环实测", "起飞 → voxblox 3D 建图 → RRG 规划 → 自主巡飞 → 时间预算自动返航 → 地图落盘(2026-07-02)");
+s.addImage({ path:"C:/CCproject/GBPlanner-WorldModel-Integration/images/exploration_metrics_full.png", x:0.6, y:1.85, w:7.3, h:4.56 });
+card(s, 8.15, 1.85, 4.55, 4.56, "F0FDF4");
+s.addText("全任务周期量化(实测)", { x:8.4, y:2.05, w:4.05, h:0.4, fontFace:F, fontSize:15, bold:true, color:GREEN });
+s.addText([
+  { text:"• 总飞行路径 291.3 米\n", options:{ fontSize:14, color:INK } },
+  { text:"• 3D 地图峰值 132,091 体素点\n", options:{ fontSize:14, color:INK } },
+  { text:"• 480s 预算,t=435s 自动返航\n  (REACHED TIME LIMIT: HOMING)\n", options:{ fontSize:13.5, color:INK } },
+  { text:"• 地图落盘 4MB(可加载复用)\n\n", options:{ fontSize:14, color:INK } },
+  { text:"左图:路径长度与地图增长随时间(70 采样点,边探边建图的直接证据)\n\n", options:{ fontSize:12.5, color:GRAY } },
+  { text:"两条命令可复现:run_light.sh + takeoff_and_explore.sh", options:{ fontSize:12.5, color:NAVY, bold:true } },
+], { x:8.4, y:2.55, w:4.05, h:3.7, fontFace:F, lineSpacingMultiple:1.22, valign:"top" });
+
+s = p.addSlide(); s.background={ color:WHITE };
 title(s, "真集成进展:两条腿往前推", "决策层原型(ROS2 原生)+ 真版 GBPlanner 桥接地基(锁定方案)");
 card(s, 0.6, 1.75, 6.0, 4.0, "F0FDF4");
 s.addText("① 决策层原型:gbplanner_gain", { x:0.85, y:1.92, w:5.5, h:0.4, fontFace:F, fontSize:15, bold:true, color:GREEN });
@@ -145,10 +159,10 @@ s = p.addSlide(); s.background={ color:WHITE };
 title(s, "当前状态与下一步");
 card(s, 0.6, 1.8, 6.0, 4.8, "F0FDF4");
 s.addText("✓ 已完成(扎实)", { x:0.85, y:2.0, w:5.5, h:0.4, fontFace:F, fontSize:17, bold:true, color:GREEN });
-s.addText("• 摸清两个系统 + 三道鸿沟,定下桥接方案\n• 算法核心可运行:体积增益决策演示 + 单测\n• gbplanner_gain 决策层原型接进 world-model 结构\n• 阶段4 桥接地基:源码证实真版 I/O 契约 + ROS2 适配器\n• 连修 3 个 humble 真 bug,SLAM 从一崩→cartographer 真运行\n• 9/9 镜像构建成功;缺陷有代码铁证\n• PR/Issue 物料备好 + 完整文档 + GitHub 私有仓", { x:0.85, y:2.5, w:5.5, h:3.9, fontFace:F, fontSize:13, color:INK, lineSpacingMultiple:1.3, valign:"top" });
+s.addText("• ⭐ 官方 GBPlanner 仿真全闭环实测+量化\n  (291m 路径 / 13 万体素地图 / 自动返航 / 地图落盘)\n• 摸清两系统 + 三道鸿沟,定下桥接方案\n• 算法核心可运行:体积增益决策演示 + 单测\n• gbplanner_gain 决策层原型接进 world-model 结构\n• 阶段4 桥接地基:源码证实 I/O 契约 + ROS2 适配器\n• 连修 4 个真 bug(tomllib/空launch参数/%%/venv悬空)\n• 9/9 镜像构建成功;缺陷有代码铁证;文档+私有仓全同步", { x:0.85, y:2.5, w:5.5, h:3.9, fontFace:F, fontSize:12.5, color:INK, lineSpacingMultiple:1.25, valign:"top" });
 card(s, 6.9, 1.8, 5.8, 4.8, "EFF6FF");
 s.addText("→ 进行中 / 下一步", { x:7.15, y:2.0, w:5.3, h:0.4, fontFace:F, fontSize:17, bold:true, color:NAVY });
-s.addText("• 接着剥运行时坑:让 /scan 到达 cartographer → SLAM healthy\n• 跑通 exploration,取 frontier_lite 真实指标 + 验证 gbplanner_gain\n• 完整路线:加 3D 雷达 + 起 ros1_bridge 接真版 GBPlanner\n• 同场景量化对比;把 PR + Issue 提交给作者(任务闭环)", { x:7.15, y:2.5, w:5.3, h:3.9, fontFace:F, fontSize:13, color:INK, lineSpacingMultiple:1.35, valign:"top" });
+s.addText("• world-model 端到端:新 gazebo-sensor 镜像已重建(venv 修复),重跑 exploration 验证 /scan → SLAM healthy\n• 取 frontier_lite 真实指标,与 GBPlanner 数据对照\n• 完整路线:加 3D 雷达 + 起 ros1_bridge 接真版 GBPlanner\n• 成果归档于自己账号(不对外提交,已拍板)", { x:7.15, y:2.5, w:5.3, h:3.9, fontFace:F, fontSize:13, color:INK, lineSpacingMultiple:1.35, valign:"top" });
 
 s = p.addSlide(); s.background={ color:NAVY };
 s.addText("frontier_lite 闭眼按脚本动;\nGBPlanner 睁眼挑未知最多的路。", { x:0.9, y:2.4, w:11.6, h:1.8, fontFace:F, fontSize:32, bold:true, color:WHITE, lineSpacingMultiple:1.15 });

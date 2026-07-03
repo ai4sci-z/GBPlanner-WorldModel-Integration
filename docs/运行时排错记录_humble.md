@@ -43,7 +43,8 @@
 - **因果**:gazebo_sensor 服务启动即"解释器不存在"→ 崩、无日志 → `/scan`/`/sim/x2/*` 全无 → cartographer 干等。
 - **修复**(已写入 `runbooks/world-model-humble-fixes/gazebo-sensor-humble.Dockerfile`):
   最终阶段补 `COPY --from=builder /root/.local/share/uv/python /root/.local/share/uv/python`。
-- **验证**:重建脚本 `build_gazebo_sensor2.sh`(含真实产物自检:镜像内 venv python 能执行才算过)——**重建进行中(2026-07-02)**。
+- **验证**:重建脚本 `build_gazebo_sensor2.sh`(含真实产物自检)——✅ **重建成功(2026-07-02 实测)**:
+  新镜像 `navlab/gazebo-sensor:humble-latest` 生成,`VENV_PYTHON=OK`(镜像内 `/opt/gazebo-sensor-venv/bin/python --version` 真能执行,输出 Python 3.14.5)。**镜像级修复完成;端到端重跑 exploration 验证 `/scan` 待做**(需等 GBPlanner 演示容器空出资源)。
 
 ## 当前进度(用于汇报)
 
