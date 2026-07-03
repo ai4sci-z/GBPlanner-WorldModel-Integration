@@ -112,10 +112,11 @@
 - **修复**(world-model 分支 commit `c8bc866`):该 Env map 补一行 `CYCLONEDDS_URI: cycloneDDSParticipantEnv()`;`go build` 过。
 - **验证**:e2e run#15 进行中(观察 blockers 中 topic_sample_missing 是否批量消失)。
 
-## 坑 #11(待修):我的 `gz sdf -p` 展平补丁输出 SDF 1.11,humble libsdformat 只认 ≤1.9
+## 坑 #11(已修):我的 `gz sdf -p` 展平补丁输出 SDF 1.11,humble libsdformat 只认 ≤1.9
 
-- **证据**:编排 run 日志 `[robot_state_publisher-2] Error [Converter.cc:156] Unable to convert from SDF version 1.11 to 1.9`。
-- 影响:RSP 进程活着但解析失败 → `/tf` 仍缺。**修法(待做)**:补丁里把展平输出的 `<sdf version=...>` 重写为 1.9。
+- **证据**:`[robot_state_publisher-2] Error [Converter.cc:156] Unable to convert from SDF version 1.11 to 1.9`。
+- **修复**(robot.launch.py 补丁 v3,薄层镜像):展平后把 `<sdf version=...>` 重写为 1.9(ardupilot 模型无 1.10+ 特性,安全)。
+- **验证(实测 run#29)**:`/tf` 以 6.5Hz 真实流动 → RSP 解析成功。✅
 
 ## 坑 #12(**编排环境真凶,今日最大战果**):`--user 1000:1000` 无 passwd 条目 → gz 分区错乱 → 同容器发现瘫痪
 
@@ -131,6 +132,17 @@
   (附带教训:此前所有 root 身份的 exec 探针与 server 天然不同分区,全是"测量假象"。)
 - **修复**(world-model commit `aa77fca`):`baselineEnv()` 与 baseline 内联 Env 显式加 `GZ_PARTITION=navlab`;`go build` 过。
 - **验证**:e2e run#28 进行中。
+
+## 坑 #13:IMU 净化桥"自吞回声"→ cartographer 崩(SIGABRT)
+
+- **背景**:坑#12 修后 run#29 里程碑——`/scan` 7Hz、`/tf` 6.5Hz、SITL JSON 接通,**感知层全线贯通**;
+  blockers 名单质变(scan/tf/rangefinder 系列全消失)。新墙:cartographer 拿到数据后 SIGABRT。
+- **遗言**:`Check failed: ... Non-sorted data added to queue: '(0, imu)'`(时间倒退 10µs);且 `/imu` 实测 ~10kHz(荒谬)。
+- **根因**(上游默认值自带环,`helpers/slam.go`):IMU 净化桥读 `imu_source_topic` 写 `imu_topic`,
+  **两者默认都是 `/imu`** → 桥订阅自己的输出 → 回声风暴(重复+微乱序)→ cartographer 时序断言崩。
+  (旁证:exploration rosbag 本来就录 `/navlab/slam/imu` = 上游本意的净化输出名。)
+- **修复**(world-model commit `d3e73b7`):`IMUTopic` 改 `/navlab/slam/imu`(cartographer 经 bringup remap 消费它)。
+- **验证**:e2e run#30 进行中。
 
 ## 当前进度(用于汇报,2026-07-03)
 
