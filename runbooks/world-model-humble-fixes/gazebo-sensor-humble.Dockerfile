@@ -37,3 +37,11 @@ RUN bash -lc "\
   cmake -S YDLidar-SDK -B /tmp/ydlidar_sdk-build -DCMAKE_INSTALL_PREFIX=/usr/local && \
   cmake --build /tmp/ydlidar_sdk-build --target install -j\$(nproc) && \
   ldconfig"
+
+# NOTE(navlab-humble-fix 2026-07-03): 运行时命令是
+#   source /opt/navlab_sensor_ws/install/setup.bash && exec venv/python -m navlab.sim.gazebo_sensor.cli
+# 而 install/ 由被跳过的 ydlidar colcon 构建生成 → source 失败 → && 中断 → 服务秒退无日志(无 /scan 的第二死点)。
+# 补一个 no-op setup.bash 占位(仿真走 gz gpu_lidar→ros-gz-bridge,不需要 ydlidar 驱动)。
+RUN mkdir -p /opt/navlab_sensor_ws/install && \
+  printf '# no-op: ydlidar colcon build skipped on humble (see navlab-humble-fix notes)\n' \
+    > /opt/navlab_sensor_ws/install/setup.bash

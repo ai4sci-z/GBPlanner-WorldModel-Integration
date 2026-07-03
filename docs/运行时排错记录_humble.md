@@ -46,6 +46,18 @@
 - **验证**:重建脚本 `build_gazebo_sensor2.sh`(含真实产物自检)——✅ **重建成功(2026-07-02 实测)**:
   新镜像 `navlab/gazebo-sensor:humble-latest` 生成,`VENV_PYTHON=OK`(镜像内 `/opt/gazebo-sensor-venv/bin/python --version` 真能执行,输出 Python 3.14.5)。**镜像级修复完成;端到端重跑 exploration 验证 `/scan` 待做**(需等 GBPlanner 演示容器空出资源)。
 
+## 坑 #4:venv 修好后 gazebo_sensor 仍秒退 → 同一命令里的第二死点
+
+- **证据**(2026-07-03 run `20260703T004145Z`):镜像 venv 已修(`VENV_PYTHON=OK`),但该 run 仍无
+  gazebo_sensor 日志、`/scan` 仍缺、blockers 与上次相同 → 服务还是没起来。
+- **根因**:启动命令为 `source /opt/navlab_sensor_ws/install/setup.bash && exec venv/python -m ...`;
+  `install/` 目录由 **ydlidar 的 colcon 构建**生成——而 humble 版镜像**故意跳过了**该构建(humble 编不过)
+  → `source` 失败 → `&&` 链中断 → 容器秒退无日志。**与坑#3(venv)是同一命令里两个独立死点,修掉第一个才暴露第二个。**
+- **修复**:Dockerfile 补一个 no-op `install/setup.bash` 占位(仿真走 gz gpu_lidar→ros-gz-bridge,不需要 ydlidar 驱动)。
+- **验证(实测)**:重建后**逐段冒烟测试 4/4 全通**(source ros → source 占位 → venv import cli → cli --help),
+  启动链首次完全打通。端到端 run#4 验证中。
+- **方法教训**:修"启动即死"类 bug,应**先在容器里逐段模拟完整启动命令**再烧整轮 e2e——本次已按此法执行。
+
 ## 当前进度(用于汇报)
 
 | 坑 | 状态 | 实测证据 |
