@@ -102,6 +102,16 @@
   ② RSP 的描述先 `gz sdf -p` 展平 include(sensor 藏在被 include 的 lidar_2d 里)再正则剥掉 `<sensor>` 块(TF 只需连杆/关节)。
 - **验证(实测四连全绿)**:RSP 死亡=0;`gz model --list` 有 iris;`/lidar` gz 侧真出数据;SITL JSON 停止刷屏(接通)。
 
+## 坑 #10:official_baseline 漏发 `CYCLONEDDS_URI` → 全容器 DDS"静音"
+
+- **证据**(2026-07-03 活体探针 v7,对比各容器 pid1 环境):所有容器同为 host 网络/域 0/cyclonedds,
+  fcu/slam 等都有 `CYCLONEDDS_URI=...MaxAutoParticipantIndex 512...`,**唯独 baseline 没有**。
+- **根因**:Go 编排里其他服务都用 `baselineEnv()`(内含该配置),`officialBaselineServiceSpec` 却**手写内联 Env 漏了它**
+  (上游疏漏)。CycloneDDS 默认每主机参与者索引上限很小;9 容器几十个节点挤 host 网络,baseline 的节点
+  (gz 桥/RSP/DDS agent)分不到索引 → **它的所有话题(/imu、/tf、/scan 源、/ap/*)对其他容器不可见**。
+- **修复**(world-model 分支 commit `c8bc866`):该 Env map 补一行 `CYCLONEDDS_URI: cycloneDDSParticipantEnv()`;`go build` 过。
+- **验证**:e2e run#15 进行中(观察 blockers 中 topic_sample_missing 是否批量消失)。
+
 ## 当前进度(用于汇报,2026-07-03)
 
 | 坑 | 一句话 | 状态 |
