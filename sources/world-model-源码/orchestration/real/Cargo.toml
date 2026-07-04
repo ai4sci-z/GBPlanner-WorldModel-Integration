@@ -1,0 +1,46 @@
+[package]
+name = "navlab-real-orchestration"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+
+[features]
+integration = []
+
+[[bin]]
+name = "navlab-real"
+path = "src/main.rs"
+
+[[bench]]
+name = "motor_debug_plan"
+harness = false
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+clap = { version = "4.6.1", features = ["derive"] }
+crossterm = "0.29.0"
+indicatif = "0.18.4"
+libc = "0.2"
+mavlink = "0.18.0"
+mcap = "0.25.0"
+navlab-contracts = { path = "../../contracts/gen/rust" }
+ratatui = "0.29.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9.34"
+statig = "0.4.1"
+thiserror = "2"
+time = { version = "0.3.48", features = ["formatting"] }
+tokio = { version = "1", features = ["full"] }
+toml = "1.1.2"
+tracing = "0.1"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+
+[dev-dependencies]
+criterion = "0.8.2"
+insta = { version = "1.48.0", features = ["json", "redactions", "yaml"] }
+mockall = "0.14.0"
+rstest = "0.26.1"
+tempfile = "3"

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package navlab.runtime.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/runtime/v1;runtimev1";
+
+import "navlab/runtime/v1/probe_spec.proto";
+import "navlab/runtime/v1/service_spec.proto";
+
+message RuntimePlan {
+  string schema_version = 1;
+  string task_id = 2;
+  string run_id = 3;
+  repeated ServiceSpec services = 4;
+  repeated ProbeSpec probes = 5;
+  repeated RosbagSpec rosbags = 6;
+}

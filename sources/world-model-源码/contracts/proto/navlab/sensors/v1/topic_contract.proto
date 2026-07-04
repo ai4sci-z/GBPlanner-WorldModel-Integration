@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package navlab.sensors.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/sensors/v1;sensorsv1";
+
+import "google/protobuf/timestamp.proto";
+
+message TopicContract {
+  string topic = 1;
+  string message_type = 2;
+  double min_rate_hz = 3;
+  double max_latest_age_sec = 4;
+  bool require_unique_owner = 5;
+  repeated string allowed_publishers = 6;
+}
+
+message TopicEvidence {
+  string topic = 1;
+  bool present = 2;
+  double observed_rate_hz = 3;
+  double latest_age_sec = 4;
+  repeated string publishers = 5;
+  google.protobuf.Timestamp observed_at = 6;
+}

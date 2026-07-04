@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "navlab.orchestration.task_request.v1",
+  "taskId": "hover",
+  "runId": "20260612T164928Z",
+  "runtimeMode": "RUNTIME_MODE_SIM",
+  "artifactDir": "artifacts/sim/hover/20260612T164928Z",
+  "capabilities": [
+    "needs_gazebo",
+    "needs_sitl",
+    "needs_slam",
+    "records_rosbag",
+    "writes_task_result"
+  ],
+  "parameters": {
+    "duration_sec": 90.0,
+    "simulation_profile": "ideal"
+  },
+  "sourceClaims": {
+    "runtimeDomain": "RUNTIME_DOMAIN_SIM",
+    "scanSource": "gazebo_x2_virtual_serial",
+    "imuSource": "official_gazebo_imu_bridge",
+    "rangefinderSource": "gazebo_down_rangefinder",
+    "slamSource": "cartographer",
+    "usesTruthAsControlInput": false
+  },
+  "createdAt": "2026-06-12T16:49:28Z"
+}

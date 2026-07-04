@@ -1,0 +1,120 @@
+name: navlab
+
+x-nn-user: &nn_user
+  user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+
+services:
+  sitl:
+    <<: *nn_user
+    image: "${SITL_IMAGE:-navlab/ardupilot-sitl:humble-latest}"
+    network_mode: "service:gazebo"
+    environment:
+      SESSION_ID: "${SESSION_ID:-manual}"
+      SITL_UPSTREAM_ENDPOINT: "${SITL_UPSTREAM_ENDPOINT:-mavlink-router:14550}"
+      SITL_ROUTER_ONLY: "${SITL_ROUTER_ONLY:-false}"
+      SITL_MODEL: "${SITL_MODEL:-JSON}"
+      SITL_SPEEDUP: "${SITL_SPEEDUP:-1}"
+      SITL_INSTANCE: "${SITL_INSTANCE:-0}"
+      SITL_HOME: "${SITL_HOME:-}"
+      SITL_EXTRA_ARGS: "${SITL_EXTRA_ARGS:-}"
+    volumes:
+      - ./artifacts/sessions:/artifacts/sessions
+      - ./docker/profiles:/workspace/profiles:ro
+      - ./docker/entrypoints/start-sitl.sh:/usr/local/bin/start-sitl.sh:ro
+    command: [ "bash", "/usr/local/bin/start-sitl.sh" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep -x arducopter >/dev/null" ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    profiles: [ "base_env" ]
+    depends_on:
+      gazebo:
+        condition: service_started
+      mavlink-router:
+        condition: service_healthy
+
+  mavlink-router:
+    <<: *nn_user
+    image: "${ROUTER_IMAGE:-navlab/mavlink-router:humble-latest}"
+    environment:
+      SESSION_ID: "${SESSION_ID:-manual}"
+      ROUTER_LISTEN: "${ROUTER_LISTEN:-0.0.0.0:14550}"
+      ROUTER_TCP_PORT: "${ROUTER_TCP_PORT:-0}"
+      ROUTER_DOWNSTREAM_ENDPOINTS: "${ROUTER_DOWNSTREAM_ENDPOINTS:-}"
+    volumes:
+      - ./artifacts/sessions:/artifacts/sessions
+      - ./docker/entrypoints/start-mavlink-router.sh:/usr/local/bin/start-mavlink-router.sh:ro
+    command: [ "bash", "/usr/local/bin/start-mavlink-router.sh" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep -x mavlink-routerd >/dev/null" ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    profiles: [ "base_env" ]
+    networks:
+      - mavlink-lab
+
+  gazebo:
+    <<: *nn_user
+    image: navlab/gazebo-headless:humble-latest
+    environment:
+      SESSION_ID: "${SESSION_ID:-manual}"
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
+      RMW_IMPLEMENTATION: "${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
+      WORLD: "${GAZEBO_WORLD:-/workspace/worlds/navlab_iq_quad_figure8.sdf}"
+    volumes:
+      - ./artifacts/ros:/artifacts/ros
+      - ./docker/worlds:/workspace/worlds:ro
+      - ./docker/navlab_models:/workspace/models:ro
+      - ./docker/entrypoints/start-gazebo.sh:/usr/local/bin/start-gazebo.sh:ro
+    command: [ "bash", "/usr/local/bin/start-gazebo.sh" ]
+    profiles: [ "base_env", "x2_sensor" ]
+    networks:
+      - mavlink-lab
+
+  gazebo-sensor:
+    <<: *nn_user
+    image: "${NAVLAB_GAZEBO_SENSOR_IMAGE:-navlab/gazebo-sensor:humble-latest}"
+    network_mode: "service:gazebo"
+    working_dir: /workspace
+    environment:
+      SESSION_ID: "${SESSION_ID:-manual}"
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
+      RMW_IMPLEMENTATION: "${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
+      PYTHONPATH: "/workspace"
+      X2_MODE: "${X2_MODE:-runtime}"
+      X2_SMOKE_DURATION_SEC: "${X2_SMOKE_DURATION_SEC:-15}"
+      X2_ARTIFACT_DIR: "${X2_ARTIFACT_DIR:-/artifacts/ros/x2_driver_smoke/manual}"
+      X2_STARTUP_TIMEOUT_SEC: "${X2_STARTUP_TIMEOUT_SEC:-20}"
+    volumes:
+      - ./:/workspace:ro
+      - ./artifacts/ros:/artifacts/ros
+      - ./docker/entrypoints/start-gazebo-sensor.sh:/usr/local/bin/start-gazebo-sensor.sh:ro
+    command: [ "bash", "/usr/local/bin/start-gazebo-sensor.sh" ]
+    profiles: [ "x2_sensor" ]
+    depends_on:
+      gazebo:
+        condition: service_started
+
+  fast-lio:
+    <<: *nn_user
+    image: "${FAST_LIO_IMAGE:-navlab/fast-lio:humble-latest}"
+    environment:
+      SESSION_ID: "${SESSION_ID:-manual}"
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
+      RMW_IMPLEMENTATION: "${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
+    volumes:
+      - ./docker/profiles:/workspace/profiles:ro
+      - ./artifacts/ros:/artifacts/ros
+      - ./docker/entrypoints/start-fast-lio.sh:/usr/local/bin/start-fast-lio.sh:ro
+    command: [ "bash", "/usr/local/bin/start-fast-lio.sh" ]
+    profiles: [ "fast-lio" ]
+    networks:
+      - mavlink-lab
+
+networks:
+  mavlink-lab:
+    driver: bridge

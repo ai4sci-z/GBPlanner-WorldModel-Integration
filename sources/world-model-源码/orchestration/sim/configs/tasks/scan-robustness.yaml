@@ -1,0 +1,27 @@
+id: scan-robustness
+family: sim
+description: Airframe disturbance and scan robustness simulation gate.
+capabilities:
+  - needs_gazebo
+  - needs_sitl
+  - needs_gazebo_sensor
+  - records_rosbag
+  - writes_task_result
+task:
+  duration_sec: 240.0
+  simulation_profile: ideal
+scan_robustness:
+  live: true
+  live_profiles: []
+airframe_disturbance:
+  profile: ideal
+airframe_disturbance_gate:
+  profile_set:
+    - ideal
+    - realistic
+  required_profiles:
+    - ideal
+    - realistic
+landing:
+  scan_robustness_policy: land_in_place
+  max_landing_duration_sec: 35.0

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package navlab.sensors.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/sensors/v1;sensorsv1";
+
+import "navlab/sensors/v1/topic_contract.proto";
+
+message SourceEvidence {
+  RuntimeDomain runtime_domain = 1;
+  string scan_source = 2;
+  string imu_source = 3;
+  string rangefinder_source = 4;
+  string slam_source = 5;
+  bool uses_truth_as_control_input = 6;
+  repeated TopicEvidence topics = 7;
+}
+
+enum RuntimeDomain {
+  RUNTIME_DOMAIN_UNSPECIFIED = 0;
+  RUNTIME_DOMAIN_SIM = 1;
+  RUNTIME_DOMAIN_REAL = 2;
+}

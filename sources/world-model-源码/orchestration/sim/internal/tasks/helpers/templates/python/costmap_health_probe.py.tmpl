@@ -1,0 +1,104 @@
+from __future__ import annotations
+
+import json
+import subprocess
+import time
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+
+
+def run(command: list[str], timeout_sec: float = 8.0) -> dict:
+    started = time.time()
+    result = subprocess.run(["timeout", str(timeout_sec), *command], check=False, capture_output=True, text=True)
+    return {
+        "command": command,
+        "returncode": result.returncode,
+        "stdout": result.stdout.strip(),
+        "stderr": result.stderr.strip(),
+        "elapsed_sec": time.time() - started,
+        "ok": result.returncode == 0,
+    }
+
+
+def topic_data(stdout: str) -> str:
+    raw = stdout.split("---", 1)[0].strip()
+    if raw.startswith("data:"):
+        raw = raw.split("data:", 1)[1].strip()
+    return raw.strip().strip("'\"")
+
+
+def parse_json_data(stdout: str) -> dict:
+    raw = topic_data(stdout)
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {}
+
+
+def topic_sample(topic: str, field: str | None = None) -> dict:
+    command = ["ros2", "topic", "echo", "--once"]
+    if field:
+        command.extend(["--field", field])
+    command.append(topic)
+    result = run(command)
+    result["topic"] = topic
+    result["field"] = field
+    result["data"] = topic_data(result["stdout"]) if field == "data" else ""
+    result["parsed"] = parse_json_data(result["stdout"]) if field == "data" else {}
+    return result
+
+
+def main() -> int:
+    health = topic_sample(SPEC["CostmapHealthTopic"], "data")
+    global_costmap = topic_sample(SPEC["GlobalCostmapTopic"], "header.frame_id")
+    local_costmap = topic_sample(SPEC["LocalCostmapTopic"], "header.frame_id")
+    parsed = health.get("parsed", {})
+    required_layers = parsed.get("required_layers", SPEC["RequiredCostmapLayers"])
+    unknown_ratio = float(parsed.get("unknown_ratio", 0.0))
+    obstacle_cells = int(parsed.get("obstacle_cells", SPEC["MinObstacleCells"]))
+    blockers = []
+    if not global_costmap["ok"]:
+        blockers.append("nav2_global_costmap_missing")
+    if not local_costmap["ok"]:
+        blockers.append("nav2_local_costmap_missing")
+    if not global_costmap["ok"] or not local_costmap["ok"]:
+        blockers.append("nav2_costmap_stale")
+    if "obstacle_layer" not in required_layers:
+        blockers.append("nav2_obstacle_layer_missing")
+    if "inflation_layer" not in required_layers:
+        blockers.append("nav2_inflation_layer_missing")
+    if unknown_ratio > float(SPEC["MaxUnknownRatio"]):
+        blockers.append("navigation_costmap_unknown_ratio_too_high")
+    if obstacle_cells < int(SPEC["MinObstacleCells"]):
+        blockers.append("navigation_costmap_obstacle_cells_too_low")
+    status = {
+        "claim": "evaluated",
+        "costmap_claim": "evaluated",
+        "global_costmap_age_sec": parsed.get("global_costmap_age_sec", global_costmap["elapsed_sec"]),
+        "local_costmap_age_sec": parsed.get("local_costmap_age_sec", local_costmap["elapsed_sec"]),
+        "unknown_ratio": unknown_ratio,
+        "obstacle_cells": obstacle_cells,
+        "local_costmap_update_frequency_hz": parsed.get("local_costmap_update_frequency_hz", 0.0),
+        "required_layers": required_layers,
+    }
+    samples = {
+        SPEC["CostmapHealthTopic"]: health,
+        SPEC["GlobalCostmapTopic"]: global_costmap,
+        SPEC["LocalCostmapTopic"]: local_costmap,
+    }
+    samples[SPEC["CostmapHealthTopic"]]["parsed"] = status
+    result = {
+        "node": "navlab_costmap_health_probe",
+        "status": "sampled",
+        "ok": not blockers,
+        "costmap_claim": "evaluated",
+        "samples": samples,
+        "blockers": blockers,
+        "started_ms": int(time.time() * 1000),
+    }
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["ok"] else 20
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

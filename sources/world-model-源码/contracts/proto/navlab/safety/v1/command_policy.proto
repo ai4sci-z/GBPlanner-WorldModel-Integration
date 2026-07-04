@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package navlab.safety.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/safety/v1;safetyv1";
+
+message CommandPolicy {
+  string schema_version = 1;
+  string task_id = 2;
+  bool require_operator_confirmation = 3;
+  bool require_no_props = 4;
+  repeated string allowed_commands = 5;
+  repeated string denied_commands = 6;
+  repeated string required_readiness_gates = 7;
+}

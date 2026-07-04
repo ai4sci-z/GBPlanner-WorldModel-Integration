@@ -1,0 +1,41 @@
+name: navigation
+storage: mcap
+required_topics:
+  # Stable world/SLAM review baseline. P13 navigation appends topics below; it
+  # must not replace the mature review surface used by earlier Foxglove runs.
+  - /tf
+  - /tf_static
+  - /ap/v1/pose/filtered
+  - /ap/v1/twist/filtered
+  - /ap/v1/cmd_vel
+  - /imu
+  - /rangefinder/down/range
+  - /navlab/navigation/status
+  - /navlab/navigation/events
+  - /navlab/navigation/goal
+  - /navlab/navigation/adapter/status
+  - /navlab/navigation/costmap_health
+  - /cmd_vel_nav
+  - /navlab/fcu/setpoint/intent
+  - /navlab/fcu/setpoint/output
+  - /navlab/fcu/controller/status
+  - /navlab/fcu/owner/status
+  - /navlab/slam/status
+  - /navlab/hover/status
+  - /slam/odom
+  - /scan
+  - /map
+  - /navlab/x2/scan_normalized
+  - /navlab/scan_stabilization/status
+  - /global_costmap/costmap
+  - /local_costmap/costmap
+  - /navlab/landing/status
+review_topics:
+  - /ap/v1/status
+  # Diagnostic-only Gazebo/bridge truth. Keep it available for drift review,
+  # but never require it for navigation acceptance or real-machine parity.
+  - /odometry
+  - /gazebo/model/odometry
+  - /navlab/navigation/path
+  - /navlab/navigation/recovery
+  - /navlab/official_maze/map

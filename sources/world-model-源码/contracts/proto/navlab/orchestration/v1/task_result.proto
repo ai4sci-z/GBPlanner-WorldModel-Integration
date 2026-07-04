@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package navlab.orchestration.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/orchestration/v1;orchestrationv1";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "navlab/safety/v1/mavlink_ack.proto";
+import "navlab/sensors/v1/source_evidence.proto";
+
+message TaskResult {
+  string schema_version = 1;
+  string task_id = 2;
+  string run_id = 3;
+  TaskStatus status = 4;
+  bool ok = 5;
+  bool blocked = 6;
+  int32 exit_code = 7;
+  string artifact_dir = 8;
+  string summary_path = 9;
+  repeated ResultBlocker blockers = 10;
+  repeated string warnings = 11;
+  navlab.sensors.v1.SourceEvidence source_evidence = 12;
+  repeated navlab.safety.v1.MavlinkAck mavlink_acks = 13;
+  google.protobuf.Struct metrics = 14;
+  google.protobuf.Struct evidence = 15;
+  google.protobuf.Struct details = 16;
+  google.protobuf.Timestamp started_at = 17;
+  google.protobuf.Timestamp finished_at = 18;
+}
+
+message ResultBlocker {
+  string code = 1;
+  string message = 2;
+  string source = 3;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_OK = 1;
+  TASK_STATUS_WARNING = 2;
+  TASK_STATUS_BLOCKED = 3;
+  TASK_STATUS_ERROR = 4;
+  TASK_STATUS_INTERRUPTED = 5;
+}

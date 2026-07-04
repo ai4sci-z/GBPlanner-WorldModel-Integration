@@ -1,0 +1,18 @@
+navlab_fake_odom_node:
+  ros__parameters:
+    mode: "static"
+    publish_rate_hz: 20.0
+    frame_id: "odom"
+    child_frame_id: "base_link"
+    odom_topic: "/odom"
+    status_topic: "/navlab/fake_odom/status"
+    start_x: 0.0
+    start_y: 0.0
+    start_z: 0.0
+    start_yaw: 0.0
+    linear_velocity_x: 0.05
+    yaw_rate: 0.05
+    pose_covariance_xy: 0.01
+    pose_covariance_yaw: 0.02
+    twist_covariance_xy: 0.02
+    twist_covariance_yaw: 0.02

@@ -1,0 +1,1 @@
+"""NavLab protobuf namespace."""

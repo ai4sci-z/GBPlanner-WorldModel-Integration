@@ -1,0 +1,1006 @@
+# NavLab World Model — Recovered Requirements Index
+# Auto-generated 2026-06-15 via autoharness existing-project recovery.
+# Confidence: confirmed = code+docs+tests agree | inferred = code clear, docs sparse | uncertain = intent unclear
+
+project:
+  name: world-model
+  languages: [python, go, rust]
+  description: >
+    NavLab autonomy and orchestration workspace for indoor GPS-denied drone
+    simulation and real-machine validation. Orchestration is split into Go sim
+    and Rust real control planes; runtime code lives in Python navlab package;
+    shared contracts use protobuf with Go/Rust/Python codegen.
+
+requirements:
+
+  # ── Cross-cutting orchestration ──────────────────────────────────────────
+
+  - id: REQ-001
+    title: Simulation task orchestration (Go)
+    description: >
+      Go control plane for simulation tasks: task registry, YAML task config
+      loading, Docker runtime planning, artifact writing, contract emission,
+      image build orchestration, TUI replay, and Foxglove upload.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: orchestration/sim/, docs/general/, README.md
+    code:
+      - path: orchestration/sim/cmd/navlab-sim/main.go
+      - path: orchestration/sim/internal/tasks/registry.go
+      - path: orchestration/sim/internal/tasks/runtime_runner.go
+      - path: orchestration/sim/internal/tasks/gate_evaluation.go
+      - path: orchestration/sim/internal/tasks/simulation_profile.go
+      - path: orchestration/sim/internal/tasks/stage1_matrix.go
+      - path: orchestration/sim/internal/runtime/docker_backend.go
+      - path: orchestration/sim/internal/images/build.go
+      - path: orchestration/sim/internal/tui/model.go
+      - path: orchestration/sim/internal/tui/run.go
+      - path: orchestration/sim/internal/tui/replay.go
+      - path: orchestration/sim/internal/config/loader.go
+      - path: orchestration/sim/internal/config/types.go
+      - path: orchestration/sim/internal/config/task_runtime.go
+      - path: orchestration/sim/internal/runtime/specs.go
+      - path: orchestration/sim/internal/tasks/types.go
+      - path: orchestration/sim/internal/tasks/runtime_specs.go
+      - path: orchestration/sim/internal/tasks/runtime_plan_contract.go
+      - path: orchestration/sim/internal/tasks/doctor_summary.go
+      - path: orchestration/sim/internal/tasks/live_summary.go
+      - path: orchestration/sim/internal/tasks/helpers/execution_plan.go
+      - path: orchestration/sim/internal/tasks/helpers/landing.go
+      - path: orchestration/sim/internal/tasks/helpers/motion.go
+      - path: orchestration/sim/internal/tasks/helpers/navlab_models.go
+      - path: orchestration/sim/internal/tasks/helpers/official_stack.go
+      - path: orchestration/sim/internal/tasks/helpers/registry.go
+      - path: orchestration/sim/internal/tasks/helpers/rosbag_profiles.go
+      - path: orchestration/sim/internal/tasks/helpers/rosbag_topic_sets.go
+      - path: orchestration/sim/internal/tasks/helpers/runtime_specs.go
+      - path: orchestration/sim/internal/tasks/helpers/scan_integrity.go
+      - path: orchestration/sim/internal/tasks/helpers/slam.go
+    tests:
+      - path: orchestration/sim/internal/tasks/gate_evaluation_test.go
+      - path: orchestration/sim/internal/tasks/registry_test.go
+      - path: orchestration/sim/internal/tasks/runtime_runner_test.go
+      - path: orchestration/sim/internal/tasks/simulation_profile_test.go
+      - path: orchestration/sim/internal/runtime/docker_backend_test.go
+      - path: orchestration/sim/internal/images/build_test.go
+      - path: orchestration/sim/internal/tui/replay_test.go
+      - path: orchestration/sim/internal/config/loader_test.go
+      - path: orchestration/sim/internal/config/task_runtime_test.go
+      - path: orchestration/sim/internal/tasks/doctor_summary_test.go
+      - path: orchestration/sim/internal/tasks/live_summary_test.go
+      - path: orchestration/sim/internal/tasks/runtime_specs_test.go
+      - path: orchestration/sim/internal/tasks/helpers/execution_plan_test.go
+    docs:
+      - path: orchestration/sim/README.md
+      - path: docs/general/orchestration_sim_remaining_migration_design.md
+      - path: docs/general/orchestration_sim_tui_monitor_design.md
+      - path: docs/general/orchestration_sim_python_parity_audit.md
+    depends_on: [REQ-008, REQ-009]
+    conflicts: []
+
+  - id: REQ-002
+    title: Real-machine task orchestration (Rust)
+    description: >
+      Rust control plane for real-machine workflows: task registry, preflight
+      checks, prepare workflow, common/task doctor, doctor-chain, MAVLink
+      transport for motor-debug, structured logging, and real task artifacts.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: orchestration/real/, docs/decisions.md, README.md
+    code:
+      - path: orchestration/real/src/main.rs
+      - path: orchestration/real/src/cli.rs
+      - path: orchestration/real/src/config.rs
+      - path: orchestration/real/src/lib.rs
+      - path: orchestration/real/src/workflows/mod.rs
+      - path: orchestration/real/src/workflows/preflight.rs
+      - path: orchestration/real/src/workflows/prepare.rs
+      - path: orchestration/real/src/workflows/common_doctor.rs
+      - path: orchestration/real/src/workflows/task_doctor.rs
+      - path: orchestration/real/src/workflows/doctor_chain.rs
+      - path: orchestration/real/src/runtime/mod.rs
+      - path: orchestration/real/src/runtime/mavlink.rs
+      - path: orchestration/real/src/runtime/process.rs
+      - path: orchestration/real/src/logging/mod.rs
+      - path: orchestration/real/src/logging/init.rs
+      - path: orchestration/real/src/logging/config.rs
+      - path: orchestration/real/src/contracts.rs
+      - path: orchestration/real/src/errors.rs
+      - path: orchestration/real/src/ui.rs
+      - path: orchestration/real/src/tasks/mod.rs
+      - path: orchestration/real/src/tasks/registry.rs
+    tests:
+      - path: orchestration/real/src/workflows/preflight.rs
+      - path: orchestration/real/src/workflows/prepare.rs
+      - path: orchestration/real/src/workflows/common_doctor.rs
+      - path: orchestration/real/src/workflows/task_doctor.rs
+      - path: orchestration/real/src/workflows/doctor_chain.rs
+      - path: orchestration/real/src/runtime/mavlink.rs
+      - path: orchestration/real/src/runtime/process.rs
+    docs:
+      - path: orchestration/real/README.md
+      - path: docs/scenarios/indoor/navlab_real_flight_preflight_doctor_design.md
+      - path: docs/scenarios/indoor/navlab_real_prepare_and_task_doctor_design.md
+      - path: docs/scenarios/indoor/navlab_real_motor_debug_design.md
+    depends_on: [REQ-008]
+    conflicts: []
+
+  - id: REQ-003
+    title: Real motor-debug workflow
+    description: >
+      No-props motor-debug task that connects through MAVLink, waits for FCU
+      heartbeat, sends GUIDED mode, arms, holds in armed-idle, disarms, and
+      writes ACK-backed summaries. Requires operator safety confirmations.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: orchestration/real/src/runtime/mavlink.rs, orchestration/real/src/tasks/motor_debug.rs, docs/decisions.md
+    code:
+      - path: orchestration/real/src/tasks/motor_debug.rs
+      - path: orchestration/real/src/runtime/mavlink.rs
+      - path: navlab/real/companion/nodes/motor_debug.py
+    tests:
+      - path: orchestration/real/src/tasks/motor_debug.rs
+      - path: orchestration/real/src/runtime/mavlink.rs
+      - path: orchestration/real/benches/motor_debug_plan.rs
+    docs:
+      - path: docs/scenarios/indoor/navlab_real_motor_debug_design.md
+    depends_on: [REQ-002]
+    conflicts: []
+
+  # ── Indoor no-GPS roadmap phases ────────────────────────────────────────
+
+  - id: REQ-004
+    title: P0 — Official baseline validation
+    description: >
+      Run and validate the official ArduPilot ROS2/Gazebo/Cartographer minimum
+      baseline. Confirm /ap/* DDS visibility, SITL, Gazebo bringup, Cartographer
+      EKF path, and DDS-domain alignment. Produces a separate failing gate
+      when /ap DDS nodes/topics are absent to prove the project has not
+      accidentally relabeled diagnostic MAVLink feedback as the official route.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p0_official_baseline_design.md, docker/images/runtime/official-baseline.Dockerfile
+    code:
+      - path: docker/images/runtime/official-baseline.Dockerfile
+      - path: orchestration/sim/internal/tasks/simulation_profile.go
+    tests: []
+    docs:
+      - path: docs/scenarios/indoor/navlab_p0_official_baseline_design.md
+      - path: docs/scenarios/indoor/todos/P0_official_baseline_todo.md
+      - path: docs/scenarios/indoor/navlab_ardupilot_ros2_official_alignment.md
+    depends_on: []
+    conflicts: []
+
+  - id: REQ-005
+    title: P1 — Official maze + NavLab X2 lidar
+    description: >
+      Keep the official iris_maze world and Iris model, swap only the lidar
+      path to NavLab X2 virtual-serial plus vendor-driver scan. Gazebo ray
+      sensor → X2 protocol emulator → ydlidar_ros2_driver → /scan.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p1_official_maze_x2_design.md, navlab/sim/gazebo_sensor/x2/
+    code:
+      - path: navlab/sim/gazebo_sensor/x2/emulator.py
+      - path: navlab/sim/gazebo_sensor/x2/protocol.py
+      - path: navlab/sim/gazebo_sensor/x2/scan_source.py
+      - path: navlab/sim/gazebo_sensor/x2/smoke.py
+      - path: navlab/real/companion/nodes/ydlidar_x2_scan.py
+    tests:
+      - path: navlab/tests/gazebo_sensor/x2/test_protocol.py
+      - path: navlab/tests/gazebo_sensor/x2/test_scan_source.py
+      - path: navlab/tests/gazebo_sensor/x2/test_serial_emulator.py
+      - path: navlab/tests/gazebo_sensor/x2/test_driver_smoke.py
+      - path: navlab/tests/gazebo_sensor/x2/test_sensor_ownership.py
+      - path: navlab/tests/gazebo_sensor/x2/test_sensor_runtime.py
+      - path: navlab/tests/gazebo_sensor/x2/test_protocol_config.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p1_official_maze_x2_design.md
+      - path: docs/sim/x2_lidar_simulation_design.md
+      - path: docs/sim/x2_lidar_protocol_todo.md
+    depends_on: [REQ-004]
+    conflicts: []
+
+  - id: REQ-006
+    title: P2 — Rangefinder and IMU validation
+    description: >
+      Down-facing rangefinder as FCU peripheral entering ArduPilot via
+      MAVLink DISTANCE_SENSOR. IMU link produces /imu for SLAM consumption.
+      Uses official maze/Iris baseline; does not represent hover completion.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p2_rangefinder_imu_design.md, navlab/sim/gazebo_sensor/rangefinder.py
+    code:
+      - path: navlab/sim/gazebo_sensor/rangefinder.py
+      - path: navlab/real/companion/nodes/rangefinder_bridge.py
+      - path: navlab/real/companion/nodes/imu_bridge.py
+    tests:
+      - path: navlab/tests/gazebo_sensor/test_rangefinder.py
+      - path: navlab/tests/companion/test_imu_bridge.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p2_rangefinder_imu_design.md
+      - path: docs/scenarios/indoor/todos/P2_rangefinder_imu_todo.md
+    depends_on: [REQ-005]
+    conflicts: []
+
+  - id: REQ-007
+    title: P3 — SLAM backend quality
+    description: >
+      Cartographer as default SLAM backend with a backend registry allowing
+      future swaps. /scan + /imu + /odometry + TF drive SLAM. /odom output
+      must be continuous, low-jump, with diagnosable error. Backend config
+      and version recorded in artifacts. Gazebo truth excluded from SLAM input.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p3_slam_backend_quality_design.md, navlab/common/slam/
+    code:
+      - path: navlab/common/slam/cli.py
+      - path: navlab/common/slam/runtime.py
+      - path: navlab/common/slam/backends.py
+      - path: navlab/common/slam/config.py
+      - path: navlab/common/slam/ros/localization/navlab_cartographer_adapter/launch/navlab_cartographer_adapter.launch.py
+      - path: navlab/common/slam/ros/scenarios/navlab_slam_bringup/launch/navlab_slam_bringup.launch.py
+    tests:
+      - path: navlab/tests/slam/test_runtime_config.py
+      - path: navlab/tests/slam/test_cartographer_adapter_contract.py
+      - path: navlab/tests/slam/test_cartographer_official_alignment.py
+      - path: navlab/tests/slam/test_ros_workspace_ownership.py
+      - path: navlab/tests/slam/test_sitl_external_nav_params.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p3_slam_backend_quality_design.md
+      - path: docs/scenarios/indoor/todos/P3_slam_backend_quality_todo.md
+      - path: docs/scenarios/indoor/navlab_cartographer_real_machine_tuning.md
+    depends_on: [REQ-006]
+    conflicts: []
+
+  - id: REQ-008
+    title: Cross-language protobuf contracts
+    description: >
+      Language-neutral protobuf schemas for orchestration (task request/result,
+      doctor result, artifact manifest), runtime (runtime plan, service spec,
+      probe spec, process event), safety (command policy, MAVLink ACK,
+      readiness gate), and sensors (topic, frame, source evidence). Generated
+      code for Go, Rust, and Python checked into contracts/gen/.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: contracts/, docs/decisions.md, README.md
+    code:
+      - path: contracts/proto/navlab/orchestration/v1/task_result.proto
+      - path: contracts/proto/navlab/orchestration/v1/task_request.proto
+      - path: contracts/proto/navlab/orchestration/v1/doctor_result.proto
+      - path: contracts/proto/navlab/orchestration/v1/artifact_manifest.proto
+      - path: contracts/proto/navlab/runtime/v1/runtime_plan.proto
+      - path: contracts/proto/navlab/runtime/v1/service_spec.proto
+      - path: contracts/proto/navlab/runtime/v1/probe_spec.proto
+      - path: contracts/proto/navlab/runtime/v1/process_event.proto
+      - path: contracts/proto/navlab/safety/v1/mavlink_ack.proto
+      - path: contracts/proto/navlab/safety/v1/readiness_gate.proto
+      - path: contracts/proto/navlab/safety/v1/command_policy.proto
+      - path: contracts/proto/navlab/sensors/v1/frame_contract.proto
+      - path: contracts/proto/navlab/sensors/v1/topic_contract.proto
+      - path: contracts/proto/navlab/sensors/v1/source_evidence.proto
+      - path: contracts/gen/go/go.mod
+      - path: contracts/gen/rust/Cargo.toml
+      - path: contracts/gen/rust/src/lib.rs
+      - path: contracts/gen/python/navlab_contracts/__init__.py
+    tests:
+      - path: contracts/gen/go/examples_test.go
+      - path: contracts/gen/python/tests/test_generated_contracts.py
+    docs:
+      - path: contracts/README.md
+      - path: docs/general/contracts_proto_semantic_boundary_design.md
+    depends_on: []
+    conflicts: []
+
+  - id: REQ-009
+    title: Docker image management for simulation
+    description: >
+      Docker images grouped as base (ros-base), infra (ardupilot-sitl,
+      mavlink-router, gazebo-headless, fast-lio), and runtime (companion,
+      slam, gazebo-sensor, official-baseline). Tag policies: distro-git-commit,
+      distro-datetime, distro-latest. Build orchestration through Go sim CLI.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docker/, orchestration/sim/internal/images/, docs/decisions.md
+    code:
+      - path: orchestration/sim/internal/images/build.go
+      - path: docker/images/base/ros-base.Dockerfile
+      - path: docker/images/infra/ardupilot-sitl.Dockerfile
+      - path: docker/images/infra/gazebo-headless.Dockerfile
+      - path: docker/images/infra/mavlink-router.Dockerfile
+      - path: docker/images/infra/fast-lio.Dockerfile
+      - path: docker/images/runtime/companion.Dockerfile
+      - path: docker/images/runtime/slam.Dockerfile
+      - path: docker/images/runtime/gazebo-sensor.Dockerfile
+      - path: docker/images/runtime/official-baseline.Dockerfile
+      - path: docker/images/runtime/sim-python.Dockerfile
+    tests:
+      - path: orchestration/sim/internal/images/build_test.go
+    docs:
+      - path: docker/README.md
+    depends_on: [REQ-001]
+    conflicts: []
+
+  - id: REQ-010
+    title: P4 — FCU state machine and unique controller
+    description: >
+      Task layer expresses intent only; exactly one controller publishes
+      setpoints to FCU. GUIDED → arm → takeoff → local position ready state
+      machine. MAVLink bootstrap for takeoff transitions, DDS /ap/v1/* for
+      state observation and /ap/v1/cmd_vel motion output.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p4_fcu_state_machine_design.md, navlab/sim/companion/nodes/hover_mission.py
+    code:
+      - path: navlab/sim/companion/nodes/hover_mission.py
+      - path: navlab/real/companion/nodes/mavlink_bridge.py
+      - path: navlab/real/companion/nodes/pose_mirror.py
+      - path: navlab/real/companion/nodes/external_nav.py
+    tests:
+      - path: navlab/tests/companion/test_hover_mission.py
+      - path: navlab/tests/companion/test_pose_mirror.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p4_fcu_state_machine_design.md
+      - path: docs/scenarios/indoor/todos/P4_fcu_state_machine_todo.md
+    depends_on: [REQ-007]
+    conflicts: []
+
+  - id: REQ-011
+    title: P5 — Frame contract auto-validation
+    description: >
+      Automated validation of TF chains, sensor frames, scan forward direction,
+      rangefinder/IMU frames, and rosbag contracts. Proves
+      map→odom→base_link→sensor frames are connected, no loops, parent unique.
+      /scan overlays onto fixed walls. Dynamic motion direction deferred to P6/P7.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p5_frame_contract_design.md, navlab/common/perception/
+    code:
+      - path: navlab/common/perception/contract.py
+      - path: navlab/common/perception/front_sector.py
+      - path: navlab/common/perception/scan_features.py
+      - path: navlab/sim/companion/nodes/scan_features.py
+    tests:
+      - path: navlab/tests/common/test_front_sector.py
+      - path: navlab/tests/companion/test_scan_features.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p5_frame_contract_design.md
+    depends_on: [REQ-010]
+    conflicts: []
+
+  - id: REQ-012
+    title: P6 — SLAM hover gate
+    description: >
+      Prove /slam/odom through ExternalNav into ArduPilot EKF supports stable
+      hover in the official maze/Iris scene. Reuses P4 unique FCU controller
+      and P5 frame contract. Gazebo truth, fake odom, and direct set_pose are
+      forbidden as control/SLAM/ExternalNav inputs. Acceptance requires hover
+      drift within thresholds, set_pose_count==0, and required rosbag topics.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p6_slam_hover_gate_design.md, navlab/sim/companion/runtime/hover_acceptance.py
+    code:
+      - path: navlab/sim/companion/runtime/hover_acceptance.py
+      - path: navlab/sim/companion/nodes/hover_mission.py
+      - path: navlab/common/slam/ros/localization/navlab_fake_odom/launch/navlab_fake_odom.launch.py
+    tests:
+      - path: navlab/tests/companion/test_hover_mission.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p6_slam_hover_gate_design.md
+    depends_on: [REQ-011]
+    conflicts: []
+
+  - id: REQ-013
+    title: P7 — Official maze motion gate
+    description: >
+      Validate minimal horizontal motion (forward, back, yaw scan, stop drift)
+      in the official maze/Iris scene. Every action through FCU setpoint, no
+      direct Gazebo control. Motion coordinator publishes intent; unique FCU
+      controller publishes /ap/v1/cmd_vel. No collision, set_pose_count==0.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p7_official_maze_motion_gate_design.md, orchestration/sim/internal/tasks/
+    code:
+      - path: orchestration/sim/internal/tasks/simulation_profile.go
+      - path: orchestration/sim/internal/tasks/stage1_matrix.go
+      - path: orchestration/sim/internal/tasks/gate_evaluation.go
+    tests:
+      - path: orchestration/sim/internal/tasks/gate_evaluation_test.go
+      - path: orchestration/sim/internal/tasks/stage1_matrix_test.go
+    docs:
+      - path: docs/scenarios/indoor/navlab_p7_official_maze_motion_gate_design.md
+      - path: docs/scenarios/indoor/todos/P7_official_maze_motion_gate_todo.md
+    depends_on: [REQ-012]
+    conflicts: []
+
+  - id: REQ-014
+    title: P8 — Official maze exploration
+    description: >
+      Complete replayable exploration in official maze/Iris scene without
+      collision or getting stuck. Exploration coordinator publishes intent only;
+      FCU controller owns setpoint output. No direct Gazebo truth as planning
+      input. Coverage or map growth reaches configured threshold.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p8_official_maze_exploration_design.md, orchestration/sim/internal/tasks/
+    code:
+      - path: orchestration/sim/internal/tasks/simulation_profile.go
+      - path: orchestration/sim/internal/tasks/gate_evaluation.go
+      - path: navlab/sim/companion/nodes/obstacle_mission.py
+    tests:
+      - path: orchestration/sim/internal/tasks/gate_evaluation_test.go
+      - path: navlab/tests/companion/test_obstacle_mission.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p8_official_maze_exploration_design.md
+    depends_on: [REQ-013]
+    conflicts: []
+
+  - id: REQ-015
+    title: P9 — Maze overlay and Foxglove-lite replay
+    description: >
+      Parse official maze.sdf walls to generate 1:1 metric overlay map.
+      Overlay SLAM /map, /scan, trajectory, and exploration state onto same
+      map frame. Crop by SLAM/trajectory bbox. Produce Foxglove-lite MCAP
+      for lightweight replay and upload. Official maze overlay is
+      visualization-only, never SLAM/planning/control input.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p9_official_maze_overlay_replay_design.md, scripts/command/src/maze.py
+    code:
+      - path: scripts/command/src/maze.py
+      - path: orchestration/sim/internal/foxglove/upload.go
+      - path: orchestration/sim/internal/tui/replay.go
+    tests:
+      - path: orchestration/sim/internal/foxglove/upload_test.go
+      - path: orchestration/sim/internal/tui/replay_test.go
+    docs:
+      - path: docs/scenarios/indoor/navlab_p9_official_maze_overlay_replay_design.md
+      - path: docs/scenarios/indoor/todos/P9_official_maze_overlay_replay_todo.md
+    depends_on: [REQ-014]
+    conflicts: []
+
+  - id: REQ-016
+    title: P10 — Scan integrity gate
+    description: >
+      Body-fixed 2D lidar scan integrity: validate /scan against IMU/FCU
+      attitude before SLAM consumption. Drop/clip scans when lidar plane tilt
+      risks hitting floor/ceiling. Publish /navlab/x2/scan_raw as diagnostic;
+      SLAM only consumes validated /scan. Normal and tilt fault-injection
+      profiles must both pass.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p10_body_fixed_lidar_scan_integrity_design.md, navlab/sim/gazebo_sensor/scan_integrity.py
+    code:
+      - path: navlab/sim/gazebo_sensor/scan_integrity.py
+      - path: navlab/sim/gazebo_sensor/scan_time_normalizer.py
+    tests:
+      - path: navlab/tests/gazebo_sensor/test_scan_integrity.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p10_body_fixed_lidar_scan_integrity_design.md
+    depends_on: [REQ-011, REQ-015]
+    conflicts: []
+
+  - id: REQ-017
+    title: P11 — Bounded 2D lidar scan stabilization
+    description: >
+      For moderate roll/pitch, project LaserScan endpoints into gravity-aligned
+      frame using IMU/TF + base_link→base_scan + rangefinder height. Keep P10
+      hard-tilt/floor-hit safety boundaries. Compare drop-only baseline vs.
+      bounded 2D projection candidate using P9 representative replay profile.
+      No Gazebo truth as compensation input.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p11_bounded_2d_lidar_scan_stabilization_design.md, navlab/sim/gazebo_sensor/scan_stabilization.py
+    code:
+      - path: navlab/sim/gazebo_sensor/scan_stabilization.py
+    tests:
+      - path: navlab/tests/gazebo_sensor/test_scan_stabilization.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p11_bounded_2d_lidar_scan_stabilization_design.md
+    depends_on: [REQ-016]
+    conflicts: []
+
+  - id: REQ-018
+    title: P12 — Airframe disturbance scan robustness
+    description: >
+      Simulate motor thrust multiplier/bias, ESC lag, thrust noise, and IMU
+      vibration profiles. Verify P11 horizontal recovery stays safe under
+      realistic disturbances. Compare ideal baseline vs. realistic disturbed
+      profiles. Hard-bias and invalid-config fault profiles must fail/block.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p12_airframe_disturbance_scan_robustness_design.md, navlab/sim/gazebo_sensor/airframe_disturbance.py
+    code:
+      - path: navlab/sim/gazebo_sensor/airframe_disturbance.py
+      - path: navlab/sim/gazebo_sensor/airframe_disturbance_runtime.py
+    tests:
+      - path: navlab/tests/gazebo_sensor/test_airframe_disturbance.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_p12_airframe_disturbance_scan_robustness_design.md
+      - path: docs/scenarios/indoor/todos/P12_airframe_disturbance_scan_robustness_todo.md
+    depends_on: [REQ-017]
+    conflicts: []
+
+  - id: REQ-019
+    title: P13 — Nav2 indoor navigation
+    description: >
+      Nav2 costmap/action/adapter for indoor navigation in official maze.
+      NavigateToPose → /cmd_vel_nav → /navlab/fcu/setpoint/intent →
+      navlab-fcu-controller → /ap/v1/cmd_vel chain. Completion policy:
+      land-in-place or return-and-land. Ideal + realistic profiles both
+      required.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_p13_nav2_indoor_navigation_design.md, orchestration/sim/internal/tasks/
+    code:
+      - path: orchestration/sim/internal/tasks/simulation_profile.go
+      - path: orchestration/sim/internal/tasks/stage1_matrix.go
+    tests:
+      - path: orchestration/sim/internal/tasks/stage1_matrix_test.go
+      - path: orchestration/sim/internal/tasks/gate_evaluation_test.go
+    docs:
+      - path: docs/scenarios/indoor/navlab_p13_nav2_indoor_navigation_design.md
+    depends_on: [REQ-018]
+    conflicts: []
+
+  # ── Supporting capabilities ──────────────────────────────────────────────
+
+  - id: REQ-020
+    title: Unified landing sequence
+    description: >
+      Unified landing policy across hover, exploration, and scan-robustness
+      tasks. Stage 1 (simulation-only): verify landing acceptance gates exist
+      and rosbag records required topics. Stage 2 (future): real LAND/disarm
+      execution path. Blockers make incomplete landing visible in summaries.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: docs/scenarios/indoor/navlab_unified_landing_sequence_design.md, orchestration/sim/internal/tasks/
+    code:
+      - path: orchestration/sim/internal/tasks/gate_evaluation.go
+      - path: orchestration/sim/internal/tasks/helpers/landing.go
+    tests:
+      - path: orchestration/sim/internal/tasks/gate_evaluation_test.go
+      - path: orchestration/sim/internal/tasks/helpers/execution_plan_test.go
+    docs:
+      - path: docs/scenarios/indoor/navlab_unified_landing_sequence_design.md
+    depends_on: [REQ-001]
+    conflicts: []
+
+  - id: REQ-021
+    title: Simulation companion runtime nodes
+    description: >
+      SITL mission controllers, Gazebo truth diagnostics, replay markers,
+      odom relay, scan-feature publishing, and vehicle/world visualization
+      markers. All under navlab.sim.companion to keep real/sim boundary clean.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: navlab/sim/companion/, docs/decisions.md
+    code:
+      - path: navlab/sim/companion/nodes/hover_mission.py
+      - path: navlab/sim/companion/nodes/obstacle_mission.py
+      - path: navlab/sim/companion/nodes/gazebo_truth_odom.py
+      - path: navlab/sim/companion/nodes/gazebo_truth_trajectory.py
+      - path: navlab/sim/companion/nodes/odom_relay.py
+      - path: navlab/sim/companion/nodes/scan_features.py
+      - path: navlab/sim/companion/nodes/vehicle_markers.py
+      - path: navlab/sim/companion/nodes/world_markers.py
+      - path: navlab/sim/companion/runtime/launcher.py
+      - path: navlab/sim/companion/runtime/config.py
+      - path: navlab/sim/companion/runtime/acceptance.py
+      - path: navlab/sim/companion/runtime/acceptance_cli.py
+      - path: navlab/sim/companion/runtime/doctor.py
+      - path: navlab/sim/companion/runtime/rosbag_profile.py
+      - path: navlab/sim/companion/runtime/status.py
+      - path: navlab/sim/companion/runtime/world_markers.py
+      - path: navlab/sim/companion/runtime/hover_acceptance.py
+      - path: navlab/sim/companion/runtime/cli.py
+    tests:
+      - path: navlab/tests/companion/test_gazebo_truth_odom.py
+      - path: navlab/tests/companion/test_gazebo_truth_trajectory.py
+      - path: navlab/tests/companion/test_hover_mission.py
+      - path: navlab/tests/companion/test_obstacle_mission.py
+      - path: navlab/tests/companion/test_world_markers.py
+      - path: navlab/tests/companion/test_vehicle_markers.py
+      - path: navlab/tests/companion/test_scan_features.py
+      - path: navlab/tests/companion/test_acceptance_artifacts.py
+      - path: navlab/tests/companion/test_acceptance_summary.py
+      - path: navlab/tests/companion/test_config.py
+    docs:
+      - path: docs/general/navlab_real_sim_package_boundary_design.md
+    depends_on: [REQ-001]
+    conflicts: []
+
+  - id: REQ-022
+    title: Real companion MAVLink runtime nodes
+    description: >
+      Real-machine MAVLink bridge, pose mirror, ExternalNav sender, IMU bridge,
+      rangefinder bridge, and YDLidar X2 scan publisher. All under
+      navlab.real.companion to keep the real/sim safety boundary explicit.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: navlab/real/companion/, docs/decisions.md
+    code:
+      - path: navlab/real/companion/nodes/mavlink_bridge.py
+      - path: navlab/real/companion/nodes/pose_mirror.py
+      - path: navlab/real/companion/nodes/external_nav.py
+      - path: navlab/real/companion/nodes/imu_bridge.py
+      - path: navlab/real/companion/nodes/rangefinder_bridge.py
+      - path: navlab/real/companion/nodes/ydlidar_x2_scan.py
+      - path: navlab/real/companion/nodes/motor_debug.py
+      - path: navlab/real/common/fcu_status.py
+    tests:
+      - path: navlab/tests/companion/test_pose_mirror.py
+      - path: navlab/tests/companion/test_imu_bridge.py
+    docs:
+      - path: docs/scenarios/indoor/navlab_real_flight_preflight_doctor_design.md
+    depends_on: [REQ-002]
+    conflicts: []
+
+  - id: REQ-023
+    title: Artifact writing and manifest
+    description: >
+      Runtime outputs written under artifacts/sim and artifacts/real roots.
+      Generated files include task plans, runtime plans, task results, summaries,
+      manifests with hashes, and rosbags. Cross-language artifacts prefer
+      protobuf contract shapes. Manifests record contract version,
+      implementation, runtime mode, backend, task id, run id, and hashes.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: orchestration/sim/internal/artifacts/, orchestration/real/src/, README.md
+    code:
+      - path: orchestration/sim/internal/artifacts/writer.go
+      - path: orchestration/sim/internal/tasks/runtime_artifacts.go
+      - path: orchestration/real/src/contracts.rs
+    tests:
+      - path: orchestration/sim/internal/artifacts/writer_test.go
+      - path: orchestration/sim/internal/tasks/runtime_artifacts_test.go
+    docs:
+      - path: README.md
+      - path: contracts/README.md
+    depends_on: [REQ-001, REQ-002, REQ-008]
+    conflicts: []
+
+  - id: REQ-024
+    title: Gazebo sensor runtime
+    description: >
+      Simulation sensor runtime: X2 virtual serial emulator, rangefinder
+      sensor, scan integrity filter, scan stabilization, airframe disturbance
+      injection, and scan time normalization. All under navlab.sim.gazebo_sensor.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: navlab/sim/gazebo_sensor/
+    code:
+      - path: navlab/sim/gazebo_sensor/cli.py
+      - path: navlab/sim/gazebo_sensor/runtime.py
+      - path: navlab/sim/gazebo_sensor/config.py
+      - path: navlab/sim/gazebo_sensor/rangefinder.py
+      - path: navlab/sim/gazebo_sensor/scan_integrity.py
+      - path: navlab/sim/gazebo_sensor/scan_stabilization.py
+      - path: navlab/sim/gazebo_sensor/scan_time_normalizer.py
+      - path: navlab/sim/gazebo_sensor/airframe_disturbance.py
+      - path: navlab/sim/gazebo_sensor/airframe_disturbance_runtime.py
+      - path: navlab/sim/gazebo_sensor/x2/emulator.py
+      - path: navlab/sim/gazebo_sensor/x2/protocol.py
+      - path: navlab/sim/gazebo_sensor/x2/scan_source.py
+      - path: navlab/sim/gazebo_sensor/x2/smoke.py
+    tests:
+      - path: navlab/tests/gazebo_sensor/test_rangefinder.py
+      - path: navlab/tests/gazebo_sensor/test_scan_integrity.py
+      - path: navlab/tests/gazebo_sensor/test_scan_stabilization.py
+      - path: navlab/tests/gazebo_sensor/test_airframe_disturbance.py
+      - path: navlab/tests/gazebo_sensor/x2/test_protocol.py
+      - path: navlab/tests/gazebo_sensor/x2/test_scan_source.py
+      - path: navlab/tests/gazebo_sensor/x2/test_serial_emulator.py
+      - path: navlab/tests/gazebo_sensor/x2/test_driver_smoke.py
+      - path: navlab/tests/gazebo_sensor/x2/test_sensor_ownership.py
+      - path: navlab/tests/gazebo_sensor/x2/test_sensor_runtime.py
+      - path: navlab/tests/gazebo_sensor/x2/test_protocol_config.py
+    docs:
+      - path: docs/sim/README.md
+      - path: docs/sim/x2_lidar_simulation_design.md
+    depends_on: []
+    conflicts: []
+
+  - id: REQ-025
+    title: Quality checks and CI
+    description: >
+      Multi-language linting, formatting, and validation: Go (golangci-lint,
+      gofmt), Rust (clippy, rustfmt), Python (ruff, pyright). Contract
+      validation via scripts/quality/check-contracts.sh. Pre-commit hooks
+      via lefthook. GitHub Actions CI for validation.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: scripts/quality/, .github/workflows/, lefthook.yml, justfile
+    code:
+      - path: scripts/quality/check-go.sh
+      - path: scripts/quality/check-rust.sh
+      - path: scripts/quality/check-python.sh
+      - path: scripts/quality/check-contracts.sh
+      - path: scripts/quality/format-go.sh
+      - path: scripts/quality/format-rust.sh
+      - path: scripts/quality/format-python.sh
+      - path: scripts/contracts/generate-contracts-go.sh
+      - path: scripts/contracts/generate-contracts-python.sh
+      - path: lefthook.yml
+      - path: justfile
+    tests: []
+    docs:
+      - path: scripts/README.md
+      - path: scripts/contracts/README.md
+    depends_on: []
+    conflicts: []
+
+  - id: REQ-026
+    title: CLI command tools
+    description: >
+      Standalone Python CLI for serial bridge (MAVLink), maze utilities,
+      ROS setup checks, and operational utilities. Foxglove replay/upload
+      belongs to Go sim orchestration, not scripts/command.
+    priority: P2
+    status: implemented
+    confidence: confirmed
+    source: scripts/command/, justfile
+    code:
+      - path: scripts/command/main.py
+      - path: scripts/command/src/cli.py
+      - path: scripts/command/src/maze.py
+      - path: scripts/command/src/mavlink_serial.py
+      - path: scripts/command/src/ros_setup.py
+      - path: scripts/command/src/command_logging.py
+      - path: scripts/ops/watch_fcu_rangefinder.py
+      - path: scripts/ops/kill-serial-holders.sh
+    tests: []
+    docs:
+      - path: scripts/command/README.md
+    depends_on: []
+    conflicts: []
+
+  - id: REQ-027
+    title: Shared Python runtime utilities
+    description: >
+      Common runtime code shared between real and sim: process manager, pose
+      types, contract helpers, logging setup, TOML value parsing, rosbag
+      utilities, perception contracts, and SLAM backend wrappers.
+      Under navlab.common with real/sim domain split.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: navlab/common/, docs/decisions.md
+    code:
+      - path: navlab/common/__init__.py
+      - path: navlab/common/process_manager.py
+      - path: navlab/common/pose.py
+      - path: navlab/common/contracts.py
+      - path: navlab/common/logging.py
+      - path: navlab/common/toml_values.py
+      - path: navlab/common/rosbag.py
+      - path: navlab/common/slam/cli.py
+      - path: navlab/common/slam/runtime.py
+      - path: navlab/common/slam/backends.py
+      - path: navlab/common/slam/config.py
+      - path: navlab/common/perception/contract.py
+      - path: navlab/common/perception/front_sector.py
+      - path: navlab/common/perception/scan_features.py
+      - path: navlab/common/interfaces/__init__.py
+    tests:
+      - path: navlab/tests/common/test_contracts.py
+      - path: navlab/tests/common/test_front_sector.py
+      - path: navlab/tests/common/test_process_manager.py
+      - path: navlab/tests/common/test_rosbag.py
+      - path: navlab/tests/slam/test_runtime_config.py
+      - path: navlab/tests/slam/test_cartographer_adapter_contract.py
+      - path: navlab/tests/slam/test_cartographer_official_alignment.py
+      - path: navlab/tests/slam/test_ros_workspace_ownership.py
+      - path: navlab/tests/slam/test_sitl_external_nav_params.py
+    docs:
+      - path: docs/general/navlab_real_sim_package_boundary_design.md
+    depends_on: []
+    conflicts: []
+
+  - id: REQ-028
+    title: Simulation runtime config normalization
+    description: >
+      Project defaults and task YAML overrides merged into typed
+      TaskRuntimeConfig. Config covers topic contracts, runtime thresholds,
+      rosbag profiles, safety/source claims, SITL params, SLAM config,
+      landing policy, Nav2, navigation adapter, and official baseline.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: orchestration/sim/internal/config/, orchestration/sim/config.toml, orchestration/real/config.toml
+    code:
+      - path: orchestration/sim/internal/config/loader.go
+      - path: orchestration/sim/internal/config/types.go
+      - path: orchestration/sim/internal/config/task_runtime.go
+      - path: orchestration/sim/internal/config/defaults.go
+      - path: orchestration/sim/config.toml
+      - path: orchestration/real/config.toml
+      - path: orchestration/real/src/config.rs
+    tests:
+      - path: orchestration/sim/internal/config/loader_test.go
+      - path: orchestration/sim/internal/config/task_runtime_test.go
+    docs:
+      - path: docs/general/orchestration_config_precedence_split_design.md
+    depends_on: [REQ-001, REQ-002]
+    conflicts: []
+
+  - id: REQ-029
+    title: Simulation TUI monitor and replay
+    description: >
+      Terminal UI for live run monitoring and artifact replay. Uses
+      Bubble Tea framework. Supports event-based live status display and
+      post-run artifact directory replay with structured panels.
+    priority: P2
+    status: implemented
+    confidence: confirmed
+    source: orchestration/sim/internal/tui/, orchestration/sim/internal/ui/
+    code:
+      - path: orchestration/sim/internal/tui/model.go
+      - path: orchestration/sim/internal/tui/run.go
+      - path: orchestration/sim/internal/tui/replay.go
+      - path: orchestration/sim/internal/tui/events.go
+      - path: orchestration/sim/internal/ui/styles.go
+    tests:
+      - path: orchestration/sim/internal/tui/replay_test.go
+    docs:
+      - path: docs/general/orchestration_sim_tui_monitor_design.md
+    depends_on: [REQ-001]
+    conflicts: []
+
+  - id: REQ-030
+    title: Foxglove upload integration
+    description: >
+      Upload simulation MCAP rosbags to Foxglove for cloud replay. Supports
+      full MCAP and Foxglove-lite (pruned) uploads. Resolves Go sim artifact
+      layouts under artifacts/sim/<task>/<run>/rosbag/.
+    priority: P2
+    status: implemented
+    confidence: confirmed
+    source: orchestration/sim/internal/foxglove/, scripts/command/src/cli.py
+    code:
+      - path: orchestration/sim/internal/foxglove/upload.go
+      - path: scripts/command/src/cli.py
+    tests:
+      - path: orchestration/sim/internal/foxglove/upload_test.go
+    docs:
+      - path: orchestration/sim/README.md
+    depends_on: [REQ-001, REQ-015]
+    conflicts: []
+
+  - id: REQ-031
+    title: Real preflight environment validation
+    description: >
+      Validate host environment before real-machine operations: check serial
+      MAVLink endpoint shape, probe dependency commands, Python modules, ROS
+      package prefixes, and process-service requirements. Writes summary.json.
+      Does not start prepare services or connect to MAVLink.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: orchestration/real/src/workflows/preflight.rs, docs/decisions.md
+    code:
+      - path: orchestration/real/src/workflows/preflight.rs
+    tests:
+      - path: orchestration/real/src/workflows/preflight.rs
+    docs:
+      - path: docs/scenarios/indoor/navlab_real_flight_preflight_doctor_design.md
+    depends_on: [REQ-002]
+    conflicts: []
+
+  - id: REQ-032
+    title: Real prepare service lifecycle
+    description: >
+      Plan and execute real prepare services (MAVLink router, NavLab bridge,
+      lidar, SLAM, rangefinder). Dry-run produces operator-inspectable plan.
+      Live execution behind --allow-live flag. Start/stop lifecycle with
+      reverse-order cleanup. Motor-debug excludes rangefinder prepare services.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: orchestration/real/src/workflows/prepare.rs, orchestration/real/src/runtime/process.rs
+    code:
+      - path: orchestration/real/src/workflows/prepare.rs
+      - path: orchestration/real/src/runtime/process.rs
+    tests:
+      - path: orchestration/real/src/workflows/prepare.rs
+      - path: orchestration/real/src/runtime/process.rs
+    docs:
+      - path: docs/scenarios/indoor/navlab_real_prepare_and_task_doctor_design.md
+    depends_on: [REQ-031]
+    conflicts: []
+
+  - id: REQ-033
+    title: Real doctor chain workflow
+    description: >
+      Chain preflight → prepare → common-doctor → task-doctor → stop prepare.
+      Writes single artifact directory with all phase summaries. Prepare
+      defaults to dry-run in chain unless --allow-live-prepare. Common-doctor
+      produces upstream evidence consumed by task-doctor.
+    priority: P0
+    status: implemented
+    confidence: confirmed
+    source: orchestration/real/src/workflows/doctor_chain.rs, docs/decisions.md
+    code:
+      - path: orchestration/real/src/workflows/doctor_chain.rs
+      - path: orchestration/real/src/workflows/common_doctor.rs
+      - path: orchestration/real/src/workflows/task_doctor.rs
+    tests:
+      - path: orchestration/real/src/workflows/doctor_chain.rs
+      - path: orchestration/real/src/workflows/common_doctor.rs
+      - path: orchestration/real/src/workflows/task_doctor.rs
+    docs:
+      - path: docs/scenarios/indoor/navlab_real_flight_preflight_doctor_design.md
+      - path: docs/scenarios/indoor/navlab_real_prepare_and_task_doctor_design.md
+    depends_on: [REQ-031, REQ-032]
+    conflicts: []
+
+  - id: REQ-034
+    title: Docker entrypoints and container startup
+    description: >
+      Container entrypoint scripts for SITL, Gazebo, Gazebo sensor, MAVLink
+      router, NavLab companion, and FAST-LIO. Mounted or copied into runtime
+      containers at /usr/local/bin/.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: docker/entrypoints/
+    code:
+      - path: docker/entrypoints/start-sitl.sh
+      - path: docker/entrypoints/start-gazebo.sh
+      - path: docker/entrypoints/start-gazebo-sensor.sh
+      - path: docker/entrypoints/start-mavlink-router.sh
+      - path: docker/entrypoints/start-navlab-companion.sh
+      - path: docker/entrypoints/start-fast-lio.sh
+    tests: []
+    docs:
+      - path: docker/README.md
+    depends_on: [REQ-009]
+    conflicts: []
+
+  - id: REQ-035
+    title: Gazebo worlds and vehicle models
+    description: >
+      Simulation world SDF files (figure-8, obstacle, empty headless) and
+      NavLab IQ quad vehicle model with X2 lidar. Mounted into Gazebo
+      container. Official maze world comes from ardupilot_gz, not defined here.
+    priority: P1
+    status: implemented
+    confidence: confirmed
+    source: docker/worlds/, docker/navlab_models/
+    code:
+      - path: docker/worlds/navlab_iq_quad_figure8.sdf
+      - path: docker/worlds/navlab_iq_quad_obstacle.sdf
+      - path: docker/worlds/uav_obstacle_5m.sdf
+      - path: docker/worlds/empty_headless.sdf
+      - path: docker/navlab_models/navlab_iq_quad/model.sdf
+      - path: docker/navlab_models/navlab_iq_quad/model.config
+    tests: []
+    docs:
+      - path: docker/README.md
+    depends_on: [REQ-009]
+    conflicts: []

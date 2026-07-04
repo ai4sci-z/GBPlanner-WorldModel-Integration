@@ -1,0 +1,20 @@
+{
+  "runtimeDomain": "RUNTIME_DOMAIN_REAL",
+  "scanSource": "ydlidar_x2",
+  "imuSource": "fcu_mavlink",
+  "rangefinderSource": "fcu_distance_sensor",
+  "slamSource": "cartographer",
+  "usesTruthAsControlInput": false,
+  "topics": [
+    {
+      "topic": "/scan",
+      "present": true,
+      "observedRateHz": 7.0,
+      "latestAgeSec": 0.12,
+      "publishers": [
+        "/ydlidar_ros2_driver_node"
+      ],
+      "observedAt": "2026-06-12T17:01:02Z"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "navlab.orchestration.task_result.v1",
+  "task_id": "navigation",
+  "run_id": "20260613T120000Z",
+  "status": "TASK_STATUS_OK",
+  "ok": true,
+  "blocked": false,
+  "exitCode": 0,
+  "artifact_dir": "artifacts/sim/navigation/20260613T120000Z",
+  "summaryPath": "artifacts/sim/navigation/20260613T120000Z/summary.json",
+  "blockers": [],
+  "warnings": [],
+  "sourceEvidence": {
+    "runtimeDomain": "RUNTIME_DOMAIN_SIM",
+    "scanSource": "gazebo_x2_virtual_serial",
+    "imuSource": "official_gazebo_imu_bridge",
+    "rangefinderSource": "tcp:127.0.0.1:5760",
+    "slamSource": "cartographer",
+    "usesTruthAsControlInput": false
+  },
+  "metrics": {
+    "gate": {
+      "navigation": {
+        "claim": "evaluated",
+        "navigation_claim": "evaluated",
+        "frontier_claim": "evaluated",
+        "strategy": "bounded_frontier",
+        "frontier_candidates": [
+          {
+            "id": "maze_exit",
+            "frame_id": "map",
+            "source": "bounded_goal_map_costmap_seed",
+            "clearance_ok": true,
+            "path_reachable": true
+          }
+        ],
+        "accepted_frontiers": [
+          {
+            "id": "maze_exit",
+            "frame_id": "map"
+          }
+        ],
+        "rejected_frontiers": [
+          {
+            "id": "unreachable_probe",
+            "reason": "unreachable_blacklisted"
+          }
+        ],
+        "blacklisted_goals": [
+          "unreachable_probe"
+        ],
+        "accepted_goals": 3,
+        "min_accepted_goals": 3,
+        "path_length_m": 4.2,
+        "min_path_length_m": 4.0,
+        "goal_success_ratio": 0.75,
+        "coverage_growth": 0.5,
+        "min_coverage_growth": 0.5,
+        "completion_policy": "land_in_place",
+        "return_home_policy": "land_in_place",
+        "uses_gazebo_truth_as_input": false
+      },
+      "costmap_health": {
+        "claim": "evaluated",
+        "costmap_claim": "evaluated",
+        "global_costmap_age_sec": 0.2,
+        "local_costmap_age_sec": 0.1,
+        "local_costmap_update_frequency_hz": 5.0,
+        "unknown_ratio": 0.12,
+        "obstacle_cells": 8,
+        "required_layers": [
+          "static_layer",
+          "obstacle_layer",
+          "inflation_layer"
+        ]
+      }
+    }
+  },
+  "evidence": {
+    "foxgloveLiteProfile": "artifacts/sim/navigation/20260613T120000Z/navigation_foxglove_lite_profile.json"
+  },
+  "details": {}
+}

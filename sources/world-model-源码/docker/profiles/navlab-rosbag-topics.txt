@@ -1,0 +1,20 @@
+# NavLab acceptance extra rosbag topics.
+#
+# The minimum replay/acceptance topics are hardcoded in
+# navlab.companion.acceptance.MINIMUM_ROSBAG_TOPICS and cannot be removed by
+# this file. Add only extra debug or algorithm topics here.
+#
+# Format: "<required|optional> /topic".
+# - required: record and fail acceptance if missing or zero-count.
+# - optional: record if present, but do not fail if missing.
+#
+# Examples:
+# optional /map
+# optional /odom
+# optional /constraint_list
+required /navlab/landing/status
+optional /navlab/landing/intent
+required /navlab/fcu/controller/status
+required /ap/v1/status
+required /ap/v1/pose/filtered
+required /rangefinder/down/range

@@ -1,0 +1,71 @@
+
+    <!-- NavLab overlay: down-facing rangefinder ray sensor.
+         The X2 vendor-driver input uses the official iris_with_lidar
+         /lidar sensor; do not add a second /lidar sensor here. -->
+    <link name="rangefinder_down_link">
+      <pose relative_to="base_link">0 0 -0.08 0 0 0</pose>
+      <inertial>
+        <mass>0.03</mass>
+        <inertia>
+          <ixx>0.00002</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00002</iyy>
+          <iyz>0</iyz>
+          <izz>0.00002</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.05 0.04 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.05 0.04 0.02</size>
+          </box>
+        </geometry>
+      </visual>
+      <sensor name="rangefinder_down" type="gpu_lidar">
+        <gz_frame_id>{{.RangefinderFrameID}}</gz_frame_id>
+        <pose>{{.RangefinderModelPose}}</pose>
+        <topic>{{.RangefinderScanIdealTopic}}</topic>
+        <always_on>true</always_on>
+        <update_rate>{{.RangefinderModelUpdateHz}}</update_rate>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>{{.RangefinderModelRayCount}}</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>{{.RangefinderMinDistanceM}}</min>
+            <max>{{.RangefinderMaxDistanceM}}</max>
+            <resolution>0.005</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>{{.RangefinderModelNoiseM}}</stddev>
+          </noise>
+        </ray>
+        <visualize>false</visualize>
+      </sensor>
+    </link>
+
+    <joint name="rangefinder_down_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>rangefinder_down_link</child>
+    </joint>

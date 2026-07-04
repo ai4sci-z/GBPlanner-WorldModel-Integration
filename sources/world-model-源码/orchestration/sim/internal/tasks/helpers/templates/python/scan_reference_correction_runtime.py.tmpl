@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+import json
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+
+def bool_flag(name: str, value: bool) -> str:
+    return "--" + name if value else "--disable-correction"
+
+def add_arg(argv: list[str], name: str, value) -> None:
+    argv.extend(["--" + name, str(value)])
+
+def main() -> int:
+    from navlab.sim.companion.nodes.scan_reference_correction import run
+
+    argv: list[str] = []
+    for name in [
+        "slam-odom-topic",
+        "scan-reference-status-topic",
+        "hover-status-topic",
+        "output-odom-topic",
+        "status-topic",
+        "expected-frame-id",
+        "expected-child-frame-id",
+        "max-status-age-ms",
+        "max-correction-m",
+        "max-measurement-delta-m",
+        "max-correction-step-m",
+        "min-runtime-consistency-samples",
+        "min-direction-cosine",
+        "max-axis-sign-flips",
+        "max-saturation-ratio",
+        "history-samples",
+    ]:
+        add_arg(argv, name, SPEC[name.replace("-", "_")])
+    argv.append(bool_flag("enable-correction", bool(SPEC["enable_correction"])))
+    return int(run(argv) or 0)
+
+if __name__ == "__main__":
+    raise SystemExit(main())

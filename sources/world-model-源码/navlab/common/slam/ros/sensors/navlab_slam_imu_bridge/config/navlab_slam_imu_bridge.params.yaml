@@ -1,0 +1,14 @@
+navlab_slam_imu_bridge_node:
+  ros__parameters:
+    source_mode: topic
+    source_topic: /ap/imu/experimental/data
+    source_label: ardupilot_dds
+    output_topic: /imu
+    status_topic: /imu/status
+    output_frame_id: imu_link
+    use_input_frame_id: true
+    replace_zero_timestamp: true
+    publish_placeholder_imu: false
+    input_timeout_ms: 500
+    status_period_ms: 500
+    min_input_rate_hz: 4.0

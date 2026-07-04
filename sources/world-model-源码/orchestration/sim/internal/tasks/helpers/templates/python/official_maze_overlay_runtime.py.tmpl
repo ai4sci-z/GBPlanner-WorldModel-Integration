@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+import json
+import math
+
+import rclpy
+from nav_msgs.msg import OccupancyGrid
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+
+
+SPEC = json.loads(r'''{{.SpecJSON}}''')
+
+
+def wall_corners(wall):
+    half_l = wall["length"] / 2.0
+    half_t = wall["thickness"] / 2.0
+    c = math.cos(wall["yaw"])
+    s = math.sin(wall["yaw"])
+    points = []
+    for lx, ly in [(-half_l, -half_t), (half_l, -half_t), (half_l, half_t), (-half_l, half_t)]:
+        points.append((wall["x"] + c * lx - s * ly, wall["y"] + s * lx + c * ly))
+    return points
+
+
+def point_inside_wall(x, y, wall):
+    dx = x - wall["x"]
+    dy = y - wall["y"]
+    c = math.cos(wall["yaw"])
+    s = math.sin(wall["yaw"])
+    lx = c * dx + s * dy
+    ly = -s * dx + c * dy
+    return abs(lx) <= wall["length"] / 2.0 and abs(ly) <= wall["thickness"] / 2.0
+
+
+def build_map():
+    walls = SPEC["walls"]
+    margin = float(SPEC["margin_m"])
+    resolution = float(SPEC["resolution_m"])
+    points = [point for wall in walls for point in wall_corners(wall)]
+    xmin = min(point[0] for point in points) - margin
+    xmax = max(point[0] for point in points) + margin
+    ymin = min(point[1] for point in points) - margin
+    ymax = max(point[1] for point in points) + margin
+    width = max(1, int(math.ceil((xmax - xmin) / resolution)))
+    height = max(1, int(math.ceil((ymax - ymin) / resolution)))
+    data = [-1] * (width * height)
+    for row in range(height):
+        y = ymin + (row + 0.5) * resolution
+        for col in range(width):
+            x = xmin + (col + 0.5) * resolution
+            if any(point_inside_wall(x, y, wall) for wall in walls):
+                data[row * width + col] = 100
+            else:
+                data[row * width + col] = 0
+    msg = OccupancyGrid()
+    msg.header.frame_id = SPEC["frame_id"]
+    msg.info.resolution = resolution
+    msg.info.width = width
+    msg.info.height = height
+    msg.info.origin.position.x = xmin
+    msg.info.origin.position.y = ymin
+    msg.info.origin.orientation.w = 1.0
+    msg.data = data
+    return msg
+
+
+def main():
+    rclpy.init()
+    node = rclpy.create_node("navlab_official_maze_overlay")
+    qos = QoSProfile(depth=1)
+    qos.reliability = ReliabilityPolicy.RELIABLE
+    qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
+    publishers = [node.create_publisher(OccupancyGrid, topic, qos) for topic in SPEC["topics"]]
+    msg = build_map()
+
+    def publish():
+        msg.header.stamp = node.get_clock().now().to_msg()
+        for publisher in publishers:
+            publisher.publish(msg)
+
+    timer = node.create_timer(1.0, publish)
+    publish()
+    node.get_logger().info(
+        "official maze overlay publishing topics=%s frame=%s width=%d height=%d"
+        % (SPEC["topics"], SPEC["frame_id"], msg.info.width, msg.info.height)
+    )
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_timer(timer)
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

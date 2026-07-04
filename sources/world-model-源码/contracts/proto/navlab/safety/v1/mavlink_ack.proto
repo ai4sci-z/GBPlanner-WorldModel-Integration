@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package navlab.safety.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/safety/v1;safetyv1";
+
+import "google/protobuf/timestamp.proto";
+
+message MavlinkAck {
+  string command = 1;
+  string result = 2;
+  int32 result_code = 3;
+  bool accepted = 4;
+  string mode_before = 5;
+  string mode_after = 6;
+  string statustext = 7;
+  google.protobuf.Timestamp observed_at = 8;
+}

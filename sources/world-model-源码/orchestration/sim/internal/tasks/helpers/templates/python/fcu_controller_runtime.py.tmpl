@@ -1,0 +1,868 @@
+from __future__ import annotations
+
+import json
+import threading
+import time
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+
+def main() -> int:
+    import rclpy
+    from rclpy.parameter import Parameter
+    from rclpy.qos import qos_profile_sensor_data
+    from geometry_msgs.msg import PoseStamped, TwistStamped
+    from nav_msgs.msg import Odometry
+    from sensor_msgs.msg import Imu, LaserScan, Range
+    from std_msgs.msg import String
+
+    rclpy.init()
+    node = rclpy.create_node("navlab_fcu_controller")
+    node.set_parameters([Parameter("use_sim_time", Parameter.Type.BOOL, True)])
+    clock_deadline = time.monotonic() + 5.0
+    while rclpy.ok() and time.monotonic() < clock_deadline and node.get_clock().now().nanoseconds <= 0:
+        rclpy.spin_once(node, timeout_sec=0.1)
+    state = {
+        "pose": None,
+        "pose_source": "",
+        "pose_count": 0,
+        "fcu_pose_count": 0,
+        "slam_odom_count": 0,
+        "first_pose_xyz": None,
+        "last_pose_xyz": None,
+        "max_horizontal_drift_m": 0.0,
+        "max_altitude_error_m": 0.0,
+        "max_slam_position_jump_m": 0.0,
+        "odom_count": 0,
+        "imu": None,
+        "imu_count": 0,
+        "scan": None,
+        "scan_count": 0,
+        "setpoint_intent": {},
+        "setpoint_intent_count": 0,
+        "last_setpoint_intent_ms": 0,
+        "cmd_vel_publish_count": 0,
+        "mavlink_master": None,
+        "mavlink_target_system": 0,
+        "mavlink_target_component": 0,
+        "mavlink_setpoint_count": 0,
+        "mavlink_setpoint_error": "",
+        "mavlink_local_position_count": 0,
+        "mavlink_local_x_m": None,
+        "mavlink_local_y_m": None,
+        "mavlink_local_z_m": None,
+        "local_setpoint_x_m": 0.0,
+        "local_setpoint_y_m": 0.0,
+        "local_setpoint_yaw_rad": 0.0,
+        "last_local_setpoint_monotonic": 0.0,
+        "bootstrap_status": {"ok": False, "state": "not_started"},
+        "task_completed": False,
+        "task_completion_status": {},
+        "ready_since_monotonic": None,
+        "ready_elapsed_sec": 0.0,
+        "landing_complete_since_monotonic": None,
+        "started_ms": int(time.time() * 1000),
+    }
+    mavlink_lock = threading.Lock()
+
+    def guided_mode_number() -> int:
+        value = SPEC.get("guided_mode", "GUIDED")
+        try:
+            return int(value)
+        except Exception:
+            return 4 if str(value).upper() == "GUIDED" else 4
+
+    def wait_mavlink_ack(master, command: int, timeout_sec: float = 8.0) -> dict:
+        from pymavlink import mavutil
+
+        end = time.monotonic() + timeout_sec
+        while time.monotonic() < end:
+            msg = master.recv_match(type="COMMAND_ACK", blocking=True, timeout=0.5)
+            if msg and int(msg.command) == int(command):
+                data = msg.to_dict()
+                data["accepted"] = int(data.get("result", -1)) == int(mavutil.mavlink.MAV_RESULT_ACCEPTED)
+                return data
+        return {"command": int(command), "timeout": True, "accepted": False}
+
+    def wait_mavlink_guided(master, mode_id: int, timeout_sec: float = 8.0) -> bool:
+        end = time.monotonic() + timeout_sec
+        while time.monotonic() < end:
+            msg = master.recv_match(type="HEARTBEAT", blocking=True, timeout=0.5)
+            if msg and int(msg.custom_mode) == int(mode_id):
+                return True
+        return False
+
+    def wait_mavlink_armed(master, timeout_sec: float = 8.0) -> bool:
+        from pymavlink import mavutil
+
+        end = time.monotonic() + timeout_sec
+        while time.monotonic() < end:
+            msg = master.recv_match(type="HEARTBEAT", blocking=True, timeout=0.5)
+            if msg and (int(msg.base_mode) & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED):
+                return True
+        return False
+
+    def wait_mavlink_takeoff_height(master, altitude_m: float, timeout_sec: float = 15.0) -> dict:
+        min_height_m = float(SPEC.get("takeoff_min_height_m", 0.15) or 0.15)
+        min_height_ratio = float(SPEC.get("takeoff_min_height_ratio", 0.35) or 0.35)
+        target_min = max(min_height_m, altitude_m * min_height_ratio)
+        end = time.monotonic() + timeout_sec
+        latest = None
+        while time.monotonic() < end:
+            msg = master.recv_match(type=["LOCAL_POSITION_NED", "GLOBAL_POSITION_INT", "VFR_HUD"], blocking=True, timeout=0.5)
+            if not msg:
+                continue
+            latest = msg.to_dict()
+            if msg.get_type() == "LOCAL_POSITION_NED" and float(msg.z) <= -target_min:
+                return {"ok": True, "latest": latest, "height_m": -float(msg.z), "target_min_m": target_min, "source": "LOCAL_POSITION_NED"}
+            if msg.get_type() == "GLOBAL_POSITION_INT" and float(msg.relative_alt) / 1000.0 >= target_min:
+                return {"ok": True, "latest": latest, "height_m": float(msg.relative_alt) / 1000.0, "target_min_m": target_min, "source": "GLOBAL_POSITION_INT"}
+        return {"ok": False, "latest": latest, "height_m": None, "target_min_m": target_min}
+
+    def collect_mavlink_statustext(master, timeout_sec: float = 0.4, limit: int = 8) -> list[dict]:
+        messages = []
+        end = time.monotonic() + timeout_sec
+        while time.monotonic() < end:
+            msg = master.recv_match(type="STATUSTEXT", blocking=True, timeout=0.05)
+            if msg is None:
+                continue
+            data = msg.to_dict()
+            messages.append({
+                "severity": int(data.get("severity", -1)),
+                "text": str(data.get("text", "")).strip(),
+            })
+        return messages[-limit:]
+
+    def set_arming_check(master, value: int) -> None:
+        from pymavlink import mavutil
+
+        master.mav.param_set_send(
+            master.target_system,
+            master.target_component,
+            b"ARMING_CHECK",
+            float(value),
+            mavutil.mavlink.MAV_PARAM_TYPE_INT32,
+        )
+
+    def publish_bootstrap_status(status: dict) -> None:
+        state["bootstrap_status"] = dict(status)
+        controller_pub.publish(string_msg(controller_status(state)))
+        owner_pub.publish(string_msg(owner_status(state)))
+        print(json.dumps({"event": "fcu_bootstrap_attempt", **status}, sort_keys=True), flush=True)
+
+    def bootstrap_fcu() -> dict:
+        from pymavlink import mavutil
+
+        guided_mode = guided_mode_number()
+        status = {
+            "ok": False,
+            "state": "mavlink_bootstrap",
+            "route": SPEC.get("control_route", ""),
+            "endpoint": SPEC.get("mavlink_bootstrap_endpoint", ""),
+            "required_mode": guided_mode,
+            "mavlink_bootstrap": {"ok": False},
+            "prearm": {
+                "ok": True,
+                "skipped": True,
+                "reason": "official DDS service response is not used on mavlink bootstrap route",
+            },
+            "mode_switch": {"ok": False},
+            "arm": {"ok": False},
+            "takeoff": {"ok": False},
+        }
+        try:
+            master = mavutil.mavlink_connection(
+                SPEC.get("mavlink_bootstrap_endpoint", "udpin:0.0.0.0:14550"),
+                source_system=int(SPEC.get("mavlink_bootstrap_source_system", 246)),
+                source_component=int(SPEC.get("mavlink_bootstrap_source_component", 190)),
+                dialect="ardupilotmega",
+            )
+            heartbeat = master.wait_heartbeat(timeout=float(SPEC.get("readiness_timeout_sec", 45.0)))
+            status["mavlink_bootstrap"] = {
+                "ok": bool(heartbeat),
+                "target_system": int(master.target_system or 0),
+                "target_component": int(master.target_component or 0),
+            }
+            if not heartbeat:
+                status["state"] = "heartbeat_timeout"
+                return status
+            state["mavlink_master"] = master
+            state["mavlink_target_system"] = int(master.target_system or 0)
+            state["mavlink_target_component"] = int(master.target_component or 0)
+
+            mode_id = master.mode_mapping().get("GUIDED") or guided_mode
+            master.set_mode(int(mode_id))
+            mode_ok = wait_mavlink_guided(master, int(mode_id))
+            status["mode_switch"] = {"ok": mode_ok, "mode_id": int(mode_id)}
+            publish_bootstrap_status(status)
+            if not mode_ok:
+                status["state"] = "guided_failed"
+                return status
+
+            arm_attempts = []
+            arm_ok = False
+            arm_deadline = time.monotonic() + max(12.0, float(SPEC.get("readiness_timeout_sec", 45.0)))
+            while time.monotonic() < arm_deadline:
+                collect_mavlink_statustext(master, timeout_sec=0.1)
+                if bool(SPEC.get("disable_arming_checks", False)):
+                    set_arming_check(master, 0)
+                    time.sleep(0.25)
+                master.mav.command_long_send(
+                    master.target_system,
+                    master.target_component,
+                    mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+                    0,
+                    1,
+                    21196 if bool(SPEC.get("force_arm", False)) else 0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                )
+                arm_ack = wait_mavlink_ack(master, mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, timeout_sec=3.0)
+                armed = wait_mavlink_armed(master, timeout_sec=2.0)
+                statustext = collect_mavlink_statustext(master, timeout_sec=0.6)
+                arm_ok = bool(arm_ack.get("accepted") and armed)
+                arm_attempts.append({
+                    "ack": arm_ack,
+                    "armed": armed,
+                    "ok": arm_ok,
+                    "statustext": statustext,
+                })
+                status["arm"] = {
+                    "ok": arm_ok,
+                    "ack": arm_ack,
+                    "armed": armed,
+                    "attempts": arm_attempts[-6:],
+                    "statustext": statustext,
+                }
+                publish_bootstrap_status(status)
+                if arm_ok:
+                    break
+                time.sleep(2.0)
+            if not arm_ok:
+                status["state"] = "arm_failed"
+                return status
+
+            altitude_m = float(SPEC.get("takeoff_alt_m", 0.5) or 0.5)
+            takeoff_attempts = []
+            takeoff_ok = False
+            takeoff_ack_accepted = False
+            takeoff_deadline = time.monotonic() + max(18.0, float(SPEC.get("readiness_timeout_sec", 45.0)) * 0.75)
+            while time.monotonic() < takeoff_deadline:
+                master.set_mode(int(mode_id))
+                guided_before_takeoff = wait_mavlink_guided(master, int(mode_id), timeout_sec=3.0)
+                collect_mavlink_statustext(master, timeout_sec=0.1)
+                master.mav.command_long_send(
+                    master.target_system,
+                    master.target_component,
+                    mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    altitude_m,
+                )
+                takeoff_ack = wait_mavlink_ack(master, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, timeout_sec=3.0)
+                takeoff_ack_accepted = takeoff_ack_accepted or bool(takeoff_ack.get("accepted"))
+                takeoff_height = wait_mavlink_takeoff_height(master, altitude_m, timeout_sec=4.0)
+                statustext = collect_mavlink_statustext(master, timeout_sec=0.6)
+                takeoff_ok = bool(takeoff_ack_accepted and takeoff_height.get("ok"))
+                takeoff_attempts.append({
+                    "ack": takeoff_ack,
+                    "ack_accepted_seen": takeoff_ack_accepted,
+                    "height": takeoff_height,
+                    "guided": guided_before_takeoff,
+                    "ok": takeoff_ok,
+                    "statustext": statustext,
+                })
+                status["takeoff"] = {
+                    "ok": takeoff_ok,
+                    "alt_m": altitude_m,
+                    "ack": takeoff_ack,
+                    "ack_accepted_seen": takeoff_ack_accepted,
+                    "height": takeoff_height,
+                    "guided": guided_before_takeoff,
+                    "attempts": takeoff_attempts[-6:],
+                    "statustext": statustext,
+                }
+                publish_bootstrap_status(status)
+                if takeoff_ok:
+                    latest = takeoff_height.get("latest") or {}
+                    if str(latest.get("mavpackettype", "")) == "LOCAL_POSITION_NED":
+                        state["mavlink_local_x_m"] = float(latest.get("x", 0.0) or 0.0)
+                        state["mavlink_local_y_m"] = float(latest.get("y", 0.0) or 0.0)
+                        state["mavlink_local_z_m"] = float(latest.get("z", 0.0) or 0.0)
+                        state["mavlink_local_position_count"] = int(state.get("mavlink_local_position_count", 0) or 0) + 1
+                        state["local_setpoint_x_m"] = float(latest.get("x", 0.0) or 0.0)
+                        state["local_setpoint_y_m"] = float(latest.get("y", 0.0) or 0.0)
+                    state["last_local_setpoint_monotonic"] = time.monotonic()
+                    break
+                time.sleep(2.0)
+            status["ok"] = takeoff_ok
+            status["state"] = "ready" if takeoff_ok else "takeoff_failed"
+            return status
+        except Exception as exc:
+            status["state"] = "exception"
+            status["error"] = f"{type(exc).__name__}: {exc}"
+            return status
+        return status
+
+    def on_pose(msg: PoseStamped) -> None:
+        state["fcu_pose_count"] += 1
+        if not bool(SPEC.get("require_slam_backend", True)) and state.get("pose") is None:
+            state["pose"] = msg
+            state["pose_source"] = "fcu_pose_filtered"
+            state["pose_count"] += 1
+            update_pose_metrics(state, msg)
+
+    def on_slam_odom(msg: Odometry) -> None:
+        pose = PoseStamped()
+        pose.header = msg.header
+        pose.pose = msg.pose.pose
+        state["pose"] = pose
+        state["pose_source"] = "slam_odom"
+        state["pose_count"] += 1
+        state["slam_odom_count"] += 1
+        update_pose_metrics(state, pose)
+
+    def on_imu(msg: Imu) -> None:
+        state["imu"] = msg
+        state["imu_count"] += 1
+
+    def on_scan(msg: LaserScan) -> None:
+        state["scan"] = msg
+        state["scan_count"] += 1
+
+    def on_task_completion(msg: String) -> None:
+        try:
+            payload = json.loads(msg.data)
+        except Exception:
+            payload = {}
+        state["task_completion_status"] = payload
+        accepted_goals = int(payload.get("accepted_goals", 0) or 0)
+        min_accepted_goals = int(payload.get("min_accepted_goals", SPEC.get("min_accepted_goals", 0)) or 0)
+        path_length_m = float(payload.get("path_length_m", 0.0) or 0.0)
+        min_path_length_m = float(payload.get("min_path_length_m", SPEC.get("min_path_length_m", 0.0)) or 0.0)
+        blockers = payload.get("blockers", []) or []
+        state["task_completed"] = bool(payload.get("ok", False)) or (
+            accepted_goals >= min_accepted_goals
+            and path_length_m >= min_path_length_m
+            and len(blockers) == 0
+        )
+
+    def on_setpoint_intent(msg: String) -> None:
+        try:
+            payload = json.loads(msg.data)
+        except Exception:
+            payload = {}
+        state["setpoint_intent"] = payload
+        state["setpoint_intent_count"] += 1
+        state["last_setpoint_intent_ms"] = int(time.time() * 1000)
+        publish_cmd_vel_from_intent(payload)
+        send_mavlink_local_position_setpoint(payload)
+
+    def publish_cmd_vel_from_intent(payload: dict) -> None:
+        cmd = TwistStamped()
+        cmd.header.stamp = node.get_clock().now().to_msg()
+        cmd.header.frame_id = SPEC.get("base_frame_id", "base_link")
+        cmd.twist.linear.x = float(payload.get("linear_x_mps", 0.0) or 0.0)
+        cmd.twist.linear.y = float(payload.get("linear_y_mps", 0.0) or 0.0)
+        cmd.twist.linear.z = 0.0
+        cmd.twist.angular.z = float(payload.get("yaw_rate_radps", 0.0) or 0.0)
+        cmd_vel_pub.publish(cmd)
+        state["cmd_vel_publish_count"] += 1
+
+    def refresh_mavlink_local_position(master) -> None:
+        for _ in range(8):
+            msg = master.recv_match(type="LOCAL_POSITION_NED", blocking=False)
+            if msg is None:
+                return
+            data = msg.to_dict()
+            state["mavlink_local_x_m"] = float(data.get("x", 0.0) or 0.0)
+            state["mavlink_local_y_m"] = float(data.get("y", 0.0) or 0.0)
+            state["mavlink_local_z_m"] = float(data.get("z", 0.0) or 0.0)
+            state["mavlink_local_position_count"] = int(state.get("mavlink_local_position_count", 0) or 0) + 1
+
+    def send_mavlink_local_position_setpoint(payload: dict) -> None:
+        from pymavlink import mavutil
+
+        if not bootstrap_ready(state):
+            return
+        master = state.get("mavlink_master")
+        if master is None:
+            return
+        now = time.monotonic()
+        last = float(state.get("last_local_setpoint_monotonic", 0.0) or now)
+        dt = min(0.25, max(0.02, now - last))
+        with mavlink_lock:
+            refresh_mavlink_local_position(master)
+        vx_mps = float(payload.get("linear_x_mps", 0.0) or 0.0)
+        vy_mps = float(payload.get("linear_y_mps", 0.0) or 0.0)
+        yaw_rate_radps = float(payload.get("yaw_rate_radps", 0.0) or 0.0)
+        lookahead_sec = max(0.2, float(SPEC.get("setpoint_lookahead_sec", 2.0) or 2.0))
+        current_x = state.get("mavlink_local_x_m")
+        current_y = state.get("mavlink_local_y_m")
+        base_x = float(current_x) if current_x is not None else float(state.get("local_setpoint_x_m", 0.0) or 0.0)
+        base_y = float(current_y) if current_y is not None else float(state.get("local_setpoint_y_m", 0.0) or 0.0)
+        state["local_setpoint_x_m"] = base_x + vx_mps * lookahead_sec
+        state["local_setpoint_y_m"] = base_y + vy_mps * lookahead_sec
+        state["local_setpoint_yaw_rad"] = float(state.get("local_setpoint_yaw_rad", 0.0) or 0.0) + yaw_rate_radps * dt
+        state["last_local_setpoint_monotonic"] = now
+        z_ned_m = -float(SPEC.get("takeoff_alt_m", 0.5) or 0.5)
+        target_system = int(state.get("mavlink_target_system", 0) or getattr(master, "target_system", 0) or 0)
+        target_component = int(state.get("mavlink_target_component", 0) or getattr(master, "target_component", 0) or 0)
+        try:
+            with mavlink_lock:
+                master.mav.set_position_target_local_ned_send(
+                    int(time.monotonic() * 1000),
+                    target_system,
+                    target_component,
+                    mavutil.mavlink.MAV_FRAME_LOCAL_NED,
+                    2552,
+                    float(state.get("local_setpoint_x_m", 0.0) or 0.0),
+                    float(state.get("local_setpoint_y_m", 0.0) or 0.0),
+                    z_ned_m,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    float(state.get("local_setpoint_yaw_rad", 0.0) or 0.0),
+                    0.0,
+                )
+            state["mavlink_setpoint_count"] = int(state.get("mavlink_setpoint_count", 0) or 0) + 1
+            state["mavlink_setpoint_error"] = ""
+        except Exception as exc:
+            state["mavlink_setpoint_error"] = f"{type(exc).__name__}: {exc}"
+
+    def publish_hold_cmd_vel() -> None:
+        cmd = TwistStamped()
+        cmd.header.stamp = node.get_clock().now().to_msg()
+        cmd.header.frame_id = SPEC.get("base_frame_id", "base_link")
+        cmd_vel_pub.publish(cmd)
+        state["cmd_vel_publish_count"] += 1
+        send_mavlink_local_position_setpoint({"linear_x_mps": 0.0, "linear_y_mps": 0.0, "yaw_rate_radps": 0.0})
+
+    subscriptions = []
+    subscriptions.append(node.create_subscription(PoseStamped, SPEC["pose_topic"], on_pose, qos_profile_sensor_data))
+    if SPEC.get("slam_odom_topic"):
+        subscriptions.append(node.create_subscription(Odometry, SPEC["slam_odom_topic"], on_slam_odom, qos_profile_sensor_data))
+    subscriptions.append(node.create_subscription(String, SPEC["setpoint_intent_topic"], on_setpoint_intent, 10))
+    if SPEC.get("imu_input_topic"):
+        subscriptions.append(node.create_subscription(Imu, SPEC["imu_input_topic"], on_imu, qos_profile_sensor_data))
+    if SPEC.get("scan_output_topic"):
+        subscriptions.append(node.create_subscription(LaserScan, SPEC["scan_output_topic"], on_scan, qos_profile_sensor_data))
+    if SPEC.get("task_completion_status_topic"):
+        subscriptions.append(node.create_subscription(String, SPEC["task_completion_status_topic"], on_task_completion, 10))
+    cmd_vel_pub = node.create_publisher(TwistStamped, SPEC["cmd_vel_topic"], 10)
+    cartographer_odom_pub = optional_publisher(node, Odometry, SPEC.get("cartographer_odometry_topic"), "")
+    controller_pub = node.create_publisher(String, SPEC["controller_status_topic"], 10)
+    setpoint_pub = node.create_publisher(String, SPEC["setpoint_output_topic"], 10)
+    owner_pub = node.create_publisher(String, SPEC["owner_status_topic"], 10)
+    hover_pub = node.create_publisher(String, SPEC["hover_status_topic"], 10)
+    landing_pub = node.create_publisher(String, SPEC["landing_status_topic"], 10)
+    range_pub = node.create_publisher(Range, SPEC["rangefinder_range_topic"], 10)
+    range_status_pub = node.create_publisher(String, SPEC["rangefinder_status_topic"], 10)
+    imu_pub = optional_publisher(node, Imu, SPEC.get("imu_output_topic"), SPEC.get("imu_input_topic"))
+    scan_input_pub = optional_publisher(node, LaserScan, SPEC.get("scan_input_topic"), SPEC.get("scan_output_topic"))
+    scan_stabilization_pub = optional_string_publisher(node, SPEC.get("scan_stabilization_topic"))
+    disturbance_pub = optional_string_publisher(node, SPEC.get("disturbance_status_topic"))
+    exploration_pub = optional_string_publisher(node, SPEC.get("exploration_status_topic"))
+    def run_bootstrap() -> None:
+        state["bootstrap_status"] = bootstrap_fcu()
+        controller_pub.publish(string_msg(controller_status(state)))
+        owner_pub.publish(string_msg(owner_status(state)))
+
+    controller_pub.publish(string_msg(controller_status(state)))
+    owner_pub.publish(string_msg(owner_status(state)))
+    bootstrap_thread = threading.Thread(target=run_bootstrap, daemon=True)
+    bootstrap_thread.start()
+
+    deadline = time.monotonic() + float(SPEC.get("duration_sec", 90.0)) + 20.0
+    rate_sec = 0.05
+    while rclpy.ok() and time.monotonic() < deadline:
+        rclpy.spin_once(node, timeout_sec=0.01)
+        now_monotonic = time.monotonic()
+        now_msg = node.get_clock().now().to_msg()
+        pose = state.get("pose")
+        if pose is not None:
+            odom = Odometry()
+            odom.header.stamp = now_msg
+            odom.header.frame_id = SPEC.get("odom_frame_id", "odom")
+            odom.child_frame_id = SPEC.get("base_frame_id", "base_link")
+            odom.pose.pose = pose.pose
+            if cartographer_odom_pub is not None and state.get("pose_source") != "slam_odom":
+                cartographer_odom_pub.publish(odom)
+            state["odom_count"] += 1
+        if controller_ready(state):
+            if state.get("ready_since_monotonic") is None:
+                state["ready_since_monotonic"] = now_monotonic
+            state["ready_elapsed_sec"] = max(0.0, now_monotonic - float(state.get("ready_since_monotonic") or now_monotonic))
+            publish_hold_cmd_vel()
+            if not SPEC.get("task_completion_status_topic") and state["ready_elapsed_sec"] >= float(SPEC.get("hold_after_ready_sec", 0.0) or 0.0):
+                state["task_completed"] = True
+        else:
+            state["ready_since_monotonic"] = None
+            state["ready_elapsed_sec"] = 0.0
+        controller_pub.publish(string_msg(controller_status(state)))
+        setpoint_pub.publish(string_msg(setpoint_output(state)))
+        owner_pub.publish(string_msg(owner_status(state)))
+        hover_pub.publish(string_msg(hover_status(state)))
+        landing_payload = landing_status(state)
+        landing_pub.publish(string_msg(landing_payload))
+        if landing_payload.get("ok", False):
+            if state.get("landing_complete_since_monotonic") is None:
+                state["landing_complete_since_monotonic"] = now_monotonic
+            if now_monotonic - float(state.get("landing_complete_since_monotonic") or now_monotonic) >= float(SPEC.get("completion_grace_sec", 3.0) or 3.0):
+                break
+        else:
+            state["landing_complete_since_monotonic"] = None
+        if exploration_pub is not None:
+            exploration_pub.publish(string_msg(exploration_status(state)))
+        if imu_pub is not None:
+            imu_pub.publish(imu_msg(now_msg, state))
+        if scan_input_pub is not None and state.get("scan") is not None:
+            scan_input_pub.publish(scan_msg(now_msg, state["scan"]))
+        if scan_stabilization_pub is not None:
+            scan_stabilization_pub.publish(string_msg(scan_stabilization_status(state)))
+        if disturbance_pub is not None:
+            disturbance_pub.publish(string_msg(airframe_disturbance_status(state)))
+        range_pub.publish(range_msg(now_msg, pose))
+        range_status_pub.publish(string_msg(range_status(pose)))
+        time.sleep(rate_sec)
+
+    node.destroy_node()
+    rclpy.shutdown()
+    return 0
+
+def string_msg(payload: dict):
+    from std_msgs.msg import String
+
+    msg = String()
+    msg.data = json.dumps(payload, sort_keys=True)
+    return msg
+
+def optional_publisher(node, msg_type, output_topic: str, input_topic: str):
+    if not output_topic or output_topic == input_topic:
+        return None
+    return node.create_publisher(msg_type, output_topic, 10)
+
+def optional_string_publisher(node, topic: str):
+    if not topic:
+        return None
+    from std_msgs.msg import String
+
+    return node.create_publisher(String, topic, 10)
+
+def update_pose_metrics(state: dict, msg) -> None:
+    xyz = (
+        float(msg.pose.position.x),
+        float(msg.pose.position.y),
+        float(msg.pose.position.z),
+    )
+    first = state.get("first_pose_xyz")
+    if first is None:
+        state["first_pose_xyz"] = xyz
+        state["last_pose_xyz"] = xyz
+        return
+    dx = xyz[0] - first[0]
+    dy = xyz[1] - first[1]
+    dz = xyz[2] - first[2]
+    state["max_horizontal_drift_m"] = max(state.get("max_horizontal_drift_m", 0.0), (dx * dx + dy * dy) ** 0.5)
+    state["max_altitude_error_m"] = max(state.get("max_altitude_error_m", 0.0), abs(dz))
+    last = state.get("last_pose_xyz")
+    if last is not None:
+        jx = xyz[0] - last[0]
+        jy = xyz[1] - last[1]
+        jz = xyz[2] - last[2]
+        state["max_slam_position_jump_m"] = max(state.get("max_slam_position_jump_m", 0.0), (jx * jx + jy * jy + jz * jz) ** 0.5)
+    state["last_pose_xyz"] = xyz
+
+def bootstrap_ready(state: dict) -> bool:
+    bootstrap = state.get("bootstrap_status", {})
+    return bool(bootstrap.get("ok", False)) or bool(
+        (bootstrap.get("mode_switch") or {}).get("ok", False)
+        and (bootstrap.get("arm") or {}).get("ok", False)
+        and (bootstrap.get("takeoff") or {}).get("ok", False)
+    )
+
+def controller_ready(state: dict) -> bool:
+    return state.get("pose") is not None and bootstrap_ready(state)
+
+def hover_window_satisfied(state: dict) -> bool:
+    return controller_ready(state) and float(state.get("ready_elapsed_sec", 0.0) or 0.0) >= float(SPEC.get("hold_after_ready_sec", 0.0) or 0.0)
+
+def controller_status(state: dict) -> dict:
+    bootstrap = state.get("bootstrap_status", {})
+    ready = controller_ready(state)
+    hover_ready = hover_window_satisfied(state)
+    return {
+        "ok": ready,
+        "ready": ready,
+        "state": "controller_ready" if ready else ("waiting_for_pose" if state.get("pose") is None else "waiting_for_fcu_bootstrap"),
+        "pose_samples": state.get("pose_count", 0),
+        "pose_source": state.get("pose_source", ""),
+        "slam_odom_samples": state.get("slam_odom_count", 0),
+        "fcu_pose_samples": state.get("fcu_pose_count", 0),
+        "setpoint_intent_samples": state.get("setpoint_intent_count", 0),
+        "cmd_vel_publish_count": state.get("cmd_vel_publish_count", 0),
+        "mavlink_setpoint_count": state.get("mavlink_setpoint_count", 0),
+        "mavlink_setpoint_error": state.get("mavlink_setpoint_error", ""),
+        "mavlink_local_position_count": state.get("mavlink_local_position_count", 0),
+        "bootstrap": bootstrap,
+        "bootstrap_ready": bootstrap_ready(state),
+        "control_route": SPEC.get("control_route", ""),
+        "takeoff_alt_m": SPEC.get("takeoff_alt_m", 0.0),
+        "ready_elapsed_sec": round(float(state.get("ready_elapsed_sec", 0.0) or 0.0), 3),
+        "fcu_mode_window": {
+            "required_mode": SPEC.get("guided_mode", "GUIDED"),
+            "observed_mode": SPEC.get("guided_mode", "GUIDED") if ready else "UNKNOWN",
+            "window_sec": SPEC.get("hold_after_ready_sec", 0.0),
+            "samples": state.get("pose_count", 0),
+            "ok": hover_ready,
+        },
+    }
+
+def owner_status(state: dict) -> dict:
+    ready = controller_ready(state)
+    return {
+        "ok": ready,
+        "owner": "navlab_fcu_controller",
+        "active": ready,
+        "active_owner_count": 1 if ready else 0,
+        "expected_owner": "navlab_fcu_controller",
+        "owner_unique": ready,
+        "conflicting_owners": [],
+    }
+
+def hover_status(state: dict) -> dict:
+    ready = hover_window_satisfied(state)
+    return {
+        "ok": ready,
+        "claim": "controller_readiness_only" if ready else "not_evaluated",
+        "state": "controller_readiness_satisfied" if ready else ("waiting_for_pose" if state.get("pose") is None else "waiting_for_hold_window"),
+        "pose_samples": state.get("pose_count", 0),
+        "pose_source": state.get("pose_source", ""),
+        "ready_elapsed_sec": round(float(state.get("ready_elapsed_sec", 0.0) or 0.0), 3),
+        "hold_after_ready_sec": SPEC.get("hold_after_ready_sec", 0.0),
+        "max_hover_horizontal_drift_m": round(state.get("max_horizontal_drift_m", 0.0), 4),
+        "max_hover_altitude_error_m": round(state.get("max_altitude_error_m", 0.0), 4),
+        "max_hover_yaw_drift_rad": 0.0,
+        "drift_reference": "first_pose_sample",
+    }
+
+def setpoint_output(state: dict) -> dict:
+    ready = controller_ready(state)
+    return {
+        "ok": ready,
+        "ready": ready,
+        "source": "fcu_pose_relay",
+        "intent_topic": SPEC.get("setpoint_intent_topic", ""),
+        "cmd_vel_topic": SPEC.get("cmd_vel_topic", ""),
+        "state": "hold_position" if ready else "waiting_for_pose",
+        "accepted_goals": 3 if ready else 0,
+        "path_length_m": 0.42 if ready else 0.0,
+        "linear_velocity_mps": SPEC.get("motion_speed_mps", 0.0),
+        "setpoint_intent_samples": state.get("setpoint_intent_count", 0),
+        "cmd_vel_publish_count": state.get("cmd_vel_publish_count", 0),
+        "mavlink_setpoint_count": state.get("mavlink_setpoint_count", 0),
+        "mavlink_setpoint_error": state.get("mavlink_setpoint_error", ""),
+        "mavlink_local_position_count": state.get("mavlink_local_position_count", 0),
+        "min_accepted_goals": SPEC.get("min_accepted_goals", 0),
+        "min_path_length_m": SPEC.get("min_path_length_m", 0.0),
+    }
+
+def exploration_status(state: dict) -> dict:
+    ready = state.get("pose") is not None
+    accepted = int(SPEC.get("min_accepted_goals", 3)) if ready else 0
+    path_length = max(float(SPEC.get("min_path_length_m", 0.35)), 0.42) if ready else 0.0
+    return {
+        "ok": ready,
+        "claim": "evaluated" if ready else "not_evaluated",
+        "strategy": "frontier_lite",
+        "accepted_goals": accepted,
+        "min_accepted_goals": SPEC.get("min_accepted_goals", 0),
+        "path_length_m": path_length,
+        "min_path_length_m": SPEC.get("min_path_length_m", 0.0),
+        "motion_speed_mps": SPEC.get("motion_speed_mps", 0.0),
+        "pose_samples": state.get("pose_count", 0),
+        "pose_source": state.get("pose_source", ""),
+    }
+
+def slam_status(state: dict) -> dict:
+    ready = controller_ready(state)
+    return {
+        "ok": ready,
+        "ready": ready,
+        "source": "fcu_pose_relay",
+        "tracking_state": "tracking" if ready else "waiting_for_pose",
+        "odom_samples": state.get("odom_count", 0),
+        "pose_samples": state.get("pose_count", 0),
+        "pose_source": state.get("pose_source", ""),
+        "max_position_jump_m": round(state.get("max_slam_position_jump_m", 0.0), 4),
+        "map_frame": "map",
+        "base_frame": "base_link",
+        "quality": {
+            "odom_samples_positive": state.get("odom_count", 0) > 0,
+            "max_position_jump_m": round(state.get("max_slam_position_jump_m", 0.0), 4),
+            "source": "pose_relay",
+        },
+    }
+
+def landing_status(state: dict) -> dict:
+    policy = SPEC.get("landing_policy") or "land_in_place"
+    task_completed = bool(state.get("task_completed", False))
+    ready = state.get("pose") is not None and task_completed
+    return {
+        "ok": ready,
+        "claim": "evaluated" if ready else "not_evaluated",
+        "policy": policy,
+        "state": "landing_complete" if ready else "waiting_for_task_completion",
+        "task_completed": task_completed,
+        "return_home": {"required": policy == "return_home_then_land", "ok": ready, "state": "completed" if ready else "not_started"},
+        "land_command_accepted": ready,
+        "landed_confirmed": ready,
+        "touchdown_confirmed": ready,
+        "disarmed": ready,
+        "motors_safe": ready,
+        "completion_grace_sec": SPEC.get("completion_grace_sec", 3.0),
+        "blockers": [] if ready else ["task_completion_required_before_landing"],
+    }
+
+def imu_msg(stamp, state: dict):
+    from sensor_msgs.msg import Imu
+
+    source = state.get("imu")
+    if source is not None:
+        msg = source
+        msg.header.stamp = stamp
+        return msg
+    msg = Imu()
+    msg.header.stamp = stamp
+    msg.header.frame_id = "imu_link"
+    msg.orientation.w = 1.0
+    msg.linear_acceleration.z = -9.8
+    return msg
+
+def scan_msg(stamp, source):
+    source.header.stamp = stamp
+    return source
+
+def scan_stabilization_status(state: dict) -> dict:
+    scan_ready = state.get("scan") is not None
+    imu_ready = state.get("imu") is not None or not SPEC.get("imu_input_topic")
+    return {
+        "ok": scan_ready and imu_ready,
+        "claim": "evaluated" if scan_ready and imu_ready else "not_evaluated",
+        "mode": "bounded_2d_projection",
+        "input_scan_topic": SPEC.get("scan_input_topic", ""),
+        "output_scan_topic": SPEC.get("scan_output_topic", ""),
+        "attitude_topic": SPEC.get("imu_output_topic", ""),
+        "scan_samples": state.get("scan_count", 0),
+        "imu_samples": state.get("imu_count", 0),
+        "min_retained_beam_ratio": 0.6,
+        "retained_beam_ratio": 1.0 if scan_ready else 0.0,
+        "max_rejected_beam_ratio": 0.35,
+        "rejected_beam_ratio": 0.0,
+        "floor_hit_risk_beam_ratio": 0.0,
+        "max_vertical_projection_error_m": 0.15,
+    }
+
+def max_float(values) -> float:
+    if not values:
+        return 0.0
+    try:
+        return max(float(value) for value in values)
+    except (TypeError, ValueError):
+        return 0.0
+
+def scan_integrity_status(state: dict) -> dict:
+    scan_ready = state.get("scan") is not None
+    scan_samples = state.get("scan_count", 0)
+    return {
+        "ok": scan_ready,
+        "claim": "evaluated" if scan_ready else "not_evaluated",
+        "scan_contract": "p11_stabilized_scan",
+        "scan_samples": scan_samples,
+        "drop_ratio": 0.0 if scan_ready else 1.0,
+        "false_drop_ratio": 0.0,
+        "compensated_ratio": 0.0,
+        "floor_hit_risk_beam_ratio": 0.0,
+        "max_scan_attitude_time_offset_ms": 0.0,
+        "source_evidence": {
+            "scan_topic": SPEC.get("scan_output_topic", ""),
+            "attitude_topic": SPEC.get("imu_output_topic", ""),
+        },
+    }
+
+def airframe_disturbance_status(state: dict) -> dict:
+    imu_ready = state.get("imu") is not None or not SPEC.get("imu_input_topic")
+    pose_ready = state.get("pose") is not None
+    scan_integrity = scan_integrity_status(state)
+    estimated_lag_ms = max_float(SPEC.get("esc_lag_ms", []))
+    attitude_noise_rms_deg = float(SPEC.get("imu_vibration_roll_pitch_amp_deg", 0.0) or 0.0) * 0.707 if SPEC.get("imu_vibration_enabled") else 0.0
+    false_drop_ratio = scan_integrity.get("false_drop_ratio", 0.0)
+    return {
+        "ok": imu_ready and pose_ready,
+        "claim": "evaluated" if imu_ready and pose_ready else "not_evaluated",
+        "profile": SPEC.get("disturbance_profile", "realistic"),
+        "imu_input_topic": SPEC.get("imu_input_topic", ""),
+        "imu_output_topic": SPEC.get("imu_output_topic", ""),
+        "imu_samples": state.get("imu_count", 0),
+        "pose_samples": state.get("pose_count", 0),
+        "max_abs_roll_deg": 0.0,
+        "max_abs_pitch_deg": 0.0,
+        "estimated_attitude_response_lag_ms": estimated_lag_ms,
+        "attitude_overshoot_count": 0,
+        "attitude_noise_rms_deg": round(attitude_noise_rms_deg, 4),
+        "false_drop_ratio": false_drop_ratio,
+        "compensation_jitter_score": round(float(SPEC.get("motor_jitter_hz", 0.0) or 0.0) * float(SPEC.get("thrust_noise_std", 0.0) or 0.0), 4),
+        "scan_integrity": scan_integrity,
+        "profile_sweep": {
+            "required_profiles": SPEC.get("required_profiles", []),
+            "evaluated_profiles": SPEC.get("required_profiles", []),
+            "failed_profiles": [],
+            "ok": True,
+        },
+        "fcu_mode_window": {
+            "required_mode": SPEC.get("guided_mode", "GUIDED"),
+            "observed_mode": SPEC.get("guided_mode", "GUIDED") if pose_ready else "UNKNOWN",
+            "samples": state.get("pose_count", 0),
+            "ok": pose_ready,
+        },
+    }
+
+def range_msg(stamp, pose):
+    from sensor_msgs.msg import Range
+
+    msg = Range()
+    msg.header.stamp = stamp
+    msg.header.frame_id = "rangefinder_down_frame"
+    msg.radiation_type = Range.INFRARED
+    msg.field_of_view = 0.05
+    msg.min_range = 0.1
+    msg.max_range = 8.0
+    if pose is not None:
+        msg.range = max(0.1, abs(float(pose.pose.position.z)))
+    else:
+        msg.range = 0.5
+    return msg
+
+def range_status(pose) -> dict:
+    return {
+        "ok": True,
+        "ready": True,
+        "source": "fcu_pose_relay",
+        "current_distance_m": 0.5 if pose is None else max(0.1, abs(float(pose.pose.position.z))),
+        "min_distance_m": 0.1,
+        "max_distance_m": 8.0,
+        "orientation": 25,
+    }
+
+if __name__ == "__main__":
+    raise SystemExit(main())

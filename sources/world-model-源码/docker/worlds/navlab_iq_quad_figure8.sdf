@@ -1,0 +1,219 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="navlab_iq_quad_figure8">
+    <physics name="1ms" type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+
+    <scene>
+      <ambient>0.45 0.45 0.45 1</ambient>
+      <background>0.74 0.78 0.82 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <light name="sun" type="directional">
+      <pose>0 0 10 0 0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <diffuse>0.85 0.82 0.74 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.85</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>16 10</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>16 10</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.58 0.61 0.58 1</ambient>
+            <diffuse>0.58 0.61 0.58 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="ground_collision_slab">
+      <static>true</static>
+      <pose>0 0 -0.025 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>16 10 0.05</size>
+            </box>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://navlab_iq_quad</uri>
+      <name>navlab_iq_quad</name>
+      <pose>0 0 0.20 0 0 0</pose>
+    </include>
+
+    <!--
+      Figure-eight corridor geometry:
+      - side corridors are about 0.60 m wide
+      - north/south corridors are about 0.73 m wide
+      - the shared waist around the origin is about 1.55 m wide for takeoff
+    -->
+    <model name="outer_left_north_wall">
+      <static>true</static>
+      <pose>-2.05 2.0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>4.1 0.35 2</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>4.1 0.35 2</size></box></geometry>
+          <material>
+            <ambient>0.34 0.42 0.50 0.82</ambient>
+            <diffuse>0.34 0.42 0.50 0.82</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="outer_left_south_wall">
+      <static>true</static>
+      <pose>-2.05 -2.0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>4.1 0.35 2</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>4.1 0.35 2</size></box></geometry>
+          <material>
+            <ambient>0.34 0.42 0.50 0.82</ambient>
+            <diffuse>0.34 0.42 0.50 0.82</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="outer_left_west_wall">
+      <static>true</static>
+      <pose>-4.1 0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.35 4.0 2</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.35 4.0 2</size></box></geometry>
+          <material>
+            <ambient>0.34 0.42 0.50 0.82</ambient>
+            <diffuse>0.34 0.42 0.50 0.82</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="outer_right_north_wall">
+      <static>true</static>
+      <pose>2.05 2.0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>4.1 0.35 2</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>4.1 0.35 2</size></box></geometry>
+          <material>
+            <ambient>0.34 0.42 0.50 0.82</ambient>
+            <diffuse>0.34 0.42 0.50 0.82</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="outer_right_south_wall">
+      <static>true</static>
+      <pose>2.05 -2.0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>4.1 0.35 2</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>4.1 0.35 2</size></box></geometry>
+          <material>
+            <ambient>0.34 0.42 0.50 0.82</ambient>
+            <diffuse>0.34 0.42 0.50 0.82</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="outer_right_east_wall">
+      <static>true</static>
+      <pose>4.1 0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.35 4.0 2</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.35 4.0 2</size></box></geometry>
+          <material>
+            <ambient>0.34 0.42 0.50 0.82</ambient>
+            <diffuse>0.34 0.42 0.50 0.82</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="inner_left_island">
+      <static>true</static>
+      <pose>-2.05 0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>2.55 2.2 2</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>2.55 2.2 2</size></box></geometry>
+          <material>
+            <ambient>0.86 0.42 0.32 0.74</ambient>
+            <diffuse>0.86 0.42 0.32 0.74</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="inner_right_island">
+      <static>true</static>
+      <pose>2.05 0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>2.55 2.2 2</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>2.55 2.2 2</size></box></geometry>
+          <material>
+            <ambient>0.86 0.42 0.32 0.74</ambient>
+            <diffuse>0.86 0.42 0.32 0.74</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

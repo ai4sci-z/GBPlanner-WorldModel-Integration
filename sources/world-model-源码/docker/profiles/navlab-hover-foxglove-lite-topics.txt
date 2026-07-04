@@ -1,0 +1,52 @@
+# Foxglove-lite replay topic profile for built-in hover Stage 1.
+# Format:
+#   overlay TOPIC
+#   required TOPIC interval=SECONDS|all
+#   optional TOPIC interval=SECONDS|all
+#   drop TOPIC
+#   rewrite_frame TOPIC frame=FRAME flip_x=BOOL flip_y=BOOL scan_free_space=BOOL scan_crop=BOOL crop_to_known=BOOL crop_margin_m=METERS role=visualization_only
+#   derive_display_tf TOPIC source=TOPIC parent=FRAME child=FRAME mode=replace coordinate_mode=raw|gazebo_xyz_to_ned role=visualization_only
+#   derive_map_tf TOPIC display_source=TOPIC slam_source=TOPIC parent=FRAME child=FRAME display_parent=FRAME display_child=FRAME slam_parent=FRAME slam_child=FRAME coordinate_mode=raw|gazebo_xyz_to_ned role=visualization_only
+
+overlay /navlab/official_maze/map
+
+required /tf interval=0.05
+required /tf_static interval=all
+required /map interval=1.0
+required /scan interval=0.10
+required /slam/odom interval=0.05
+required /navlab/hover/status interval=0.25
+required /navlab/landing/status interval=0.10
+required /rangefinder/down/range interval=0.20
+
+optional /lidar interval=0.10
+optional /gazebo/model/odometry interval=0.05
+optional /sim/x2/status interval=0.50
+optional /navlab/fcu/setpoint/intent interval=all
+optional /navlab/fcu/setpoint/output interval=0.10
+optional /navlab/fcu/controller/status interval=0.25
+optional /navlab/landing/intent interval=all
+optional /external_nav/status interval=0.50
+optional /external_nav/odom interval=0.05
+optional /navlab/slam/status interval=0.50
+optional /ap/v1/pose/filtered interval=0.20
+optional /ap/v1/twist/filtered interval=0.20
+optional /ap/v1/status interval=0.50
+optional /submap_list interval=0.50
+optional /trajectory_node_list interval=0.50
+
+drop /imu
+drop /clock
+drop /odometry
+drop /ap/v1/time
+drop /ap/v1/cmd_vel
+drop /navlab/fcu/owner/status
+drop /navlab/fcu/state
+drop /navlab/x2/vendor_scan
+drop /rangefinder/down/scan_ideal
+drop /rangefinder/down/status
+
+rewrite_frame /map frame=cartographer_map flip_y=true scan_free_space=true scan_crop=true crop_to_known=true crop_margin_m=0.25 role=visualization_only
+rewrite_frame /slam/odom frame=cartographer_map role=visualization_only
+derive_display_tf /tf source=/gazebo/model/odometry parent=map child=base_link mode=replace coordinate_mode=gazebo_xyz_to_ned role=visualization_only
+derive_map_tf /tf display_source=/gazebo/model/odometry slam_source=/navlab/slam/tf parent=map child=cartographer_map display_parent=map display_child=base_link slam_parent=map slam_child=base_link coordinate_mode=gazebo_xyz_to_ned role=visualization_only

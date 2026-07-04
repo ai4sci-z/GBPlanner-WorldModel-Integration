@@ -1,0 +1,12 @@
+id: hover-slam-only
+family: sim
+description: SLAM-only hover preflight over Gazebo without FCU takeoff or external-nav injection.
+capabilities:
+  - needs_gazebo
+  - needs_sitl
+  - needs_slam
+  - records_rosbag
+  - writes_task_result
+task:
+  duration_sec: 45.0
+  simulation_profile: ideal

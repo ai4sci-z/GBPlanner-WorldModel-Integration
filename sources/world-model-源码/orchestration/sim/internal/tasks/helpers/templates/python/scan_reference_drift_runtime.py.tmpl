@@ -1,0 +1,50 @@
+from __future__ import annotations
+
+import json
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+
+def bool_flag(name: str, value: bool) -> str:
+    return "--" + name if value else "--no-" + name
+
+def add_arg(argv: list[str], name: str, value) -> None:
+    argv.extend(["--" + name, str(value)])
+
+def main() -> int:
+    from navlab.sim.companion.nodes.scan_reference_drift import run
+
+    argv: list[str] = []
+    for name in [
+        "scan-topic",
+        "hover-status-topic",
+        "odom-topic",
+        "status-topic",
+        "frame-id",
+        "child-frame-id",
+        "min-valid-beams",
+        "max-residual-rms-m",
+        "max-range-delta-m",
+        "max-horizontal-drift-m",
+        "max-inlier-residual-m",
+        "min-inlier-ratio",
+        "robust-iterations",
+        "yaw-search-window-rad",
+        "yaw-search-steps",
+        "eligibility-window-samples",
+        "min-stable-samples",
+        "min-axis-drift-m",
+        "axis-deadband-m",
+        "max-axis-sign-flips",
+        "max-velocity-mps",
+        "min-direction-cosine",
+        "max-phase4b-saturation-ratio",
+        "min-correction-intent-consecutive-allowed-samples",
+        "max-correction-intent-m",
+        "correction-intent-gain",
+    ]:
+        add_arg(argv, name, SPEC[name.replace("-", "_")])
+    argv.append(bool_flag("reset-on-hover-hold", bool(SPEC["reset_on_hover_hold"])))
+    return int(run(argv) or 0)
+
+if __name__ == "__main__":
+    raise SystemExit(main())

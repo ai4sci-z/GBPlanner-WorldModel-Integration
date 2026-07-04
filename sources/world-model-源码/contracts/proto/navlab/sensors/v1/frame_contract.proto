@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package navlab.sensors.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/sensors/v1;sensorsv1";
+
+import "navlab/sensors/v1/topic_contract.proto";
+
+message FrameContract {
+  string map_frame = 1;
+  string odom_frame = 2;
+  string base_frame = 3;
+  string imu_frame = 4;
+  string scan_frame = 5;
+  repeated string required_frames = 6;
+  repeated TopicContract topic_contracts = 7;
+}
+
+message FrameEvidence {
+  bool ok = 1;
+  repeated string present_frames = 2;
+  repeated string missing_frames = 3;
+  repeated string blockers = 4;
+}

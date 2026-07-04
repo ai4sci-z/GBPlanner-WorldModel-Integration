@@ -1,0 +1,20 @@
+# NavLab Foxglove replay notes
+
+- Rosbag: `{{ rosbag_dir }}`
+- Recommended panels: {{ recommended_panels | join(", ") }}.
+- 3D panel fixed frame: `{{ fixed_frame }}`.
+- 3D marker topics: {% for topic in marker_topics %}`{{ topic }}`{% if not loop.last %}, {% endif %}{% endfor %}.
+- Scene objects: `/sim/markers` contains a self-contained moving quadrotor primitive model, X2 lidar marker, and obstacle wall.
+- `/sim/markers` and `/sim/uav_pose` use the stable replay frame `{{ fixed_frame }}` so static obstacles do not follow SLAM or FCU TF drift in Foxglove.
+- `/tf_static` includes replay bridges `{{ fixed_frame }} -> map -> odom` and `base_link -> laser_frame/imu_link`; `/tf` includes runtime `odom -> base_link`, so LaserScan and IMU layers can resolve into `{{ fixed_frame }}`.
+- Gazebo truth pose TF is isolated under `/gazebo/tf` and `/gazebo/tf_static`; keep it diagnostic-only and do not use it as a SLAM, Nav2, ExternalNav, or controller input.
+- The UAV replay markers intentionally avoid `mesh_resource`, so the MCAP does not require local `/workspace` files or remote mesh fetches on the replay machine.
+- 3D pose/odom topics, only if using a Pose/Odometry layer: {% for topic in pose_topics %}`{{ topic }}`{% if not loop.last %}, {% endif %}{% endfor %}.
+- Gazebo model motion is driven by the ArduPilot JSON plugin; `/sim/uav_pose` is replay/observation output from MAVLink local position, not a Gazebo set-pose command.
+- Laser topics: {% for topic in laser_topics %}`{{ topic }}`{% if not loop.last %}, {% endif %}{% endfor %}.
+- `/scan_ideal` is the Gazebo geometric ray topic; `/scan` is the vendor driver output after the virtual X2 serial protocol path.
+- Raw JSON string topics: {% for topic in raw_status_topics %}`{{ topic }}`{% if not loop.last %}, {% endif %}{% endfor %}.
+- Recording starts before the mission controller, so replay should include wait_ready through final_hold/complete.
+- Expected sequence: {{ expected_sequence | join(" -> ") }}.
+- The bag intentionally excludes Cartographer custom-schema debug topics such as constraints and trajectory node lists.
+- Do not add `/sim/log` or `/navlab/mission/status` to a 3D layer; they are `std_msgs/msg/String` raw-message topics.

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package navlab.runtime.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/runtime/v1;runtimev1";
+
+message ServiceSpec {
+  string name = 1;
+  string role = 2;
+  RuntimeBackend backend = 3;
+  string image = 4;
+  repeated string command = 5;
+  map<string, string> env = 6;
+  string cwd = 7;
+  repeated VolumeMount volumes = 8;
+  repeated string networks = 9;
+  bool required = 10;
+  string log_path = 11;
+}
+
+message VolumeMount {
+  string source = 1;
+  string target = 2;
+  bool read_only = 3;
+}
+
+message RosbagSpec {
+  string name = 1;
+  string role = 2;
+  RuntimeBackend backend = 3;
+  repeated string topics = 4;
+  string output_path = 5;
+  double duration_sec = 6;
+  string storage = 7;
+  bool required = 8;
+  string log_path = 9;
+}
+
+enum RuntimeBackend {
+  RUNTIME_BACKEND_UNSPECIFIED = 0;
+  RUNTIME_BACKEND_DOCKER = 1;
+  RUNTIME_BACKEND_PROCESS = 2;
+}

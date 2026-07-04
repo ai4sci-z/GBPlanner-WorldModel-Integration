@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package navlab.runtime.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/runtime/v1;runtimev1";
+
+import "navlab/runtime/v1/service_spec.proto";
+
+message ProbeSpec {
+  string name = 1;
+  string role = 2;
+  RuntimeBackend backend = 3;
+  string image = 4;
+  repeated string command = 5;
+  map<string, string> env = 6;
+  string output_path = 7;
+  double timeout_sec = 8;
+  bool required = 9;
+  string log_path = 10;
+}
+
+message ProbeResult {
+  string name = 1;
+  bool ok = 2;
+  int32 return_code = 3;
+  string output_path = 4;
+  string log_path = 5;
+  repeated string blockers = 6;
+}

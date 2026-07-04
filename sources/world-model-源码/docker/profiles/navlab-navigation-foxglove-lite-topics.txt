@@ -1,0 +1,49 @@
+# Foxglove-lite replay topic profile for P13 navigation.
+# Keep the mature world/SLAM review surface first; Nav2-specific layers can be
+# added after the baseline map/scan/trajectory overlay is stable.
+# Format:
+#   overlay TOPIC
+#   required TOPIC interval=SECONDS|all
+#   optional TOPIC interval=SECONDS|all
+#   drop TOPIC
+
+overlay /navlab/official_maze/map
+
+required /tf interval=0.05
+required /tf_static interval=all
+required /map interval=1.0
+required /scan interval=0.10
+required /slam/odom interval=0.05
+required /navlab/slam/status interval=0.50
+required /navlab/fcu/controller/status interval=0.25
+required /navlab/fcu/setpoint/intent interval=0.10
+required /navlab/fcu/setpoint/output interval=0.10
+required /rangefinder/down/range interval=0.20
+required /navlab/landing/status interval=0.25
+
+optional /ap/v1/status interval=0.50
+optional /ap/v1/pose/filtered interval=0.20
+optional /ap/v1/twist/filtered interval=0.20
+optional /ap/v1/cmd_vel interval=0.10
+optional /imu interval=0.20
+optional /navlab/fcu/owner/status interval=0.50
+optional /navlab/hover/status interval=0.25
+optional /navlab/x2/scan_normalized interval=0.10
+optional /navlab/scan_stabilization/status interval=0.50
+
+drop /clock
+drop /odometry
+drop /submap_list
+drop /trajectory_node_list
+drop /ap/v1/time
+drop /cmd_vel_nav
+drop /global_costmap/costmap
+drop /local_costmap/costmap
+drop /navlab/navigation/status
+drop /navlab/navigation/goal
+drop /navlab/navigation/events
+drop /navlab/navigation/adapter/status
+drop /navlab/navigation/costmap_health
+drop /navlab/navigation/path
+drop /navlab/navigation/recovery
+drop /rangefinder/down/status

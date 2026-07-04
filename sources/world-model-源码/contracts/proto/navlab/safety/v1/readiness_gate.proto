@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package navlab.safety.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/safety/v1;safetyv1";
+
+message ReadinessGate {
+  string name = 1;
+  bool ok = 2;
+  bool required = 3;
+  string evidence = 4;
+  repeated string blockers = 5;
+}

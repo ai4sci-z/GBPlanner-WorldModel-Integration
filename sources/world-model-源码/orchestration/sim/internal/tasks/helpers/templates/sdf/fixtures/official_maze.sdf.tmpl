@@ -1,0 +1,27 @@
+<sdf version="1.9">
+  <world name="fixture">
+    <model name="maze">
+      <link name="north_wall">
+        <pose>0 5 0 0 0 0</pose>
+        <collision name="collision">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><box><size>10 0.2 2</size></box></geometry>
+        </collision>
+      </link>
+      <link name="west_wall">
+        <pose>-5 0 0 0 0 1.57079632679</pose>
+        <collision name="collision">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><box><size>10 0.2 2</size></box></geometry>
+        </collision>
+      </link>
+      <link name="inner_wall">
+        <pose>0 0 0 0 0 1.57079632679</pose>
+        <collision name="collision">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><box><size>5 0.2 2</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+  </world>
+</sdf>

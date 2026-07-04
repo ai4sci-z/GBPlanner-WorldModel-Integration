@@ -1,0 +1,329 @@
+from __future__ import annotations
+
+import json
+import math
+import time
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+RUN_UNTIL = time.monotonic() + {{ printf "%.3f" .DurationSec }}
+
+
+def clamp(value: float, limit: float) -> tuple[float, bool]:
+    if limit <= 0:
+        return 0.0, True
+    if value > limit:
+        return limit, True
+    if value < -limit:
+        return -limit, True
+    return value, False
+
+
+def main() -> int:
+    import rclpy
+    from geometry_msgs.msg import TransformStamped
+    from geometry_msgs.msg import Twist
+    from nav_msgs.msg import OccupancyGrid
+    from rclpy.parameter import Parameter
+    from rclpy.qos import DurabilityPolicy
+    from rclpy.qos import QoSProfile
+    from rclpy.qos import ReliabilityPolicy
+    from std_msgs.msg import String
+    from tf2_ros import StaticTransformBroadcaster
+
+    rclpy.init()
+    node = rclpy.create_node("navlab_navigation_adapter")
+    node.set_parameters([Parameter("use_sim_time", Parameter.Type.BOOL, bool(SPEC.get("UseSimTime", True)))])
+    clock_deadline = time.monotonic() + 5.0
+    while bool(SPEC.get("UseSimTime", True)) and rclpy.ok() and time.monotonic() < clock_deadline and node.get_clock().now().nanoseconds <= 0:
+        rclpy.spin_once(node, timeout_sec=0.1)
+    tf_broadcaster = StaticTransformBroadcaster(node)
+    seed_map_qos = QoSProfile(depth=1)
+    seed_map_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
+    seed_map_qos.reliability = ReliabilityPolicy.RELIABLE
+    seed_map_pub = node.create_publisher(OccupancyGrid, SPEC["SeedMapTopic"], seed_map_qos)
+    intent_pub = node.create_publisher(String, SPEC["SetpointIntentTopic"], 10)
+    status_pub = node.create_publisher(String, SPEC["AdapterStatusTopic"], 10)
+    costmap_health_pub = node.create_publisher(String, SPEC["CostmapHealthTopic"], 10)
+    state = {
+        "last_cmd_ms": 0,
+        "last_output": {"x": 0.0, "y": 0.0, "yaw": 0.0},
+        "last_output_time": time.monotonic(),
+        "last_seed_map_publish_time": 0.0,
+        "last_tf_publish_time": 0.0,
+        "last_health_publish_time": 0.0,
+        "last_status_publish_time": 0.0,
+        "first_local_costmap_time": 0.0,
+        "local_costmap_count": 0,
+        "clamp_count": 0,
+        "hold_count": 0,
+        "intent_count": 0,
+        "last_costmap_ms": 0,
+        "last_slam_ms": 0,
+        "last_global_costmap_ms": 0,
+        "last_local_costmap_ms": 0,
+        "global_obstacle_cells": 0,
+        "local_obstacle_cells": 0,
+        "global_unknown_ratio": 1.0,
+        "local_unknown_ratio": 1.0,
+        "costmap_ready": not SPEC["StopOnStaleCostmap"],
+        "slam_ready": not SPEC["StopOnStaleSlam"],
+    }
+
+    def make_seed_map() -> OccupancyGrid:
+        msg = OccupancyGrid()
+        msg.header.stamp = node.get_clock().now().to_msg()
+        msg.header.frame_id = SPEC["GlobalFrame"]
+        msg.info.resolution = 0.05
+        msg.info.width = 200
+        msg.info.height = 200
+        msg.info.origin.position.x = -5.0
+        msg.info.origin.position.y = -5.0
+        msg.info.origin.orientation.w = 1.0
+        data = []
+        for y in range(msg.info.height):
+            for x in range(msg.info.width):
+                border = x in (0, msg.info.width - 1) or y in (0, msg.info.height - 1)
+                interior_marker = 135 <= x <= 138 and 70 <= y <= 130
+                data.append(100 if border or interior_marker else 0)
+        msg.data = data
+        return msg
+
+    seed_map = make_seed_map()
+
+    def publish_seed_map() -> None:
+        seed_map.header.stamp = node.get_clock().now().to_msg()
+        seed_map_pub.publish(seed_map)
+        state["last_seed_map_publish_time"] = time.monotonic()
+
+    def publish_seed_tf() -> None:
+        transform = TransformStamped()
+        transform.header.stamp = node.get_clock().now().to_msg()
+        transform.header.frame_id = SPEC["GlobalFrame"]
+        transform.child_frame_id = SPEC["OdomFrame"]
+        transform.transform.rotation.w = 1.0
+        tf_broadcaster.sendTransform(transform)
+        state["last_tf_publish_time"] = time.monotonic()
+
+    def costmap_stats(msg: OccupancyGrid) -> tuple[int, float]:
+        total = len(msg.data)
+        if total <= 0:
+            return 0, 1.0
+        unknown = 0
+        occupied = 0
+        for cell in msg.data:
+            value = int(cell)
+            if value < 0:
+                unknown += 1
+            elif value >= 50:
+                occupied += 1
+        return occupied, unknown / float(total)
+
+    def on_global_costmap(msg: OccupancyGrid) -> None:
+        occupied, unknown_ratio = costmap_stats(msg)
+        state["global_obstacle_cells"] = occupied
+        state["global_unknown_ratio"] = unknown_ratio
+        state["last_global_costmap_ms"] = int(time.time() * 1000)
+
+    def on_local_costmap(msg: OccupancyGrid) -> None:
+        occupied, unknown_ratio = costmap_stats(msg)
+        state["local_obstacle_cells"] = occupied
+        state["local_unknown_ratio"] = unknown_ratio
+        state["last_local_costmap_ms"] = int(time.time() * 1000)
+        state["local_costmap_count"] += 1
+        if state["first_local_costmap_time"] <= 0:
+            state["first_local_costmap_time"] = time.monotonic()
+
+    def publish_costmap_health() -> None:
+        now_ms = int(time.time() * 1000)
+        global_age = None
+        local_age = None
+        if state["last_global_costmap_ms"] > 0:
+            global_age = (now_ms - state["last_global_costmap_ms"]) / 1000.0
+        if state["last_local_costmap_ms"] > 0:
+            local_age = (now_ms - state["last_local_costmap_ms"]) / 1000.0
+        unknown_ratio = max(float(state["global_unknown_ratio"]), float(state["local_unknown_ratio"]))
+        obstacle_cells = max(int(state["global_obstacle_cells"]), int(state["local_obstacle_cells"]))
+        local_frequency_hz = 0.0
+        if state["first_local_costmap_time"] > 0:
+            elapsed = max(0.001, time.monotonic() - state["first_local_costmap_time"])
+            local_frequency_hz = state["local_costmap_count"] / elapsed
+        ok = (
+            global_age is not None
+            and local_age is not None
+            and global_age <= float(SPEC["MaxCostmapAgeSec"])
+            and local_age <= float(SPEC["MaxCostmapAgeSec"])
+            and unknown_ratio <= float(SPEC["MaxUnknownRatio"])
+            and obstacle_cells >= int(SPEC["MinObstacleCells"])
+        )
+        payload = {
+            "claim": "evaluated",
+            "costmap_claim": "evaluated",
+            "ok": ok,
+            "ready": ok,
+            "source": "nav2_costmap_topics",
+            "global_costmap_topic": SPEC["GlobalCostmapTopic"],
+            "local_costmap_topic": SPEC["LocalCostmapTopic"],
+            "global_costmap_age_sec": global_age,
+            "local_costmap_age_sec": local_age,
+            "unknown_ratio": unknown_ratio,
+            "obstacle_cells": obstacle_cells,
+            "local_costmap_update_frequency_hz": local_frequency_hz,
+            "required_layers": SPEC["RequiredCostmapLayers"],
+        }
+        msg = String()
+        msg.data = json.dumps(payload, sort_keys=True)
+        costmap_health_pub.publish(msg)
+        state["last_health_publish_time"] = time.monotonic()
+
+    def publish_status(active: bool, hold_reason: str = "") -> None:
+        payload = {
+            "claim": "evaluated",
+            "adapter_claim": "evaluated",
+            "active": active,
+            "source_topic": SPEC["CmdVelTopic"],
+            "intent_topic": SPEC["SetpointIntentTopic"],
+            "max_xy_speed_mps": SPEC["MaxXYSpeedMPS"],
+            "max_yaw_rate_dps": SPEC["MaxYawRateDPS"],
+            "max_accel_mps2": SPEC["MaxAccelMPS2"],
+            "fixed_altitude_m": SPEC["FixedAltitudeM"],
+            "stop_on_stale_costmap": SPEC["StopOnStaleCostmap"],
+            "stop_on_stale_slam": SPEC["StopOnStaleSlam"],
+            "last_cmd_ms": state["last_cmd_ms"],
+            "clamp_count": state["clamp_count"],
+            "hold_count": state["hold_count"],
+            "intent_count": state["intent_count"],
+            "hold_reason": hold_reason,
+        }
+        msg = String()
+        msg.data = json.dumps(payload, sort_keys=True)
+        status_pub.publish(msg)
+        state["last_status_publish_time"] = time.monotonic()
+
+    def publish_hold(hold_reason: str) -> None:
+        state["hold_count"] += 1
+        intent = {
+            "source": "nav2",
+            "frame_id": SPEC["BaseFrame"],
+            "linear_x_mps": 0.0,
+            "linear_y_mps": 0.0,
+            "yaw_rate_radps": 0.0,
+            "fixed_altitude_m": SPEC["FixedAltitudeM"],
+            "clamped": False,
+            "hold": True,
+            "hold_reason": hold_reason,
+        }
+        out = String()
+        out.data = json.dumps(intent, sort_keys=True)
+        intent_pub.publish(out)
+        publish_status(False, hold_reason)
+
+    def parse_status_message(msg: String) -> dict:
+        try:
+            return json.loads(msg.data)
+        except Exception:
+            return {}
+
+    def on_costmap_status(msg: String) -> None:
+        payload = parse_status_message(msg)
+        ready = bool(payload.get("ok", payload.get("ready", True)))
+        if "unknown_ratio" in payload:
+            ready = ready and float(payload["unknown_ratio"]) <= float(SPEC["MaxUnknownRatio"])
+        state["costmap_ready"] = ready
+        state["last_costmap_ms"] = int(time.time() * 1000)
+
+    def on_slam_status(msg: String) -> None:
+        payload = parse_status_message(msg)
+        state["slam_ready"] = bool(payload.get("ready", payload.get("ok", True)))
+        state["last_slam_ms"] = int(time.time() * 1000)
+
+    def stale_hold_reason() -> str:
+        now_ms = int(time.time() * 1000)
+        max_age_ms = int(float(SPEC["MaxCostmapAgeSec"]) * 1000)
+        if SPEC["StopOnStaleCostmap"]:
+            if not state["costmap_ready"] or state["last_costmap_ms"] <= 0:
+                return "stale_costmap"
+            if now_ms - state["last_costmap_ms"] > max_age_ms:
+                return "stale_costmap"
+        if SPEC["StopOnStaleSlam"]:
+            if not state["slam_ready"] or state["last_slam_ms"] <= 0:
+                return "stale_slam"
+            if now_ms - state["last_slam_ms"] > max_age_ms:
+                return "stale_slam"
+        return ""
+
+    def apply_accel_limit(x: float, y: float, yaw: float) -> tuple[float, float, float, bool]:
+        now = time.monotonic()
+        dt = max(0.02, now - state["last_output_time"])
+        max_delta = float(SPEC["MaxAccelMPS2"]) * dt
+        prev = state["last_output"]
+        next_x, clamp_x = clamp(x - prev["x"], max_delta)
+        next_y, clamp_y = clamp(y - prev["y"], max_delta)
+        limited_x = prev["x"] + next_x
+        limited_y = prev["y"] + next_y
+        state["last_output"] = {"x": limited_x, "y": limited_y, "yaw": yaw}
+        state["last_output_time"] = now
+        return limited_x, limited_y, yaw, clamp_x or clamp_y
+
+    def on_cmd_vel(msg: Twist) -> None:
+        hold_reason = stale_hold_reason()
+        if hold_reason:
+            publish_hold(hold_reason)
+            return
+        xy_speed = math.hypot(float(msg.linear.x), float(msg.linear.y))
+        max_xy = float(SPEC["MaxXYSpeedMPS"])
+        scale = 1.0
+        clamped = False
+        if xy_speed > max_xy > 0:
+            scale = max_xy / xy_speed
+            clamped = True
+        yaw_rate, yaw_clamped = clamp(float(msg.angular.z), math.radians(float(SPEC["MaxYawRateDPS"])))
+        clamped = clamped or yaw_clamped
+        linear_x, linear_y, yaw_rate, accel_clamped = apply_accel_limit(float(msg.linear.x) * scale, float(msg.linear.y) * scale, yaw_rate)
+        clamped = clamped or accel_clamped
+        if clamped:
+            state["clamp_count"] += 1
+        state["intent_count"] += 1
+        state["last_cmd_ms"] = int(time.time() * 1000)
+        intent = {
+            "source": "nav2",
+            "frame_id": SPEC["BaseFrame"],
+            "linear_x_mps": linear_x,
+            "linear_y_mps": linear_y,
+            "yaw_rate_radps": yaw_rate,
+            "fixed_altitude_m": SPEC["FixedAltitudeM"],
+            "clamped": clamped,
+        }
+        out = String()
+        out.data = json.dumps(intent, sort_keys=True)
+        intent_pub.publish(out)
+        publish_status(True)
+
+    node.create_subscription(Twist, SPEC["CmdVelTopic"], on_cmd_vel, 10)
+    node.create_subscription(String, SPEC["CostmapHealthTopic"], on_costmap_status, 10)
+    node.create_subscription(String, SPEC["SlamStatusTopic"], on_slam_status, 10)
+    node.create_subscription(OccupancyGrid, SPEC["GlobalCostmapTopic"], on_global_costmap, 10)
+    node.create_subscription(OccupancyGrid, SPEC["LocalCostmapTopic"], on_local_costmap, 10)
+    publish_seed_map()
+    publish_seed_tf()
+    publish_costmap_health()
+    publish_status(False, "waiting_for_nav2_cmd_vel")
+    while rclpy.ok() and time.monotonic() < RUN_UNTIL:
+        now = time.monotonic()
+        if now - state["last_seed_map_publish_time"] >= 1.0:
+            publish_seed_map()
+        if now - state["last_tf_publish_time"] >= 1.0:
+            publish_seed_tf()
+        if now - state["last_health_publish_time"] >= 0.5:
+            publish_costmap_health()
+        if now - state["last_status_publish_time"] >= 0.5:
+            active = state["intent_count"] > 0
+            publish_status(active, "" if active else "waiting_for_nav2_cmd_vel")
+        rclpy.spin_once(node, timeout_sec=0.1)
+    publish_status(False, "duration_elapsed")
+    node.destroy_node()
+    rclpy.shutdown()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

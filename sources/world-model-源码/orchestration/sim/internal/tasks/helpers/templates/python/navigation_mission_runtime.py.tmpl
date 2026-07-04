@@ -1,0 +1,401 @@
+from __future__ import annotations
+
+import json
+import math
+import subprocess
+import time
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+RUN_UNTIL = time.monotonic() + {{ printf "%.3f" .DurationSec }}
+
+
+def run(command: list[str], timeout_sec: float = 4.0) -> dict:
+    started = time.time()
+    result = subprocess.run(["timeout", str(timeout_sec), *command], check=False, capture_output=True, text=True)
+    return {
+        "command": command,
+        "returncode": result.returncode,
+        "stdout": result.stdout.strip(),
+        "stderr": result.stderr.strip(),
+        "elapsed_sec": time.time() - started,
+        "ok": result.returncode == 0,
+    }
+
+
+def action_ready() -> bool:
+    result = run(["ros2", "action", "list"])
+    actions = [line.strip() for line in result["stdout"].splitlines() if line.strip()]
+    return result["ok"] and ("/navigate_to_pose" in actions or "navigate_to_pose" in actions)
+
+
+def yaw_to_quaternion(yaw: float) -> dict:
+    return {"z": math.sin(yaw / 2.0), "w": math.cos(yaw / 2.0)}
+
+
+def publish_json(node, publisher, payload: dict) -> None:
+    from std_msgs.msg import String
+
+    msg = String()
+    msg.data = json.dumps(payload, sort_keys=True)
+    publisher.publish(msg)
+
+
+def log_event(event: str, **values) -> None:
+    payload = {"event": event, **values}
+    print(json.dumps(payload, sort_keys=True), flush=True)
+
+
+def frontier_candidate(goal: dict) -> dict:
+    x_m = float(goal["XM"])
+    y_m = float(goal["YM"])
+    distance_m = math.hypot(x_m, y_m)
+    clearance_m = max(float(SPEC["MinClearanceM"]), float(SPEC["FootprintRadiusM"]) + float(SPEC["InflationRadiusM"]))
+    return {
+        "id": goal["ID"],
+        "frame_id": SPEC["GoalFrame"],
+        "x_m": x_m,
+        "y_m": y_m,
+        "yaw_rad": float(goal["YawRad"]),
+        "source": "bounded_goal_slam_map_costmap",
+        "estimated_path_length_m": distance_m,
+        "clearance_m": clearance_m,
+        "clearance_ok": clearance_m >= float(SPEC["MinClearanceM"]),
+        "path_reachable": "unreachable" not in str(goal["ID"]).lower(),
+        "map_ready": False,
+        "costmap_ready": False,
+    }
+
+
+def mission_goals() -> list[dict]:
+    goals = []
+    exit_goal = SPEC.get("ExitGoal") or {}
+    if exit_goal.get("ID"):
+        goals.append(exit_goal)
+    goals.extend(SPEC.get("BoundedGoals") or [])
+    seen = set()
+    unique_goals = []
+    for goal in goals:
+        goal_id = goal.get("ID")
+        if not goal_id or goal_id in seen:
+            continue
+        seen.add(goal_id)
+        unique_goals.append(goal)
+    return unique_goals
+
+
+def main() -> int:
+    import rclpy
+    from rclpy.action import ActionClient
+    from rclpy.parameter import Parameter
+    from std_msgs.msg import String
+    from nav_msgs.msg import OccupancyGrid, Odometry
+    from nav2_msgs.action import NavigateToPose
+
+    rclpy.init()
+    node = rclpy.create_node("navlab_navigation_mission")
+    node.set_parameters([Parameter("use_sim_time", Parameter.Type.BOOL, bool(SPEC.get("UseSimTime", True)))])
+    clock_deadline = time.monotonic() + 5.0
+    while bool(SPEC.get("UseSimTime", True)) and rclpy.ok() and time.monotonic() < clock_deadline and node.get_clock().now().nanoseconds <= 0:
+        rclpy.spin_once(node, timeout_sec=0.1)
+    status_pub = node.create_publisher(String, SPEC["NavigationStatusTopic"], 10)
+    event_pub = node.create_publisher(String, SPEC["NavigationEventsTopic"], 10)
+    goal_pub = node.create_publisher(String, SPEC["NavigationGoalTopic"], 10)
+    path_pub = node.create_publisher(String, SPEC["NavigationPathTopic"], 10)
+    recovery_pub = node.create_publisher(String, SPEC["NavigationRecoveryTopic"], 10)
+    state = {
+        "map_samples": 0,
+        "costmap_health_samples": 0,
+        "costmap_ready": False,
+        "costmap_health": {},
+        "controller_samples": 0,
+        "controller_ready": False,
+        "controller_status": {},
+        "slam_samples": 0,
+        "slam_ready": False,
+        "slam_status": {},
+        "odom_samples": 0,
+        "last_odom_xy": None,
+        "path_length_m": 0.0,
+    }
+
+    def on_map(msg: OccupancyGrid) -> None:
+        state["map_samples"] += 1
+
+    def parse_status_message(msg: String) -> dict:
+        try:
+            return json.loads(msg.data)
+        except Exception:
+            return {}
+
+    def on_costmap_health(msg: String) -> None:
+        payload = parse_status_message(msg)
+        state["costmap_health_samples"] += 1
+        state["costmap_health"] = payload
+        state["costmap_ready"] = bool(payload.get("ok", payload.get("ready", False)))
+
+    def on_controller_status(msg: String) -> None:
+        payload = parse_status_message(msg)
+        state["controller_samples"] += 1
+        state["controller_status"] = payload
+        bootstrap = payload.get("bootstrap", {})
+        state["controller_ready"] = bool(payload.get("ready", payload.get("ok", False))) or bool(bootstrap.get("ok", False))
+
+    def on_slam_status(msg: String) -> None:
+        payload = parse_status_message(msg)
+        state["slam_samples"] += 1
+        state["slam_status"] = payload
+        state["slam_ready"] = bool(payload.get("ready", payload.get("ok", False)))
+
+    def on_odom(msg: Odometry) -> None:
+        x = float(msg.pose.pose.position.x)
+        y = float(msg.pose.pose.position.y)
+        state["odom_samples"] += 1
+        previous = state.get("last_odom_xy")
+        if previous is not None:
+            step = math.hypot(x - previous[0], y - previous[1])
+            if 0.001 <= step <= 0.75:
+                state["path_length_m"] += step
+        state["last_odom_xy"] = (x, y)
+
+    def enrich_candidate(candidate: dict) -> dict:
+        candidate = dict(candidate)
+        candidate["map_ready"] = state["map_samples"] > 0
+        candidate["costmap_ready"] = state["costmap_health_samples"] > 0
+        candidate["costmap_health_ok"] = state["costmap_ready"]
+        candidate["controller_ready"] = state["controller_ready"]
+        candidate["slam_ready"] = state["slam_ready"]
+        candidate["map_samples"] = state["map_samples"]
+        candidate["costmap_health_samples"] = state["costmap_health_samples"]
+        candidate["controller_samples"] = state["controller_samples"]
+        candidate["slam_samples"] = state["slam_samples"]
+        candidate["odom_samples"] = state["odom_samples"]
+        return candidate
+
+    node.create_subscription(OccupancyGrid, SPEC["MapTopic"], on_map, 10)
+    node.create_subscription(String, SPEC["CostmapHealthTopic"], on_costmap_health, 10)
+    node.create_subscription(String, SPEC["ControllerStatusTopic"], on_controller_status, 10)
+    node.create_subscription(String, SPEC["SlamStatusTopic"], on_slam_status, 10)
+    node.create_subscription(Odometry, SPEC["SlamOdomTopic"], on_odom, 10)
+    warmup_until = min(RUN_UNTIL, time.monotonic() + max(12.0, float(SPEC.get("NavigationWindowSec", 120)) * 0.5))
+    while (
+        rclpy.ok()
+        and time.monotonic() < warmup_until
+        and (
+            state["map_samples"] <= 0
+            or state["costmap_health_samples"] <= 0
+            or not state["controller_ready"]
+            or not state["slam_ready"]
+        )
+    ):
+        rclpy.spin_once(node, timeout_sec=0.1)
+    goals = mission_goals()
+    log_event(
+        "mission_warmup_complete",
+        map_samples=state["map_samples"],
+        costmap_health_samples=state["costmap_health_samples"],
+        costmap_ready=state["costmap_ready"],
+        controller_ready=state["controller_ready"],
+        controller_samples=state["controller_samples"],
+        slam_ready=state["slam_ready"],
+        slam_samples=state["slam_samples"],
+        goals=[goal["ID"] for goal in goals],
+    )
+    blockers = []
+    candidates = [enrich_candidate(frontier_candidate(goal)) for goal in goals]
+    accepted_frontiers = []
+    rejected_frontiers = []
+    blacklisted_goals = []
+    timed_out_goals = []
+    accepted_goals = 0
+    succeeded_goals = 0
+    recovery_count = 0
+
+    def publish_status(current_blockers: list[str] | None = None) -> None:
+        candidate_count = max(1, len(candidates))
+        coverage_growth = min(1.0, len(accepted_frontiers) / candidate_count)
+        path_length_m = float(state.get("path_length_m", 0.0))
+        publish_json(node, status_pub, {
+            "claim": "evaluated",
+            "navigation_claim": "evaluated",
+            "frontier_claim": "evaluated",
+            "strategy": SPEC["Strategy"],
+            "frontier_candidates": candidates,
+            "accepted_frontiers": accepted_frontiers,
+            "rejected_frontiers": rejected_frontiers,
+            "blacklisted_goals": blacklisted_goals,
+            "timed_out_goals": timed_out_goals,
+            "accepted_goals": accepted_goals,
+            "succeeded_goals": succeeded_goals,
+            "min_accepted_goals": SPEC["MinAcceptedGoals"],
+            "path_length_m": path_length_m,
+            "min_path_length_m": SPEC["MinPathLengthM"],
+            "coverage_growth": coverage_growth,
+            "min_coverage_growth": SPEC["MinCoverageGrowth"],
+            "recovery_count": recovery_count,
+            "odom_samples": state["odom_samples"],
+            "completion_policy": SPEC["CompletionPolicy"],
+            "return_home_policy": SPEC["ReturnHomePolicy"],
+            "goal_success_ratio": 0.0 if not goals else accepted_goals / len(goals),
+            "uses_gazebo_truth_as_input": SPEC["UsesGazeboTruthAsInput"],
+            "blockers": current_blockers or [],
+        })
+
+    publish_status()
+    if state["map_samples"] <= 0:
+        blockers.append("map_unavailable")
+    if state["costmap_health_samples"] <= 0:
+        blockers.append("costmap_unavailable")
+    if not state["controller_ready"]:
+        blockers.append("controller_not_ready")
+    if not state["slam_ready"]:
+        blockers.append("slam_not_ready")
+    if blockers:
+        log_event("mission_readiness_blocked", blockers=blockers, controller_status=state["controller_status"], slam_status=state["slam_status"])
+        publish_status(blockers)
+        node.destroy_node()
+        rclpy.shutdown()
+        return 20
+    if not action_ready():
+        blockers.append("nav2_action_unavailable")
+        log_event("nav2_action_unavailable")
+        publish_status(blockers)
+        node.destroy_node()
+        rclpy.shutdown()
+        return 20
+
+    client = ActionClient(node, NavigateToPose, "navigate_to_pose")
+    if not client.wait_for_server(timeout_sec=8.0):
+        blockers.append("nav2_action_unavailable")
+        log_event("nav2_action_server_unavailable")
+    per_goal_timeout_sec = max(30.0, float(SPEC.get("NavigationWindowSec", 120.0)) / max(1, len(goals)))
+    for goal in goals:
+        if blockers or time.monotonic() >= RUN_UNTIL:
+            break
+        candidate = enrich_candidate(frontier_candidate(goal))
+        log_event("frontier_candidate", candidate=candidate)
+        publish_json(node, event_pub, {"event": "frontier_candidate", "candidate": candidate})
+        if not candidate["map_ready"] or not candidate["costmap_ready"] or not candidate["clearance_ok"] or not candidate["path_reachable"]:
+            if not candidate["map_ready"]:
+                reason = "map_unavailable"
+            elif not candidate["costmap_ready"]:
+                reason = "costmap_unavailable"
+            elif not candidate["clearance_ok"]:
+                reason = "clearance_too_low"
+            else:
+                reason = "unreachable_blacklisted"
+            rejected = {"id": candidate["id"], "reason": reason, "candidate": candidate}
+            rejected_frontiers.append(rejected)
+            blacklisted_goals.append(candidate["id"])
+            recovery_count += 1
+            log_event("frontier_rejected", id=candidate["id"], reason=reason)
+            publish_json(node, recovery_pub, {"goal_id": candidate["id"], "reason": reason, "return_home_policy": SPEC["ReturnHomePolicy"]})
+            publish_json(node, event_pub, {"event": "frontier_rejected", "id": candidate["id"], "reason": reason})
+            publish_status()
+            continue
+        nav_goal = NavigateToPose.Goal()
+        nav_goal.pose.header.frame_id = SPEC["GoalFrame"]
+        nav_goal.pose.header.stamp = node.get_clock().now().to_msg()
+        nav_goal.pose.pose.position.x = float(goal["XM"])
+        nav_goal.pose.pose.position.y = float(goal["YM"])
+        quat = yaw_to_quaternion(float(goal["YawRad"]))
+        nav_goal.pose.pose.orientation.z = quat["z"]
+        nav_goal.pose.pose.orientation.w = quat["w"]
+        publish_json(node, goal_pub, {"id": goal["ID"], "frame_id": SPEC["GoalFrame"], "x_m": goal["XM"], "y_m": goal["YM"], "yaw_rad": goal["YawRad"]})
+        log_event("goal_sent", id=goal["ID"], frame_id=SPEC["GoalFrame"], x_m=goal["XM"], y_m=goal["YM"], yaw_rad=goal["YawRad"])
+        def wait_for_future(future_obj, timeout_sec: float):
+            deadline = time.monotonic() + max(0.1, timeout_sec)
+            last_status = 0.0
+            while rclpy.ok() and time.monotonic() < deadline and not future_obj.done():
+                rclpy.spin_once(node, timeout_sec=0.1)
+                now = time.monotonic()
+                if now - last_status >= 1.0:
+                    publish_status()
+                    last_status = now
+            return future_obj.result() if future_obj.done() else None
+
+        future = client.send_goal_async(nav_goal)
+        handle = wait_for_future(future, 8.0)
+        if handle is None or not handle.accepted:
+            rejected_frontiers.append({"id": goal["ID"], "reason": "goal_rejected", "candidate": candidate})
+            blacklisted_goals.append(goal["ID"])
+            log_event("goal_rejected", id=goal["ID"], handle_is_none=handle is None)
+            publish_json(node, recovery_pub, {"goal_id": goal["ID"], "reason": "goal_rejected", "return_home_policy": SPEC["ReturnHomePolicy"]})
+            recovery_count += 1
+            publish_status()
+            continue
+        log_event("goal_accepted", id=goal["ID"])
+        accepted_goals += 1
+        accepted_frontiers.append(candidate)
+        publish_status()
+        result_future = handle.get_result_async()
+        result = wait_for_future(result_future, min(per_goal_timeout_sec, max(1.0, RUN_UNTIL - time.monotonic())))
+        if result is None:
+            timed_out_goals.append({"id": goal["ID"], "reason": "action_result_timeout", "candidate": candidate})
+            log_event("goal_timeout", id=goal["ID"], path_length_m=state["path_length_m"])
+            publish_status()
+            continue
+        action_status = int(result.status)
+        if action_status != 4:
+            rejected_frontiers.append({"id": goal["ID"], "reason": "goal_failed", "action_status": action_status, "candidate": candidate})
+            blacklisted_goals.append(goal["ID"])
+            recovery_count += 1
+            log_event("goal_failed", id=goal["ID"], status=action_status)
+            publish_status()
+            continue
+        succeeded_goals += 1
+        log_event("goal_result", id=goal["ID"], status=action_status)
+        publish_json(node, path_pub, {"goal_id": goal["ID"], "path_length_m": state["path_length_m"], "action_status": action_status})
+        publish_status()
+
+    accepted_candidate_count = len(accepted_frontiers)
+    candidate_count = max(1, len(candidates))
+    coverage_growth = min(1.0, accepted_candidate_count / candidate_count)
+    path_length_m = float(state.get("path_length_m", 0.0))
+    if recovery_count > int(SPEC["MaxRecoveryCount"]):
+        blockers.append("nav2_recovery_limit_exceeded")
+        publish_json(node, event_pub, {"event": "return_home_requested", "reason": "recovery_limit_exceeded", "policy": SPEC["ReturnHomePolicy"]})
+    if accepted_goals < int(SPEC["MinAcceptedGoals"]):
+        blockers.append("navigation_goal_count_too_low")
+    if path_length_m < float(SPEC["MinPathLengthM"]):
+        blockers.append("navigation_path_length_too_low")
+    if coverage_growth < float(SPEC["MinCoverageGrowth"]):
+        blockers.append("navigation_coverage_growth_too_low")
+    final_status = {
+        "claim": "evaluated",
+        "navigation_claim": "evaluated",
+        "frontier_claim": "evaluated",
+        "strategy": SPEC["Strategy"],
+        "frontier_candidates": candidates,
+        "accepted_frontiers": accepted_frontiers,
+        "rejected_frontiers": rejected_frontiers,
+        "blacklisted_goals": blacklisted_goals,
+        "timed_out_goals": timed_out_goals,
+        "accepted_goals": accepted_goals,
+        "succeeded_goals": succeeded_goals,
+        "min_accepted_goals": SPEC["MinAcceptedGoals"],
+        "path_length_m": path_length_m,
+        "min_path_length_m": SPEC["MinPathLengthM"],
+        "coverage_growth": coverage_growth,
+        "min_coverage_growth": SPEC["MinCoverageGrowth"],
+        "recovery_count": recovery_count,
+        "completion_policy": SPEC["CompletionPolicy"],
+        "return_home_policy": SPEC["ReturnHomePolicy"],
+        "goal_success_ratio": 0.0 if not goals else accepted_goals / len(goals),
+        "uses_gazebo_truth_as_input": SPEC["UsesGazeboTruthAsInput"],
+        "odom_samples": state["odom_samples"],
+        "blockers": blockers,
+    }
+    publish_json(node, status_pub, final_status)
+    log_event("mission_complete", blockers=blockers, accepted_goals=accepted_goals, path_length_m=path_length_m, coverage_growth=coverage_growth)
+    replay_until = RUN_UNTIL if blockers else min(RUN_UNTIL, time.monotonic() + 5.0)
+    while rclpy.ok() and time.monotonic() < replay_until:
+        publish_json(node, status_pub, final_status)
+        rclpy.spin_once(node, timeout_sec=0.1)
+        time.sleep(0.4)
+    node.destroy_node()
+    rclpy.shutdown()
+    return 0 if not blockers else 20
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

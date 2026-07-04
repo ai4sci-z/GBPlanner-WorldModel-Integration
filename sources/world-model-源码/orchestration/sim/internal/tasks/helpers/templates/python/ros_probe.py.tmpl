@@ -1,0 +1,337 @@
+from __future__ import annotations
+
+import json
+import threading
+import time
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+TOPICS = json.loads({{ printf "%q" .TopicsJSON }})
+OPTIONAL_TOPICS = set(json.loads({{ printf "%q" .OptionalTopicsJSON }}))
+PROBE_TIMEOUT_SEC = max(1.0, float(SPEC.get("probe_timeout_sec", SPEC.get("ProbeTimeoutSec", 8.0))))
+TOPIC_SAMPLE_TIMEOUT_SEC = max(0.5, min(2.0, PROBE_TIMEOUT_SEC / 6.0))
+STRING_BATCH_TIMEOUT_SEC = max(0.5, min(3.0, PROBE_TIMEOUT_SEC / 6.0))
+STRING_READY_TIMEOUT_SEC = max(STRING_BATCH_TIMEOUT_SEC, PROBE_TIMEOUT_SEC)
+
+def main() -> int:
+    samples = sample_string_topics([topic for topic in TOPICS if is_string_topic(topic)])
+    for topic in TOPICS:
+        if topic in samples:
+            continue
+        samples[topic] = sample_topic(topic)
+    blockers = []
+    optional_blockers = []
+    for topic, sample in samples.items():
+        if not effective_sample_ok(topic, sample, samples):
+            blocker = "topic_sample_missing:" + topic
+            if topic in OPTIONAL_TOPICS:
+                optional_blockers.append(blocker)
+            else:
+                blockers.append(blocker)
+    ok = len(blockers) == 0
+    result = {
+        "node": {{ printf "%q" .NodeName }},
+        "topics": TOPICS,
+        "optional_topics": sorted(OPTIONAL_TOPICS),
+        "spec": SPEC,
+        "started_ms": int(time.time() * 1000),
+        "status": "sampled",
+        "ok": ok,
+        "samples": samples,
+        "blockers": blockers,
+        "optional_blockers": optional_blockers,
+    }
+    print(json.dumps(result, sort_keys=True))
+    return 0 if ok else 20
+
+def is_string_topic(topic: str) -> bool:
+    return (
+        topic.endswith("/status")
+        or topic.endswith("/output")
+        or topic.endswith("/intent")
+        or topic.endswith("/goal")
+        or topic.endswith("/coverage")
+        or topic.endswith("/frontiers")
+        or topic.endswith("/path")
+        or topic.endswith("/markers")
+    )
+
+def effective_sample_ok(topic: str, sample: dict, samples: dict) -> bool:
+    parsed = sample.get("parsed") or {}
+    if sample.get("ok", False) and ("ok" not in parsed or bool(parsed.get("ok", False))):
+        return True
+    if topic == SPEC.get("SlamOdomTopic"):
+        return slam_status_has_odom_evidence(samples.get(SPEC.get("SlamStatusTopic", ""), {}))
+    return False
+
+def slam_status_has_odom_evidence(sample: dict) -> bool:
+    parsed = sample.get("parsed") or {}
+    output = parsed.get("output") or {}
+    quality = parsed.get("quality") or {}
+    try:
+        if int(output.get("odom_count", 0) or 0) > 0:
+            return True
+        if int(parsed.get("odom_samples", 0) or 0) > 0:
+            return True
+    except Exception:
+        pass
+    return bool(quality.get("odom_samples_positive", False))
+
+def sample_topic(topic: str) -> dict:
+    rclpy_sample = sample_message_topic(topic)
+    if rclpy_sample.get("ok", False):
+        return rclpy_sample
+
+    import subprocess
+
+    started = time.time()
+    deadline = time.monotonic() + TOPIC_SAMPLE_TIMEOUT_SEC
+    attempts = 0
+    result = None
+    stdout = ""
+    stderr = ""
+    while time.monotonic() < deadline:
+        attempts += 1
+        remaining = max(0.2, min(TOPIC_SAMPLE_TIMEOUT_SEC, deadline - time.monotonic()))
+        command = ["timeout", str(remaining), "ros2", "topic", "echo", "--once", topic]
+        result = subprocess.run(command, check=False, capture_output=True, text=True)
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
+        if result.returncode == 0 and stdout:
+            break
+        # ros2 can return immediately when discovery has not learned a late
+        # publisher yet. It can also fail during ROS graph churn with XMLRPC
+        # connection errors while the publisher is otherwise healthy. Keep
+        # retrying transient graph/CLI failures until the probe deadline.
+        if not retryable_probe_error(result.returncode, stdout + "\n" + stderr):
+            break
+        time.sleep(0.2)
+    if result is None:
+        class EmptyResult:
+            returncode = 124
+        result = EmptyResult()
+    sample = {
+        "ok": bool(stdout),
+        "return_code": result.returncode,
+        "latency_sec": round(time.time() - started, 3),
+        "attempts": attempts,
+        "sample_method": "ros2_topic_echo",
+    }
+    if stdout and result.returncode == 124:
+        sample["failure_kind"] = "sample_stdout_present_timeout"
+    elif not stdout:
+        sample["failure_kind"] = "topic_sample_missing"
+    if stdout:
+        sample["stdout"] = stdout[-4000:]
+        data = parse_std_msgs_string(stdout)
+        if data:
+            sample["data"] = data
+            parsed = parse_json_payload(data)
+            if parsed is not None:
+                sample["parsed"] = parsed
+    if stderr:
+        sample["stderr"] = stderr[-2000:]
+    if rclpy_sample:
+        sample["rclpy_attempt"] = rclpy_sample
+    return sample
+
+def sample_message_topic(topic: str) -> dict:
+    started = time.time()
+    try:
+        import rclpy
+        from rclpy.qos import qos_profile_sensor_data
+        from rosidl_runtime_py.utilities import get_message
+    except Exception as exc:
+        return {"ok": False, "return_code": 125, "latency_sec": 0.0, "error": "rclpy_unavailable:" + str(exc)}
+
+    holder = {"msg": None, "type": ""}
+    node = None
+    try:
+        rclpy.init(args=None)
+        node = rclpy.create_node("navlab_probe_message_topic")
+        type_deadline = time.monotonic() + TOPIC_SAMPLE_TIMEOUT_SEC
+        topic_type = ""
+        while rclpy.ok() and time.monotonic() < type_deadline:
+            for name, types in node.get_topic_names_and_types():
+                if name == topic and types:
+                    topic_type = types[0]
+                    break
+            if topic_type:
+                break
+            rclpy.spin_once(node, timeout_sec=0.1)
+        if not topic_type:
+            return {"ok": False, "return_code": 124, "latency_sec": round(time.time() - started, 3), "error": "topic_type_missing", "failure_kind": "topic_type_missing"}
+        msg_type = get_message(topic_type)
+        holder["type"] = topic_type
+
+        def on_msg(msg) -> None:
+            holder["msg"] = msg
+
+        subscription = node.create_subscription(msg_type, topic, on_msg, qos_profile_sensor_data)
+        deadline = time.monotonic() + TOPIC_SAMPLE_TIMEOUT_SEC
+        spins = 0
+        while rclpy.ok() and time.monotonic() < deadline and holder["msg"] is None:
+            spins += 1
+            rclpy.spin_once(node, timeout_sec=0.1)
+        _ = subscription
+        msg = holder["msg"]
+        sample = {
+            "ok": msg is not None,
+            "return_code": 0 if msg is not None else 124,
+            "latency_sec": round(time.time() - started, 3),
+            "attempts": spins,
+            "sample_method": "rclpy_subscription",
+            "type": topic_type,
+        }
+        if msg is None:
+            sample["failure_kind"] = "topic_sample_missing"
+        if msg is not None:
+            data = getattr(msg, "data", None)
+            if isinstance(data, str):
+                sample["data"] = data
+                sample["stdout"] = "data: " + data
+                parsed = parse_json_payload(data)
+                if parsed is not None:
+                    sample["parsed"] = parsed
+            else:
+                sample["stdout"] = summarize_message(msg)
+        return sample
+    except Exception as exc:
+        return {"ok": False, "return_code": 125, "latency_sec": round(time.time() - started, 3), "error": "rclpy_sample_failed:" + str(exc)}
+    finally:
+        if node is not None:
+            try:
+                node.destroy_node()
+            except Exception:
+                pass
+        try:
+            if rclpy.ok():
+                rclpy.shutdown()
+        except Exception:
+            pass
+
+def summarize_message(msg) -> str:
+    summary = {}
+    header = getattr(msg, "header", None)
+    if header is not None:
+        stamp = getattr(header, "stamp", None)
+        summary["header"] = {
+            "frame_id": getattr(header, "frame_id", ""),
+            "stamp_sec": getattr(stamp, "sec", None),
+            "stamp_nanosec": getattr(stamp, "nanosec", None),
+        }
+    for field in ("range", "radiation_type", "angle_min", "angle_max", "time_increment", "scan_time"):
+        if hasattr(msg, field):
+            value = getattr(msg, field)
+            try:
+                summary[field] = float(value)
+            except Exception:
+                summary[field] = str(value)
+    return json.dumps(summary, sort_keys=True)
+
+def retryable_probe_error(return_code: int, output: str) -> bool:
+    if return_code in (124, 130):
+        return True
+    transient_markers = (
+        "does not appear to be published yet",
+        "Failed to find a free participant index",
+        "ConnectionRefusedError",
+        "Connection refused",
+        "rmw_create_node",
+        "error creating node",
+        "xmlrpc/client.py",
+        "node.get_namespace()",
+    )
+    return any(marker in output for marker in transient_markers)
+
+def sample_string_topics(topics: list[str]) -> dict:
+    if not topics:
+        return {}
+    try:
+        import rclpy
+        from std_msgs.msg import String
+    except Exception:
+        return {}
+
+    holders = {topic: {"data": None, "parsed": None, "best_data": None, "best_parsed": None, "started": time.time()} for topic in topics}
+    started = time.time()
+    try:
+        rclpy.init(args=None)
+        node = rclpy.create_node("navlab_probe_string_topics")
+    except Exception:
+        # DDS participant exhaustion is probe infrastructure churn, not sensor
+        # evidence. Fall back to ros2 topic echo sampling for every topic.
+        try:
+            rclpy.shutdown()
+        except Exception:
+            pass
+        return {}
+
+    def make_callback(topic: str):
+        def on_msg(msg: String) -> None:
+            holder = holders[topic]
+            holder["data"] = msg.data
+            parsed = parse_json_payload(msg.data)
+            holder["parsed"] = parsed
+            if string_payload_ok(parsed):
+                holder["best_data"] = msg.data
+                holder["best_parsed"] = parsed
+        return on_msg
+
+    subscriptions = [node.create_subscription(String, topic, make_callback(topic), 10) for topic in topics]
+    deadline = time.monotonic() + STRING_READY_TIMEOUT_SEC
+    while rclpy.ok() and time.monotonic() < deadline:
+        rclpy.spin_once(node, timeout_sec=0.1)
+        if all(string_holder_ok(holder) for holder in holders.values()):
+            break
+    subscriptions.clear()
+    node.destroy_node()
+    rclpy.shutdown()
+    samples = {}
+    for topic, holder in holders.items():
+        data = holder.get("best_data") or holder.get("data")
+        parsed = holder.get("best_parsed") or holder.get("parsed")
+        sample = {
+            "ok": string_holder_ok(holder),
+            "return_code": 0 if data is not None else 124,
+            "latency_sec": round(time.time() - float(holder.get("started", started)), 3),
+        }
+        if data is not None:
+            sample["data"] = data
+            sample["stdout"] = "data: " + data
+            if parsed is not None:
+                sample["parsed"] = parsed
+        samples[topic] = sample
+    return samples
+
+def string_holder_ok(holder: dict) -> bool:
+    if holder.get("best_data") is not None:
+        return True
+    data = holder.get("data")
+    parsed = holder.get("parsed")
+    return data is not None and string_payload_ok(parsed)
+
+def string_payload_ok(parsed) -> bool:
+    return not isinstance(parsed, dict) or "ok" not in parsed or bool(parsed.get("ok", False))
+
+def parse_json_payload(value: str):
+    try:
+        parsed = json.loads(value)
+    except Exception:
+        return None
+    if isinstance(parsed, dict):
+        return parsed
+    return None
+
+def parse_std_msgs_string(output: str) -> str:
+    for line in output.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("data:"):
+            continue
+        value = stripped.split(":", 1)[1].strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            return value[1:-1]
+        return value
+    return ""
+
+if __name__ == "__main__":
+    raise SystemExit(main())

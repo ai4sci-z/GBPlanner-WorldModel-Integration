@@ -1,0 +1,229 @@
+[orchestration]
+family = "real"
+implementation = "rust"
+contract_version = "navlab.orchestration.v1"
+
+[runtime]
+mode = "real"
+backend = "process"
+
+[paths]
+workspace_root = "../.."
+artifact_root = "../../artifacts/real"
+task_config_dir = "configs/tasks"
+
+[sources]
+scan_source_claim = "ydlidar_x2"
+scan_source_topic = "/scan"
+fcu_source_claim = "fcu_mavlink"
+imu_source_claim = "fcu_mavlink"
+rangefinder_source_claim = "fcu_distance_sensor"
+slam_source_claim = "cartographer"
+required_real_topics = [
+  "/scan",
+  "/tf",
+  "/tf_static",
+  "/slam/odom",
+  "/ap/v1/status",
+  "/ap/v1/pose/filtered",
+]
+forbidden_simulation_input_topics = [
+  "/gazebo/*",
+  "/scan_ideal",
+  "/sim/x2/status",
+  "/rangefinder/down/scan_ideal",
+]
+
+[preflight]
+valid_for_sec = 300.0
+ros_distro = "humble"
+
+[preflight.serial_mavlink]
+enabled = true
+port = "/dev/ttyUSB1"
+baud = 115200
+heartbeat_timeout_sec = 15.0
+required_messages = ["HEARTBEAT", "SYS_STATUS", "ATTITUDE"]
+optional_messages = [
+  "LOCAL_POSITION_NED",
+  "GLOBAL_POSITION_INT",
+  "RANGEFINDER",
+  "DISTANCE_SENSOR",
+  "HIGHRES_IMU",
+  "RAW_IMU",
+  "SCALED_IMU",
+]
+
+[preflight.dependencies]
+required_command_groups = [["mavlink-routerd", "mavlink-router"], ["ros2"]]
+required_ros_packages = [
+  "cartographer_ros",
+  "navlab_slam_bringup",
+  "navlab_external_nav_bridge",
+  "ydlidar_ros2_driver",
+]
+required_python_modules = [
+  "navlab.sim.companion.runtime.cli",
+  "navlab.common.slam.cli",
+  "navlab.real.companion.nodes.mavlink_bridge",
+  "navlab.real.companion.nodes.pose_mirror",
+  "navlab.real.companion.nodes.external_nav",
+  "navlab.real.companion.nodes.imu_bridge",
+]
+required_process_services = []
+
+[prepare]
+dry_run = false
+fcu_bridge_mode = "navlab_mavlink"
+process_log_dir = "../../artifacts/runtime_logs/real_prepare"
+summary_artifact_dir = "../../artifacts/ros/navlab_real_prepare"
+ros_topic_probe_timeout_sec = 5.0
+topic_freshness_window_sec = 2.0
+external_nav_yaw_required = true
+external_nav_yaw_status_topics = ["/external_nav/status", "/navlab/slam/status"]
+external_nav_yaw_ready_fields = [
+  "external_nav_yaw_ready",
+  "yaw_ready",
+  "orientation_ready",
+  "ready",
+]
+mavlink_router_serial_port = "/dev/ttyUSB1"
+mavlink_router_baud = 115200
+mavlink_router_local_endpoint = "127.0.0.1:14550"
+fcu_bridge_state_topic = "/navlab/mavlink/status"
+height_rangefinder_required = true
+required_upstream_topics = [
+  "/scan",
+  "/imu/data",
+  "/imu",
+  "/tf",
+  "/tf_static",
+  "/slam/odom",
+  "/navlab/slam/status",
+]
+forbidden_simulation_topics = [
+  "/gazebo/*",
+  "/scan_ideal",
+  "/sim/x2/status",
+  "/rangefinder/down/scan_ideal",
+]
+
+[prepare.mavlink_router]
+enabled = true
+required = true
+command = ["mavlink-routerd", "-e", "127.0.0.1:14550", "/dev/ttyUSB1:115200"]
+startup_timeout_sec = 8.0
+health_topics = []
+shutdown_policy = "stop_on_wrapper_exit"
+direct_serial_access_allowed = true
+
+[prepare.navlab_mavlink_bridge]
+enabled = true
+required = true
+command = [
+  "uv",
+  "run",
+  "--project",
+  "orchestration",
+  "python",
+  "-m",
+  "navlab.real.companion.nodes.mavlink_bridge",
+  "--ros-distro",
+  "humble",
+  "--mavlink-endpoint",
+  "tcp:127.0.0.1:14550",
+]
+startup_timeout_sec = 8.0
+health_topics = [
+  "/navlab/mavlink/status",
+  "/navlab/fcu/local_position_pose",
+  "/mavlink_external_nav/status",
+  "/imu/data",
+  "/imu/status",
+]
+shutdown_policy = "stop_on_wrapper_exit"
+direct_serial_access_allowed = false
+
+[prepare.mavros]
+enabled = false
+required = true
+command = [
+  "ros2",
+  "launch",
+  "mavros",
+  "apm.launch",
+  "fcu_url:=udp://@127.0.0.1:14550",
+]
+startup_timeout_sec = 8.0
+health_topics = ["/mavros/state", "/ap/v1/status"]
+shutdown_policy = "stop_on_wrapper_exit"
+direct_serial_access_allowed = false
+
+[prepare.lidar]
+enabled = true
+required = true
+command = [
+  "bash",
+  "-lc",
+  "source /opt/ros/humble/setup.bash && source install/setup.bash && PYTHONPATH=.:$PYTHONPATH /usr/bin/python3 -m navlab.real.companion.nodes.ydlidar_x2_scan --port /dev/ttyUSB0 --baud 115200 --scan-topic /scan --frame-id laser_frame",
+]
+startup_timeout_sec = 8.0
+health_topics = ["/scan"]
+shutdown_policy = "stop_on_wrapper_exit"
+direct_serial_access_allowed = false
+
+[prepare.slam]
+enabled = true
+required = true
+command = [
+  "ros2",
+  "launch",
+  "navlab_slam_bringup",
+  "navlab_slam_bringup.launch.py",
+  "use_sim_time:=false",
+  "launch_fake_odom:=false",
+  "launch_cartographer_backend:=true",
+  "publish_placeholder_odom:=false",
+  "cartographer_configuration_basename:=navlab_cartographer_2d_real.lua",
+  "scan_topic:=/scan",
+  "imu_source_topic:=/imu/data",
+  "imu_topic:=/imu",
+  "cartographer_odometry_topic:=/cartographer/odometry_input",
+  "odom_topic:=/slam/odom",
+  "external_nav_input_odom_topic:=/slam/odom",
+  "require_imu_for_external_nav:=false",
+  "require_height_for_external_nav:=false",
+  "laser_frame:=laser_frame",
+  "imu_frame:=imu_link",
+  "base_frame:=base_link",
+]
+startup_timeout_sec = 8.0
+health_topics = [
+  "/imu",
+  "/slam/odom",
+  "/navlab/slam/status",
+  "/external_nav/status",
+]
+shutdown_policy = "stop_on_wrapper_exit"
+direct_serial_access_allowed = false
+
+[prepare.rangefinder_bridge]
+enabled = true
+required = true
+command = [
+  "bash",
+  "-lc",
+  "source /opt/ros/humble/setup.bash && source install/setup.bash && PYTHONPATH=.:$PWD/orchestration/.venv/lib/python3.11/site-packages:$PYTHONPATH /usr/bin/python3 -m navlab.real.companion.nodes.rangefinder_bridge --mavlink-endpoint tcp:127.0.0.1:14550 --range-topic /rangefinder/down/range --status-topic /rangefinder/down/status --frame-id rangefinder_down_frame --accepted-orientation 25",
+]
+startup_timeout_sec = 8.0
+health_topics = ["/rangefinder/down/range", "/rangefinder/down/status"]
+shutdown_policy = "stop_on_wrapper_exit"
+direct_serial_access_allowed = false
+
+[common_doctor]
+external_nav_status_topic = "/external_nav/status"
+mavlink_external_nav_status_topic = "/mavlink_external_nav/status"
+
+[task_doctor]
+fcu_status_topic = "/ap/v1/status"
+fcu_bridge_state_topic = "/navlab/mavlink/status"

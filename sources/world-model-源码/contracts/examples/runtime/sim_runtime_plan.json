@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "navlab.runtime.runtime_plan.v1",
+  "taskId": "hover",
+  "runId": "20260612T164928Z",
+  "services": [
+    {
+      "name": "official_baseline",
+      "role": "official-stack",
+      "backend": "RUNTIME_BACKEND_DOCKER",
+      "image": "navlab/official-baseline:humble-latest",
+      "command": [
+        "bash",
+        "-lc",
+        "ros2 launch ardupilot_gz_bringup iris_maze.launch.py"
+      ],
+      "env": {
+        "ROS_DOMAIN_ID": "85"
+      },
+      "cwd": "/workspace",
+      "volumes": [
+        {
+          "source": "/repo/world-model",
+          "target": "/workspace",
+          "readOnly": false
+        }
+      ],
+      "networks": [
+        "host"
+      ],
+      "required": true,
+      "logPath": "artifacts/sim/hover/20260612T164928Z/official_baseline.start.log"
+    }
+  ],
+  "probes": [
+    {
+      "name": "slam_hover_probe",
+      "role": "slam-hover",
+      "backend": "RUNTIME_BACKEND_DOCKER",
+      "image": "navlab/official-baseline:humble-latest",
+      "command": [
+        "bash",
+        "-lc",
+        "python3 /workspace/artifacts/sim/hover/20260612T164928Z/slam_hover_probe.py"
+      ],
+      "env": {
+        "ROS_DOMAIN_ID": "85"
+      },
+      "outputPath": "artifacts/sim/hover/20260612T164928Z/slam_hover_probe.json",
+      "timeoutSec": 30.0,
+      "required": true,
+      "logPath": "artifacts/sim/hover/20260612T164928Z/slam_hover_probe.log"
+    }
+  ],
+  "rosbags": [
+    {
+      "name": "hover_rosbag",
+      "role": "slam-hover",
+      "backend": "RUNTIME_BACKEND_DOCKER",
+      "topics": [
+        "/slam/odom",
+        "/navlab/fcu/controller/status",
+        "/navlab/hover/status"
+      ],
+      "outputPath": "artifacts/sim/hover/20260612T164928Z/rosbag/hover_rosbag",
+      "durationSec": 90.0,
+      "storage": "mcap",
+      "required": true,
+      "logPath": "artifacts/sim/hover/20260612T164928Z/hover_rosbag.log"
+    }
+  ]
+}

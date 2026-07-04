@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package navlab.runtime.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/runtime/v1;runtimev1";
+
+import "google/protobuf/timestamp.proto";
+
+message ProcessEvent {
+  string schema_version = 1;
+  string run_id = 2;
+  string service_name = 3;
+  ProcessEventType type = 4;
+  int32 pid = 5;
+  int32 exit_code = 6;
+  string message = 7;
+  string log_path = 8;
+  google.protobuf.Timestamp observed_at = 9;
+}
+
+enum ProcessEventType {
+  PROCESS_EVENT_TYPE_UNSPECIFIED = 0;
+  PROCESS_EVENT_TYPE_STARTED = 1;
+  PROCESS_EVENT_TYPE_EXITED = 2;
+  PROCESS_EVENT_TYPE_FAILED = 3;
+  PROCESS_EVENT_TYPE_STOPPED = 4;
+}

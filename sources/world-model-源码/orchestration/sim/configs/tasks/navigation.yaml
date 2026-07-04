@@ -1,0 +1,63 @@
+id: navigation
+family: sim
+description: Nav2 indoor navigation gate over Gazebo/SITL.
+capabilities:
+  - needs_gazebo
+  - needs_sitl
+  - needs_slam
+  - needs_nav2
+  - records_rosbag
+  - writes_task_result
+task:
+  timeout_sec: 360.0
+  simulation_profile: ideal
+nav2:
+  enabled: true
+  profile: indoor_2d
+  costmap:
+    max_costmap_age_sec: 1.5
+    min_obstacle_cells: 1
+    max_unknown_ratio: 0.35
+navigation_adapter:
+  max_xy_speed_mps: 0.25
+  fixed_altitude_m: 0.8
+  stop_on_stale_costmap: true
+  stop_on_stale_slam: true
+navigation_mission:
+  strategy: bounded_frontier
+  completion_policy: land_in_place
+  goal_frame: map
+  navigation_window_sec: 240.0
+  min_accepted_goals: 3
+  min_coverage_growth: 0.50
+  min_path_length_m: 4.0
+  exit_goal:
+    id: maze_exit
+    x_m: 1.5
+    y_m: -0.5
+    yaw_rad: 0.0
+  bounded_goals:
+    - id: p13_probe_1
+      x_m: 1.0
+      y_m: 0.0
+      yaw_rad: 0.0
+    - id: p13_probe_2
+      x_m: 1.5
+      y_m: 0.5
+      yaw_rad: 0.0
+    - id: p13_probe_3
+      x_m: 1.5
+      y_m: -0.5
+      yaw_rad: 0.0
+  home_goal:
+    id: home
+    x_m: 0.0
+    y_m: 0.0
+    yaw_rad: 0.0
+landing:
+  navigation_policy: land_in_place
+  home_source: post_takeoff_hover_pose
+  home_radius_m: 0.35
+  completion_grace_sec: 3.0
+  max_return_home_duration_sec: 60.0
+  max_landing_duration_sec: 35.0

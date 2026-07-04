@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package navlab.orchestration.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/orchestration/v1;orchestrationv1";
+
+import "google/protobuf/timestamp.proto";
+
+message DoctorResult {
+  string schema_version = 1;
+  string task_id = 2;
+  string run_id = 3;
+  bool ok = 4;
+  bool blocked = 5;
+  repeated DoctorBlocker blockers = 6;
+  repeated Check checks = 7;
+  google.protobuf.Timestamp checked_at = 8;
+}
+
+message Check {
+  string name = 1;
+  CheckStatus status = 2;
+  string message = 3;
+}
+
+message DoctorBlocker {
+  string code = 1;
+  string message = 2;
+  string source = 3;
+}
+
+enum CheckStatus {
+  CHECK_STATUS_UNSPECIFIED = 0;
+  CHECK_STATUS_OK = 1;
+  CHECK_STATUS_WARNING = 2;
+  CHECK_STATUS_BLOCKED = 3;
+  CHECK_STATUS_ERROR = 4;
+}

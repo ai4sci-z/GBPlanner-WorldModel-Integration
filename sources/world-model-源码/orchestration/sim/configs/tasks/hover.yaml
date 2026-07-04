@@ -1,0 +1,33 @@
+id: hover
+family: sim
+description: SITL hover gate over Gazebo with SLAM and landing checks.
+capabilities:
+  - needs_gazebo
+  - needs_sitl
+  - needs_slam
+  - records_rosbag
+  - writes_task_result
+task:
+  duration_sec: 90.0
+  simulation_profile: slam-direct-no-odom-prior
+fcu_controller:
+  takeoff_alt_m: 0.5
+  takeoff_min_height_m: 0.15
+  takeoff_min_height_ratio: 0.35
+  readiness_timeout_sec: 45.0
+  hold_after_ready_sec: 8.0
+slam_hover:
+  settle_window_sec: 8.0
+  hover_window_sec: 18.0
+  final_hold_window_sec: 5.0
+  max_hover_horizontal_drift_m: 0.10
+  max_hover_altitude_error_m: 0.30
+landing:
+  hover_policy: ap_land_mode_after_hover
+  pre_land_hold_sec: 2.0
+  max_landing_duration_sec: 35.0
+  max_descent_rate_mps: 0.60
+  landing_setpoint_lookahead_sec: 0.5
+  touchdown_altitude_m: 0.12
+  require_disarm: true
+  require_motors_safe: true

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package navlab.orchestration.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/orchestration/v1;orchestrationv1";
+
+import "google/protobuf/timestamp.proto";
+
+message ArtifactManifest {
+  string schema_version = 1;
+  string run_id = 2;
+  string task_id = 3;
+  repeated Artifact artifacts = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message Artifact {
+  string path = 1;
+  string type = 2;
+  string producer = 3;
+  string schema_version = 4;
+  string sha256 = 5;
+  int64 bytes = 6;
+  google.protobuf.Timestamp created_at = 7;
+}

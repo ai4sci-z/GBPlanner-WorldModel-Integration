@@ -1,0 +1,71 @@
+"""Mission evidence helpers for reusable flight stages."""
+
+from __future__ import annotations
+
+from navlab.common.companion.mission.evidence.hover import (
+    HoverCompletionEvaluation,
+    HoverDriftSummary,
+    HoverEvidenceRecorder,
+    HoverEvidenceWindow,
+    classify_hover_drift,
+    classify_hover_slo_tier,
+    json_safe_number,
+    summarize_hover_altitude_crosscheck,
+    summarize_hover_drift,
+)
+from navlab.common.companion.mission.evidence.landing import (
+    DEFAULT_LANDING_MAX_POST_TOUCHDOWN_BOUNCE_M,
+    DEFAULT_LANDING_RANGEFINDER_LOCAL_CROSSCHECK_MAX_HEIGHT_M,
+    DEFAULT_LANDING_RANGEFINDER_MAX_ABOVE_LOCAL_M,
+    DEFAULT_LANDING_RANGEFINDER_MAX_RATE_MPS,
+    DEFAULT_LANDING_RANGEFINDER_OUTLIER_MAX_NEIGHBOR_DT_SEC,
+    DEFAULT_LANDING_RANGEFINDER_OUTLIER_MIN_M,
+    LandingDescentSample,
+    LandingDescentSetpoint,
+    build_landing_intent_payload,
+    compute_landing_descent_setpoint,
+    landing_descent_evidence_height_and_source_m,
+    landing_descent_evidence_height_m,
+    landing_descent_height_m,
+    landing_descent_target_z_ned,
+    landing_effective_descent_rate_mps,
+    landing_touchdown_candidate,
+    summarize_landing_descent_profile,
+)
+from navlab.common.companion.mission.evidence.summary import (
+    build_hover_status_payload,
+    build_landing_summary,
+    mission_phase_summary_fields,
+)
+
+__all__ = [
+    "DEFAULT_LANDING_MAX_POST_TOUCHDOWN_BOUNCE_M",
+    "DEFAULT_LANDING_RANGEFINDER_LOCAL_CROSSCHECK_MAX_HEIGHT_M",
+    "DEFAULT_LANDING_RANGEFINDER_MAX_ABOVE_LOCAL_M",
+    "DEFAULT_LANDING_RANGEFINDER_MAX_RATE_MPS",
+    "DEFAULT_LANDING_RANGEFINDER_OUTLIER_MAX_NEIGHBOR_DT_SEC",
+    "DEFAULT_LANDING_RANGEFINDER_OUTLIER_MIN_M",
+    "HoverCompletionEvaluation",
+    "HoverDriftSummary",
+    "HoverEvidenceRecorder",
+    "HoverEvidenceWindow",
+    "LandingDescentSample",
+    "LandingDescentSetpoint",
+    "build_hover_status_payload",
+    "build_landing_intent_payload",
+    "build_landing_summary",
+    "classify_hover_drift",
+    "classify_hover_slo_tier",
+    "compute_landing_descent_setpoint",
+    "json_safe_number",
+    "landing_descent_evidence_height_and_source_m",
+    "landing_descent_evidence_height_m",
+    "landing_descent_height_m",
+    "landing_descent_target_z_ned",
+    "landing_effective_descent_rate_mps",
+    "landing_touchdown_candidate",
+    "mission_phase_summary_fields",
+    "summarize_hover_altitude_crosscheck",
+    "summarize_hover_drift",
+    "summarize_landing_descent_profile",
+]

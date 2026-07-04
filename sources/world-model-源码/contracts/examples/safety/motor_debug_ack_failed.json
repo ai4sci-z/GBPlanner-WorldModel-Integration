@@ -1,0 +1,10 @@
+{
+  "command": "ARM",
+  "result": "MAV_RESULT_FAILED",
+  "resultCode": 4,
+  "accepted": false,
+  "modeBefore": "GUIDED",
+  "modeAfter": "GUIDED",
+  "statustext": "Arm: RC not found",
+  "observedAt": "2026-06-12T17:01:03Z"
+}

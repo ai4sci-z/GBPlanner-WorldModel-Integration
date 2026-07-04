@@ -1,0 +1,22 @@
+navlab_cartographer_adapter_node:
+  ros__parameters:
+    scan_timeout_ms: 500
+    imu_timeout_ms: 500
+    tf_timeout_ms: 500
+    max_tf_stamp_sec: 2000000000.0
+    max_tf_translation_m: 100.0
+    max_tf_jump_m: 2.0
+    max_tf_yaw_z_jump: 1.0
+    publish_placeholder_odom: false
+    odom_source_mode: slam_tf
+    map_frame_id: map
+    odom_frame_id: odom
+    base_frame_id: base_link
+    tf_topic: /navlab/slam/tf
+    publish_global_tf: false
+    global_tf_topic: /tf
+    cached_odom_publish_rate_hz: 10.0
+    scan_topic: /scan
+    imu_topic: /imu
+    odom_topic: /odom
+    status_topic: /navlab/slam/status

@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+import json
+import subprocess
+import time
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+LIFECYCLE_NODES = ["/planner_server", "/controller_server", "/bt_navigator"]
+ACTION_NAMES = ["/navigate_to_pose", "navigate_to_pose"]
+
+
+def run(command: list[str], timeout_sec: float = 8.0) -> dict:
+    started = time.time()
+    result = subprocess.run(["timeout", str(timeout_sec), *command], check=False, capture_output=True, text=True)
+    return {
+        "command": command,
+        "returncode": result.returncode,
+        "stdout": result.stdout.strip(),
+        "stderr": result.stderr.strip(),
+        "elapsed_sec": time.time() - started,
+        "ok": result.returncode == 0,
+    }
+
+
+def lifecycle_state(node: str) -> dict:
+    result = run(["ros2", "lifecycle", "get", node], timeout_sec=5.0)
+    text = result["stdout"].strip().lower()
+    result["active"] = result["ok"] and text.startswith("active")
+    return result
+
+
+def action_server_ready() -> dict:
+    result = run(["ros2", "action", "list"])
+    actions = [line.strip() for line in result["stdout"].splitlines() if line.strip()]
+    result["actions"] = actions
+    result["ready"] = result["ok"] and any(action in actions for action in ACTION_NAMES)
+    return result
+
+
+def topic_sample(topic: str, field: str) -> dict:
+    result = run(["ros2", "topic", "echo", "--once", "--field", field, topic])
+    result["topic"] = topic
+    result["field"] = field
+    return result
+
+
+def tf_check(parent: str, child: str) -> dict:
+    result = run(["ros2", "run", "tf2_ros", "tf2_echo", parent, child], timeout_sec=2.5)
+    result["parent"] = parent
+    result["child"] = child
+    output = result["stdout"].lower()
+    result["valid"] = "translation:" in output and "rotation:" in output
+    return result
+
+
+def main() -> int:
+    lifecycle = {node: lifecycle_state(node) for node in LIFECYCLE_NODES}
+    lifecycle_active = all(state["active"] for state in lifecycle.values())
+    action = action_server_ready()
+    samples = {
+        SPEC["MapTopic"]: topic_sample(SPEC["MapTopic"], "header.frame_id"),
+        SPEC["SlamOdomTopic"]: topic_sample(SPEC["SlamOdomTopic"], "header.frame_id"),
+    }
+    tf = {
+        "map_to_odom": tf_check(SPEC["GlobalFrame"], SPEC["OdomFrame"]),
+        "odom_to_base": tf_check(SPEC["OdomFrame"], SPEC["BaseFrame"]),
+        "base_to_scan": tf_check(SPEC["BaseFrame"], "base_scan"),
+    }
+    blockers = []
+    if not lifecycle_active:
+        blockers.append("nav2_lifecycle_inactive")
+    if not action["ready"]:
+        blockers.append("nav2_action_unavailable")
+    if not all(sample["ok"] for sample in samples.values()):
+        blockers.append("navigation_map_stale")
+    if not all(item["valid"] for item in tf.values()):
+        blockers.append("nav2_tf_invalid")
+    result = {
+        "node": "navlab_nav2_lifecycle_probe",
+        "status": "sampled",
+        "ok": not blockers,
+        "claim": "evaluated",
+        "nav2_claim": "evaluated",
+        "nav2_lifecycle_active": lifecycle_active,
+        "nav2_action_server_ready": action["ready"],
+        "lifecycle": lifecycle,
+        "action": action,
+        "tf": tf,
+        "samples": samples,
+        "blockers": blockers,
+        "started_ms": int(time.time() * 1000),
+    }
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["ok"] else 20
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

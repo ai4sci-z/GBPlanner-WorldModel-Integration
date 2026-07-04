@@ -1,0 +1,31 @@
+[tool.ruff]
+cache-dir = ".cache/ruff"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",  # https://docs.astral.sh/ruff/rules/#error-e
+    "F",  # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "I",  # https://docs.astral.sh/ruff/rules/#isort-i
+    "UP", # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+]
+ignore = ["F401"]
+
+[tool.pyright]
+exclude = [ #
+    ".git",
+    "**/__pycache__",
+    ".cache",
+    ".idea",
+    ".vscode",
+    ".venv",
+    ".devbox",
+    "db/",
+    "data/",
+    "temp/",
+    "logs/",
+    "vendor/",
+    "output/",
+    "**/node_modules",
+    "**/.*",
+]

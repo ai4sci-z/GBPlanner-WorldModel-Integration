@@ -1,0 +1,204 @@
+{
+  "cameraState": {
+    "perspective": true,
+    "distance": 28.63945562103307,
+    "phi": 30.300108853828814,
+    "thetaOffset": 7.12976476720637,
+    "targetOffset": [
+      3.4201136674502624,
+      1.5965008328187889,
+      0
+    ],
+    "target": [
+      0,
+      0,
+      0
+    ],
+    "targetOrientation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "fovy": 45,
+    "near": 0.05,
+    "far": 5000
+  },
+  "followMode": "follow-none",
+  "fixedFrame": "map",
+  "followTf": "map",
+  "scene": {
+    "transforms": {
+      "visible": true
+    }
+  },
+  "transforms": {
+    "map": {
+      "visible": true
+    },
+    "odom": {
+      "visible": true
+    },
+    "base_link": {
+      "visible": true
+    },
+    "imu_link": {
+      "visible": true
+    },
+    "base_scan": {
+      "visible": true
+    },
+    "base_scan_map_aligned": {
+      "visible": true
+    },
+    "rangefinder_down_frame": {
+      "visible": true
+    },
+    "frame:map": {
+      "visible": true
+    },
+    "frame:odom": {
+      "visible": true
+    },
+    "frame:base_link": {
+      "visible": true
+    },
+    "frame:imu_link": {
+      "visible": true
+    },
+    "frame:base_scan": {
+      "visible": true
+    },
+    "frame:base_scan_map_aligned": {
+      "visible": true
+    },
+    "frame:rangefinder_down_frame": {
+      "visible": true
+    },
+    "frame:rotor_0": {
+      "visible": true
+    },
+    "frame:rotor_1": {
+      "visible": true
+    },
+    "frame:rotor_2": {
+      "visible": true
+    },
+    "frame:rotor_3": {
+      "visible": true
+    }
+  },
+  "topics": {
+    "/map": {
+      "visible": true,
+      "colorMode": "map",
+      "frameLocked": true
+    },
+    "/navlab/official_maze/map": {
+      "visible": true,
+      "colorMode": "map",
+      "frameLocked": true
+    },
+    "/scan": {
+      "visible": false,
+      "colorMode": "colormap",
+      "color": "#ffb000",
+      "pointSize": 3,
+      "decayTime": 1.5,
+      "colorField": "intensity",
+      "colorMap": "rainbow"
+    },
+    "/scan_map_aligned": {
+      "visible": false,
+      "colorMode": "flat",
+      "color": "#ff8a00",
+      "pointSize": 2,
+      "decayTime": 0.05
+    },
+    "/slam/odom": {
+      "visible": true,
+      "color": "#2f80ff",
+      "type": "axis",
+      "axisScale": 0.35,
+      "lineWidth": 2
+    },
+    "/ap/v1/pose/filtered": {
+      "visible": true,
+      "color": "#00c853",
+      "type": "axis",
+      "axisScale": 0.5
+    },
+    "/rangefinder/down/range": {
+      "visible": true,
+      "color": "#ff4d4d"
+    },
+    "/lidar": {
+      "visible": false
+    },
+    "/navlab/x2/vendor_scan": {
+      "visible": false
+    },
+    "/navlab/x2/scan_ideal": {
+      "visible": false
+    },
+    "/rangefinder/down/scan_ideal": {
+      "visible": false
+    },
+    "/navlab/x2/scan_normalized": {
+      "visible": false
+    },
+    "/trajectory_node_list": {
+      "visible": false
+    },
+    "/submap_list": {
+      "visible": false
+    },
+    "/local_costmap/costmap": {
+      "visible": false
+    },
+    "/global_costmap/costmap": {
+      "visible": false
+    },
+    "/scan_map_aligned_points": {
+      "visible": true,
+      "colorMode": "flat",
+      "color": "#ff1f1f",
+      "pointSize": 2,
+      "decayTime": 1.5
+    }
+  },
+  "layers": {
+    "grid-map": {
+      "visible": true,
+      "drawBehind": false,
+      "instanceId": "grid-map",
+      "layerId": "foxglove.Grid",
+      "size": 20,
+      "divisions": 20,
+      "lineWidth": 1,
+      "color": "#248eff",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "order": 1
+    }
+  },
+  "publish": {
+    "type": "point",
+    "poseTopic": "/move_base_simple/goal",
+    "pointTopic": "/clicked_point",
+    "poseEstimateTopic": "/initialpose",
+    "poseEstimateXDeviation": 0.5,
+    "poseEstimateYDeviation": 0.5,
+    "poseEstimateThetaDeviation": 0.26179939
+  },
+  "synchronize": false,
+  "imageMode": {}
+}

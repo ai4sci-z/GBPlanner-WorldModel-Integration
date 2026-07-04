@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "navlab.orchestration.task_result.v1",
+  "taskId": "motor-debug",
+  "runId": "20260612T170100Z",
+  "status": "TASK_STATUS_BLOCKED",
+  "ok": false,
+  "blocked": true,
+  "exitCode": 20,
+  "artifactDir": "artifacts/real/motor-debug/20260612T170100Z",
+  "summaryPath": "artifacts/real/motor-debug/20260612T170100Z/summary.json",
+  "blockers": [
+    {
+      "code": "MAVLINK_ACK_REJECTED",
+      "message": "arm command was rejected by the FCU",
+      "source": "mavlink"
+    }
+  ],
+  "warnings": [],
+  "sourceEvidence": {
+    "runtimeDomain": "RUNTIME_DOMAIN_REAL",
+    "scanSource": "not_required",
+    "imuSource": "fcu_mavlink",
+    "rangefinderSource": "not_required",
+    "slamSource": "not_required",
+    "usesTruthAsControlInput": false
+  },
+  "mavlinkAcks": [
+    {
+      "command": "ARM",
+      "result": "MAV_RESULT_FAILED",
+      "resultCode": 4,
+      "accepted": false,
+      "modeBefore": "GUIDED",
+      "modeAfter": "GUIDED",
+      "statustext": "Arm: RC not found",
+      "observedAt": "2026-06-12T17:01:03Z"
+    }
+  ],
+  "metrics": {},
+  "evidence": {
+    "heartbeat_observed": true,
+    "guided_mode_confirmed": true
+  },
+  "details": {},
+  "startedAt": "2026-06-12T17:01:00Z",
+  "finishedAt": "2026-06-12T17:01:04Z"
+}

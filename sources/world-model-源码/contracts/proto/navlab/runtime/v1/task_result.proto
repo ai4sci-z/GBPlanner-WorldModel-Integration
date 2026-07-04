@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package navlab.runtime.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/runtime/v1;runtimev1";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+message TaskResult {
+  string schema_version = 1;
+  string task_name = 2;
+  RuntimeDomain runtime_domain = 3;
+  TaskStatus status = 4;
+
+  bool ok = 5;
+  bool blocked = 6;
+  int32 exit_code = 7;
+
+  string run_id = 8;
+  string artifact_dir = 9;
+  string summary_path = 10;
+
+  repeated string blockers = 11;
+  repeated string warnings = 12;
+  repeated LogFile logs = 13;
+
+  google.protobuf.Struct task_config = 14;
+  google.protobuf.Struct evidence = 15;
+  google.protobuf.Struct metrics = 16;
+  google.protobuf.Struct details = 17;
+
+  google.protobuf.Timestamp started_at = 18;
+  google.protobuf.Timestamp finished_at = 19;
+}
+
+message LogFile {
+  string process = 1;
+  string path = 2;
+  int64 entries = 3;
+  int64 bytes = 4;
+}
+
+enum RuntimeDomain {
+  RUNTIME_DOMAIN_UNSPECIFIED = 0;
+  RUNTIME_DOMAIN_REAL = 1;
+  RUNTIME_DOMAIN_SIM = 2;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_OK = 1;
+  TASK_STATUS_WARNING = 2;
+  TASK_STATUS_BLOCKED = 3;
+  TASK_STATUS_ERROR = 4;
+  TASK_STATUS_INTERRUPTED = 5;
+}

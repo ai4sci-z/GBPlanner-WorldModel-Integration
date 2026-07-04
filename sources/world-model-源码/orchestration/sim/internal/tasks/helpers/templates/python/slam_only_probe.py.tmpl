@@ -1,0 +1,203 @@
+from __future__ import annotations
+
+import json
+import math
+import time
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+
+
+def stamp_to_float(stamp) -> float:
+    return float(stamp.sec) + float(stamp.nanosec) * 1e-9
+
+
+def yaw_from_quaternion(q) -> float:
+    siny_cosp = 2.0 * (float(q.w) * float(q.z) + float(q.x) * float(q.y))
+    cosy_cosp = 1.0 - 2.0 * (float(q.y) * float(q.y) + float(q.z) * float(q.z))
+    return math.atan2(siny_cosp, cosy_cosp)
+
+
+def unwrap_delta(current: float, previous: float) -> float:
+    delta = current - previous
+    while delta > math.pi:
+        delta -= 2.0 * math.pi
+    while delta < -math.pi:
+        delta += 2.0 * math.pi
+    return delta
+
+
+def parse_status(data: str) -> dict:
+    try:
+        value = json.loads(data)
+    except Exception:
+        return {"raw": data}
+    return value if isinstance(value, dict) else {"raw": data}
+
+
+def status_ready(payload: dict) -> bool:
+    if payload.get("ready") is True:
+        return True
+    state = str(payload.get("state") or payload.get("tracking_state") or "").lower()
+    quality = str(payload.get("quality") or "").lower()
+    return state in {"ready", "healthy", "tracking"} or quality in {"good", "healthy"}
+
+
+def main() -> int:
+    import rclpy
+    from nav_msgs.msg import Odometry
+    from sensor_msgs.msg import Imu, LaserScan
+    from std_msgs.msg import String
+    from rclpy.qos import qos_profile_sensor_data
+
+    rclpy.init()
+    node = rclpy.create_node("navlab_slam_only_probe")
+    state = {
+        "start_wall": time.monotonic(),
+        "odom": [],
+        "scan_count": 0,
+        "imu_count": 0,
+        "imu_nonmonotonic_count": 0,
+        "last_imu_stamp": None,
+        "status_count": 0,
+        "last_status": {},
+        "external_nav_status_count": 0,
+        "last_external_nav_status": {},
+        "last_odom_wall": None,
+    }
+
+    def on_odom(msg: Odometry) -> None:
+        wall = time.monotonic()
+        yaw = yaw_from_quaternion(msg.pose.pose.orientation)
+        state["odom"].append({
+            "wall": wall,
+            "stamp": stamp_to_float(msg.header.stamp),
+            "x": float(msg.pose.pose.position.x),
+            "y": float(msg.pose.pose.position.y),
+            "z": float(msg.pose.pose.position.z),
+            "yaw": yaw,
+        })
+        state["last_odom_wall"] = wall
+
+    def on_scan(_msg: LaserScan) -> None:
+        state["scan_count"] += 1
+
+    def on_imu(msg: Imu) -> None:
+        stamp = stamp_to_float(msg.header.stamp)
+        last = state.get("last_imu_stamp")
+        if last is not None and stamp < last:
+            state["imu_nonmonotonic_count"] += 1
+        state["last_imu_stamp"] = stamp
+        state["imu_count"] += 1
+
+    def on_status(msg: String) -> None:
+        state["status_count"] += 1
+        state["last_status"] = parse_status(msg.data)
+
+    def on_external_nav_status(msg: String) -> None:
+        state["external_nav_status_count"] += 1
+        state["last_external_nav_status"] = parse_status(msg.data)
+
+    node.create_subscription(Odometry, SPEC["slam_odom_topic"], on_odom, qos_profile_sensor_data)
+    node.create_subscription(LaserScan, SPEC["scan_topic"], on_scan, qos_profile_sensor_data)
+    node.create_subscription(Imu, SPEC["imu_topic"], on_imu, qos_profile_sensor_data)
+    node.create_subscription(String, SPEC["slam_status_topic"], on_status, 10)
+    node.create_subscription(String, SPEC["external_nav_status_topic"], on_external_nav_status, 10)
+
+    deadline = time.monotonic() + float(SPEC["duration_sec"])
+    while rclpy.ok() and time.monotonic() < deadline:
+        rclpy.spin_once(node, timeout_sec=0.05)
+
+    finished = time.monotonic()
+    odom = state["odom"]
+    elapsed = max(0.0, finished - state["start_wall"])
+    blockers = []
+    max_jump = 0.0
+    yaw_span = 0.0
+    horizontal_span = 0.0
+    odom_rate = 0.0
+    if len(odom) >= 2:
+        odom_elapsed = max(1e-6, odom[-1]["wall"] - odom[0]["wall"])
+        odom_rate = float(len(odom) - 1) / odom_elapsed
+        min_x = min(p["x"] for p in odom)
+        max_x = max(p["x"] for p in odom)
+        min_y = min(p["y"] for p in odom)
+        max_y = max(p["y"] for p in odom)
+        horizontal_span = math.hypot(max_x - min_x, max_y - min_y)
+        yaw_accum = 0.0
+        yaw_values = [0.0]
+        for prev, cur in zip(odom, odom[1:]):
+            jump = math.hypot(cur["x"] - prev["x"], cur["y"] - prev["y"])
+            max_jump = max(max_jump, jump)
+            yaw_accum += unwrap_delta(cur["yaw"], prev["yaw"])
+            yaw_values.append(yaw_accum)
+        yaw_span = max(yaw_values) - min(yaw_values)
+    else:
+        blockers.append("slam_only_odom_missing")
+
+    stale_age = None
+    if state["last_odom_wall"] is not None:
+        stale_age = max(0.0, finished - float(state["last_odom_wall"]))
+    if odom_rate < float(SPEC["min_odom_rate_hz"]):
+        blockers.append("slam_only_odom_rate_low")
+    if stale_age is None or stale_age > float(SPEC["max_odom_stale_sec"]):
+        blockers.append("slam_only_odom_stale")
+    if state["scan_count"] <= 0:
+        blockers.append("slam_only_scan_missing")
+    if state["imu_count"] <= 1:
+        blockers.append("slam_only_imu_missing")
+    if state["imu_nonmonotonic_count"] > 0:
+        blockers.append("slam_only_imu_timestamp_nonmonotonic")
+    if state["status_count"] <= 0:
+        blockers.append("slam_only_status_missing")
+    elif not status_ready(state["last_status"]):
+        blockers.append("slam_only_status_not_ready")
+    if max_jump > float(SPEC["max_position_jump_m"]):
+        blockers.append("slam_only_pose_jump")
+    quality_fields = {"slam_quality", "slam_quality_reason", "slam_quality_good", "slam_quality_report"}
+    external_status = state["last_external_nav_status"]
+    if state["external_nav_status_count"] <= 0:
+        blockers.append("slam_only_external_nav_status_missing")
+    elif not quality_fields.issubset(set(external_status.keys())):
+        blockers.append("slam_only_external_nav_quality_fields_missing")
+
+    output = {
+        "ok": len(blockers) == 0,
+        "status": "ok" if len(blockers) == 0 else "blocked",
+        "blockers": blockers,
+        "topics": {
+            "scan": SPEC["scan_topic"],
+            "imu": SPEC["imu_topic"],
+            "slam_odom": SPEC["slam_odom_topic"],
+            "slam_status": SPEC["slam_status_topic"],
+            "external_nav_status": SPEC["external_nav_status_topic"],
+        },
+        "metrics": {
+            "duration_sec": elapsed,
+            "odom_count": len(odom),
+            "odom_rate_hz": odom_rate,
+            "odom_stale_age_sec": stale_age,
+            "scan_count": state["scan_count"],
+            "imu_count": state["imu_count"],
+            "imu_nonmonotonic_count": state["imu_nonmonotonic_count"],
+            "status_count": state["status_count"],
+            "external_nav_status_count": state["external_nav_status_count"],
+            "external_nav_quality_fields_ok": (
+                state["external_nav_status_count"] > 0
+                and quality_fields.issubset(set(external_status.keys()))
+            ),
+            "status_ready": status_ready(state["last_status"]) if state["status_count"] > 0 else False,
+            "max_position_jump_m": max_jump,
+            "horizontal_span_m": horizontal_span,
+            "yaw_span_rad": yaw_span,
+        },
+        "last_status": state["last_status"],
+        "last_external_nav_status": external_status,
+    }
+    print(json.dumps(output, sort_keys=True))
+    node.destroy_node()
+    rclpy.shutdown()
+    return 0 if output["ok"] else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

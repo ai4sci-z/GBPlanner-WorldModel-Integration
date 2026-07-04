@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+import json
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+
+def add_arg(argv: list[str], name: str, value) -> None:
+    argv.extend(["--" + name, str(value)])
+
+def main() -> int:
+    from navlab.sim.companion.nodes.external_nav_source_selector import run
+
+    argv: list[str] = []
+    for name in [
+        "slam-odom-topic",
+        "scan-reference-odom-topic",
+        "scan-reference-status-topic",
+        "hover-status-topic",
+        "output-odom-topic",
+        "status-topic",
+        "max-status-age-ms",
+        "cartographer-disagreement-m",
+    ]:
+        add_arg(argv, name, SPEC[name.replace("-", "_")])
+    return int(run(argv) or 0)
+
+if __name__ == "__main__":
+    raise SystemExit(main())

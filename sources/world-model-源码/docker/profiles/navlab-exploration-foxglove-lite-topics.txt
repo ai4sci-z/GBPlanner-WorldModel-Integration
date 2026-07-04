@@ -1,0 +1,46 @@
+# Foxglove-lite replay topic profile for P9.
+# Format:
+#   overlay TOPIC
+#   required TOPIC interval=SECONDS|all
+#   optional TOPIC interval=SECONDS|all
+#   drop TOPIC
+# Missing, malformed, or incomplete profiles are fatal by design.
+
+overlay /navlab/official_maze/map
+
+required /tf interval=0.05
+required /tf_static interval=all
+required /map interval=1.0
+required /scan interval=0.10
+required /slam/odom interval=0.05
+required /navlab/exploration/status interval=0.25
+required /navlab/exploration/goal interval=all
+required /navlab/exploration/coverage interval=0.25
+required /navlab/fcu/controller/status interval=0.25
+required /navlab/fcu/setpoint/intent interval=0.10
+required /navlab/fcu/setpoint/output interval=0.10
+required /navlab/motion/status interval=0.25
+required /rangefinder/down/range interval=0.20
+
+optional /external_nav/odom interval=0.05
+optional /navlab/frame_contract/status interval=0.50
+optional /navlab/slam/status interval=0.50
+optional /external_nav/status interval=0.50
+optional /ap/v1/pose/filtered interval=0.20
+optional /ap/v1/twist/filtered interval=0.20
+
+drop /imu
+drop /clock
+drop /odometry
+drop /submap_list
+drop /trajectory_node_list
+drop /ap/v1/time
+drop /ap/v1/cmd_vel
+drop /ap/v1/status
+drop /navlab/fcu/owner/status
+drop /navlab/fcu/state
+drop /navlab/hover/status
+drop /navlab/x2/vendor_scan
+drop /rangefinder/down/scan_ideal
+drop /rangefinder/down/status
+drop /sim/x2/status

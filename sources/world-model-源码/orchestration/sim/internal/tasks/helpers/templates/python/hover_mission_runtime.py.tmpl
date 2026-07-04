@@ -1,0 +1,79 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+SPEC = json.loads({{ printf "%q" .SpecJSON }})
+
+def bool_flag(name: str) -> str:
+    return "--" + name if SPEC.get(name.replace("-", "_"), False) else "--no-" + name
+
+def add_arg(argv: list[str], name: str, value) -> None:
+    argv.extend(["--" + name, str(value)])
+
+def main() -> int:
+    from navlab.sim.companion.nodes.hover_mission import run
+
+    script_dir = Path(__file__).resolve().parent
+    artifact_dir = script_dir.parents[1] if script_dir.name == "scripts" and script_dir.parent.name == "runtime" else script_dir
+    argv: list[str] = []
+    for name in [
+        "endpoint",
+        "duration-sec",
+        "summary-file",
+        "mode",
+        "takeoff-alt-m",
+        "min-airborne-alt-m",
+        "preflight-ready-sec",
+        "max-wait-ready-sec",
+        "hover-settle-sec",
+        "hover-altitude-tolerance-m",
+        "hover-hold-sec",
+        "hover-health-min-observation-sec",
+        "hover-health-stable-required-sec",
+        "hover-health-max-wait-sec",
+        "operator-confirm-timeout-sec",
+        "max-horizontal-drift-m",
+        "hover-span-target-m",
+        "hover-span-hard-cap-m",
+        "max-altitude-drift-m",
+        "source-system",
+        "source-component",
+        "status-topic",
+        "landing-status-topic",
+        "landing-intent-topic",
+        "external-nav-status-topic",
+        "mavlink-external-nav-status-topic",
+        "imu-status-topic",
+        "mavlink-status-topic",
+        "landing-policy",
+        "pre-land-hold-sec",
+		"max-landing-duration-sec",
+		"landing-descent-rate-mps",
+		"landing-land-command-altitude-m",
+		"max-landing-descent-rate-mps",
+		"touchdown-altitude-m",
+        "touchdown-vertical-speed-mps",
+        "force-disarm-grace-sec",
+    ]:
+        key = name.replace("-", "_")
+        value = str(artifact_dir / "mission_summary.json") if key == "summary_file" else SPEC[key]
+        add_arg(argv, name, value)
+    for name in [
+        "require-disarm",
+        "require-motors-safe",
+        "require-external-nav",
+        "require-imu-status",
+        "operator-confirm-required",
+        "disable-arming-checks",
+        "force-arm",
+    ]:
+        argv.append(bool_flag(name))
+    rc = int(run(argv) or 0)
+    runtime_logs = artifact_dir / "runtime" / "logs"
+    runtime_logs.mkdir(parents=True, exist_ok=True)
+    (runtime_logs / "hover_mission_rc.txt").write_text(str(rc) + "\n", encoding="utf-8")
+    return rc
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,13 @@
+version: 1
+mode: straight_line
+frame_id: map
+forward_speed: 0.5
+position_tolerance: 0.05
+start:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+goal:
+  x: 6.0
+  y: 0.0
+  z: 0.0

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package navlab.orchestration.v1;
+
+option go_package = "navlab/contracts/gen/go/navlab/orchestration/v1;orchestrationv1";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "navlab/sensors/v1/source_evidence.proto";
+
+message TaskRequest {
+  string schema_version = 1;
+  string task_id = 2;
+  string run_id = 3;
+  RuntimeMode runtime_mode = 4;
+  string artifact_dir = 5;
+  repeated string capabilities = 6;
+  google.protobuf.Struct parameters = 7;
+  navlab.sensors.v1.SourceEvidence source_claims = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+enum RuntimeMode {
+  RUNTIME_MODE_UNSPECIFIED = 0;
+  RUNTIME_MODE_SIM = 1;
+  RUNTIME_MODE_REAL = 2;
+}

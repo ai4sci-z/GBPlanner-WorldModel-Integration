@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "navlab.runtime.process_event.v1",
+  "runId": "20260612T170100Z",
+  "serviceName": "mavlink_router",
+  "type": "PROCESS_EVENT_TYPE_STARTED",
+  "pid": 4242,
+  "exitCode": 0,
+  "message": "process started",
+  "logPath": "artifacts/real/prepare/20260612T170100Z/mavlink_router.log",
+  "observedAt": "2026-06-12T17:01:00Z"
+}

@@ -1,0 +1,16 @@
+id: motor-debug
+family: real
+description: No-props real motor debug task. Preflight and prepare migration are intentionally deferred.
+capabilities:
+  - needs_real_fcu
+  - needs_operator_safety_confirmation
+  - writes_task_result
+task:
+  motor_percent: 5.0
+  motor_sec: 5.0
+  motor_count: 4
+safety:
+  confirm_manual_takeover: true
+  confirm_kill_switch: true
+  confirm_safe_area: true
+  confirm_no_props: true

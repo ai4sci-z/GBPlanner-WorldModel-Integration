@@ -1,0 +1,30 @@
+id: exploration
+family: sim
+description: Official-maze exploration gate over Gazebo/SITL.
+capabilities:
+  - needs_gazebo
+  - needs_sitl
+  - needs_slam
+  - records_rosbag
+  - writes_task_result
+task:
+  duration_sec: 150.0
+  simulation_profile: ideal
+fcu_controller:
+  takeoff_alt_m: 0.5
+  takeoff_min_height_m: 0.15
+  takeoff_min_height_ratio: 0.35
+  readiness_timeout_sec: 45.0
+  hold_after_ready_sec: 8.0
+exploration_gate:
+  strategy: frontier_lite
+  exploration_window_sec: 26.0
+  motion_speed_mps: 0.10
+  min_accepted_goals: 3
+  min_path_length_m: 0.35
+landing:
+  exploration_policy: return_home_then_land
+  home_source: post_takeoff_hover_pose
+  home_radius_m: 0.35
+  max_return_home_duration_sec: 45.0
+  max_landing_duration_sec: 35.0

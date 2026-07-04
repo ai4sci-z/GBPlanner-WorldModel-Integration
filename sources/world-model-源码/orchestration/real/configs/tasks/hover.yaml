@@ -1,0 +1,24 @@
+id: hover
+family: real
+description: Real hover dry-run design task. Live flight is intentionally fail-closed until WF5 runtime evidence gates are implemented.
+capabilities:
+  - needs_real_fcu
+  - needs_real_lidar
+  - needs_real_slam
+  - needs_external_nav
+  - needs_rangefinder
+  - needs_operator_safety_confirmation
+  - writes_task_result
+task:
+  target_altitude_m: 0.8
+  hover_hold_sec: 10.0
+  hover_health_stable_sec: 3.0
+  hover_health_max_wait_sec: 20.0
+  hover_span_target_m: 0.10
+  hover_span_hard_cap_m: 0.20
+  max_altitude_error_m: 0.15
+safety:
+  confirm_manual_takeover: true
+  confirm_kill_switch: true
+  confirm_safe_area: true
+  confirm_props_installed: true
