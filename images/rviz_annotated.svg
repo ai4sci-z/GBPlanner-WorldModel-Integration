@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="760" font-family="Noto Sans CJK SC, sans-serif">
+  <rect width="1080" height="760" fill="#0d0d0d"/>
+  <text x="540" y="34" fill="#ffffff" font-size="22" text-anchor="middle" font-weight="bold">GBPlanner 的 RViz 画面元素详解(配色取自 gbplanner_rviz.cpp 源码)</text>
+
+  <!-- 模拟RViz场景区域 -->
+  <rect x="40" y="60" width="640" height="560" fill="#000000" stroke="#333" stroke-width="1"/>
+
+  <!-- RRG 边:橙色细线 (200,100,0) -->
+  <g stroke="#C86400" stroke-width="1.5" opacity="0.9">
+    <line x1="150" y1="500" x2="230" y2="430"/><line x1="230" y1="430" x2="310" y2="470"/>
+    <line x1="230" y1="430" x2="290" y2="360"/><line x1="290" y1="360" x2="380" y2="330"/>
+    <line x1="310" y1="470" x2="400" y2="440"/><line x1="380" y1="330" x2="470" y2="300"/>
+    <line x1="400" y1="440" x2="470" y2="380"/><line x1="470" y1="380" x2="470" y2="300"/>
+    <line x1="470" y1="300" x2="560" y2="250"/><line x1="380" y1="330" x2="360" y2="240"/>
+    <line x1="360" y1="240" x2="430" y2="180"/><line x1="470" y1="300" x2="540" y2="330"/>
+    <line x1="150" y1="500" x2="210" y2="540"/><line x1="310" y1="470" x2="350" y2="530"/>
+  </g>
+
+  <!-- RRG 普通顶点:紫球 (125,42,104) -->
+  <g fill="#7D2A68">
+    <circle cx="230" cy="430" r="9"/><circle cx="310" cy="470" r="9"/><circle cx="290" cy="360" r="9"/>
+    <circle cx="400" cy="440" r="9"/><circle cx="470" cy="380" r="9"/><circle cx="360" cy="240" r="9"/>
+    <circle cx="210" cy="540" r="9"/><circle cx="350" cy="530" r="9"/><circle cx="540" cy="330" r="9"/>
+  </g>
+
+  <!-- frontier 顶点:纯红球 (255,0,0) -->
+  <g fill="#FF0000">
+    <circle cx="560" cy="250" r="11"/><circle cx="430" cy="180" r="11"/><circle cx="380" cy="330" r="11"/>
+  </g>
+
+  <!-- gain 标注小球:蓝紫 (18,15,196) -->
+  <g fill="#120FC4">
+    <circle cx="560" cy="232" r="5"/><circle cx="430" cy="162" r="5"/><circle cx="380" cy="312" r="5"/>
+  </g>
+
+  <!-- best path:深绿粗线 (11,114,27) -->
+  <g stroke="#0B721B" stroke-width="5" fill="none">
+    <polyline points="150,500 230,430 290,360 380,330 470,300 560,250"/>
+  </g>
+
+  <!-- 已执行轨迹:粉色粗线(PCI/rviz执行轨迹) -->
+  <g stroke="#FF69B4" stroke-width="4" fill="none" opacity="0.95">
+    <polyline points="90,560 120,545 150,500"/>
+  </g>
+
+  <!-- 无人机位姿 TF 三轴 -->
+  <g stroke-width="5">
+    <line x1="150" y1="500" x2="196" y2="500" stroke="#FF3333"/>
+    <line x1="150" y1="500" x2="150" y2="454" stroke="#33CC33"/>
+    <line x1="150" y1="500" x2="118" y2="532" stroke="#4488FF"/>
+  </g>
+
+  <!-- 标注引线与文字 -->
+  <g fill="#ffffff" font-size="16">
+    <line x1="560" y1="250" x2="720" y2="120" stroke="#888" stroke-dasharray="4"/>
+    <text x="726" y="112" fill="#FF6666" font-weight="bold">红球 = frontier(边界)顶点</text>
+    <text x="726" y="132" fill="#cccccc" font-size="13">还能看到大量未知空间的候选点(源码 r=1,g=0,b=0)</text>
+
+    <line x1="540" y1="330" x2="720" y2="200" stroke="#888" stroke-dasharray="4"/>
+    <text x="726" y="192" fill="#C58BE0" font-weight="bold">紫球 = RRG 图普通顶点</text>
+    <text x="726" y="212" fill="#cccccc" font-size="13">随机撒出的候选位姿(125,42,104)</text>
+
+    <line x1="430" y1="162" x2="720" y2="260" stroke="#888" stroke-dasharray="4"/>
+    <text x="726" y="252" fill="#7A78FF" font-weight="bold">蓝紫小球 = 增益标注</text>
+    <text x="726" y="272" fill="#cccccc" font-size="13">该顶点的体积增益可视化(18,15,196)</text>
+
+    <line x1="470" y1="440" x2="720" y2="330" stroke="#888" stroke-dasharray="4"/>
+    <text x="726" y="322" fill="#FFA94D" font-weight="bold">橙色细线 = RRG 图的边</text>
+    <text x="726" y="342" fill="#cccccc" font-size="13">顶点间可安全通行的连接(200,100,0)</text>
+
+    <line x1="380" y1="300" x2="720" y2="400" stroke="#888" stroke-dasharray="4"/>
+    <text x="726" y="392" fill="#4FCB6B" font-weight="bold">绿色粗折线 = 本轮最优路径(best_path)</text>
+    <text x="726" y="412" fill="#cccccc" font-size="13">增益最高的那条(11,114,27);每轮重算所以不停变</text>
+
+    <line x1="115" y1="552" x2="720" y2="470" stroke="#888" stroke-dasharray="4"/>
+    <text x="726" y="462" fill="#FF9BCB" font-weight="bold">粉色粗线 = 已执行轨迹</text>
+    <text x="726" y="482" fill="#cccccc" font-size="13">无人机实际飞过的路(执行历史)</text>
+
+    <line x1="170" y1="480" x2="720" y2="540" stroke="#888" stroke-dasharray="4"/>
+    <text x="726" y="532" fill="#ffffff" font-weight="bold">三轴 = 无人机当前位姿(TF)</text>
+    <text x="726" y="552" fill="#FF6666" font-size="13">红=X(机头朝向)</text>
+    <text x="836" y="552" fill="#66DD66" font-size="13">绿=Y(左)</text>
+    <text x="920" y="552" fill="#77AAFF" font-size="13">蓝=Z(上)</text>
+    <text x="726" y="572" fill="#cccccc" font-size="13">三轴整体移动/旋转 = 无人机的位置与姿态在变</text>
+  </g>
+
+  <text x="60" y="656" fill="#aaaaaa" font-size="14">▲ 一句话读图:紫球橙线是"撒点连成的候选路网",红球是"还有未知可看的边界",</text>
+  <text x="60" y="678" fill="#aaaaaa" font-size="14">绿线是"这一轮算出的最优路线"(所以每隔几秒变一次),粉线是"已经飞过的路",三轴就是无人机本机。</text>
+  <text x="60" y="712" fill="#777777" font-size="12">配色出处:sources/gbplanner_ros-源码/gbplanner/src/gbplanner_rviz.cpp(frontier L649-651、vertex L304-307、edges L265-268、best_path L1745-1748)</text>
+</svg>

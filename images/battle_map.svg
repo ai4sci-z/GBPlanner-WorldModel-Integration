@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="820" font-family="Noto Sans CJK SC, sans-serif">
+  <rect width="1100" height="820" fill="#fafafa"/>
+  <text x="550" y="36" font-size="22" text-anchor="middle" font-weight="bold" fill="#1E2761">预研A 运行时排错战役全景:35 轮受控实验 = 14 个坑的证据链(2026-06-30 → 07-04)</text>
+
+  <!-- 主线:多米诺链 -->
+  <text x="60" y="80" font-size="16" font-weight="bold" fill="#333">目标多米诺链(每一环通了下一环才可能通):</text>
+  <g font-size="14">
+    <rect x="55" y="95" width="120" height="44" rx="6" fill="#d4f7d4" stroke="#2a2"/><text x="115" y="114" text-anchor="middle">gz 仿真世界</text><text x="115" y="131" text-anchor="middle" font-size="11" fill="#060">✅ 机器人生成</text>
+    <rect x="195" y="95" width="120" height="44" rx="6" fill="#d4f7d4" stroke="#2a2"/><text x="255" y="114" text-anchor="middle">传感器出数</text><text x="255" y="131" text-anchor="middle" font-size="11" fill="#060">✅ /scan /imu</text>
+    <rect x="335" y="95" width="120" height="44" rx="6" fill="#d4f7d4" stroke="#2a2"/><text x="395" y="114" text-anchor="middle">SLAM 建图定位</text><text x="395" y="131" text-anchor="middle" font-size="11" fill="#060">✅ /slam/odom</text>
+    <rect x="475" y="95" width="130" height="44" rx="6" fill="#d4f7d4" stroke="#2a2"/><text x="540" y="114" text-anchor="middle">位姿回灌飞控EKF</text><text x="540" y="131" text-anchor="middle" font-size="11" fill="#060">✅ pose_samples=153</text>
+    <rect x="625" y="95" width="130" height="44" rx="6" fill="#fff3cd" stroke="#c90"/><text x="690" y="114" text-anchor="middle">FCU bootstrap</text><text x="690" y="131" text-anchor="middle" font-size="11" fill="#960">◉ 当前站(PreArm?)</text>
+    <rect x="775" y="95" width="110" height="44" rx="6" fill="#eee" stroke="#999"/><text x="830" y="114" text-anchor="middle">起飞+探索</text><text x="830" y="131" text-anchor="middle" font-size="11" fill="#666">○ 下一站</text>
+    <rect x="905" y="95" width="130" height="44" rx="6" fill="#eee" stroke="#999"/><text x="970" y="114" text-anchor="middle">frontier_lite指标</text><text x="970" y="131" text-anchor="middle" font-size="11" fill="#666">○ 终点</text>
+    <g stroke="#666" stroke-width="2" marker-end="url(#arr)">
+      <line x1="175" y1="117" x2="193" y2="117"/><line x1="315" y1="117" x2="333" y2="117"/>
+      <line x1="455" y1="117" x2="473" y2="117"/><line x1="605" y1="117" x2="623" y2="117"/>
+      <line x1="755" y1="117" x2="773" y2="117"/><line x1="885" y1="117" x2="903" y2="117"/>
+    </g>
+  </g>
+  <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#666"/></marker></defs>
+
+  <!-- 14坑分层 -->
+  <text x="60" y="185" font-size="16" font-weight="bold" fill="#333">14 个坑按"死亡层次"分组(修掉一层才暴露下一层 = 剥洋葱):</text>
+  <g font-size="13">
+    <rect x="55" y="200" width="1000" height="78" rx="6" fill="#eef2ff" stroke="#88a"/>
+    <text x="70" y="220" font-weight="bold" fill="#334">第一层·进程启动即死:</text>
+    <text x="70" y="240">#1 tomllib(Py3.10无此库,SLAM秒崩) #2 空launch参数(humble拒绝name:=) #3 venv悬空软链 #4 setup.bash缺失 #5 venv Py3.14无法import rclpy</text>
+    <text x="70" y="260" fill="#555">共性:jazzy(Py3.12/24.04)栈搬到 humble(Py3.10/22.04)的版本断层;修法=兜底/占位/换系统python</text>
+
+    <rect x="55" y="288" width="1000" height="78" rx="6" fill="#fdf1e7" stroke="#b86"/>
+    <text x="70" y="308" font-weight="bold" fill="#743">第二层·组件缺失/互不兼容:</text>
+    <text x="70" y="328">#6 ydlidar驱动是X2硬件保真管线的必经节点(推翻假设)+declare_parameter humble补丁26处 #7 QoS RELIABILITY不兼容(订阅收不到best-effort)</text>
+    <text x="70" y="348" fill="#555">共性:管线设计意图要读源码才知道;ROS2 QoS 是隐形契约</text>
+
+    <rect x="55" y="376" width="1000" height="98" rx="6" fill="#fde8e8" stroke="#c66"/>
+    <text x="70" y="396" font-weight="bold" fill="#833">第三层·系统级总根因(最难,最值钱):</text>
+    <text x="70" y="416">#9 humble sdformat_urdf 不认 gpu_lidar → RSP崩 → /robot_description没了 → 机器人从未生成(此前一切"缺话题"全是它下游)</text>
+    <text x="70" y="436">#12 编排以 --user 1000:1000 运行而容器无此passwd条目 → gz-transport 默认分区(hostname:username)解析错乱 → 同容器服务发现互相隐身</text>
+    <text x="70" y="456" fill="#555">发现手段:#9=手动常驻容器取证(gz model --list 一锤定音);#12=docker inspect 逐字段diff + A/B复现/治愈双实验</text>
+
+    <rect x="55" y="484" width="1000" height="78" rx="6" fill="#e8f4fd" stroke="#69c"/>
+    <text x="70" y="504" font-weight="bold" fill="#367">第四层·修复的副作用与配置暗雷:</text>
+    <text x="70" y="524">#10 baseline漏发CYCLONEDDS_URI(DDS参与者索引耗尽) #11 我的gz sdf -p展平输出SDF1.11(humble只认≤1.9)→重写版本号 #13 IMU净化桥"自吞回声"(source=output=/imu)→cartographer时序崩(两针:helpers默认+config默认覆盖链)</text>
+    <text x="70" y="544" fill="#555">教训:修复自身也会引入新坑;默认值有多层覆盖链,要追到装配点</text>
+  </g>
+
+  <!-- 方法论 -->
+  <text x="60" y="600" font-size="16" font-weight="bold" fill="#333">实验方法工具箱(形象名 → 正规方法):</text>
+  <g font-size="13">
+    <rect x="55" y="614" width="490" height="180" rx="6" fill="#f4f4f4" stroke="#aaa"/>
+    <text x="70" y="636" font-weight="bold">🧪 二分/消融(ablation / bisection)</text>
+    <text x="70" y="654" fill="#444">一次只加一个差异变量做对照,定位元凶(锁定 --user 的手段)</text>
+    <text x="70" y="678" font-weight="bold">💉 投毒实验(fault injection)</text>
+    <text x="70" y="696" fill="#444">主动把嫌疑组件放进健康系统,看是否复现故障(验证Fortress桥,结果无罪)</text>
+    <text x="70" y="720" font-weight="bold">🗡 斩杀 / ❄️ 冻结(kill / pause probe)</text>
+    <text x="70" y="738" fill="#444">杀掉/暂停嫌疑进程看症状是否消失——区分"运行时干扰"与"已固化损伤"</text>
+    <text x="70" y="762" font-weight="bold">🕳 守株待兔(event-driven capture)</text>
+    <text x="70" y="780" fill="#444">循环蹲守目标出现的瞬间抓证据,破解"容器活不过探针"的竞态</text>
+
+    <rect x="565" y="614" width="490" height="180" rx="6" fill="#f4f4f4" stroke="#aaa"/>
+    <text x="580" y="636" font-weight="bold">🔬 活体探针 vs 验尸(in-vivo probing / post-mortem)</text>
+    <text x="580" y="654" fill="#444">运行中实时取证(topic hz/进程表/env)对照事后翻日志</text>
+    <text x="580" y="678" font-weight="bold">📡 嗅探(packet sniffing)</text>
+    <text x="580" y="696" fill="#444">自写UDP监听蹲组播端口,证明"发现报文在飞但接收端聋了"</text>
+    <text x="580" y="720" font-weight="bold">🧾 逐字段 diff(configuration diffing)</text>
+    <text x="580" y="738" fill="#444">docker inspect 两容器全配置对比——最终揪出 User:1000:1000 的一招</text>
+    <text x="580" y="762" font-weight="bold">📖 读源码(终极捷径)</text>
+    <text x="580" y="780" fill="#444">gz分区=hostname:username、/ap/v1=sysid命名空间……读10分钟省30轮实验</text>
+  </g>
+</svg>
