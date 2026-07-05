@@ -3,7 +3,7 @@
 > 背景:world-model 这套栈原为 jazzy(Ubuntu 24.04 / Python 3.12)写,本机搬到 humble(Ubuntu 22.04 / Python 3.10)。
 > 9 个镜像已全部构建成功(预研A),但**运行时**还有一连串版本坑。本文按"只信真实产物"的铁律,逐个记录:
 > 每个坑都给【真实证据(日志原文)】+【根因】+【修复】+【验证】。证据来自 `artifacts/sim/exploration/<run_id>/`。
-> 最后更新 2026-07-04。
+> 最后更新 2026-07-05。
 
 ## 坑 #1(头号):SLAM 崩于 `ModuleNotFoundError: No module named 'tomllib'`
 
@@ -159,7 +159,26 @@
   而非 4(GUIDED);或 mavlink COPTER 自定义模式号与 controller 常量表错位。
 - **状态**:🔵 排查中(任务#6)。
 
-## 当前进度(用于汇报,2026-07-04)
+## 坑 #14(已修好,run#38/39 实证):FCU bootstrap 请求 mode 15(AUTOTUNE)而非 4(GUIDED)
+
+- **根因**:`fcu_controller_runtime.py.tmpl:192` 用 `mode_id = master.mode_mapping().get("GUIDED") or guided_mode`——
+  pymavlink 的 `mode_mapping()` 依车型识别,SITL 早期握手可能返回 **ArduPlane 表(GUIDED=15=Copter 的 AUTOTUNE)**→ set_mode(15) 被拒。
+- **修复**(commit `b13f268`):改为**优先信显式配置** `guided_mode`(config=4)。
+- **验证(实测 run#38/39)**:✅ `mode_switch: {mode_id: 4, ok: true}`,SITL 不再报 Autotune failed。
+  **连带 arm 也过了**:重试 4 次后 `arm: {armed: true, ok: true}`(前几次 result=4 临时拒绝,EKF/就绪未稳)。
+
+## 坑 #15(当前前沿):GUIDED+armed 后 `takeoff` 被拒 result=4,高度不涨
+
+- **证据**(run#39 fcu_controller 日志):`takeoff: {ack result:4(TEMPORARILY_REJECTED), accepted:false}`,
+  多次重试,`guided:true armed:true` 但 `height z≈-0.009m`(target_min 0.175),无人机没离地。
+- **伴随**:SITL statustext 反复 `DDS: Participant session request failure` / `DDS: Creation Requests failed, retrying`
+  (AP_DDS micro-ROS participant 创建失败)。
+- **疑似根因(待确认,深水区)**:ArduCopter GUIDED 下 NAV_TAKEOFF 需要**位置估计健康**;之前有 `PreArm: VisOdom not healthy`——
+  external_nav(视觉里程计)喂给 EKF 的位置源不健康 → GUIDED takeoff 被临时拒绝。涉及 EKF3_SRC* 参数 / external_nav 频率/协方差门限,
+  叠加 AP_DDS participant 问题。**这是比模式映射深得多的层次(飞控 EKF/外部导航调参),已止损,不盲目深挖(见战役实录的死循环告诫)。**
+- **进展意义**:FCU bootstrap 已连过 GUIDED→arm 两大关,只差 takeoff 离地;端到端就差这最后一跳。
+
+## 当前进度(用于汇报,2026-07-05)
 
 | 坑 | 一句话 | 状态 |
 |---|---|---|
