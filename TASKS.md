@@ -24,20 +24,21 @@
 - **预研 A / 预研 B** = 复现任务(A=复现 world-model,B=复现 GBPlanner)。
 - **集成方案** = 「桥接方案(ros1_bridge)」(已选定)/「重写方案(gbplanner_core)」(备选)。**不用字母指代方案。**
 
-## 三、当前任务表(2026-06-30 更新)
+## 三、当前任务表(2026-07-05 更新)
 | ID | 任务 | 状态 | 备注 |
 |---|---|---|---|
 | 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | ✅ **完成:自主探索全闭环(2026-07-02 实测)** | 排 6 坑后:起飞→voxblox 3D建图→RRG规划→**无人机自主巡飞覆盖迷宫**(轨迹实测 (5.7,-1.3)→(4.4,6.4),RViz 可视化在桌面)。复现:`run_light.sh` + `takeoff_and_explore.sh`;全记录 docs/预研B_仿真实跑排错记录.md |
 | 2 | 调研·确认 ros1_bridge 官方接入做法 | ✅ 完成 | 你已选「桥接方案」 |
-| 3 | 预研A·完整复现并**实际运行** world-model | 🔵 **~90%(07-04)** | 35轮实验修13坑;感知层全通→SLAM闭环(tight)→位姿回灌飞控(pose_samples=153)。当前站:FCU bootstrap(坑#14候选:mode 15≠GUIDED 4;PreArm VisOdom)。战役全解 docs/预研A排错战役实录;逐坑证据 docs/运行时排错记录_humble.md |
+| 3 | 预研A·完整复现并**实际运行** world-model | 🔵 **~92%(07-05)** | 39轮实验修15坑;感知全通→SLAM闭环→位姿回灌→**FCU GUIDED+arm 已过**(坑#14修好 run#38/39 armed:true);卡 takeoff TEMPORARILY_REJECTED(坑#15,EKF位置源/VisOdom,humble 深水区)→**主线转 jazzy(#11),不在 humble 死磕** |
 | 4 | 集成落地·把 GBPlanner 决策接进 world-model | ✅ **代码完成,待你提交PR** | ROS2-native 决策层集成:新增 `gbplanner_gain` 策略读图选向,替代脚本式 frontier_lite。已在 `~/ws/world-model` 分支 `feat/gbplanner-gain-exploration-strategy` commit(2提交:bugfix+feat),go build/vet/test + py_compile 全过。物料见 `integration/world-model-PR/` |
 | 4.5 | **真 bug 发现**:exploration 生成脚本无法编译 | ✅ 已修并入PR | `%%` 经 text/template 原样落盘 → SyntaxError;`py_compile` 实测复现,改单 `%` 后通过。疑似 exploration 运行时起不来根因之一 |
 | 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | 🔵 进行中 | 代码层已铁证(脚本循环、不订阅地图);**GBPlanner 侧实测数据已到手**(291.3m/132,091点/自动返航,曲线+CSV 在 images/);frontier_lite 侧量化待 #3 运行时修好 |
 | 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ⏸ 阻塞(依赖#3) | 覆盖率/用时/路径/卡死 → 表+图,突出优势 |
 | 7 | 文档·写预研A/预研B 独立报告(桌面+三处) | 🔵 进行中 | 两份初稿已建,随复现进展补截图/数据 |
-| 8 | ~~手动提交 PR + Issue 给 world-model 作者~~ | ❌ **取消(你 2026-07-02 拍板)** | **不向别人仓库提交,成果只留自己账号**。PR/Issue 物料(`integration/world-model-PR/`)转为**留档证据**(证明改动可用、有含金量);world-model 的 4 个 commit 留在本地分支,可选推到自己账号私有镜像仓备份 |
+| 8 | 提交 PR + Issue 给 world-model 作者 | ⬜ **恢复(你 2026-07-05 更正:做完必须提交)** | ~~07-02 取消~~ → **必须提交**(自己账号 ai4sci-z fork);**硬约束=作者 jazzy 环境能跑**(见 docs/PR兼容性与jazzy评估.md)。前置=#11 jazzy 全栈跑通。物料 `integration/world-model-PR/`;分支现 12 提交 |
 | 9 | **阶段4·ros1_bridge 接真版 GBPlanner** | 🔵 进行中 | ✅ I/O契约源码证实+ROS2出口适配器+bridge映射(`integration/ros1_bridge/`);⬜ 加3D雷达/编译起桥/ROS1侧跑/端到端(受运行时阻塞) |
-| 10 | **修运行时头号根因 tomllib** | ⬜ 就绪 | SLAM CLI `import tomllib`→加 `tomli` 兜底;humble 装 tomli。修好才能端到端验证#3#9 |
+| 10 | 修运行时头号根因 tomllib | ✅ 完成(0b85cea) | `try: tomllib / except: tomli` 兜底;jazzy 实测零影响(原生 tomllib,兜底分支不执行) |
+| 11 | **⭐ jazzy 全栈重建(当前主线,用户硬指令)** | 🔵 **8/9(07-05 晚)** | 作者环境=jazzy(config.toml 铁证),PR 必须 jazzy 跑通。gazebo-headless/fast-lio/gazebo-sensor 已建+开箱验真(坑:BuildKit 假成功/Livox cstdint/ydlidar declare_parameter,全修);official-baseline 构建中(预研:原版零补丁)。施工指引 docs/jazzy全栈重建_施工指引.md;脚本 runbooks/world-model-jazzy/ |
 
 ## 四、决策 & 桥接路线(你已拍板)
 集成采用「桥接方案(ros1_bridge)」。原 P1 重规划为:① 跑通 gbplanner-ref 的 rmf_sim 确认 I/O ② 搭 ros1_bridge:world-model(ROS2)点云/里程计 → 喂 GBPlanner(ROS1),航点回流 `/navlab/exploration/*` ③ 给 iq_quad 加 3D 雷达 ④ 接 exploration 替换 frontier_lite。`gbplanner_core` 转备选/加深理解。
@@ -62,3 +63,6 @@
   - ⚠️ **环境铁律(新)**:WSL 下跑容器必须挂常驻 keepalive 进程——发行版空闲十几秒自动关机→docker 被优雅停止→容器全死 255(journalctl 实锤)。
 - 2026-07-02 预研B **自主探索全闭环**(起飞→建图→RRG→巡飞→480s 预算自动返航→地图落盘 4MB)+ 全程量化(291.3m/132,091 体素点/70 采样点曲线入库 images/)。
 - 2026-07-03 预研A 运行时剥洋葱:坑④~⑨ 逐个实锤修复(venv悬空/setup.bash缺失/rclpy版本/ydlidar必需+declare_parameter/QoS/**总根因 sdformat_urdf-gpu_lidar-RSP**)。方法论沉淀:"手动常驻容器从容取证"+"逐段模拟启动命令冒烟"+"活体探针"。当前卡:编排下 baseline DDS 隔离嫌疑。
+- 2026-07-05 ⚠️ 又抓一类假成功:`go run navlab-sim build` 编排 builder 无 BuildKit,遇 `RUN --mount` 失败**却报 OK/rc=0**(docker images 无镜像)→ 绕过,直用 `DOCKER_BUILDKIT=1 docker build`(runbooks/world-model-jazzy/build_jazzy.sh,内置真产物核验)。
+- 2026-07-05 jazzy 镜像 7 个开箱验真(verify_jazzy_images.sh 逐个进容器查 /opt/ros):全真。副产物发现:**companion 的 humble tag 内部实为 jazzy/Py3.12**(同 ID 双标签)——解释了它从不报 tomllib。
+- 2026-07-05 gazebo-sensor jazzy 原样构建**实测失败**(ydlidar declare_parameter,rclcpp jazzy 头文件四候选全不匹配)→ 26 处 sed v2 一次过;开箱 venv python(系统 Py3.12)直接能跑 → **d8ff119 悬空软链坑 jazzy 不存在**双向实锤。

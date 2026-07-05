@@ -10,9 +10,12 @@ task: 把 GBPlanner(ROS1,图搜索体积增益探索) 集成进 world-model(ROS2
 decision_locked: 桥接方案(ros1_bridge)  # 不是 gbplanner_core 重写
 CURRENT_TOP_PRIORITY_2026_07_05: |
   ⭐⭐ 用户硬指令:【一定要在 jazzy 上跑通,否则 PR 作者无法跑=白干】。作者环境=jazzy(铁证:上游 config.toml distro=jazzy)。
-  → 接管第一件事:读 docs/jazzy全栈重建_施工指引.md,按它补齐 4 个缺失 jazzy 镜像(fast-lio/gazebo-headless/gazebo-sensor/official-baseline)
-    (已有5/9),逐个解 jazzy 编译坑(用 humble 经验:ydlidar declare_parameter、uint8_t/cstdint;去掉我 d8ff119 在 jazzy 有害的 COPY),
-    最终 jazzy 上 exploration 跑通 + gbplanner_gain 替换 frontier_lite。
+  ✅ 进展(07-05 晚):jazzy 镜像 **8/9 已建成+开箱验真**(gazebo-headless/fast-lio/gazebo-sensor 本轮新建,编译坑全解:
+    Livox cstdint→-include cstdint(68c19bf);ydlidar declare_parameter→26处sed v2;d8ff119 COPY 坑 jazzy 实锤不存在)。
+    official-baseline(第9个)构建中(预研:jazzy 用原版 Dockerfile 零补丁,只加代理+jazzy args)。
+  🔴 新抓假成功:编排器 go run navlab-sim build 无 BuildKit,遇 RUN --mount 失败却报 OK rc=0!
+    → 只用 runbooks/world-model-jazzy/build_jazzy.sh(BuildKit 直建+真产物核验);verify_jazzy_images.sh 开箱验真。
+  → 接下来:official-baseline 建成(9/9)→ NAVLAB_SIM_DISTRO=jazzy 跑 exploration → frontier_lite 指标 → gbplanner_gain 替换对比 → PR。
   🩸 血泪教训:代码级"论证兼容"不可靠——我论证 d8ff119 通用兼容,jazzy 实测直接 COPY failed。只信 jazzy 实跑,不信论证/退出码,只认 docker images。
   🔧 脚本铁律:改文件→构建→恢复 用绝对路径 + git checkout 恢复(别 cd 后用相对路径,我栽了3次 cwd bug 还破坏过文件)。
   PR 政策更正(用户2026-07-05):不是"不提交",是"做完必须提交";硬约束=jazzy 兼容。
@@ -144,6 +147,19 @@ progress_2026_07_05_下午_jazzy转向: |
   ❌ jazzy 全栈未做:缺 4 镜像未构建;d8ff119 实测在 jazzy 构建失败(已在 PR评估标❌❌纠正)。
   📄 本轮新文档:jazzy全栈重建_施工指引 / PR兼容性与jazzy评估 / GBPlanner原始论文与代码对应关系 / 项目简洁汇报 / 文档索引 / integration/world-model-PR/PR物料清单。
   ⚠️ 本地未提交改动:config.toml(distro=humble,本机跑用)、navlab/sim/gazebo_sensor/cli.py(坑#7 QoS修复,PR前要补提交)、tomli vendor。
+progress_2026_07_05_晚_jazzy重建8of9: |
+  ✅ jazzy 镜像 5/9→**8/9**(docker images+开箱验真双重实测):
+    gazebo-headless(5.21GB,原版零补丁)/fast-lio(1.85GB,坑=Livox-SDK2 GCC13 缺 cstdint→cmake -include cstdint,
+    提交 68c19bf)/gazebo-sensor(1.97GB,坑=ydlidar declare_parameter 无默认值 jazzy 同 humble→26处sed v2 Dockerfile)。
+  🔴 又抓一类假成功:编排器 go builder 无 BuildKit,遇 RUN --mount 报错却打印 OK/rc=0(docker images 无镜像)。
+    正解=DOCKER_BUILDKIT=1 docker build 直建,封装 runbooks/world-model-jazzy/build_jazzy.sh(内置真产物核验)。
+  ✅ 7 镜像开箱验真(verify_jazzy_images.sh):全真 jazzy 或 distro 无关。副产物:companion 的 humble tag 内部
+    实为 jazzy/Py3.12(同 ID 双标签)——解释它从不报 tomllib。
+  ✅ d8ff119 双向实锤:jazzy 原版(无 COPY)构建成功+venv python(系统 Py3.12)直接能跑→坑不存在,COPY 条件化依据坐实。
+  ✅ world-model 分支 10→12 提交:68c19bf(fast-lio cstdint,通用向后兼容)+12ab9f0(坑#8 emulator sensor-data QoS,
+    还清"本地 M 未提交"欠账)。剩余本地未提交=config.toml(本机humble)+tomli vendor(本机垫片),均故意不进 PR。
+  🔵 official-baseline 构建中(最重):预研=jazzy 原版 Dockerfile 零补丁(ros-gz 天然配 Harmonic/--break-system-packages
+    Py3.12 必需/MICRO_ROS_AGENT_REF=jazzy 默认即对),只传 jazzy args+host网代理。
 decision_2026_07_02_已作废: ~~不向作者仓库提交~~ → 做完必须提交,保证jazzy兼容(用户2026-07-05更正)。
 next_actions:
   - 截真图:用户在 RViz 看自主探索,Win+Shift+S 截图存 images/,补进实操手册与 PPT(组会硬料)

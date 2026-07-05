@@ -6,21 +6,23 @@
 
 ---
 
-# 🗺️ 路线图·你在这里(2026-07-04)
+# 🗺️ 路线图·你在这里(2026-07-05)
 
 ```
 线路1·预研B(复现GBPlanner)  ██████████ 100% ✅ 终点:自主探索全闭环+量化(291m/13万体素/地图落盘)
-线路2·预研A(跑通world-model) █████████░ ~90%  ◉◉◉ ← 你在这里(2026-07-04)
-   9/9镜像✅ → 35轮受控实验修掉13坑(总根因=RSP崩机器人未生成、编排真凶=uid无passwd致gz分区错乱…)
-   → 感知层全通(/scan /tf /imu)✅ → SLAM闭环(quality=tight,/slam/odom)✅ → 位姿回灌飞控(pose_samples=153)✅
-   ◉ 当前站:FCU bootstrap(坑#14候选:控制器请求mode 15=AUTOTUNE而非4=GUIDED;PreArm VisOdom)
-   ○ 下一站:解锁起飞 → frontier_lite 真实指标 → 终点
+线路2·预研A(跑通world-model) █████████░ ~92%  39轮实验修15坑(humble)
+   9/9镜像✅ → 感知层全通✅ → SLAM闭环(tight)✅ → 位姿回灌飞控✅ → FCU GUIDED+解锁(armed:true)✅
+   ⏸ humble 暂停在:takeoff TEMPORARILY_REJECTED(坑#15,EKF位置源深水区)——不死磕,主线转 jazzy
    战役全解:docs/预研A排错战役实录_35轮实验全解.md
+线路2.5·jazzy全栈重建        ████████░░  8/9  ◉◉◉ ← 你在这里(2026-07-05,用户硬指令:作者环境=jazzy,PR必须jazzy跑通)
+   已建+开箱验真:gazebo-headless/fast-lio/gazebo-sensor(编译坑全解:cstdint/declare_parameter/BuildKit假成功)
+   ◉ 当前站:official-baseline 构建中(第9个,预研=原版零补丁) ○ 下一站:jazzy 跑 exploration → frontier_lite 指标
+   施工指引:docs/jazzy全栈重建_施工指引.md
 线路3·集成                   ██████░░░░ ~60%  决策层原型✅+真版桥接地基✅;完整桥接等线路2通车
 线路4·量化对比               ███░░░░░░░ ~30%  GBPlanner侧实测✅入库;frontier_lite侧等线路2
 ```
 
-# 🔴 最新全景状态(2026-07-04)
+# 🔴 最新全景状态(2026-07-05)
 
 | 环节 | 状态 |
 |---|---|
@@ -33,11 +35,12 @@
 | **🟢 真集成代码(决策层,ROS2-native)** | ✅ **已接进 world-model 真实结构**——新增可选策略 `gbplanner_gain`(读 `/map`、体积增益选向),`go build/vet/test` + `py_compile` 全过 |
 | **🟢 阶段4 桥接地基(接真版 GBPlanner)** | ✅ 从源码逐条证实真版 I/O 契约(点云/里程计进、`MultiDOFJointTrajectory` 出、自定义 msg 留 ROS1 不跨桥)+ ROS2 出口适配器(`integration/ros1_bridge/`) |
 | **🟢 35轮实验连修 13 个 humble 真坑(全实证)** | ✅ ①tomllib ②空launch参数 ③模板`%%` ④venv悬空软链 ⑤setup.bash缺失 ⑥rclpy版本(Py3.14→3.10) ⑦ydlidar驱动必需+declare_parameter 26处补丁 ⑧QoS不兼容 ⑨**总根因:sdformat_urdf 不认 gpu_lidar→RSP崩→机器人从未生成** ⑩CYCLONEDDS漏发 ⑪SDF1.11版本 ⑫**编排真凶:uid无passwd→gz分区错乱→容器互相隐身** ⑬IMU自吞回声。感知层全通→SLAM闭环(tight)→位姿回灌飞控。全证据链:[docs/运行时排错记录_humble.md](docs/运行时排错记录_humble.md)、[战役实录](docs/预研A排错战役实录_35轮实验全解.md) |
-| **PR/bugfix 物料(留档)** | ✅ [integration/world-model-PR/](integration/world-model-PR/)——按你拍板**不对外提交**,作为"改动可用、有含金量"的证据存档 |
-| **跑 exploration(看 frontier_lite)** | 🔵 感知层全通(/scan /tf /imu)→SLAM闭环(quality=tight,/slam/odom)→位姿回灌飞控(pose_samples=153);当前站 FCU bootstrap(坑#14候选:控制器请求 mode 15=AUTOTUNE 而非 4=GUIDED) |
-| 量化对比 | ⬜ 待运行时完全跑通后做 |
+| **PR/bugfix 物料** | 🔄 **政策更正(你 2026-07-05):做完必须提交 PR**(自己账号 ai4sci-z fork);硬约束=作者 jazzy 环境能跑([docs/PR兼容性与jazzy评估.md](docs/PR兼容性与jazzy评估.md))。物料 [integration/world-model-PR/](integration/world-model-PR/);world-model 分支现 12 提交 |
+| **跑 exploration(看 frontier_lite)** | 🔵 humble 推进到:感知全通→SLAM闭环→位姿回灌→**FCU GUIDED+解锁(armed:true,坑#14 修好实测)**;takeoff 被拒(坑#15 EKF 深水区)→ **主线转 jazzy 全栈**(作者设计环境,这些深水坑可能天然不存在) |
+| **⭐ jazzy 全栈重建(当前主线)** | 🔵 **8/9(07-05 晚)**:gazebo-headless/fast-lio/gazebo-sensor 建成+开箱验真(坑全解:Livox cstdint、ydlidar declare_parameter、**编排器无 BuildKit 假成功**);official-baseline 构建中(预研=原版零补丁)。[docs/jazzy全栈重建_施工指引.md](docs/jazzy全栈重建_施工指引.md) |
+| 量化对比 | ⬜ 待 jazzy exploration 跑通后做 |
 
-- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器);35轮实验连修 13 个 humble 真坑,平台推进到 FCU 解锁前沿(感知层全通/SLAM闭环/位姿回灌)。**按你拍板不对外提交**,[integration/world-model-PR/](integration/world-model-PR/) 物料仅留档(证明改动可用、有含金量)。
+- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器);39轮实验连修 15 个真坑,humble 推进到 FCU 解锁(armed:true)。**政策更正(2026-07-05):做完必须提交 PR,硬约束=jazzy 兼容** → 当前主线=jazzy 全栈重建(8/9)。
 - **你怎么自己验证 9/9**:打开 WSL 敲 `docker images | grep navlab`(应数到 9 个)。详见 [docs/WSL使用与复现.md](docs/WSL使用与复现.md)。
 - **你怎么自己验证集成代码**:WSL `cd ~/ws/world-model && git log --oneline -2`(看到 fix+feat 两提交);渲染脚本证据在 `integration/world-model-PR/rendered_*.py`。
 - **看仿真画面**:[docs/实跑操作手册_图文版.md](docs/实跑操作手册_图文版.md)。
@@ -58,7 +61,7 @@
 **整体路线:**
 | 阶段 | 名称 | 内容 | 状态 |
 |---|---|---|---|
-| P0-A | 复现 world-model | 跑通平台,看占位探索怎么工作 | 🔵 **~90%(07-04)**:9/9镜像✅+35轮实验修13坑;感知层全通→SLAM闭环→位姿回灌飞控;当前站 FCU bootstrap(坑#14候选) |
+| P0-A | 复现 world-model | 跑通平台,看占位探索怎么工作 | 🔵 **~92%(07-05)**:humble 修到 FCU 解锁(armed:true);takeoff 卡 EKF 深水区 → **主线转 jazzy 全栈重建(8/9)** |
 | P0-B | 复现 GBPlanner | 单独跑官方算法,看它怎么探索 | ✅ **完成(2026-07-02):自主探索全闭环实测**(291.3m/435s/地图落盘) |
 | P1→桥接 | 桥接路线落地 | 已选桥接方案:搭 ros1_bridge + 适配 + 加 3D 雷达 | 🟡 核心已起步(测试通过),路线改为桥接,见 TASKS.md |
 | P2 | ROS2 节点 | 把核心包成 ROS2 模块,接 world-model 数据 | ⚪ 未开始 |
