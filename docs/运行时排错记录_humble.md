@@ -3,7 +3,7 @@
 > 背景:world-model 这套栈原为 jazzy(Ubuntu 24.04 / Python 3.12)写,本机搬到 humble(Ubuntu 22.04 / Python 3.10)。
 > 9 个镜像已全部构建成功(预研A),但**运行时**还有一连串版本坑。本文按"只信真实产物"的铁律,逐个记录:
 > 每个坑都给【真实证据(日志原文)】+【根因】+【修复】+【验证】。证据来自 `artifacts/sim/exploration/<run_id>/`。
-> 最后更新 2026-07-03。
+> 最后更新 2026-07-04。
 
 ## 坑 #1(头号):SLAM 崩于 `ModuleNotFoundError: No module named 'tomllib'`
 
@@ -147,7 +147,19 @@
   `slam_odom_missing`/`slam_runtime_*` blockers 全部消失,**`/slam/odom` 真实流动**。blockers 26→21。
 - **下一段链**(新前沿):`/slam/odom` → external_nav → ArduPilot EKF → `/ap/v1/pose/filtered`(仍缺)→ 控制器就绪。
 
-## 当前进度(用于汇报,2026-07-03)
+## 坑 #14(当前前沿,候选):FCU bootstrap 请求 mode 15(AUTOTUNE)而非 4(GUIDED)
+
+- **背景**:坑#13 修后,`/slam/odom` → external_nav → ArduPilot EKF → **`/ap/v1/pose/filtered` 出来了**;
+  读源码确认 `/ap/v1/` 前缀 = AP_DDS 的 sysid 命名空间(`AP_DDS_Topic_Table.h:182` topic_name="pose/filtered",名字没错);
+  controller **pose_samples=153**,状态从 waiting_for_pose 推进到 `waiting_for_fcu_bootstrap`。blockers 21→19。
+- **证据**(run#35):SITL 日志 `AP: Mode change to Autotune failed: init failed` + `Got COMMAND_ACK: DO_SET_MODE: FAILED`;
+  fcu_controller runtime 日志 `mode_switch: {mode_id: 15, ok: false}`,而 `required_mode: 4`(GUIDED)。
+  另有 `AP: PreArm: VisOdom: not healthy`。
+- **疑似根因**(待读 navlab fcu 控制器源码确认):bootstrap 的模式映射把目标模式发成了 15(ArduCopter 里 15=AUTOTUNE)
+  而非 4(GUIDED);或 mavlink COPTER 自定义模式号与 controller 常量表错位。
+- **状态**:🔵 排查中(任务#6)。
+
+## 当前进度(用于汇报,2026-07-04)
 
 | 坑 | 一句话 | 状态 |
 |---|---|---|
@@ -159,11 +171,16 @@
 | #6 ydlidar 驱动必需 | 推翻"仿真不需要驱动"假设;declare_parameter 26 处补丁 | ✅ 修+实证(YDLIDAR_PKG=OK) |
 | #7 QoS 不兼容 | emulator 订阅 RELIABLE 拒收 best-effort | ✅ 修 |
 | #9 **总根因** | sdformat_urdf 不认 gpu_lidar→RSP 崩→**机器人从未生成** | ✅ 修+手动四连全绿 |
-| ◉ 当前 | 编排环境下 baseline 话题对其他容器不可见(DDS 隔离嫌疑:ROS_LOCALHOST_ONLY/RMW/域号) | 🔵 探针 v7 已备,待下轮 run 验证 |
+| #10 CYCLONEDDS 漏发 | baseline 缺 participant-index 配置 | ✅ 修 |
+| #11 SDF 版本 | 我的展平补丁输出 1.11,humble 只认 ≤1.9 | ✅ 修 |
+| #12 **编排真凶** | uid 无 passwd→gz 分区错乱→**同容器发现瘫痪** | ✅ 复现+治愈双实验定案 |
+| #13 IMU 自吞回声 | 净化桥 source=output=/imu→cartographer SIGABRT | ✅ 修+实证(SLAM quality=tight) |
+| ◉ #14 当前 | FCU bootstrap 请求 mode 15≠GUIDED 4;PreArm VisOdom | 🔵 排查中 |
 
 (编号无 #8:中途的"渲染引擎起不来"假设经实证**排除**,已并入 #9 的订正。)
 
-**一句话**:9 个 humble 真坑修 8、全部实锤;机器人生成链手动验证全绿;编排端到端只差"容器间 DDS 可见性"最后一层。
+**一句话**:13 个 humble 真坑全实锤修复;感知层全通→SLAM 闭环(tight)→位姿回灌飞控(pose_samples=153);
+端到端只差 FCU 解锁起飞(坑#14)。逐轮实验叙事见 [预研A排错战役实录_35轮实验全解.md](预研A排错战役实录_35轮实验全解.md)。
 
 > 说明:这批修复(代码 4 项 + 镜像 4 项)都是真实、可提交级的贡献,已固化在 world-model 本地分支与
 > `runbooks/world-model-humble-fixes/`;按用户拍板**不对外提交**,`integration/world-model-PR/` 物料仅留档。
