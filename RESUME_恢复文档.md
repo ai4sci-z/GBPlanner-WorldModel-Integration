@@ -8,6 +8,15 @@ role: 接管本任务的 Claude Code（运行在用户 Windows + WSL2 上）
 language_to_user: 中文
 task: 把 GBPlanner(ROS1,图搜索体积增益探索) 集成进 world-model(ROS2 无人机仿真平台)，替换占位探索 frontier_lite，论证其缺陷并量化对比突出 GBPlanner 优势
 decision_locked: 桥接方案(ros1_bridge)  # 不是 gbplanner_core 重写
+CURRENT_TOP_PRIORITY_2026_07_05: |
+  ⭐⭐ 用户硬指令:【一定要在 jazzy 上跑通,否则 PR 作者无法跑=白干】。作者环境=jazzy(铁证:上游 config.toml distro=jazzy)。
+  → 接管第一件事:读 docs/jazzy全栈重建_施工指引.md,按它补齐 4 个缺失 jazzy 镜像(fast-lio/gazebo-headless/gazebo-sensor/official-baseline)
+    (已有5/9),逐个解 jazzy 编译坑(用 humble 经验:ydlidar declare_parameter、uint8_t/cstdint;去掉我 d8ff119 在 jazzy 有害的 COPY),
+    最终 jazzy 上 exploration 跑通 + gbplanner_gain 替换 frontier_lite。
+  🩸 血泪教训:代码级"论证兼容"不可靠——我论证 d8ff119 通用兼容,jazzy 实测直接 COPY failed。只信 jazzy 实跑,不信论证/退出码,只认 docker images。
+  🔧 脚本铁律:改文件→构建→恢复 用绝对路径 + git checkout 恢复(别 cd 后用相对路径,我栽了3次 cwd bug 还破坏过文件)。
+  PR 政策更正(用户2026-07-05):不是"不提交",是"做完必须提交";硬约束=jazzy 兼容。
+  原始论文=Dang et al. JFR2020(非 mentor 那篇应用 arXiv:2201.07067)。
 key_finding_2026_06_30: |
   frontier_lite 经查证是"脚本预设动作"(exploration_workflow_runtime.py.tmpl:142-147,pattern[goal_index%len(pattern)]按计时器循环 前进/左扭/右扭,且只订阅 /slam/odom+控制器状态、不订阅地图)，不是探索算法。
   GBPlanner 集成的精确插入点 = 这个探索决策节点(navlab_exploration_workflow,输出 /navlab/fcu/setpoint/intent + /navlab/exploration/*)。
@@ -125,7 +134,17 @@ progress_2026_07_05: |
   ✅ Codex桌面review已参考(桌面Codex_GBPlanner_工作区/05):采纳"只攻FCU→跑frontier_lite对照"路线。
   ✅ 桌面散落13个旧md已归档(留档);新增 文档索引.md(三处对齐规则)+项目简洁汇报.md。
   下一步(Codex+用户共识顺序):FCU arm/takeoff(坑#15)→跑通exploration取frontier_lite真实指标→同口径对比→PR。
-decision_2026_07_02_已作废: ~~不向作者仓库提交~~ → 见 progress_2026_07_05 更正:做完必须提交,保证jazzy兼容。
+progress_2026_07_05_下午_jazzy转向: |
+  ✅ FCU 又连过两关(run#38/39):坑#14 mode 修好(mode_switch mode_id=4 ok,GUIDED 进了)+ arm 也过(armed:true)。
+    坑#15 卡 takeoff result=4(TEMPORARILY_REJECTED,高度不涨),疑 EKF 位置源(EK3_SRC1_POSXY=6 ExternalNav)+VisOdom not healthy+AP_DDS participant failure。
+    ⚠️ 这是 humble 环境的深水区;jazzy(作者设计环境)上 takeoff 可能本来就能跑,别在 humble 死磕。
+  ✅ 【重大转向】查清作者环境=jazzy(config.toml distro=jazzy 铁证),不是 humble(Dockerfile ARG humble 只是可被覆盖的默认值,我一度误读)。
+    → 用户拍板:必须 jazzy 跑通再提 PR。开始 jazzy 全栈重建(施工指引 docs/jazzy全栈重建_施工指引.md)。
+  ✅ jazzy 语言层已实测(ros:jazzy-ros-base Py3.12):tomllib 原生零影响/脚本 py_compile/rclpy+msgs 全绿(脚本 runbooks/diagnostics/jazzy兼容实测_Py312.sh)。
+  ❌ jazzy 全栈未做:缺 4 镜像未构建;d8ff119 实测在 jazzy 构建失败(已在 PR评估标❌❌纠正)。
+  📄 本轮新文档:jazzy全栈重建_施工指引 / PR兼容性与jazzy评估 / GBPlanner原始论文与代码对应关系 / 项目简洁汇报 / 文档索引 / integration/world-model-PR/PR物料清单。
+  ⚠️ 本地未提交改动:config.toml(distro=humble,本机跑用)、navlab/sim/gazebo_sensor/cli.py(坑#7 QoS修复,PR前要补提交)、tomli vendor。
+decision_2026_07_02_已作废: ~~不向作者仓库提交~~ → 做完必须提交,保证jazzy兼容(用户2026-07-05更正)。
 next_actions:
   - 截真图:用户在 RViz 看自主探索,Win+Shift+S 截图存 images/,补进实操手册与 PPT(组会硬料)
   - 预研A运行时:接着剥 /scan 链路坑(gazebo-sensor venv 修复已写好,需重建该镜像验证)
