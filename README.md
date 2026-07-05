@@ -37,7 +37,7 @@
 | **跑 exploration(看 frontier_lite)** | 🔵 感知层全通(/scan /tf /imu)→SLAM闭环(quality=tight,/slam/odom)→位姿回灌飞控(pose_samples=153);当前站 FCU bootstrap(坑#14候选:控制器请求 mode 15=AUTOTUNE 而非 4=GUIDED) |
 | 量化对比 | ⬜ 待运行时完全跑通后做 |
 
-- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器);连修 9 个 humble 真坑把平台推到最后一层。**按你拍板不对外提交**,[integration/world-model-PR/](integration/world-model-PR/) 物料仅留档(证明改动可用、有含金量)。
+- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器);35轮实验连修 13 个 humble 真坑,平台推进到 FCU 解锁前沿(感知层全通/SLAM闭环/位姿回灌)。**按你拍板不对外提交**,[integration/world-model-PR/](integration/world-model-PR/) 物料仅留档(证明改动可用、有含金量)。
 - **你怎么自己验证 9/9**:打开 WSL 敲 `docker images | grep navlab`(应数到 9 个)。详见 [docs/WSL使用与复现.md](docs/WSL使用与复现.md)。
 - **你怎么自己验证集成代码**:WSL `cd ~/ws/world-model && git log --oneline -2`(看到 fix+feat 两提交);渲染脚本证据在 `integration/world-model-PR/rendered_*.py`。
 - **看仿真画面**:[docs/实跑操作手册_图文版.md](docs/实跑操作手册_图文版.md)。
