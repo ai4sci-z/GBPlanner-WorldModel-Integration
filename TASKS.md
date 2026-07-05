@@ -38,7 +38,8 @@
 | 8 | 提交 PR + Issue 给 world-model 作者 | ⬜ **恢复(你 2026-07-05 更正:做完必须提交)** | ~~07-02 取消~~ → **必须提交**(自己账号 ai4sci-z fork);**硬约束=作者 jazzy 环境能跑**(见 docs/PR兼容性与jazzy评估.md)。前置=#11 jazzy 全栈跑通。物料 `integration/world-model-PR/`;分支现 12 提交 |
 | 9 | **阶段4·ros1_bridge 接真版 GBPlanner** | 🔵 进行中 | ✅ I/O契约源码证实+ROS2出口适配器+bridge映射(`integration/ros1_bridge/`);⬜ 加3D雷达/编译起桥/ROS1侧跑/端到端(受运行时阻塞) |
 | 10 | 修运行时头号根因 tomllib | ✅ 完成(0b85cea) | `try: tomllib / except: tomli` 兜底;jazzy 实测零影响(原生 tomllib,兜底分支不执行) |
-| 11 | **⭐ jazzy 全栈重建(当前主线,用户硬指令)** | 🔵 **8/9(07-05 晚)** | 作者环境=jazzy(config.toml 铁证),PR 必须 jazzy 跑通。gazebo-headless/fast-lio/gazebo-sensor 已建+开箱验真(坑:BuildKit 假成功/Livox cstdint/ydlidar declare_parameter,全修);official-baseline 构建中(预研:原版零补丁)。施工指引 docs/jazzy全栈重建_施工指引.md;脚本 runbooks/world-model-jazzy/ |
+| 11 | **⭐ jazzy 全栈重建(用户硬指令)** | ✅ **镜像阶段 9/9 收官(07-05 晚)** | 4 缺镜像全建成+开箱验真(坑全解:BuildKit 假成功/Livox cstdint/ydlidar declare_parameter;official-baseline **原版零补丁一次过**,micro_ros_agent 58.4s=humble 最狠坑 jazzy 天然没有)。施工指引 docs/jazzy全栈重建_施工指引.md;脚本 runbooks/world-model-jazzy/ |
+| 12 | **⭐ jazzy 跑通 exploration(当前主线)** | 🔵 首跑中 | `run_exploration_jazzy.sh`(NAVLAB_SIM_DISTRO=jazzy);策略=遇坑小修作者代码不动框架、修完即提交(用户 07-05 拍板:目的是跑通+提PR,不死磕环境);humble 作对照组二分定位 |
 
 ## 四、决策 & 桥接路线(你已拍板)
 集成采用「桥接方案(ros1_bridge)」。原 P1 重规划为:① 跑通 gbplanner-ref 的 rmf_sim 确认 I/O ② 搭 ros1_bridge:world-model(ROS2)点云/里程计 → 喂 GBPlanner(ROS1),航点回流 `/navlab/exploration/*` ③ 给 iq_quad 加 3D 雷达 ④ 接 exploration 替换 frontier_lite。`gbplanner_core` 转备选/加深理解。

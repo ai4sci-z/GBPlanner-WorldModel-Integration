@@ -9,7 +9,10 @@
 2. `cd ~/ws/world-model/orchestration/sim && NAVLAB_SIM_DISTRO=jazzy go run ./cmd/navlab-sim run exploration --live-preflight` 端到端跑绿(或至少 FCU 起飞、frontier_lite 出指标)。
 3. jazzy 上把 `strategy=gbplanner_gain` 真替换 frontier_lite 跑一遍(证明"模块直接替换")。
 
-## 二、现状(2026-07-05 晚更新):jazzy 镜像 **8/9**,official-baseline 构建中
+## 二、现状(2026-07-05 晚终版):✅✅ **9/9 全部建成+开箱验真,镜像阶段收官**
+> official-baseline(17GB级):**原版 Dockerfile 零补丁一次过**(预研判断全中:ros-gz 天然配 Harmonic、--break-system-packages
+> Py3.12 必需保留、MICRO_ROS_AGENT_REF=jazzy 默认即对——micro_ros_agent 58.4s 编过,humble 当初最狠的 Fast-CDR 坑 jazzy 天然不存在)。
+> 开箱:/opt/ros/jazzy + ardupilot 全家桶 12 包 + BASELINE_OK。当前已转入 jazzy exploration 实跑阶段。
 - ✅ 原有 5:`ros-base` `ardupilot-sitl` `mavlink-router` `companion` `slam-cartographer`。
   **已开箱验真**(`verify_jazzy_images.sh`,逐个进容器查 `/opt/ros`):ros-base/slam/companion 内部真 jazzy;
   ardupilot-sitl/mavlink-router 无 ROS(distro 无关,共用 ID 合理)。

@@ -10,9 +10,10 @@ task: 把 GBPlanner(ROS1,图搜索体积增益探索) 集成进 world-model(ROS2
 decision_locked: 桥接方案(ros1_bridge)  # 不是 gbplanner_core 重写
 CURRENT_TOP_PRIORITY_2026_07_05: |
   ⭐⭐ 用户硬指令:【一定要在 jazzy 上跑通,否则 PR 作者无法跑=白干】。作者环境=jazzy(铁证:上游 config.toml distro=jazzy)。
-  ✅ 进展(07-05 晚):jazzy 镜像 **8/9 已建成+开箱验真**(gazebo-headless/fast-lio/gazebo-sensor 本轮新建,编译坑全解:
-    Livox cstdint→-include cstdint(68c19bf);ydlidar declare_parameter→26处sed v2;d8ff119 COPY 坑 jazzy 实锤不存在)。
-    official-baseline(第9个)构建中(预研:jazzy 用原版 Dockerfile 零补丁,只加代理+jazzy args)。
+  ✅✅ 里程碑(07-05 晚):jazzy 镜像 **9/9 全部建成+开箱验真**!(gazebo-headless/fast-lio/gazebo-sensor/official-baseline
+    本轮新建,编译坑全解:Livox cstdint→-include cstdint(68c19bf);ydlidar declare_parameter→26处sed v2;
+    d8ff119 COPY 坑 jazzy 实锤不存在;official-baseline **原版零补丁一次过**,micro_ros_agent 58.4s 编过=humble最狠坑 jazzy 天然没有)。
+  ◉ 当前:jazzy exploration 首跑中(run_exploration_jazzy.sh,NAVLAB_SIM_DISTRO=jazzy 覆盖 config,不动文件)。
   🔴 新抓假成功:编排器 go run navlab-sim build 无 BuildKit,遇 RUN --mount 失败却报 OK rc=0!
     → 只用 runbooks/world-model-jazzy/build_jazzy.sh(BuildKit 直建+真产物核验);verify_jazzy_images.sh 开箱验真。
   → 接下来:official-baseline 建成(9/9)→ NAVLAB_SIM_DISTRO=jazzy 跑 exploration → frontier_lite 指标 → gbplanner_gain 替换对比 → PR。
