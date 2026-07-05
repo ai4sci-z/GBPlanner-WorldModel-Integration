@@ -9,18 +9,44 @@
 2. `cd ~/ws/world-model/orchestration/sim && NAVLAB_SIM_DISTRO=jazzy go run ./cmd/navlab-sim run exploration --live-preflight` 端到端跑绿(或至少 FCU 起飞、frontier_lite 出指标)。
 3. jazzy 上把 `strategy=gbplanner_gain` 真替换 frontier_lite 跑一遍(证明"模块直接替换")。
 
-## 二、现状:jazzy 镜像 5/9(已成)+ 4 缺
-- ✅ 已有(当初构建成功):`ros-base` `ardupilot-sitl` `mavlink-router` `companion` `slam-cartographer` 的 `:jazzy-latest`。
-- ❌ 缺:`fast-lio` `gazebo-headless` `gazebo-sensor` `official-baseline`(重的那 4 个,当初卡编译坑退了 humble)。
+## 二、现状(2026-07-05 晚更新):jazzy 镜像 **8/9**,official-baseline 构建中
+- ✅ 原有 5:`ros-base` `ardupilot-sitl` `mavlink-router` `companion` `slam-cartographer`。
+  **已开箱验真**(`verify_jazzy_images.sh`,逐个进容器查 `/opt/ros`):ros-base/slam/companion 内部真 jazzy;
+  ardupilot-sitl/mavlink-router 无 ROS(distro 无关,共用 ID 合理)。
+  意外发现:**companion 的 humble tag 名不副实**(同 ID,内部其实是 jazzy/Py3.12)——难怪它从没报过 tomllib。
+- ✅ 本轮新建 3(全部 `docker images` 实测 + 开箱验真):
+  - `gazebo-headless:jazzy-latest`(5.21GB)——原版 Dockerfile 零补丁,BuildKit 直建。
+  - `fast-lio:jazzy-latest`(1.85GB)——**坑:Livox-SDK2 GCC13 缺 `<cstdint>`**(std::uint8_t 不识),
+    修法=cmake 加 `-DCMAKE_CXX_FLAGS="-include cstdint"`(改 in-repo Dockerfile,向后兼容,已提交 world-model 分支 `68c19bf`)。
+    开箱:install 里 fast_lio+livox_ros_driver2、livox .so 实在。
+  - `gazebo-sensor:jazzy-latest`(1.97GB)——**坑:ydlidar `declare_parameter("name")` 无默认值**(jazzy rclcpp 同 humble 已移除,
+    原样构建实测失败打脸"jazzy 或许没这坑"),修法=humble 同款 26 处 sed(`gazebo-sensor-jazzy.Dockerfile` v2)。
+    开箱:venv python 直接能跑(Py3.12.3 系统 python)→ **实锤 d8ff119 悬空软链坑 jazzy 不存在**,该 COPY 条件化依据坐实。
+- 🔵 `official-baseline`:**预研结论=jazzy 用原版 Dockerfile 零补丁**(ros-gz 天然配 Harmonic、--break-system-packages Py3.12 必需、
+  MICRO_ROS_AGENT_REF=jazzy 默认即对),只传 jazzy args+代理。构建已发车(最重,ArduPilot master 克隆+colcon 全家桶)。
+- 📌 同日在 world-model 分支补 2 提交:`68c19bf`(fast-lio cstdint)+`12ab9f0`(坑#8 emulator sensor-data QoS,还清"本地 M 未提交"欠账)。
 
 ## 三、构建命令(逐镜像)
+
+> 🔴🔴 **2026-07-05 实测重大更正**:`go run ./cmd/navlab-sim build` **不能用**!编排器内置 builder 走 Docker **经典 builder(无 BuildKit)**,而这些 Dockerfile 用了 `RUN --mount=type=cache`(gazebo-headless/official-baseline 都有),经典 builder 在 Step 8 直接报 `the --mount option requires BuildKit` 失败——**但 harness 吞掉错误,仍打印 `OK NavLab image build completed` 且 rc=0**(典型假成功,`docker images` 里根本没镜像)。humble 当初也是因此绕过 Go builder。
+>
+> **正解:直接用 `DOCKER_BUILDKIT=1 docker build`**。已封装成 `runbooks/world-model-jazzy/build_jazzy.sh <infra|runtime> <image>`:自动定位 Dockerfile、传 `INFRA_TAG=jazzy-latest ROS_DISTRO=jazzy`、official-baseline 加 host 网+7897 代理、**构建后 grep `docker images` 核验真产物**(NO 则 rc=1)。
+>
+> 镜像分组(build.go 实锤):**infra**=ardupilot-sitl/mavlink-router/**gazebo-headless**/**fast-lio**;**runtime**=companion/slam-cartographer/**gazebo-sensor**/**official-baseline**。
+
 ```bash
-# 前置:挂 keepalive(WSL 空闲关机杀 docker);cwd 必须是 orchestration/sim(go.mod 在这!)
-cd /home/ai4s/ws/world-model/orchestration/sim
-NAVLAB_SIM_DISTRO=jazzy go run ./cmd/navlab-sim build runtime --distro jazzy --image <fast-lio|gazebo-headless|gazebo-sensor|official-baseline>
+# 前置:挂 keepalive(WSL 空闲关机杀 docker)
+wsl bash -lc 'nohup sleep infinity >/dev/null 2>&1 &'
+# 逐镜像(直用 BuildKit,自带真产物核验):
+bash /mnt/c/CCproject/GBPlanner-WorldModel-Integration/runbooks/world-model-jazzy/build_jazzy.sh infra   gazebo-headless
+bash /mnt/c/CCproject/GBPlanner-WorldModel-Integration/runbooks/world-model-jazzy/build_jazzy.sh infra   fast-lio
+bash /mnt/c/CCproject/GBPlanner-WorldModel-Integration/runbooks/world-model-jazzy/build_jazzy.sh runtime gazebo-sensor  runbooks/world-model-jazzy/gazebo-sensor-jazzy.Dockerfile
+bash /mnt/c/CCproject/GBPlanner-WorldModel-Integration/runbooks/world-model-jazzy/build_jazzy.sh runtime official-baseline
 # 验证真实产物(不信退出码):
-docker images | grep 'navlab/<名>.*jazzy'
+docker images | grep 'navlab/.*jazzy'
 ```
+
+**gazebo-sensor jazzy 特办**:in-repo Dockerfile 含我 `d8ff119` 的 `COPY .../uv/python`(jazzy 无此路径→COPY failed)。jazzy 版=d8ff119 父提交 `c2cc690` 的原版(已导出 `runbooks/world-model-jazzy/gazebo-sensor-jazzy.Dockerfile`,无 COPY)。若 ydlidar `declare_parameter` 在 jazzy GCC13 也编不过,再套用 `gazebo-sensor-humble.Dockerfile` 的 26 处 sed 补丁。
 
 ## 四、已知 jazzy 坑 + 修法(用 humble 经验)
 | 镜像 | jazzy 坑 | 修法(我已在 humble 会修) |
