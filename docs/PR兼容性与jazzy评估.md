@@ -25,7 +25,7 @@
 | `0b85cea` | `import tomllib` 加 `tomli` 兜底 | 向后兼容 | ✅ **零影响 jazzy**:写法是 `try: import tomllib / except ModuleNotFoundError: import tomli`。jazzy=Py3.12 **有** tomllib → 走原生,`import tomli` 那行**根本不执行**。(需在 pyproject 的 `<3.11` 条件依赖里声明 tomli,已注明。) |
 | `4a52df4` | 新增 `gbplanner_gain` 策略 | 新功能 | ✅ **通用**:纯 ROS2 Python(rclpy/nav_msgs/std_msgs),不用任何 humble 专有 API;additive、默认策略不变。jazzy 直接可用。 |
 | `49d3551` | 跳过空值 launch 参数 | 向后兼容 | ✅ **通用**:humble 拒绝空 `name:=`;空参数本来就无意义,跳过它在 humble/jazzy **都安全**(jazzy launch 只会更严或相同)。 |
-| `d8ff119` | gazebo-sensor 镜像补拷 uv 托管 Python | 纯 bug | ✅ **通用**:上游 `COPY venv` 却不 COPY venv 的解释器(uv 托管 python)→ 悬空软链,服务秒退。无论 uv 装的是哪个 Python 版本,不拷都是 bug。jazzy 构建同样需要这 4 行 `COPY`。 |
+| `d8ff119` | gazebo-sensor 镜像补拷 uv 托管 Python | ~~纯 bug~~ | ❌❌ **实测推翻!jazzy 构建因它直接失败** `COPY failed: stat root/.local/share/uv/python: file does not exist`。推断:humble(Py3.10 太旧)uv 下载托管 Py3.14 才有悬空 bug;jazzy(Py3.12)uv 直接用系统 python、**不下载托管 python**,该路径不存在 → 我的 COPY 有害。**这是 humble 特有修复,绝不能无条件进 PR!** 2026-07-05 jazzy 实测抓出。修法:①COPY 条件化(仅 humble)②或此修复只留 humble-fixes 不进 PR。 |
 | `c8bc866` | official_baseline 补 `CYCLONEDDS_URI` | 纯 bug | ✅ **通用**:其他服务都由 `baselineEnv()` 注入该 env,唯独 baseline 内联 Env 漏了——是 **Go 代码疏漏**,与 ROS 版本无关。jazzy 同样漏、同样该补。 |
 | `aa77fca` | gz-transport 服务显式设 `GZ_PARTITION` | 通用改进 | ✅ **通用**:根因是容器以 `--user 1000:1000` 运行但无 passwd 条目 → gz 默认分区(hostname:username)解析错乱。这与 ROS 发行版无关,只与容器用户/gz-transport 有关;jazzy 同样受影响。显式设分区是稳健化。 |
 | `d3e73b7` | IMU 净化桥不得回灌自己的 source topic | 纯 bug | ✅ **通用**:桥的 source 与 output 默认同为 `/imu` → 自吞回声 → cartographer 时序崩。逻辑 bug,与 ROS 版本无关。 |
