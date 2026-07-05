@@ -3,7 +3,19 @@
 > **背景**:作者 world-model 的目标环境是 **jazzy**(Ubuntu 24.04 / Python 3.12),我们在 **humble**(Ubuntu 22.04 / Python 3.10)上跑通。
 > 用户硬约束:**任务做完必须提交 PR,且 PR 里的代码必须保证作者 jazzy 环境能兼容跑;不能兼容就重建 jazzy。**
 > 本文**逐条审查**给 world-model 分支(`feat/gbplanner-gain-exploration-strategy`,基于上游最新 `09a5aa4`)的每个提交,判断 jazzy 兼容性。
-> **结论先行:10 个提交全部 jazzy 兼容,不需要重建 jazzy。** 依据如下。
+> **结论先行:10 个提交全部 jazzy 兼容(已在真 jazzy Py3.12 实测语言/API 层),不需要重建 jazzy 全栈即可提 PR。** 依据如下。
+
+## 0. ✅ jazzy 实测(2026-07-05,已做,不只是论证)
+拉官方 `ros:jazzy-ros-base`(**Python 3.12**)实测(脚本 `runbooks/diagnostics/jazzy兼容实测_Py312.sh`):
+
+| 验证项 | jazzy Py3.12 实测 |
+|---|---|
+| tomllib 修改对 jazzy 影响 | ✅ `import tomllib` **原生成功**,`except: import tomli` 分支**不执行** → 零影响 |
+| `navlab/common/toml_values.py` import | ✅ jazzy 成功(走原生 tomllib) |
+| gbplanner_gain / frontier_lite 脚本 py_compile | ✅ Py3.12 通过 |
+| rclpy + nav_msgs + std_msgs | ✅ jazzy 全部可 import |
+
+**诚实边界**:已实测=语言层(Py3.12/tomllib)+ ROS2 消息依赖层;**未做**=完整 jazzy 全栈 exploration e2e(需重建 jazzy 镜像集,当初构建失败,几小时大工程)。Go 代码编译与 ROS 发行版无关(humble build 过=jazzy 同)。**代码文件兼容性已真 jazzy 实测;整套系统 jazzy 端到端跑通这步未做**,若要该级别确证需专门重建 jazzy 全栈,建议 PR 提交前作最终把关。
 
 ## 一、逐条兼容性审查(git log 09a5aa4..HEAD)
 
@@ -37,4 +49,4 @@
    - `pyproject.toml` 里 tomli 声明为 `python_version < "3.11"` 条件依赖(确保 jazzy 不多装)。
    - PR 描述里注明:"修复均为通用/向后兼容;humble 专用镜像适配见附录,不在本 PR。"
    - 用用户账号 `ai4sci-z` fork + 提交(照 `integration/world-model-PR/手动提交PR与Issue指南.md`)。
-3. **诚实边界**:我**没有**在 jazzy 上实测过这些改动(当初 jazzy 构建就失败,没有可运行的 jazzy 环境)。上述兼容性是**代码级论证**(向后兼容写法 + 通用 bug 性质),不是 jazzy 实跑验证。**若作者/用户要求 100% 确证,唯一办法是重建 jazzy 实跑**——这点如实告知,不夸大。
+3. **诚实边界(已更新)**:代码文件的 jazzy 兼容性**已在真 jazzy Py3.12 实测**(见 §0);**完整 jazzy 全栈 e2e 未做**(需重建 jazzy 镜像集,当初构建失败)。即"我改的代码在 jazzy 语言/API 层不破坏"已实证,"整套系统在 jazzy 端到端跑通"这步待专门重建 jazzy 全栈。
