@@ -64,7 +64,7 @@ but it cannot adapt to the environment, so coverage and path quality do not refl
 real exploration algorithm.
 
 **Proposal:** add an optional, map-aware strategy that selects motion by information
-gain (the GBPlanner idea — Dang et al., arXiv:2201.07067), while keeping
+gain (the GBPlanner idea — Dang et al., "Graph-based subterranean exploration path planning", J. Field Robotics 2020 (the original GBPlanner paper)), while keeping
 `frontier_lite` as the default. A first ROS2-native version is in the accompanying PR
 (`gbplanner_gain`): subscribe to the occupancy grid, ray-cast to count reachable
 unknown cells (a 2D volumetric-gain proxy), penalise turning, steer toward the best

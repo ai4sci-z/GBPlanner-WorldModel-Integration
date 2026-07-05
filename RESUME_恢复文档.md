@@ -111,8 +111,21 @@ progress_2026_07_04: |
   SITL回"Mode change to Autotune failed";另有 PreArm: VisOdom not healthy。下一步=读 navlab fcu 控制器源码修模式映射。
   用户13条要求推进:sources/源码归档✅;战役实录+RViz详解两文档✅(配图);实操手册重写并全流程实测✅;
   launchers/一键入口+桌面副本✅;diagnostics/脚本工具箱✅;文档瘦身对齐进行中。
-decision_2026_07_02: 【用户拍板】不向 world-model 作者仓库提交 PR/Issue;成果只留自己账号(ai4sci-z)。
-  integration/world-model-PR/ 物料转为留档证据;world-model 4个commit留本地分支(可选推自己账号私有镜像仓)。
+progress_2026_07_05: |
+  ✅ 坑#14 实锤修好(run#38):fcu bootstrap mode_switch mode_id=4 ok:true(GUIDED进了,之前15 AUTOTUNE failed);
+    SITL 不再报 Autotune failed。修复=优先信config guided_mode(commit b13f268)。GUIDED这关过了,
+    bootstrap下一步(arm/takeoff)未通,controller仍 waiting_for_fcu_bootstrap——坑#15候选。
+  ✅ world-model 本地基线确认最新:fetch后 origin/main 仍=09a5aa4(6/27 FSM/DAG重构),无更新;
+    我一直用新artifact路径(runtime/logs、runtime/scripts、audit)排错,没踩Codex提醒的旧路径坑。
+  ⚠️ 【重大认知更正】用户澄清:不是"不提交PR",是"做完必须提交"。PR硬约束=保证作者jazzy兼容。
+    已做 docs/PR兼容性与jazzy评估.md:逐条审10提交,全部通用bugfix或向后兼容(tomllib try/except对jazzy零影响等),
+    结论不需重建jazzy;humble专用镜像适配在独立目录不进PR。诚实边界:未在jazzy实跑,是代码级论证。
+  ✅ 【原始论文】mentor那篇arXiv:2201.07067是应用非原文;原文=Dang et al. JFR2020(已归档sources/+读+写对应关系文档);
+    全项目文档论文定性已统一(原理引JFR2020,应用引2201.07067)。PR物料论文引用也改了。
+  ✅ Codex桌面review已参考(桌面Codex_GBPlanner_工作区/05):采纳"只攻FCU→跑frontier_lite对照"路线。
+  ✅ 桌面散落13个旧md已归档(留档);新增 文档索引.md(三处对齐规则)+项目简洁汇报.md。
+  下一步(Codex+用户共识顺序):FCU arm/takeoff(坑#15)→跑通exploration取frontier_lite真实指标→同口径对比→PR。
+decision_2026_07_02_已作废: ~~不向作者仓库提交~~ → 见 progress_2026_07_05 更正:做完必须提交,保证jazzy兼容。
 next_actions:
   - 截真图:用户在 RViz 看自主探索,Win+Shift+S 截图存 images/,补进实操手册与 PPT(组会硬料)
   - 预研A运行时:接着剥 /scan 链路坑(gazebo-sensor venv 修复已写好,需重建该镜像验证)

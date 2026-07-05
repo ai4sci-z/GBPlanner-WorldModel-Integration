@@ -55,7 +55,7 @@ smoke test rather than an exploration policy (the review topic even labels its s
 `bounded_lite_pattern`).
 
 This PR adds an **optional** strategy that implements the core idea of GBPlanner
-(Dang et al., *Graph-based subterranean exploration path planning*, arXiv:2201.07067):
+(Dang et al., *Graph-based subterranean exploration path planning*, J. Field Robotics 2020 (original GBPlanner paper)):
 read the SLAM occupancy grid and move toward the direction of highest information gain.
 
 When `strategy == "gbplanner_gain"`:

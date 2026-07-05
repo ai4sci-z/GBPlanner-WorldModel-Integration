@@ -37,7 +37,7 @@ and downstream of #1.
 
 Today `frontier_lite` drives motion from a fixed 3-step pattern indexed by an elapsed-time
 counter and subscribes to no map (its review topic is labeled `bounded_lite_pattern`).
-This PR adds an **opt-in** strategy inspired by GBPlanner (Dang et al., arXiv:2201.07067):
+This PR adds an **opt-in** strategy inspired by GBPlanner (Dang et al., "Graph-based subterranean exploration path planning", J. Field Robotics 2020 (the original GBPlanner paper)):
 when `strategy == "gbplanner_gain"` the workflow subscribes to `map_topic`
 (`nav_msgs/OccupancyGrid`, default `/map`), ray-casts in 24 directions, counts reachable
 UNKNOWN cells as a 2D volumetric-gain proxy, applies a turn penalty, and steers toward the

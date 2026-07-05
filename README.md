@@ -112,7 +112,11 @@
 
 ## 1.2 GBPlanner 是什么
 
-**论文:** CERBERUS 团队(arXiv:2201.07067),源自 DARPA 地下挑战赛。**官方代码:** 网址 `github.com/ntnu-arl/gbplanner_ros`,用其中的 `gbplanner2` 分支。
+**论文(区分清楚,2026-07-05 校准):**
+- **原始论文** = Dang et al., *"Graph-based subterranean exploration path planning using aerial and legged robots"*, **Journal of Field Robotics 2020**(DOI 10.1002/rob.21993)。算法原理**以此为准**。已归档 `sources/GBPlanner原始论文_JFR2020_Dang_et_al.pdf`。
+- **mentor 发的 arXiv:2201.07067** 是 GBPlanner 的**应用/扩展**(落地工作),不是原始算法——引它只讲"怎么用/怎么部署"。
+- **官方代码:** `github.com/ntnu-arl/gbplanner_ros` 的 `gbplanner2` 分支。
+- 论文↔代码逐概念对应、以及我们 `gbplanner_gain` 原型相对原文的失真标注,见 [docs/GBPlanner原始论文与代码对应关系.md](docs/GBPlanner原始论文与代码对应关系.md)。
 
 **它怎么工作(6 步大白话):**
 1. 无人机靠 **3D 激光雷达**边飞边建一张 **3D 占据地图**——空间被切成无数小方块(体素),每块标记为"已占据 / 空闲 / **未知**"。

@@ -59,7 +59,7 @@ publishes `"source": "bounded_lite_pattern"`. This is fine as a control-chain sm
 but cannot adapt to the environment.
 
 **Proposal:** add an optional, map-aware strategy that selects motion by information gain
-(the GBPlanner idea — Dang et al., arXiv:2201.07067), keeping `frontier_lite` as default.
+(the GBPlanner idea — Dang et al., "Graph-based subterranean exploration path planning", J. Field Robotics 2020 (the original GBPlanner paper)), keeping `frontier_lite` as default.
 A first, intentionally simple ROS 2-native version is in the accompanying PR
 (`gbplanner_gain`, a 2D occupancy-grid prototype). Happy to iterate on the shape (it is
 explicitly not the full graph-based 3D planner).
