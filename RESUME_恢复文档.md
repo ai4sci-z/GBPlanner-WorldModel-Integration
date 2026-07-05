@@ -1,6 +1,6 @@
 # 🔄 恢复文档 · 新窗口无损接管本任务
 
-> 用途:本会话上下文将满。在**新窗口/新对话**里,让新的 Claude 读本文件 + `MEMORY.md`(自动加载)+ `README.md`(蓝图)+ `TASKS.md`(任务台账),即可**基本无损接管**。最后更新 2026-07-03。
+> 用途:本会话上下文将满。在**新窗口/新对话**里,让新的 Claude 读本文件 + `MEMORY.md`(自动加载)+ `README.md`(蓝图)+ `TASKS.md`(任务台账),即可**基本无损接管**。最后更新 2026-07-04。
 
 ## ⚙️ AGENT DIRECTIVES（下一个 Claude 先读这段，机器友好）
 ```yaml
@@ -103,6 +103,14 @@ progress_2026_07_03_预研A剥洋葱: |
     ROS_LOCALHOST_ONLY/RMW 不一致/域号类),活体探针 v7(对比各容器 pid1 的 DDS env)已写好待下轮 run 验证。
   方法论(好用,沉淀):①手动常驻容器从容取证(gz model --list 一锤定音)②逐段模拟启动命令冒烟③活体探针(容器活着时抓)。
   镜像注意:navlab/official-baseline:humble-latest 已被薄层补丁覆盖(含 navlab-humble-fix 标记,grep 可验)。
+progress_2026_07_04: |
+  预研A冲刺:run#28~35——感知层全通(/scan 7Hz、/tf 6.5Hz、SITL JSON通)→ SLAM闭环(坑#13 IMU自吞回声两针修复,
+  quality=tight,/slam/odom流动,blockers 26→21)→ 位姿回灌飞控成功(/ap/v1名字=sysid命名空间,读源码定;
+  controller pose_samples=153,状态推进到 waiting_for_fcu_bootstrap,blockers→19)。
+  ◉ 当前前沿(坑#14候选):fcu_controller bootstrap 请求 mode_id=15(AUTOTUNE)而 required_mode=4(GUIDED),
+  SITL回"Mode change to Autotune failed";另有 PreArm: VisOdom not healthy。下一步=读 navlab fcu 控制器源码修模式映射。
+  用户13条要求推进:sources/源码归档✅;战役实录+RViz详解两文档✅(配图);实操手册重写并全流程实测✅;
+  launchers/一键入口+桌面副本✅;diagnostics/脚本工具箱✅;文档瘦身对齐进行中。
 decision_2026_07_02: 【用户拍板】不向 world-model 作者仓库提交 PR/Issue;成果只留自己账号(ai4sci-z)。
   integration/world-model-PR/ 物料转为留档证据;world-model 4个commit留本地分支(可选推自己账号私有镜像仓)。
 next_actions:

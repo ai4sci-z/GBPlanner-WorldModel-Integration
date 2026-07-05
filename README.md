@@ -2,19 +2,20 @@
 
 > 把 **GBPlanner 自主探索算法** 加入 **world-model 仿真平台**,替换其占位探索策略。
 > 本文 = 项目**蓝图 + 全景理解 + 集成方案 + 进展日志**,面向"看懂 + 做报告"。
-> 📖 **零基础友好**:正文里每个英文缩写第一次出现都就地解释;不懂的词也可直接翻到**文末第 5 部分·名词表**(按类别详解)。最后更新:2026-07-03。
+> 📖 **零基础友好**:正文里每个英文缩写第一次出现都就地解释;不懂的词也可直接翻到**文末第 5 部分·名词表**(按类别详解)。最后更新:2026-07-04。
 
 ---
 
-# 🗺️ 路线图·你在这里(2026-07-03)
+# 🗺️ 路线图·你在这里(2026-07-04)
 
 ```
 线路1·预研B(复现GBPlanner)  ██████████ 100% ✅ 终点:自主探索全闭环+量化(291m/13万体素/地图落盘)
-线路2·预研A(跑通world-model) ████████░░ ~80%  ◉◉◉ ← 你在这里
-   9/9镜像✅ → 运行时剥洋葱 9 坑已修 8(含总根因:humble sdformat_urdf 不认 gpu_lidar
-   → RSP 崩 → 机器人从未生成;修复后手动验证四连全绿)
-   ◉ 当前站:编排环境下 baseline 的 ROS 话题对其他容器不可见(DDS 隔离嫌疑,探针已备)
-   ○ 下一站:SLAM healthy → frontier_lite 真实指标 → 终点
+线路2·预研A(跑通world-model) █████████░ ~90%  ◉◉◉ ← 你在这里(2026-07-04)
+   9/9镜像✅ → 35轮受控实验修掉13坑(总根因=RSP崩机器人未生成、编排真凶=uid无passwd致gz分区错乱…)
+   → 感知层全通(/scan /tf /imu)✅ → SLAM闭环(quality=tight,/slam/odom)✅ → 位姿回灌飞控(pose_samples=153)✅
+   ◉ 当前站:FCU bootstrap(坑#14候选:控制器请求mode 15=AUTOTUNE而非4=GUIDED;PreArm VisOdom)
+   ○ 下一站:解锁起飞 → frontier_lite 真实指标 → 终点
+   战役全解:docs/预研A排错战役实录_35轮实验全解.md
 线路3·集成                   ██████░░░░ ~60%  决策层原型✅+真版桥接地基✅;完整桥接等线路2通车
 线路4·量化对比               ███░░░░░░░ ~30%  GBPlanner侧实测✅入库;frontier_lite侧等线路2
 ```
@@ -31,9 +32,9 @@
 | **预研A·world-model 9 镜像** | ✅ **9/9 全部构建成功(实测)**——排掉 6 个 jazzy→humble 兼容坑 |
 | **🟢 真集成代码(决策层,ROS2-native)** | ✅ **已接进 world-model 真实结构**——新增可选策略 `gbplanner_gain`(读 `/map`、体积增益选向),`go build/vet/test` + `py_compile` 全过 |
 | **🟢 阶段4 桥接地基(接真版 GBPlanner)** | ✅ 从源码逐条证实真版 I/O 契约(点云/里程计进、`MultiDOFJointTrajectory` 出、自定义 msg 留 ROS1 不跨桥)+ ROS2 出口适配器(`integration/ros1_bridge/`) |
-| **🟢 连修 9 个 humble 真坑(8 个已实证)** | ✅ ①tomllib ②空launch参数 ③模板`%%` ④venv悬空软链 ⑤setup.bash缺失 ⑥rclpy版本(Py3.14→3.10) ⑦ydlidar驱动必需+declare_parameter 26处补丁 ⑧QoS不兼容 ⑨**总根因:sdformat_urdf 不认 gpu_lidar→RSP崩→机器人从未生成**(修复后手动四连全绿:RSP活/iris在gz/激光出数据/SITL JSON接通)。全证据链:[docs/运行时排错记录_humble.md](docs/运行时排错记录_humble.md) |
+| **🟢 35轮实验连修 13 个 humble 真坑(全实证)** | ✅ ①tomllib ②空launch参数 ③模板`%%` ④venv悬空软链 ⑤setup.bash缺失 ⑥rclpy版本(Py3.14→3.10) ⑦ydlidar驱动必需+declare_parameter 26处补丁 ⑧QoS不兼容 ⑨**总根因:sdformat_urdf 不认 gpu_lidar→RSP崩→机器人从未生成** ⑩CYCLONEDDS漏发 ⑪SDF1.11版本 ⑫**编排真凶:uid无passwd→gz分区错乱→容器互相隐身** ⑬IMU自吞回声。感知层全通→SLAM闭环(tight)→位姿回灌飞控。全证据链:[docs/运行时排错记录_humble.md](docs/运行时排错记录_humble.md)、[战役实录](docs/预研A排错战役实录_35轮实验全解.md) |
 | **PR/bugfix 物料(留档)** | ✅ [integration/world-model-PR/](integration/world-model-PR/)——按你拍板**不对外提交**,作为"改动可用、有含金量"的证据存档 |
-| **跑 exploration(看 frontier_lite)** | 🔵 机器人生成链已修通(手动实证);编排环境还差最后一层:**baseline 话题对其他容器不可见(DDS 隔离嫌疑)**,探针已备好待验证 |
+| **跑 exploration(看 frontier_lite)** | 🔵 感知层全通(/scan /tf /imu)→SLAM闭环(quality=tight,/slam/odom)→位姿回灌飞控(pose_samples=153);当前站 FCU bootstrap(坑#14候选:控制器请求 mode 15=AUTOTUNE 而非 4=GUIDED) |
 | 量化对比 | ⬜ 待运行时完全跑通后做 |
 
 - 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器);连修 9 个 humble 真坑把平台推到最后一层。**按你拍板不对外提交**,[integration/world-model-PR/](integration/world-model-PR/) 物料仅留档(证明改动可用、有含金量)。
@@ -57,7 +58,7 @@
 **整体路线:**
 | 阶段 | 名称 | 内容 | 状态 |
 |---|---|---|---|
-| P0-A | 复现 world-model | 跑通平台,看占位探索怎么工作 | 🔵 **~80%**:9/9 镜像✅+运行时 9 坑修 8(总根因已破),差 DDS 可见性最后一层 |
+| P0-A | 复现 world-model | 跑通平台,看占位探索怎么工作 | 🔵 **~90%(07-04)**:9/9镜像✅+35轮实验修13坑;感知层全通→SLAM闭环→位姿回灌飞控;当前站 FCU bootstrap(坑#14候选) |
 | P0-B | 复现 GBPlanner | 单独跑官方算法,看它怎么探索 | ✅ **完成(2026-07-02):自主探索全闭环实测**(291.3m/435s/地图落盘) |
 | P1→桥接 | 桥接路线落地 | 已选桥接方案:搭 ros1_bridge + 适配 + 加 3D 雷达 | 🟡 核心已起步(测试通过),路线改为桥接,见 TASKS.md |
 | P2 | ROS2 节点 | 把核心包成 ROS2 模块,接 world-model 数据 | ⚪ 未开始 |
@@ -65,7 +66,7 @@
 
 > P0~P3 是我给阶段起的编号(P=Phase 阶段)。
 
-## 最新进展速览(2026-06-29)
+## 历史里程碑存档(2026-06-29 当日速览,保留不删)
 
 **① 已核实:GBPlanner 确为 ROS1**(`package.xml` 用 catkin/roscpp;仓库 16 个分支无任何 ROS2 分支)。**并挖到关键事实:算法作者自己用 `ros1_bridge` 把 GBPlanner 接进 ROS2 系统(其 Unified Autonomy Stack),于是集成出现两条路** —— 这条"官方捷径"是你追问 ROS 版本时挖出来的:
 

@@ -1,21 +1,23 @@
 # 预研 A · 在本机完整复现并运行 world-model 仿真
 
 > 目的:**完整复现并实际运行** world-model(不止构建),亲眼跑通 exploration 任务,**用证据论证** frontier_lite 探索的不足,为引入 GBPlanner 提供实据。
-> 状态:🔵 **~80%,运行时剥洋葱到最后几层**(9 坑修 8,总根因已破)。最后更新 2026-07-03。
+> 状态:🔵 **~90%(2026-07-04)**:35轮实验修13坑;感知层全通→SLAM闭环(tight)→位姿回灌飞控(pose_samples=153);当前站 FCU bootstrap。战役全解见 [预研A排错战役实录_35轮实验全解.md](预研A排错战役实录_35轮实验全解.md)。最后更新 2026-07-04。
 
 ## 一、目标(精细度要求)
 1. 在本机把 world-model 仿真**完整跑起来**:Gazebo(无头)+ ArduPilot SITL + Cartographer SLAM + exploration 任务。
 2. **实跑 frontier_lite**,做小 demo 暴露其局限(2D 平面、覆盖不充分、易停),**用数据+截图充分论证"需要改进"**(不空口)。
 3. 为后续 GBPlanner vs frontier_lite 对比实验铺底。
 
-## 二、当前进度(2026-07-03)
+## 二、当前进度(2026-07-04)
 | 步骤 | 状态 |
 |---|---|
 | 克隆仓库 + 子模块 | ✅ |
 | **构建 9/9 镜像(humble)** | ✅ 全部实测存在(排掉 6 个 jazzy→humble 构建坑,见 [预研A_构建排错记录.md](预研A_构建排错记录.md)) |
-| **运行时排坑(9 个,jazzy→humble 迁移遗留)** | 🔵 **已修 8 个、全部实锤**:tomllib/空launch参数/模板`%%`/venv悬空/setup.bash缺失/rclpy版本/ydlidar驱动+declare_parameter/QoS/**总根因 sdformat_urdf-gpu_lidar→RSP崩→机器人从未生成**。全证据链:[运行时排错记录_humble.md](运行时排错记录_humble.md) |
-| 机器人生成链(spawn/传感器/SITL JSON) | ✅ **手动常驻验证四连全绿**(RSP 活/iris 在 gz/激光出数据/JSON 接通) |
-| 编排环境端到端(exploration 全绿) | ◉ **当前站**:baseline 话题对其他容器不可见(DDS 隔离嫌疑),探针已备 |
+| **运行时排坑(13 个,jazzy→humble 迁移遗留)** | 🔵 **35轮实验全实锤**:tomllib/空参/`%%`/venv悬空/setup.bash/rclpy版本/ydlidar+declare_parameter/QoS/**总根因sdformat_urdf-gpu_lidar-RSP**/CYCLONEDDS/SDF版本/**uid无passwd致gz分区错乱**/IMU自吞回声。全证据链:[运行时排错记录_humble.md](运行时排错记录_humble.md)、[战役实录](预研A排错战役实录_35轮实验全解.md) |
+| 机器人生成链(spawn/传感器/SITL JSON) | ✅ 手动四连全绿 → **编排环境也全通**(感知层 /scan /tf /imu) |
+| SLAM 闭环 | ✅ quality=tight,/slam/odom 真实流动(坑#13 IMU 自吞回声两针修复后) |
+| 位姿回灌飞控 EKF | ✅ controller pose_samples=153,状态推进到 waiting_for_fcu_bootstrap |
+| 编排环境端到端(exploration 全绿) | ◉ **当前站**:FCU bootstrap(坑#14候选:控制器请求 mode 15=AUTOTUNE 而 required=4=GUIDED;PreArm VisOdom) |
 | frontier_lite 真实指标 + 截图留痕 | ⬜ 等上一步 |
 | 论证 frontier_lite 不足(小 demo) | ⬜ 代码级铁证已有(脚本循环、不读图);量化等实跑 |
 

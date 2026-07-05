@@ -29,7 +29,7 @@
 |---|---|---|---|
 | 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | ✅ **完成:自主探索全闭环(2026-07-02 实测)** | 排 6 坑后:起飞→voxblox 3D建图→RRG规划→**无人机自主巡飞覆盖迷宫**(轨迹实测 (5.7,-1.3)→(4.4,6.4),RViz 可视化在桌面)。复现:`run_light.sh` + `takeoff_and_explore.sh`;全记录 docs/预研B_仿真实跑排错记录.md |
 | 2 | 调研·确认 ros1_bridge 官方接入做法 | ✅ 完成 | 你已选「桥接方案」 |
-| 3 | 预研A·完整复现并**实际运行** world-model | 🔵 **~80%,剥洋葱到最后几层** | 9/9 镜像✅;运行时 9 坑修 8(实证),**总根因已破**(sdformat_urdf 不认 gpu_lidar→RSP崩→机器人从未生成;修后手动四连全绿)。当前:编排下 baseline 话题对其他容器不可见(DDS 隔离嫌疑)。全记录 docs/运行时排错记录_humble.md |
+| 3 | 预研A·完整复现并**实际运行** world-model | 🔵 **~90%(07-04)** | 35轮实验修13坑;感知层全通→SLAM闭环(tight)→位姿回灌飞控(pose_samples=153)。当前站:FCU bootstrap(坑#14候选:mode 15≠GUIDED 4;PreArm VisOdom)。战役全解 docs/预研A排错战役实录;逐坑证据 docs/运行时排错记录_humble.md |
 | 4 | 集成落地·把 GBPlanner 决策接进 world-model | ✅ **代码完成,待你提交PR** | ROS2-native 决策层集成:新增 `gbplanner_gain` 策略读图选向,替代脚本式 frontier_lite。已在 `~/ws/world-model` 分支 `feat/gbplanner-gain-exploration-strategy` commit(2提交:bugfix+feat),go build/vet/test + py_compile 全过。物料见 `integration/world-model-PR/` |
 | 4.5 | **真 bug 发现**:exploration 生成脚本无法编译 | ✅ 已修并入PR | `%%` 经 text/template 原样落盘 → SyntaxError;`py_compile` 实测复现,改单 `%` 后通过。疑似 exploration 运行时起不来根因之一 |
 | 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | 🔵 进行中 | 代码层已铁证(脚本循环、不订阅地图);**GBPlanner 侧实测数据已到手**(291.3m/132,091点/自动返航,曲线+CSV 在 images/);frontier_lite 侧量化待 #3 运行时修好 |
