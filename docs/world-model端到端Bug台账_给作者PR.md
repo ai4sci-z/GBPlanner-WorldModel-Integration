@@ -41,8 +41,15 @@ end-to-end **仍未跑通**（最新 run `status=TASK_STATUS_ERROR`）。已从"
 
 ---
 
-## 下一步坑（当前前沿，尚未修）
-**坑#17 候选**：takeoff 已被接受但飞机不爬升,`EKF3 still initialising`。方向:①EKF3 external-nav 收敛需要更长 warmup（bootstrap 时序/超时）②或 takeoff 后需要持续 setpoint 才爬升。取证中。
+## 下一步坑（当前前沿，尚未修）—— 2026-07-06 精确定性
+**坑#17：GUIDED 外部导航 takeoff 被接受但电机不上桨、无人机不爬升。** 逐层实锤(tlog+servo 解码)：
+- 机型确认 `MAV_TYPE=2` 四旋翼；SLAM/建图/位姿全通(rosbag:/slam/odom 7946、/map 38、/ap/v1/pose/filtered 614)。
+- 无人机**稳定 armed 41 秒**(19.77s→61.19s)，GUIDED(custom_mode=4)，mavlink NAV_TAKEOFF **ack result=0(接受)**。
+- 但 **SERVO_OUTPUT 全程 1100(spin-armed 怠速)**，从没超 1117(离地需~1500+)；throttle 0%、alt 0.00、SITL 从无 "Takeoff" 字样 → **飞控收指令却没执行爬升**。
+- 持续 `PreArm: VisOdom: not healthy`；早期(EKF 未收敛时) `Accels inconsistent`/`EKF attitude is bad`。仿真仅 72% 实时(CPU 吃紧)。
+- **根因假设**：GUIDED 自动起飞的位置质量门(VisOdom/ExternalNav 健康)没过 → 拒绝上桨。humble/jazzy 同墙 → 作者 external-nav 起飞路径疑从未验证。
+- **下一步最小修方向**：①查 ArduPilot 实收外部导航(ExternalOdometry via AP_DDS)真实频率/新鲜度,过低则提速 ②评估 VISO_TYPE=1 是否造成 spurious VisOdom 健康检查 ③或改用 DDS takeoff 服务 /ap/v1/experimental/takeoff 而非 mavlink NAV_TAKEOFF。
+- 诊断脚本(证据可复现)：`runbooks/world-model-jazzy/` 的 decode_takeoff_physics.sh(电机/油门/高度)、decode_disarm_reason.sh(arm/disarm 时间线)、inspect_ekf_timeline.sh、diag_topics.sh(rosbag 话题计数)。
 
 ## 给作者的高价值观察（Issue 素材）
 - B1/B14 说明作者**很可能从未端到端跑通过 exploration**（脚本编译不过、rangefinder 参数被固件无视）——任何人、任何 OS、Mac 或 Linux 跑到这步都会死,不是环境问题。

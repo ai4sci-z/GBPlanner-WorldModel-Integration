@@ -14,10 +14,11 @@
    9/9镜像✅ → 感知层全通✅ → SLAM闭环(tight)✅ → 位姿回灌飞控✅ → FCU GUIDED+解锁(armed:true)✅
    ⏸ humble 暂停在:takeoff TEMPORARILY_REJECTED(坑#15,EKF位置源深水区)——不死磕,主线转 jazzy
    战役全解:docs/预研A排错战役实录_35轮实验全解.md
-线路2.5·jazzy全栈重建        ████████░░  8/9  ◉◉◉ ← 你在这里(2026-07-05,用户硬指令:作者环境=jazzy,PR必须jazzy跑通)
-   已建+开箱验真:gazebo-headless/fast-lio/gazebo-sensor(编译坑全解:cstdint/declare_parameter/BuildKit假成功)
-   ◉ 当前站:official-baseline 构建中(第9个,预研=原版零补丁) ○ 下一站:jazzy 跑 exploration → frontier_lite 指标
-   施工指引:docs/jazzy全栈重建_施工指引.md
+线路2.5·jazzy全栈重建        ██████████  9/9✅ jazzy镜像全建成+开箱验真(容器内Ubuntu24.04+jazzy+Py3.12实测)
+线路2.6·jazzy exploration首跑排障 ████████░░  ◉◉◉ ← 你在这里(2026-07-06)
+   SLAM/建图/位姿全通(rosbag实测:/slam/odom 7946、/map 38、/ap/v1/pose/filtered 614)
+   ◉ 当前站:坑#17 GUIDED起飞被接受但电机怠速不上桨(armed41s/servo1100/无爬升;VisOdom not healthy)
+   ○ 下一站:修外部导航健康→无人机真起飞→frontier_lite指标。Bug台账:docs/world-model端到端Bug台账_给作者PR.md
 线路3·集成                   ██████░░░░ ~60%  决策层原型✅+真版桥接地基✅;完整桥接等线路2通车
 线路4·量化对比               ███░░░░░░░ ~30%  GBPlanner侧实测✅入库;frontier_lite侧等线路2
 ```
@@ -37,7 +38,8 @@
 | **🟢 35轮实验连修 13 个 humble 真坑(全实证)** | ✅ ①tomllib ②空launch参数 ③模板`%%` ④venv悬空软链 ⑤setup.bash缺失 ⑥rclpy版本(Py3.14→3.10) ⑦ydlidar驱动必需+declare_parameter 26处补丁 ⑧QoS不兼容 ⑨**总根因:sdformat_urdf 不认 gpu_lidar→RSP崩→机器人从未生成** ⑩CYCLONEDDS漏发 ⑪SDF1.11版本 ⑫**编排真凶:uid无passwd→gz分区错乱→容器互相隐身** ⑬IMU自吞回声。感知层全通→SLAM闭环(tight)→位姿回灌飞控。全证据链:[docs/运行时排错记录_humble.md](docs/运行时排错记录_humble.md)、[战役实录](docs/预研A排错战役实录_35轮实验全解.md) |
 | **PR/bugfix 物料** | 🔄 **政策更正(你 2026-07-05):做完必须提交 PR**(自己账号 ai4sci-z fork);硬约束=作者 jazzy 环境能跑([docs/PR兼容性与jazzy评估.md](docs/PR兼容性与jazzy评估.md))。物料 [integration/world-model-PR/](integration/world-model-PR/);world-model 分支现 12 提交 |
 | **跑 exploration(看 frontier_lite)** | 🔵 humble 推进到:感知全通→SLAM闭环→位姿回灌→**FCU GUIDED+解锁(armed:true,坑#14 修好实测)**;takeoff 被拒(坑#15 EKF 深水区)→ **主线转 jazzy 全栈**(作者设计环境,这些深水坑可能天然不存在) |
-| **⭐ jazzy 全栈重建(当前主线)** | 🔵 **8/9(07-05 晚)**:gazebo-headless/fast-lio/gazebo-sensor 建成+开箱验真(坑全解:Livox cstdint、ydlidar declare_parameter、**编排器无 BuildKit 假成功**);official-baseline 构建中(预研=原版零补丁)。[docs/jazzy全栈重建_施工指引.md](docs/jazzy全栈重建_施工指引.md) |
+| **⭐ jazzy 全栈重建** | ✅ **9/9 全建成+开箱验真**(容器内实测 Ubuntu 24.04+jazzy+Py3.12;坑全解:Livox cstdint、ydlidar declare_parameter、编排器无 BuildKit 假成功、official-baseline 原版零补丁)。[施工指引](docs/jazzy全栈重建_施工指引.md) |
+| **⭐ jazzy exploration 首跑排障(当前主线)** | 🔵 SLAM/建图/位姿全通;卡**坑#17**:GUIDED 外部导航起飞被接受但电机怠速不上桨(armed 41s/servo 1100/无爬升)。逐层实锤见 [Bug台账](docs/world-model端到端Bug台账_给作者PR.md) |
 | 量化对比 | ⬜ 待 jazzy exploration 跑通后做 |
 
 - 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器);39轮实验连修 15 个真坑,humble 推进到 FCU 解锁(armed:true)。**政策更正(2026-07-05):做完必须提交 PR,硬约束=jazzy 兼容** → 当前主线=jazzy 全栈重建(8/9)。
