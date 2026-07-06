@@ -5,3 +5,98 @@
   docker exec gbplanner_ref bash -c 'source /opt/ros/noetic/setup.bash; export ROS_MASTER_URI=http://localhost:11311 ROS_HOSTNAME=localhost; rostopic hz /gbplanner_node/tsdf_pointcloud'
   (看到 average rate ≈4~5 = voxblox 3D 建图在跑)
 触发探索:RViz 左下 GbPlanner Control → Initialization → Start Planner
+--- 2. 节点清单(应有 gbplanner_node + pci) ---
+/gbplanner_node
+/gbplanner_ui
+/pci_general_ros_node
+--- 3. voxblox 建图心跳(tsdf_pointcloud hz) ---
+average rate: 4.098
+--- 4. 起飞 + 触发探索(takeoff_and_explore.sh) ---
+===== 0. 起飞前高度 =====
+x: -5.932065198976784e-20
+y: -3.6746085234201766e-20
+z: 0.05649999999741756
+---
+===== 1. 向 lee 控制器发升高位姿(z=1.2) =====
+publishing and latching message for 3.0 seconds
+===== 2. 等 8 秒,看高度 =====
+x: 5.8046283039287404e-06
+y: -2.6850225969117466e-06
+z: 1.2007971481727904
+---
+===== 3. 触发自主探索(automatic_planning) =====
+success: True
+message: ''
+===== 4. 10 秒后:出轨迹了吗 + 位置动了吗 =====
+--- command/trajectory: 
+no new messages
+--- 当前位置: 
+x: 5.729046538247075
+y: 0.2645515949686993
+z: 1.3936629964722826
+---
+--- 5. trajectory 证据:hz ---
+no new messages
+--- 6. trajectory 证据:抓一条(头 45 行,看 frame_id/首个 waypoint) ---
+header: 
+  seq: 2
+  stamp: 
+    secs: 39
+    nsecs: 184000000
+  frame_id: "world"
+joint_names: []
+points: 
+  - 
+    transforms: 
+      - 
+        translation: 
+          x: 4.853149882611119
+          y: 6.5627444585484875
+          z: 1.513030622056722
+        rotation: 
+          x: 0.0
+          y: 0.0
+          z: 0.5570430781770062
+          w: 0.8304835995099998
+    velocities: 
+      - 
+        linear: 
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        angular: 
+          x: 0.0
+          y: 0.0
+          z: 0.0
+    accelerations: 
+      - 
+        linear: 
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        angular: 
+          x: 0.0
+          y: 0.0
+          z: 0.0
+    time_from_start: 
+      secs: 0
+      nsecs:  50000000
+  - 
+    transforms: 
+--- 7. odometry frame 证据(桥接 TF 对照表用) ---
+seq: 9628
+stamp: 
+  secs: 39
+  nsecs: 892000000
+frame_id: "world"
+---
+"rmf_obelix/base_link"
+---
+--- 8. 点云输入 frame 证据 ---
+seq: 399
+stamp: 
+  secs: 41
+  nsecs: 360000000
+frame_id: "rmf_obelix/rmf_obelix/velodyne"
+---
+=== STAGE1 END Mon Jul  6 21:34:35 CST 2026 ===
