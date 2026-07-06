@@ -11,8 +11,9 @@
 - **B2.5 自写薄桥**(官方 ros1_bridge 与 zenoh 均实验判死)transport 三段通;
 - **纯 planner 栈消费 /wm/\* 闭环已打通**(GBPlanner/voxblox 真消费过桥输入并出轨迹);
 - **Stage3 dry-run 已 PASS**(轨迹→速度意图跟踪量自洽,零发布);
-- **当前施工点 = 3D lidar 接入**(lidar3d 净增量补丁已应用,10800 点/帧点云已过桥实证);
-- 未完成:3D 对照实验、Stage4 低速 FCU、Stage5 gate 对齐、GUI 三演示。
+- **Stage3.5 3D 数据链已贯通**(world-model 真 odom+真 3D 点云 → voxblox 3D 体素地图 90,472 点 zspan=13.2m → trajectory 回流);
+- **当前施工点 = Stage4 低速 FCU intent**(限速/kill/hold/status);
+- 未完成:Stage4、Stage5 gate 对齐+同口径对比(含 3D 对照强化)、GUI 三演示。
 
 ## 二、阶段表
 
@@ -23,9 +24,9 @@
 | Stage2/2.5 薄桥 transport + TCP 稳定性 | ✅ |
 | Stage2.6 纯 planner 栈消费 /wm/\* 闭环(2D 冒烟输入) | ✅ |
 | Stage3 trajectory dry-run(零发布) | ✅ |
-| **Stage3.5 3D lidar 接入** | 🔵 **当前** |
-| Stage4 低速 FCU intent(限速/kill/hold/status) | ⬜ |
-| Stage5 exploration gate 对齐 + 3D 同口径对比 | ⬜ |
+| Stage3.5 3D 数据链贯通(voxblox 3D 体素 zspan 13.2m) | ✅ |
+| **Stage4 低速 FCU intent(限速/kill/hold/status)** | 🔵 **当前** |
+| Stage5 exploration gate 对齐 + 同口径对比(含 3D 对照强化) | ⬜ |
 | GUI 三演示(①原版GBPlanner ②frontier_lite ③接入后) | ⬜ |
 
 ## 三、不能宣称的结论
@@ -52,6 +53,6 @@
 
 - **预研 A**(world-model 复现与全绿):35 轮排障实录、humble 运行时记录、构建排错 → `docs/archive/`;Bug 修复链事实源 → [Bug 台账](docs/world-model端到端Bug台账_给作者PR.md)(B1~B16,PR 素材)
 - **预研 B**(GBPlanner 官方仿真复现):291.3m 自主探索+13 万体素建图实测 → [预研B_复现GBPlanner](docs/预研B_复现GBPlanner.md)
-- **科普/参考**:[论文↔代码对应](docs/GBPlanner原始论文与代码对应关系.md)、[体积增益与RViz详解](docs/体积增益与RViz界面详解.md)、[算法核心演示](docs/算法核心演示_体积增益选路.md)
+- **科普/参考**:[术语表·科研小白版](docs/术语表_科研小白版.md)、[论文↔代码对应](docs/GBPlanner原始论文与代码对应关系.md)、[体积增益与RViz详解](docs/体积增益与RViz界面详解.md)、[算法核心演示](docs/算法核心演示_体积增益选路.md)
 - **旧方案(已判死/已取代)**:官方 ros1_bridge、zenoh 双桥、gbplanner_core 重写路线 → `docs/archive/OBSOLETE_*`
 - 旧版全景蓝图 README(科普+名词表+历史叙事)→ [docs/archive/README_历史全景蓝图_2026-07-06.md](docs/archive/README_历史全景蓝图_2026-07-06.md)

@@ -24,15 +24,14 @@
 | Stage2.6 纯 planner 栈消费 /wm/\* 闭环 | ✅ | stage26_evidence:订阅关系+voxblox 2.303Hz+19 条 trajectory。**边界:输入是 2D 冒烟(z=0),非 3D** |
 | Stage3 trajectory dry-run(零发布) | ✅ | stage3_evidence:37 条 DRY 跟踪量数学自洽(首跑曾 FAIL=PCI 状态机挂起,fresh 时序后 PASS) |
 | **Stage3.5 3D 数据链贯通** | ✅ **三判据过(stage35_evidence)** | lidar3d 净增量(点云源 z 跨度 3.3m)→ 薄桥 cloud3d 直通(base64/2Hz,3D 优先自动停 2D 冒烟)→ **史诗同框**:world-model 真栈(SITL 真 odom 604 条+真 3D 点云 115 帧)喂 GBPlanner → **voxblox 3D 体素地图 90,472 点 zspan=13.2m(判据②)**→ trajectory 回流(32wp,z 分量存在,判据③初步——大 z 机动待 Stage4 真飞) |
-| **Stage4 低速 FCU intent(当前)** | ⬜ 下一步 | trajectory_to_intent 补限速/kill/hold/status → 低速短程闭环(B15 门天然防起飞冲突) |
-| Stage4 低速 FCU intent(限速/kill/hold) | ⬜ | — |
-| Stage5 gate 对齐 + 3D 同口径对比 | ⬜ | — |
+| **Stage4 低速 FCU intent(当前)** | 🔵 施工中 | trajectory_to_intent 补限速/kill/hold/timeout/status(gate 契约字段)→ 低速短程闭环(B15 门天然防起飞冲突);安全检查清单见 Review_013 §4 |
+| Stage5 gate 对齐 + 同口径对比(含 3D 对照强化) | ⬜ | 对照=改 3D 场景验证 voxblox/trajectory/指标随输入变化 |
 | GUI 三演示 | ⬜(用户指示:跑通后建) | — |
 
 ## 三、不能宣称的结论(汇报/文档纪律)
 
 1. **不能说"完整 GBPlanner 已集成完成"**——当前=transport+纯 planner 栈消费闭环,Stage4/5 未做;
-2. **不能说"已实现 3D 探索"**——Stage2.6 输入是 z=0 冒烟;3D 实证进行中;
+2. **不能说"已完成 3D 探索闭环/完整 gate/FCU 闭环"**——可以说"**3D 数据链已贯通**,voxblox 3D 体素证据成立(90,472 点 zspan 13.2m)";Stage3.5 证明数据链,**不证明完整任务成功**(stage35 的 world-model run 本身 status=blocked=exploration_probe 波动+尚无 Stage4/5,见证据定性);
 3. **不能把 Stage2.6 说成完整 world-model 闭环**——那是"纯 planner 栈+手工输入";stage2k 证据是反例(完整原仿真栈里 GBPlanner 吃原生 topic,/wm/\* 无订阅者);
 4. **RViz 绿线(best planning path)≠执行轨迹**——执行轨迹=粉线=`/rmf_obelix/command/trajectory`(发布者 PCI,已实证),桥只接它,绝不接 `/vis/*`;
 5. **PR/Issue 禁止提交**——用户指示:等真 GBPlanner 集成跑通后统一定稿(物料全部 DRAFT);
