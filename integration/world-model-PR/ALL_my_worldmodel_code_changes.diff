@@ -1,0 +1,577 @@
+diff --git a/docker/images/infra/fast-lio.Dockerfile b/docker/images/infra/fast-lio.Dockerfile
+index 1291250..13c31dd 100644
+--- a/docker/images/infra/fast-lio.Dockerfile
++++ b/docker/images/infra/fast-lio.Dockerfile
+@@ -34,7 +34,7 @@ RUN test -f /tmp/third_party/Livox-SDK2/CMakeLists.txt \
+ WORKDIR /tmp/third_party/Livox-SDK2
+ RUN mkdir -p build \
+     && cd build \
+-    && cmake .. \
++    && cmake .. -DCMAKE_CXX_FLAGS="-include cstdint" \
+     && make -j"$(nproc)" \
+     && make install \
+     && ldconfig
+diff --git a/docker/images/runtime/gazebo-sensor.Dockerfile b/docker/images/runtime/gazebo-sensor.Dockerfile
+index 9f0c26f..cad1e67 100644
+--- a/docker/images/runtime/gazebo-sensor.Dockerfile
++++ b/docker/images/runtime/gazebo-sensor.Dockerfile
+@@ -38,6 +38,10 @@ RUN apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https
+   rm -rf /var/lib/apt/lists/*
+ 
+ COPY --from=gazebo-sensor-python-builder /opt/gazebo-sensor-venv /opt/gazebo-sensor-venv
++# The venv interpreter is a symlink into uv-managed Python under /root/.local/share/uv;
++# copying only the venv leaves that symlink dangling and the runtime dies with
++# "No such file or directory". Copy the managed Python as well.
++COPY --from=gazebo-sensor-python-builder /root/.local/share/uv/python /root/.local/share/uv/python
+ 
+ WORKDIR /opt/navlab_sensor_ws
+ 
+diff --git a/docker/profiles/navlab-sitl-external-nav.parm b/docker/profiles/navlab-sitl-external-nav.parm
+index 73aeb89..25433eb 100644
+--- a/docker/profiles/navlab-sitl-external-nav.parm
++++ b/docker/profiles/navlab-sitl-external-nav.parm
+@@ -21,7 +21,10 @@ EK3_SRC1_POSXY 6
+ EK3_SRC1_POSZ 2
+ EK3_SRC1_VELXY 0
+ EK3_SRC1_VELZ 0
+-EK3_SRC1_YAW 1
++EK3_SRC1_YAW 6
++COMPASS_USE 0
++COMPASS_USE2 0
++COMPASS_USE3 0
+ 
+ SCR_ENABLE 1
+ AHRS_ORIG_ALT 584
+@@ -47,9 +50,9 @@ RNGFND1_RMETRIC 1
+ RNGFND1_SCALING 3
+ RNGFND1_STOP_PIN -1
+ RNGFND1_TYPE 20
+-RNGFND1_MIN_CM 10
+-RNGFND1_MAX_CM 1200
+-RNGFND1_GNDCLEAR 15
++RNGFND1_MIN 0.05
++RNGFND1_MAX 12
++RNGFND1_GNDCLR 0.15
+ RNGFND1_ORIENT 25
+ RNGFND1_POS_X 0
+ RNGFND1_POS_Y 0
+diff --git a/navlab/common/slam/backends.py b/navlab/common/slam/backends.py
+index 960f68f..03831c1 100644
+--- a/navlab/common/slam/backends.py
++++ b/navlab/common/slam/backends.py
+@@ -62,7 +62,15 @@ class CartographerBackend(SlamBackend):
+     BACKEND_NAME: ClassVar[str] = "cartographer"
+ 
+     def command(self, config: RuntimeConfig) -> list[str]:
+-        launch_args = [f"{key}:={launch_value(value)}" for key, value in config.launch_argument_map().items()]
++        launch_args = []
++        for key, value in config.launch_argument_map().items():
++            rendered = launch_value(value)
++            if rendered == "":
++                # ROS 2 launch rejects empty 'name:=' arguments (e.g. an unset
++                # cartographer_configuration_directory under Humble); omit them so
++                # the launch file's own default value is used instead.
++                continue
++            launch_args.append(f"{key}:={rendered}")
+         return [
+             "ros2",
+             "launch",
+diff --git a/navlab/common/toml_values.py b/navlab/common/toml_values.py
+index d3ac431..eaf31d6 100644
+--- a/navlab/common/toml_values.py
++++ b/navlab/common/toml_values.py
+@@ -6,7 +6,10 @@ from dataclasses import dataclass
+ from pathlib import Path
+ from typing import Any
+ 
+-import tomllib
++try:
++    import tomllib
++except ModuleNotFoundError:  # Python < 3.11 (e.g. ROS 2 Humble / Ubuntu 22.04 ships 3.10)
++    import tomli as tomllib
+ 
+ 
+ @dataclass(slots=True)
+diff --git a/navlab/sim/companion/runtime/config.py b/navlab/sim/companion/runtime/config.py
+index 667e2bc..ebf886e 100644
+--- a/navlab/sim/companion/runtime/config.py
++++ b/navlab/sim/companion/runtime/config.py
+@@ -5,7 +5,10 @@ from dataclasses import dataclass
+ from pathlib import Path
+ from typing import Any
+ 
+-import tomllib
++try:
++    import tomllib
++except ModuleNotFoundError:  # Python < 3.11 (e.g. ROS 2 Humble / Ubuntu 22.04 ships 3.10)
++    import tomli as tomllib
+ 
+ from navlab.common.toml_values import (
+     FloatWithSource,
+diff --git a/navlab/sim/gazebo_sensor/cli.py b/navlab/sim/gazebo_sensor/cli.py
+index 6eb76dd..770d496 100644
+--- a/navlab/sim/gazebo_sensor/cli.py
++++ b/navlab/sim/gazebo_sensor/cli.py
+@@ -89,7 +89,15 @@ def run(argv: list[str] | None = None) -> int:
+             emulator.open()
+             if config.auto_start:
+                 emulator.start_scanning()
+-            self.create_subscription(LaserScan, config.scan_ideal_topic, self._handle_scan_ideal, 10)
++            from rclpy.qos import qos_profile_sensor_data
++
++            # Use sensor-data (best-effort) QoS: compatible with both the reliable
++            # ros_gz_bridge publisher and the best-effort cloud_scan_projection
++            # publisher. With the default reliable QoS the projection publisher is
++            # rejected (incompatible RELIABILITY) and the emulator starves.
++            self.create_subscription(
++                LaserScan, config.scan_ideal_topic, self._handle_scan_ideal,
++                qos_profile_sensor_data)
+             self.create_timer(0.02, self._poll_commands)
+             self.create_timer(max(0.001, 1.0 / config.scan_frequency_hz), self._write_scan)
+             self.create_timer(0.5, self._publish_status)
+diff --git a/navlab/tests/slam/test_sitl_external_nav_params.py b/navlab/tests/slam/test_sitl_external_nav_params.py
+index 7b52437..f588ec4 100644
+--- a/navlab/tests/slam/test_sitl_external_nav_params.py
++++ b/navlab/tests/slam/test_sitl_external_nav_params.py
+@@ -61,9 +61,9 @@ def test_down_rangefinder_uses_real_benewake_serial_profile() -> None:
+     assert params["RNGFND1_SCALING"] == "3"
+     assert params["RNGFND1_OFFSET"] == "0"
+     assert params["RNGFND1_TYPE"] == "20"
+-    assert params["RNGFND1_MIN_CM"] == "10"
+-    assert params["RNGFND1_MAX_CM"] == "1200"
+-    assert params["RNGFND1_GNDCLEAR"] == "15"
++    assert params["RNGFND1_MIN"] == "0.05"
++    assert params["RNGFND1_MAX"] == "12"
++    assert params["RNGFND1_GNDCLR"] == "0.15"
+     assert params["RNGFND1_ORIENT"] == "25"
+     assert params["RNGFND1_POS_X"] == "0"
+     assert params["RNGFND1_POS_Y"] == "0"
+diff --git a/orchestration/sim/internal/config/defaults.go b/orchestration/sim/internal/config/defaults.go
+index cb2a81e..b6f3098 100644
+--- a/orchestration/sim/internal/config/defaults.go
++++ b/orchestration/sim/internal/config/defaults.go
+@@ -126,7 +126,9 @@ func defaultSlamBackend(cfg *SlamBackendConfig) {
+ 	cfg.LaunchFile = defaultString(cfg.LaunchFile, "navlab_slam_bringup.launch.py")
+ 	cfg.CartographerConfigurationBasename = defaultString(cfg.CartographerConfigurationBasename, "navlab_cartographer_2d_real.lua")
+ 	cfg.ScanTopic = defaultString(cfg.ScanTopic, "/scan")
+-	cfg.IMUTopic = defaultString(cfg.IMUTopic, "/imu")
++	// Sanitized IMU output must differ from the bridge's /imu source topic, or the
++	// bridge echoes its own output and cartographer aborts on non-sorted IMU data.
++	cfg.IMUTopic = defaultString(cfg.IMUTopic, "/navlab/slam/imu")
+ 	cfg.OdometryTopic = defaultString(cfg.OdometryTopic, "/cartographer/odometry_input")
+ 	cfg.CartographerTFTopic = defaultString(cfg.CartographerTFTopic, "/navlab/slam/tf")
+ 	cfg.OdomSourceMode = defaultString(cfg.OdomSourceMode, "slam_tf")
+diff --git a/orchestration/sim/internal/tasks/helpers/navlab_models.go b/orchestration/sim/internal/tasks/helpers/navlab_models.go
+index ccd31d7..7f5a744 100644
+--- a/orchestration/sim/internal/tasks/helpers/navlab_models.go
++++ b/orchestration/sim/internal/tasks/helpers/navlab_models.go
+@@ -52,15 +52,16 @@ func writeBridgeOverride(path string, imuRosTopic string) error {
+ }
+ 
+ func WriteParamOverlayFromSource(path string, source string, spec SensorRuntimeSpec) error {
+-	minCM := int(spec.RangefinderMinDistanceM*100 + 0.5)
+-	maxCM := int(spec.RangefinderMaxDistanceM*100 + 0.5)
+ 	orientation := 25
+ 	overlay := missingParamLines(source, map[string]string{
+ 		"RNGFND1_TYPE":     "20",
+ 		"RNGFND1_ORIENT":   fmt.Sprintf("%d", orientation),
+-		"RNGFND1_MIN_CM":   fmt.Sprintf("%d", minCM),
+-		"RNGFND1_MAX_CM":   fmt.Sprintf("%d", maxCM),
+-		"RNGFND1_GNDCLEAR": "15",
++		// ArduPilot 4.5 renamed RNGFND1_MIN_CM/MAX_CM/GNDCLEAR to
++		// RNGFND1_MIN/MAX/GNDCLR (centimetres -> metres); the old names are
++		// silently ignored by current firmware.
++		"RNGFND1_MIN":    fmt.Sprintf("%.2f", spec.RangefinderMinDistanceM),
++		"RNGFND1_MAX":    fmt.Sprintf("%.2f", spec.RangefinderMaxDistanceM),
++		"RNGFND1_GNDCLR": "0.15",
+ 	})
+ 	if overlay == "" {
+ 		return writeText(path, strings.TrimRight(source, "\n")+"\n")
+@@ -77,7 +78,7 @@ func missingParamLines(source string, defaults map[string]string) string {
+ 		}
+ 		seen[fields[0]] = true
+ 	}
+-	keys := []string{"RNGFND1_TYPE", "RNGFND1_ORIENT", "RNGFND1_MIN_CM", "RNGFND1_MAX_CM", "RNGFND1_GNDCLEAR"}
++	keys := []string{"RNGFND1_TYPE", "RNGFND1_ORIENT", "RNGFND1_MIN", "RNGFND1_MAX", "RNGFND1_GNDCLR"}
+ 	lines := []string{}
+ 	for _, key := range keys {
+ 		if seen[key] {
+diff --git a/orchestration/sim/internal/tasks/helpers/runtime_specs.go b/orchestration/sim/internal/tasks/helpers/runtime_specs.go
+index 5bb6374..12defc1 100644
+--- a/orchestration/sim/internal/tasks/helpers/runtime_specs.go
++++ b/orchestration/sim/internal/tasks/helpers/runtime_specs.go
+@@ -1108,6 +1108,9 @@ type ExplorationWorkflowSpec struct {
+ 	SetpointOutputTopic    string
+ 	SlamOdomTopic          string
+ 	ExplorationStatusTopic string
++	// MapTopic carries the SLAM occupancy grid consumed by map-aware strategies
++	// such as "gbplanner_gain". The default "frontier_lite" strategy ignores it.
++	MapTopic string
+ }
+ 
+ func DefaultExplorationWorkflowSpec() ExplorationWorkflowSpec {
+@@ -1124,6 +1127,7 @@ func DefaultExplorationWorkflowSpec() ExplorationWorkflowSpec {
+ 		SetpointOutputTopic:    "/navlab/fcu/setpoint/output",
+ 		SlamOdomTopic:          "/slam/odom",
+ 		ExplorationStatusTopic: "/navlab/exploration/status",
++		MapTopic:               "/map",
+ 	}
+ }
+ 
+@@ -1162,6 +1166,7 @@ func ExplorationWorkflowRuntimeScript(spec ExplorationWorkflowSpec, durationSec
+ 		"setpoint_output_topic":    spec.SetpointOutputTopic,
+ 		"slam_odom_topic":          spec.SlamOdomTopic,
+ 		"exploration_status_topic": spec.ExplorationStatusTopic,
++		"map_topic":                spec.MapTopic,
+ 	})
+ 	if err != nil {
+ 		return "", err
+diff --git a/orchestration/sim/internal/tasks/helpers/slam.go b/orchestration/sim/internal/tasks/helpers/slam.go
+index e84e55c..5198624 100644
+--- a/orchestration/sim/internal/tasks/helpers/slam.go
++++ b/orchestration/sim/internal/tasks/helpers/slam.go
+@@ -86,7 +86,12 @@ func DefaultSlamRuntimeSpec() SlamRuntimeSpec {
+ 		CartographerConfigurationBasename:  "navlab_cartographer_2d_real.lua",
+ 		ScanTopic:                          "/scan",
+ 		IMUSourceTopic:                     "/imu",
+-		IMUTopic:                           "/imu",
++		// The IMU sanitizer bridge reads IMUSourceTopic and republishes on IMUTopic;
++		// with both set to /imu it subscribed to its own output, creating an echo
++		// storm of duplicated, non-monotonic IMU samples that crashed cartographer
++		// (Check failed: Non-sorted data '(0, imu)'). Publish the sanitized stream
++		// on its own topic (already recorded by the exploration rosbag).
++		IMUTopic:                           "/navlab/slam/imu",
+ 		OdometryTopic:                      CartographerOdometryInputTopic,
+ 		CartographerTFTopic:                CartographerTFTopic,
+ 		PublishGlobalTF:                    true,
+diff --git a/orchestration/sim/internal/tasks/helpers/slam_test.go b/orchestration/sim/internal/tasks/helpers/slam_test.go
+index 4873701..5f7a5c9 100644
+--- a/orchestration/sim/internal/tasks/helpers/slam_test.go
++++ b/orchestration/sim/internal/tasks/helpers/slam_test.go
+@@ -21,7 +21,7 @@ func TestWriteSlamRuntimeConfig(t *testing.T) {
+ 		`backend = 'cartographer'`,
+ 		`scan_topic = '/scan'`,
+ 		`imu_source_topic = '/imu'`,
+-		`imu_topic = '/imu'`,
++		`imu_topic = '/navlab/slam/imu'`,
+ 		`laser_z = '0.075077'`,
+ 		`laser_frame_id = 'base_scan'`,
+ 		`launch_fake_odom = false`,
+@@ -39,6 +39,9 @@ func TestWriteSlamRuntimeConfig(t *testing.T) {
+ 			t.Fatalf("runtime config missing %q:\n%s", want, text)
+ 		}
+ 	}
++	if strings.Contains(text, `imu_topic = '/imu'`) {
++		t.Fatalf("slam backend imu_topic must not equal the bridge source /imu (self-echo loop):\n%s", text)
++	}
+ 	if strings.Contains(text, `cartographer_odometry_topic = '/odometry'`) {
+ 		t.Fatalf("runtime config must not point Cartographer odometry input at diagnostic truth /odometry:\n%s", text)
+ 	}
+diff --git a/orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl b/orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl
+index c30c132..eb63b2b 100644
+--- a/orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl
++++ b/orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl
+@@ -13,7 +13,10 @@ EK3_SRC1_POSXY 6
+ EK3_SRC1_POSZ 2
+ EK3_SRC1_VELXY 0
+ EK3_SRC1_VELZ 0
+-EK3_SRC1_YAW 1
++EK3_SRC1_YAW 6
++COMPASS_USE 0
++COMPASS_USE2 0
++COMPASS_USE3 0
+ SCR_ENABLE 1
+ AHRS_ORIG_ALT 584
+ AHRS_ORIG_LAT -35.363262
+@@ -31,9 +34,9 @@ RNGFND1_RMETRIC 1
+ RNGFND1_SCALING 3
+ RNGFND1_STOP_PIN -1
+ RNGFND1_TYPE 20
+-RNGFND1_MIN_CM 10
+-RNGFND1_MAX_CM 1200
+-RNGFND1_GNDCLEAR 15
++RNGFND1_MIN 0.05
++RNGFND1_MAX 12
++RNGFND1_GNDCLR 0.15
+ RNGFND1_ORIENT 25
+ RNGFND1_POS_X 0
+ RNGFND1_POS_Y 0
+diff --git a/orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl b/orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl
+index a70c695..dcd9d10 100644
+--- a/orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl
++++ b/orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl
+@@ -10,7 +10,7 @@ def main() -> int:
+     import rclpy
+     from rclpy.parameter import Parameter
+     from rclpy.qos import qos_profile_sensor_data
+-    from nav_msgs.msg import Odometry
++    from nav_msgs.msg import Odometry, OccupancyGrid
+     from std_msgs.msg import String
+ 
+     rclpy.init()
+@@ -25,6 +25,9 @@ def main() -> int:
+         "controller_ready": False,
+         "odom_samples": 0,
+         "last_xyz": None,
++        "heading": 0.0,
++        "grid": None,
++        "last_theta": None,
+         "path_length_m": 0.0,
+         "accepted_goals": 0,
+         "last_goal_index": -1,
+@@ -63,9 +66,17 @@ def main() -> int:
+             if step <= 1.0:
+                 state["path_length_m"] += step
+         state["last_xyz"] = xyz
++        q = msg.pose.pose.orientation
++        siny = 2.0 * (q.w * q.z + q.x * q.y)
++        cosy = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
++        state["heading"] = math.atan2(siny, cosy)
+ 
+     node.create_subscription(String, SPEC["controller_status_topic"], on_controller_status, 10)
+     node.create_subscription(Odometry, SPEC["slam_odom_topic"], on_slam_odom, qos_profile_sensor_data)
++    if SPEC.get("strategy") == "gbplanner_gain":
++        def on_map(msg: OccupancyGrid) -> None:
++            state["grid"] = OccGrid(msg)
++        node.create_subscription(OccupancyGrid, SPEC.get("map_topic", "/map") or "/map", on_map, 1)
+     intent_pub = node.create_publisher(String, SPEC["setpoint_intent_topic"], 10)
+     status_pub = node.create_publisher(String, SPEC["exploration_status_topic"], 10)
+     goal_pub = node.create_publisher(String, "/navlab/exploration/goal", 10)
+@@ -138,13 +149,107 @@ def string_msg(payload: dict):
+     msg.data = json.dumps(payload, sort_keys=True)
+     return msg
+ 
++# --- gbplanner_gain: map-aware volumetric-gain direction selection -----------
++# Implements the core idea of GBPlanner (Dang et al., arXiv:2201.07067): instead of
++# replaying a fixed motion pattern, read the SLAM occupancy grid, ray-cast outward in
++# many directions, count reachable UNKNOWN cells (a 2D volumetric-gain proxy), penalise
++# turning, and steer toward the highest-gain direction. Active only when
++# SPEC["strategy"] == "gbplanner_gain"; the default frontier_lite path is untouched.
++GRID_UNKNOWN = -1
++GRID_OCC_MIN = 65
++
++class OccGrid:
++    def __init__(self, msg):
++        self.w = msg.info.width
++        self.h = msg.info.height
++        self.res = msg.info.resolution or 0.05
++        self.ox = msg.info.origin.position.x
++        self.oy = msg.info.origin.position.y
++        self.data = msg.data
++
++    def to_cell(self, x, y):
++        return int((x - self.ox) / self.res), int((y - self.oy) / self.res)
++
++    def val(self, i, j):
++        if 0 <= i < self.w and 0 <= j < self.h:
++            return self.data[j * self.w + i]
++        return GRID_UNKNOWN
++
++def ray_unknown_count(grid: OccGrid, x0: float, y0: float, theta: float, max_range: float) -> int:
++    step = grid.res * 0.5
++    dx, dy = math.cos(theta), math.sin(theta)
++    unknown = 0
++    last = None
++    t = step
++    while t <= max_range:
++        i, j = grid.to_cell(x0 + dx * t, y0 + dy * t)
++        if not (0 <= i < grid.w and 0 <= j < grid.h):
++            break
++        if (i, j) != last:
++            last = (i, j)
++            v = grid.val(i, j)
++            if v >= GRID_OCC_MIN:
++                break
++            if v == GRID_UNKNOWN:
++                unknown += 1
++        t += step
++    return unknown
++
++def best_direction(grid: OccGrid, x0: float, y0: float, heading: float,
++                   num_dirs: int = 24, max_range: float = 4.0, k_turn: float = 0.8):
++    best = None
++    for k in range(num_dirs):
++        theta = -math.pi + 2.0 * math.pi * k / num_dirs
++        gain = 0.0
++        for off in (-0.13, 0.0, 0.13):
++            gain += ray_unknown_count(grid, x0, y0, theta + off, max_range)
++        gain *= grid.res * grid.res
++        dh = abs(theta - heading)
++        if dh > math.pi:
++            dh = 2.0 * math.pi - dh
++        score = gain - k_turn * dh
++        if best is None or score > best[2]:
++            best = (theta, gain, score)
++    return best
++
++def gbplanner_gain_intent(goal_index: int, speed: float, state: dict) -> dict:
++    grid = state["grid"]
++    pose = state.get("last_xyz") or (0.0, 0.0, 0.0)
++    heading = float(state.get("heading", 0.0) or 0.0)
++    theta, gain, _ = best_direction(grid, pose[0], pose[1], heading)
++    dyaw = theta - heading
++    while dyaw > math.pi:
++        dyaw -= 2.0 * math.pi
++    while dyaw < -math.pi:
++        dyaw += 2.0 * math.pi
++    yaw_rate = max(-0.4, min(0.4, dyaw))
++    forward = speed if abs(dyaw) < 0.5 else speed * 0.3
++    state["last_theta"] = theta
++    return {
++        "ok": True,
++        "source": "exploration_workflow",
++        "strategy": "gbplanner_gain",
++        "goal_id": f"gbplanner_gain_{goal_index + 1}",
++        "goal_index": goal_index,
++        "linear_x_mps": forward,
++        "linear_y_mps": 0.0,
++        "yaw_rate_radps": yaw_rate,
++        "chosen_heading_deg": round(math.degrees(theta), 1),
++        "chosen_gain_m2": round(gain, 4),
++        "uses_gazebo_truth_as_input": False,
++        "odom_samples": state.get("odom_samples", 0),
++        "path_length_m": round(state.get("path_length_m", 0.0), 4),
++    }
++
+ def exploration_intent(goal_index: int, speed: float, state: dict) -> dict:
++    if SPEC.get("strategy") == "gbplanner_gain" and state.get("grid") is not None:
++        return gbplanner_gain_intent(goal_index, speed, state)
+     pattern = [
+         {"linear_x_mps": speed, "linear_y_mps": 0.0, "yaw_rate_radps": 0.0},
+         {"linear_x_mps": speed * 0.6, "linear_y_mps": 0.0, "yaw_rate_radps": 0.20},
+         {"linear_x_mps": speed, "linear_y_mps": 0.0, "yaw_rate_radps": -0.12},
+     ]
+-    command = dict(pattern[goal_index %% len(pattern)])
++    command = dict(pattern[goal_index % len(pattern)])
+     command.update({
+         "ok": True,
+         "source": "exploration_workflow",
+@@ -221,7 +326,7 @@ def publish_review_topics(goal_pub, coverage_pub, frontiers_pub, path_pub, marke
+     frontiers_payload = {
+         "strategy": SPEC.get("strategy", "frontier_lite"),
+         "candidate_count": max(0, int(status.get("min_accepted_goals", 3)) - int(status.get("accepted_goals", 0))),
+-        "source": "bounded_lite_pattern",
++        "source": "occupancy_grid_volumetric_gain" if SPEC.get("strategy") == "gbplanner_gain" else "bounded_lite_pattern",
+     }
+     path_payload = {
+         "path_length_m": status.get("path_length_m", 0.0),
+diff --git a/orchestration/sim/internal/tasks/helpers/templates/python/fcu_controller_runtime.py.tmpl b/orchestration/sim/internal/tasks/helpers/templates/python/fcu_controller_runtime.py.tmpl
+index ce76043..2e5f167 100644
+--- a/orchestration/sim/internal/tasks/helpers/templates/python/fcu_controller_runtime.py.tmpl
++++ b/orchestration/sim/internal/tasks/helpers/templates/python/fcu_controller_runtime.py.tmpl
+@@ -189,7 +189,11 @@ def main() -> int:
+             state["mavlink_target_system"] = int(master.target_system or 0)
+             state["mavlink_target_component"] = int(master.target_component or 0)
+ 
+-            mode_id = master.mode_mapping().get("GUIDED") or guided_mode
++            # NOTE(navlab-humble-fix 2026-07-04): 优先信显式配置的 GUIDED 号(ArduCopter=4)。
++            #   pymavlink 的 mode_mapping() 依赖车型识别,SITL 早期握手时可能返回 ArduPlane 表
++            #   (Plane GUIDED=15=Copter AUTOTUNE)→ set_mode 被拒 "Mode change to Autotune failed"。
++            #   guided_mode 来自 config(=4),确定正确;仅在其无效(0/None)时才回退 mode_mapping。
++            mode_id = guided_mode or (master.mode_mapping() or {}).get("GUIDED")
+             master.set_mode(int(mode_id))
+             mode_ok = wait_mavlink_guided(master, int(mode_id))
+             status["mode_switch"] = {"ok": mode_ok, "mode_id": int(mode_id)}
+diff --git a/orchestration/sim/internal/tasks/runtime_specs.go b/orchestration/sim/internal/tasks/runtime_specs.go
+index 097a5a3..aedc3cc 100644
+--- a/orchestration/sim/internal/tasks/runtime_specs.go
++++ b/orchestration/sim/internal/tasks/runtime_specs.go
+@@ -345,6 +345,11 @@ func resolveEnv(project config.ProjectConfig, values map[string]string) map[stri
+ 
+ func baselineEnv(project config.ProjectConfig) map[string]string {
+ 	return map[string]string{
++		// GZ_PARTITION must be explicit: services run as a numeric --user with no
++		// passwd entry, so gz-transport's default partition (hostname:username)
++		// resolves inconsistently across processes and in-container discovery
++		// breaks (spawn/create never finds the world service).
++		"GZ_PARTITION":       "navlab",
+ 		"CYCLONEDDS_URI":     cycloneDDSParticipantEnv(),
+ 		"DDS_ENABLE":         "1",
+ 		"DDS_DOMAIN_ID":      runtimeRosDomain(project),
+@@ -602,6 +607,12 @@ func officialBaselineServiceSpec(
+ 		Command:       []string{"bash", "-lc", command},
+ 		Env: map[string]string{
+ 			"SESSION_ID":         project.SessionID,
++			"GZ_PARTITION":       "navlab", // see baselineEnv: numeric --user breaks default partition
++
++			// CYCLONEDDS_URI raises MaxAutoParticipantIndex; without it the baseline's
++			// many nodes exhaust CycloneDDS's default per-host participant indexes on the
++			// shared host network and its topics stay invisible to the other services.
++			"CYCLONEDDS_URI":     cycloneDDSParticipantEnv(),
+ 			"ROS_DOMAIN_ID":      runtimeRosDomain(project),
+ 			"DDS_DOMAIN_ID":      runtimeRosDomain(project),
+ 			"ROS_DISTRO":         runtimeRosDistro(project),
+
+
+===== UNCOMMITTED: hole#17 external_nav rate fix (rebuild verifying) =====
+diff --git a/navlab/common/slam/ros/bridges/navlab_external_nav_bridge/config/navlab_external_nav_bridge.params.yaml b/navlab/common/slam/ros/bridges/navlab_external_nav_bridge/config/navlab_external_nav_bridge.params.yaml
+index 11ad485..64c6bab 100644
+--- a/navlab/common/slam/ros/bridges/navlab_external_nav_bridge/config/navlab_external_nav_bridge.params.yaml
++++ b/navlab/common/slam/ros/bridges/navlab_external_nav_bridge/config/navlab_external_nav_bridge.params.yaml
+@@ -28,6 +28,7 @@ navlab_external_nav_bridge_node:
+     min_scan_range_stddev_m_for_quality: 0.20
+     min_scan_observed_quadrants_for_quality: 3
+     scan_max_range_hit_margin_m: 0.05
++    output_odom_rate_hz: 30.0
+     output_odom_topic: /external_nav/odom
+     status_topic: /external_nav/status
+     output_frame_id: external_nav
+diff --git a/navlab/common/slam/ros/bridges/navlab_external_nav_bridge/src/navlab_external_nav_bridge_node.cpp b/navlab/common/slam/ros/bridges/navlab_external_nav_bridge/src/navlab_external_nav_bridge_node.cpp
+index 2906862..e8231e8 100644
+--- a/navlab/common/slam/ros/bridges/navlab_external_nav_bridge/src/navlab_external_nav_bridge_node.cpp
++++ b/navlab/common/slam/ros/bridges/navlab_external_nav_bridge/src/navlab_external_nav_bridge_node.cpp
+@@ -85,6 +85,8 @@ class NavlabExternalNavBridgeNode : public rclcpp::Node {
+     scan_topic_ = declare_parameter<std::string>("scan_topic", "/scan");
+     coordinate_mode_ =
+         declare_parameter<std::string>("coordinate_mode", "pass_through_enu_flu");
++    output_odom_rate_hz_ =
++        declare_parameter("output_odom_rate_hz", 30.0);
+ 
+     status_pub_ = create_publisher<std_msgs::msg::String>(
+         status_topic_, 10);
+@@ -110,6 +112,11 @@ class NavlabExternalNavBridgeNode : public rclcpp::Node {
+ 
+     timer_ = create_wall_timer(
+         500ms, std::bind(&NavlabExternalNavBridgeNode::publish_status, this));
++    const double odom_hz = std::max(1.0, output_odom_rate_hz_);
++    odom_timer_ = create_wall_timer(
++        std::chrono::duration_cast<std::chrono::nanoseconds>(
++            std::chrono::duration<double>(1.0 / odom_hz)),
++        std::bind(&NavlabExternalNavBridgeNode::publish_odom_tick, this));
+ 
+     const std::string imu_requirement =
+         require_imu_for_output_ ? " and " + imu_topic_ : "";
+@@ -242,9 +249,7 @@ class NavlabExternalNavBridgeNode : public rclcpp::Node {
+     const bool ready = odom_ok && quality_ok && (!require_imu_for_output_ || imu_ok) &&
+                        (!require_height_for_output_ || height_ok);
+ 
+-    if (ready) {
+-      publish_external_nav_odom();
+-    }
++    last_ready_ = ready;
+ 
+     std_msgs::msg::String status;
+     status.data =
+@@ -255,6 +260,12 @@ class NavlabExternalNavBridgeNode : public rclcpp::Node {
+     status_pub_->publish(status);
+   }
+ 
++  void publish_odom_tick() {
++    if (last_ready_) {
++      publish_external_nav_odom();
++    }
++  }
++
+   void publish_external_nav_odom() {
+     if (!last_odom_ || !last_height_) {
+       return;
+@@ -778,6 +789,9 @@ class NavlabExternalNavBridgeNode : public rclcpp::Node {
+   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+   rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr ap_tf_pub_;
+   rclcpp::TimerBase::SharedPtr timer_;
++  rclcpp::TimerBase::SharedPtr odom_timer_;
++  double output_odom_rate_hz_{30.0};
++  bool last_ready_{false};
+ };
+ 
+ int main(int argc, char **argv) {
