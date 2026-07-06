@@ -36,3 +36,24 @@ stamp:
 frame_id: "world"
 --- 4. [验收c] 触发规划 -> trajectory(2D 冒烟输入,拒了如实记录) ---
 75444d8b7038009bc65e6c56bd7ed3b73467fe58545edd1b9bd72da541a6d0a6
+success: True
+message: ''
+FIRST_MSG_AT=10.61s frame=map
+--- 5. 两端桥统计与 planner 日志尾部 ---
+[INFO] [1783350419.222562]: thinbridge: traj -> tcp (5 wp, total 17)
+[INFO] [1783350422.910093]: thinbridge: traj -> tcp (9 wp, total 18)
+[INFO] [1783350423.180069]: thinbridge stats: {'traj_out': 18, 'odom_in': 614, 'cloud_in': 296} clients=1
+[INFO] [1783350423.952549]: thinbridge: traj -> tcp (3 wp, total 19)
+[INFO] [1783350417.612554352] [thinbridge_ros2]: stats: {'odom_out': 579, 'cloud_out': 280, 'traj_in': 16}
+[INFO] [1783350419.225725618] [thinbridge_ros2]: traj -> /gbp/trajectory (5 wp)
+[INFO] [1783350422.913351343] [thinbridge_ros2]: traj -> /gbp/trajectory (9 wp)
+[INFO] [1783350423.955192917] [thinbridge_ros2]: traj -> /gbp/trajectory (3 wp)
+ * /gbplanner_node/voxel_carving_enabled: True
+ * /gbplanner_node/weight_ray_by_range: False
+ * /gbplanner_node/world_frame: world
+ * /pci_general_ros_node/planner_trigger_lead_time: 0.4
+    gbplanner_node (gbplanner/gbplanner_node)
+]2;/root/wm_planner.launch http://localhost:11311
+[1mprocess[gbplanner_node-4]: started with pid [90][0m
+/gbplanner_node/SensorParams/OS064 0, 0, 0
+=== STAGE26 END Mon Jul  6 23:07:04 CST 2026 ===
