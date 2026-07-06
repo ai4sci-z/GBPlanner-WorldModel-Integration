@@ -11,12 +11,14 @@ import socket
 import struct
 import threading
 
+import base64
+
 import rospy
 import sensor_msgs.point_cloud2 as pc2
 import tf2_ros
 from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import PointCloud2
+from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
 from trajectory_msgs.msg import MultiDOFJointTrajectory
 
@@ -123,6 +125,23 @@ def reader(conn, pub_odom, pub_cloud):
                 cloud = pc2.create_cloud_xyz32(header, obj.get("points", []))
                 pub_cloud.publish(cloud)
                 stats["cloud_in"] += 1
+            elif kind == "cloud3d":
+                # 真 3D PointCloud2 直通重建(字段/布局原样,data=base64,时间戳重打)
+                m2 = PointCloud2()
+                m2.header.stamp = rospy.Time.now()
+                m2.header.frame_id = obj.get("frame", "rmf_obelix/rmf_obelix/velodyne")
+                m2.height = int(obj.get("height", 1))
+                m2.width = int(obj.get("width", 0))
+                m2.fields = [PointField(name=f["name"], offset=int(f["offset"]),
+                                        datatype=int(f["datatype"]), count=int(f["count"]))
+                             for f in obj.get("fields", [])]
+                m2.is_bigendian = False
+                m2.point_step = int(obj.get("point_step", 0))
+                m2.row_step = int(obj.get("row_step", 0))
+                m2.is_dense = bool(obj.get("is_dense", False))
+                m2.data = base64.b64decode(obj.get("data", ""))
+                pub_cloud.publish(m2)
+                stats["cloud3d_in"] = stats.get("cloud3d_in", 0) + 1
     with lock:
         if conn in clients:
             clients.remove(conn)

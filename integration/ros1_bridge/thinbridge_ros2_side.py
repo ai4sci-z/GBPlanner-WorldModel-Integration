@@ -11,11 +11,13 @@ import threading
 import time
 import math
 
+import base64
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import LaserScan, PointCloud2
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
 from geometry_msgs.msg import Transform
 from builtin_interfaces.msg import Duration
@@ -26,12 +28,15 @@ class ThinBridge(Node):
         super().__init__("thinbridge_ros2")
         self.sock = None
         self.sock_lock = threading.Lock()
-        self.stats = {"odom_out": 0, "cloud_out": 0, "traj_in": 0}
+        self.stats = {"odom_out": 0, "cloud_out": 0, "cloud3d_out": 0, "traj_in": 0}
         self.last_odom = 0.0
         self.last_cloud = 0.0
+        self.last_cloud3d = 0.0
+        self.have3d = False  # 收到真 3D 后停发 2D scan 冒烟(3D 优先)
         self.pub_traj = self.create_publisher(MultiDOFJointTrajectory, "/gbp/trajectory", 10)
         self.create_subscription(Odometry, "/slam/odom", self.on_odom, qos_profile_sensor_data)
         self.create_subscription(LaserScan, "/scan", self.on_scan, qos_profile_sensor_data)
+        self.create_subscription(PointCloud2, "/wm/cloud3d", self.on_cloud3d, qos_profile_sensor_data)
         threading.Thread(target=self.conn_loop, daemon=True).start()
         self.create_timer(10.0, lambda: self.get_logger().info("stats: %s" % self.stats))
         # 3s ping 心跳:保活 + 快速暴露断链方向(哪端 send/recv 先报错)
@@ -114,7 +119,30 @@ class ThinBridge(Node):
         })
         self.stats["odom_out"] += 1
 
+    def on_cloud3d(self, m):
+        # 真 3D 点云直通(阶段3.5):元数据 JSON + data base64,2Hz 限频;
+        # frame 在桥层映射到 GBPlanner TF 树里的 velodyne(lidar3d 装在 base_link+0.10,
+        # tf_5 的 velodyne 在 +0.05——5cm 安装差,记录在案,对建图精度影响可忽略)。
+        now = time.monotonic()
+        if now - self.last_cloud3d < 0.5:  # 2Hz cap(~350KB/帧 base64 后 ~470KB,本机 TCP 无压力)
+            return
+        self.last_cloud3d = now
+        self.have3d = True
+        self.send({
+            "type": "cloud3d",
+            "frame": "rmf_obelix/rmf_obelix/velodyne",
+            "width": m.width, "height": m.height,
+            "point_step": m.point_step, "row_step": m.row_step,
+            "is_dense": bool(m.is_dense),
+            "fields": [{"name": f.name, "offset": f.offset, "datatype": f.datatype, "count": f.count}
+                       for f in m.fields],
+            "data": base64.b64encode(bytes(m.data)).decode(),
+        })
+        self.stats["cloud3d_out"] += 1
+
     def on_scan(self, m):
+        if self.have3d:  # 3D 优先:真点云在流时停发 2D 冒烟,避免混流
+            return
         now = time.monotonic()
         if now - self.last_cloud < 0.2:  # 5Hz cap
             return

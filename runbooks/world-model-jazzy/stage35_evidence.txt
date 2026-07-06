@@ -1,0 +1,30 @@
+=== STAGE35 3D START Mon Jul  6 23:59:01 CST 2026 ===
+--- 0. fresh ROS1 纯 planner 栈 + 薄桥两端(cloud3d 直通版)---
+/gbplanner_node
+/pci_general_ros_node
+/rosout
+/tf_5
+1560a9ff95b950310abaeeedc03ddec2893518c2af258530045c30d809be6c8a
+bcd4e0d6da94bb4e46d684fb74dde91522ba4d68a5c4abdd49a6bb821bfd2781
+--- 1. 起 world-model 真栈(真 odom + 真 3D 点云源)---
+--- 2. 中场检查:cloud3d 过桥了吗 ---
+cloud3d_in': 49
+[INFO] [1783353633.172154537] [thinbridge_ros2]: stats: {'odom_out': 283, 'cloud_out': 0, 'cloud3d_out': 52, 'traj_in': 0}
+--- 3. 触发规划 ---
+success: True
+message: ''
+--- 4. [判据②] voxblox tsdf z 分布 ---
+/gbplanner_node/tsdf_pointcloud : points=90472 zmin=-9.900 zmax=3.300 zspan=13.200 -> 3D
+--- 5. [判据③] trajectory z 变化 ---
+TRAJ#1 wp=32 zmin=-0.090 zmax=0.000 zspan=0.090 frame=map
+--- 6. 两端统计 ---
+[INFO] [1783353649.838047]: thinbridge stats: {'traj_out': 1, 'odom_in': 438, 'cloud_in': 0, 'cloud3d_in': 80} clients=1
+[INFO] [1783353659.837908]: thinbridge stats: {'traj_out': 1, 'odom_in': 530, 'cloud_in': 0, 'cloud3d_in': 98} clients=1
+[INFO] [1783353671.167247]: thinbridge stats: {'traj_out': 1, 'odom_in': 604, 'cloud_in': 0, 'cloud3d_in': 115} clients=1
+[INFO] [1783353653.173086079] [thinbridge_ros2]: stats: {'odom_out': 469, 'cloud_out': 0, 'cloud3d_out': 86, 'traj_in': 1}
+[INFO] [1783353663.172198459] [thinbridge_ros2]: stats: {'odom_out': 549, 'cloud_out': 0, 'cloud3d_out': 101, 'traj_in': 1}
+--- 7. 等 world-model run 结束 ---
+status=blocked
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260706T155948.127279116Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+exit status 1
+=== STAGE35 3D END Tue Jul  7 00:01:11 CST 2026 ===

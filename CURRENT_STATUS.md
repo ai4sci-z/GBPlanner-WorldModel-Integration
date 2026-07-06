@@ -1,15 +1,15 @@
 > **[CURRENT] 本文件是全项目唯一当前事实源。其他文档与本文冲突时,以本文为准。**
 > 维护规则:每完成/失败一个阶段就更新本文;README 只引用本文,不另行维护状态。
 
-# CURRENT_STATUS(最后更新:2026-07-06 深夜)
+# CURRENT_STATUS(最后更新:2026-07-07 凌晨)
 
 ## 一、当前一句话状态
 
 > world-model jazzy exploration 已端到端全绿;frontier_lite 基线已定档(达标率 40%);
-> B2.5 自写薄桥 transport 三段通;纯 planner 栈消费 /wm/\* 闭环已打通(2D 冒烟输入);
-> Stage3 trajectory dry-run 已 PASS(零发布,跟踪量自洽);
-> **当前施工点 = 3D lidar 接入**(lidar3d 净增量补丁已应用,z 分布实证进行中);
-> 3D 对照、低速 FCU(Stage4)、exploration gate 对齐(Stage5)尚未完成。
+> B2.5 自写薄桥 transport/消费闭环/dry-run 全 PASS;
+> **3D 数据链已贯通(stage35 史诗同框)**:world-model 真 odom+真 3D 点云 → GBPlanner/voxblox
+> 3D 体素地图(90,472 点,zspan 13.2m)→ trajectory 回流;
+> **当前施工点 = Stage4 低速 FCU intent**(限速/kill/hold/status);Stage5 gate 对齐与同口径对比未完成。
 
 ## 二、阶段表(全部有证据文件)
 
@@ -23,7 +23,8 @@
 | Stage2.5 TCP 稳定性 | ✅ | stage2k:心跳后零断连;acceptor 线程死亡 bug 修复 |
 | Stage2.6 纯 planner 栈消费 /wm/\* 闭环 | ✅ | stage26_evidence:订阅关系+voxblox 2.303Hz+19 条 trajectory。**边界:输入是 2D 冒烟(z=0),非 3D** |
 | Stage3 trajectory dry-run(零发布) | ✅ | stage3_evidence:37 条 DRY 跟踪量数学自洽(首跑曾 FAIL=PCI 状态机挂起,fresh 时序后 PASS) |
-| **Stage3.5 3D lidar 接入(当前)** | 🔵 **点云源已实证 3D** | lidar3d 净增量补丁(overlay+bridge,SLAM 链零触碰);实证:`/wm/cloud3d` **10800 点(360×30),z∈[-0.334,+2.969] 跨度 3.3m,zstd=0.593 → 3D**(stage3d_evidence)。剩:薄桥 PointCloud2 直通 → GBPlanner 联跑(voxblox 3D 体素+trajectory z 变化+随输入变化对照) |
+| **Stage3.5 3D 数据链贯通** | ✅ **三判据过(stage35_evidence)** | lidar3d 净增量(点云源 z 跨度 3.3m)→ 薄桥 cloud3d 直通(base64/2Hz,3D 优先自动停 2D 冒烟)→ **史诗同框**:world-model 真栈(SITL 真 odom 604 条+真 3D 点云 115 帧)喂 GBPlanner → **voxblox 3D 体素地图 90,472 点 zspan=13.2m(判据②)**→ trajectory 回流(32wp,z 分量存在,判据③初步——大 z 机动待 Stage4 真飞) |
+| **Stage4 低速 FCU intent(当前)** | ⬜ 下一步 | trajectory_to_intent 补限速/kill/hold/status → 低速短程闭环(B15 门天然防起飞冲突) |
 | Stage4 低速 FCU intent(限速/kill/hold) | ⬜ | — |
 | Stage5 gate 对齐 + 3D 同口径对比 | ⬜ | — |
 | GUI 三演示 | ⬜(用户指示:跑通后建) | — |
