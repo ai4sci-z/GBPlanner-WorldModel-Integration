@@ -1,0 +1,7 @@
+=== STAGE1 START Mon Jul  6 21:32:45 CST 2026 ===
+--- 1. run_light.sh 起仿真 ---
+5ccba65080aa1a31f3268a22ec620d86491d6446a11e275373db2116a2886a44
+已启动。约 20 秒后 RViz 弹到桌面;验证链路:
+  docker exec gbplanner_ref bash -c 'source /opt/ros/noetic/setup.bash; export ROS_MASTER_URI=http://localhost:11311 ROS_HOSTNAME=localhost; rostopic hz /gbplanner_node/tsdf_pointcloud'
+  (看到 average rate ≈4~5 = voxblox 3D 建图在跑)
+触发探索:RViz 左下 GbPlanner Control → Initialization → Start Planner

@@ -35,7 +35,7 @@
 | 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | 🔵 进行中 | 代码层已铁证(脚本循环、不订阅地图);**GBPlanner 侧实测数据已到手**(291.3m/132,091点/自动返航,曲线+CSV 在 images/);frontier_lite 侧量化待 #3 运行时修好 |
 | 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ⏸ 阻塞(依赖#3) | 覆盖率/用时/路径/卡死 → 表+图,突出优势 |
 | 7 | 文档·写预研A/预研B 独立报告(桌面+三处) | 🔵 进行中 | 两份初稿已建,随复现进展补截图/数据 |
-| 8 | 提交 PR + Issue 给 world-model 作者 | ⬜ **恢复(你 2026-07-05 更正:做完必须提交)** | ~~07-02 取消~~ → **必须提交**(自己账号 ai4sci-z fork);**硬约束=作者 jazzy 环境能跑**(见 docs/PR兼容性与jazzy评估.md)。**前置(Codex 更正)= ① frame_contract_probe 修完 + exploration 全绿 ② clean diff 已去 hack(✅77d951a已提交/diff已重导)③ 重写 PR_BODY/ISSUE_BODY(现仍停在 tomllib/%%)**。物料 `integration/world-model-PR/` |
+| 8 | 提交 PR + Issue 给 world-model 作者 | ⏸ **延后(你 2026-07-06 晚指示)** | 源码改动**先保存**(clean 分支 4 commit+净diff 286行零hack✅,全绿✅);**等最终集成任务(真 GBPlanner 桥接)跑通后再准备完整 PR 物料一并定稿**。硬约束不变=作者 jazzy 环境能跑 |
 | 9 | **阶段4·ros1_bridge 接真版 GBPlanner** | 🔵 进行中 | ✅ I/O契约源码证实+ROS2出口适配器+bridge映射(`integration/ros1_bridge/`);⬜ 加3D雷达/编译起桥/ROS1侧跑/端到端(受运行时阻塞) |
 | 10 | 修运行时头号根因 tomllib | ✅ 完成(0b85cea) | `try: tomllib / except: tomli` 兜底;jazzy 实测零影响(原生 tomllib,兜底分支不执行) |
 | 11 | **⭐ jazzy 全栈重建(用户硬指令)** | ✅ **镜像阶段 9/9 收官(07-05 晚)** | 4 缺镜像全建成+开箱验真(坑全解:BuildKit 假成功/Livox cstdint/ydlidar declare_parameter;official-baseline **原版零补丁一次过**,micro_ros_agent 58.4s=humble 最狠坑 jazzy 天然没有)。施工指引 docs/jazzy全栈重建_施工指引.md;脚本 runbooks/world-model-jazzy/ |
