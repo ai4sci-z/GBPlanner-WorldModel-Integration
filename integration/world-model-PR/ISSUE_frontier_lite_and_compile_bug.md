@@ -1,3 +1,5 @@
+> 🗄️ **早期作废版(2026-07-06)——请勿使用**。当前草稿见 [`ISSUE_BODY.md`](ISSUE_BODY.md)(覆盖 B1/B3/B6/B14/B15 端到端 blockers);事实源见 [Bug 台账](../../docs/world-model端到端Bug台账_给作者PR.md)。保留仅作历史。
+
 # Issue: exploration workflow — generated script fails to compile, and `frontier_lite` ignores the map
 
 > Paste the title and body below into the GitHub "New issue" form on `SZ-surveying/world-model`.

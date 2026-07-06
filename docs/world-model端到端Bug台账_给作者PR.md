@@ -3,14 +3,18 @@
 > **用途**：①你（用户）随时查我到底找出并修了哪些真 bug；②提 PR 时的逐条依据。
 > **原则**：只小修不大修、不动大框架；每条都有失败现场证据 + 源码根因 + 最小改动 + 提交号。
 > **诚实标注**：✅已实测确认修好 / 🔵已提交但端到端尚未全绿（在验证链上推进了一个门）/ ⚠️需处理后再进 PR。
-> 分支 `feat/gbplanner-gain-exploration-strategy`（基于上游 `09a5aa4`）+ clean 分支 `fix/world-model-e2e-takeoff`（干净复现验证，commit 79643b9），最后更新 **2026-07-06（起飞突破）**。
+> 分支 `feat/gbplanner-gain-exploration-strategy`（基于上游 `09a5aa4`）+ clean 分支 `fix/world-model-e2e-takeoff`（干净复现验证；提交链 `09a5aa4` → `79643b9` 真bug+死锁修复 → `77d951a` 撤 3 参数 hack），最后更新 **2026-07-06（起飞突破 + 参数hack撤销已提交 + Codex查证纠偏）**。
 
-## 一句话现状（2026-07-06 更新 · 起飞突破）
-🎉 **world-model 端到端起飞跑通了**。从全新克隆的作者源码(09a5aa4)干净复现，连修 5 类真 bug，**无人机真物理离地**（SIM 物理高度升 0.75m、四电机 PWM 1950、DAlt 爬到 0.61m），**原版 frontier_lite 探索首次端到端跑起来**（`exploration_probe ok=True`、飞 1.61m、接受 3 个目标、`takeoff.ok=True state=ready`）。
+## 一句话现状（2026-07-06 更新 · 起飞突破 + Codex 查证纠偏）
+🎯 **无 hack 配置下无人机物理起飞已实测复现**。从全新克隆的作者源码(09a5aa4)干净复现，连修 5 类作者真 bug + 1 处死锁逻辑，起飞**不依赖任何参数 hack**。实测证据 run `20260706T110405`（BIN 解码）：**SIM 地面真值高度 +0.760 m**（584.190→584.950）、**四电机 PWM 峰值 1950**、CTUN DAlt 0.655 m、`bootstrap/takeoff.ok=True`。
+- ⚠️ **诚实边界(重要)**：**端到端 exploration 尚未全绿**。同一 run：`accepted_goals=2`（<min 3，触发 `accepted_goals_below_min`）、`slam ready=False`、`frame_contract_probe` 与 `exploration_probe` 均 rc=20。此前文档"exploration_probe ok=True / 接受 3 目标"是**过度声称**（那是另一次 run 的结果，存在 run 间波动），现按实测更正。**物理起飞=真;端到端全绿=尚未达到。**
 - **关键那一刀=死锁逻辑修复**（B15）：起飞完成前不把探索 intent 转发给飞控，否则"保持当前位置"指令覆盖 GUIDED takeoff 爬升（CTUN.DAlt 被摁在 0）→永不离地→死锁。这是相序互斥正解，非强改 DAlt。
-- ⚠️ **诚实边界**：我曾额外堆 3 个不符合物理实际的参数 hack（改气压计高度源/DISARM_DELAY=0/readiness 拉长），被用户正确批评已**全部撤销**——去掉后照样飞（测距仪高度源 POSZ=2、安全保护都保持作者原样）。
-- ◉ **就差最后一个**：`frame_contract_probe` 采不到 `/tf_static`（latched，需 TRANSIENT_LOCAL QoS，探针用了默认 VOLATILE）和 `/ap/v1/pose/filtered`（DDS type-hash/时序）→ 见文末"下一步坑"。
-- diff（可看）：`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff`；干净复现命令：`runbooks/world-model-jazzy/clean_repro.sh`。
+- **参数 hack 已撤销并提交**（Codex 查出的不自洽已修复）：原栽过 3 个不符合物理实际的 hack（EK3_SRC1_POSZ 改气压计 / DISARM_DELAY=0 / readiness 拉长）。之前**只改了工作树、从未提交、diff 也未重导**，导致 `CLEAN_REPRO_takeoff_fixes.diff` 与"已撤销"文字矛盾；现已作为 commit `77d951a` 提交到 clean 分支，diff 重新导出为**净无 hack 变更集**（153 行、零 hack 字符串）。测距仪高度源 POSZ=2、安全保护均保持作者原样。
+- ◉ **剩余 gate（按根因区分，勿混为一谈）**：
+  - `/tf_static`：latched（rosbag 实测 `dur=transient_local`、count=3），探针用 `qos_profile_sensor_data`（VOLATILE）收不到锁存样本 → **需 QoS 修复**（订阅按 publisher 内省匹配 reliable+transient_local）。
+  - `/ap/v1/pose/filtered`：rosbag 实测 `dur=volatile`、`rel=best_effort`、count=512 → **与探针 QoS 本就兼容，不是 durability 问题**；疑时序（探针在 EKF pose 产出前、SLAM 仍 `waiting_for_scan_and_imu` 时就跑）或 DDS type-hash，**待深查，QoS 补丁修不了它**。
+  - `exploration_probe`：**不是采样 bug**，是探索工作流自报 `ok=False`（accepted_goals 2<3），属探索质量/波动。
+- diff（已纠正）：`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff`；干净复现：`runbooks/world-model-jazzy/clean_repro.sh`；查证脚本：`verify_codex.py` / `decode_takeoff_bin.py` / `check_rosbag_qos.py`。
 
 ---
 
@@ -50,14 +54,25 @@
 **逐层实锤(BIN 的 CTUN/RCOU/SIM 解码)**：DAlt=0 → 控制器被命令"保持当前高度"而非爬升。
 **真根因(读 fcu_controller_runtime.py.tmpl 源码)**：`on_setpoint_intent` **无条件**把探索工作流的 setpoint/intent 转成 cmd_vel + 本地位置设定点灌给飞控。起飞前 intent 是"静止 hold"，在 GUIDED 下覆盖 takeoff 的爬升目标(DAlt=当前高度) → 永不离地 → takeoff never ok → controller never ready → 工作流一直发 hold intent → **死锁**（cmd_vel 排除法：`controller_ready` 需 `takeoff.ok`，故 hold cmd_vel 不是它发的；真凶是 on_setpoint_intent 无门转发）。
 **最小改动**：`on_setpoint_intent` 加 `if bootstrap_ready(state):` 门——起飞完成前不转发探索 intent。相序互斥正解，不动大框架。
-**验证(实测)**：SIM 物理高度升 0.75m、四电机 1950、DAlt 爬到 0.61m、frontier_lite exploration_probe ok=True(飞1.61m/3目标)。
-**诚实修正**：曾额外堆 3 个参数 hack（EK3_SRC1_POSZ 改气压计/DISARM_DELAY=0/readiness 拉长），不符合物理实际，已全撤——去掉后照样飞，证明只需 B15 逻辑修复。
+**验证(实测)**：无 hack 配置 run `20260706T110405`，BIN 解码 SIM 地面真值 +0.760m、四电机 PWM 峰值 1950、CTUN DAlt 0.655m、`takeoff.ok=True`。（注：物理起飞=真；但该 run accepted_goals=2<3、两个 probe rc=20，**端到端未全绿**，见文末"下一步坑"。）
+**诚实修正**：曾额外堆 3 个参数 hack（EK3_SRC1_POSZ 改气压计/DISARM_DELAY=0/readiness 拉长），不符合物理实际。去掉后照样飞，证明只需 B15 逻辑修复。**撤销已作为 commit `77d951a` 正式提交**（此前只改工作树未提交、diff 未重导，被 Codex 查出不自洽，现已修复）。
 
-## 下一步坑（当前前沿，尚未修）—— 2026-07-06
-**frontier_lite 探索已端到端跑通，只剩 `frame_contract_probe` 诊断探针 gate 没过。**
-- 采不到 2 个话题：`/tf_static`（latched=TRANSIENT_LOCAL QoS，探针用默认 `qos_profile_sensor_data`=VOLATILE 收不到，ROS2 经典 QoS 坑）、`/ap/v1/pose/filtered`（ArduPilot DDS 位姿，实测发布过 614 条，探针 ros2_topic_echo/rclpy 采不到，疑 DDS type-hash/时序）。其余 /imu /scan /slam/odom /tf 全 ok=True。
-- **最小修方向**：探针模板 `templates/python/ros_probe.py.tmpl` L169 `create_subscription(..., qos_profile_sensor_data)` → 对 latched 话题(/tf_static)用 TRANSIENT_LOCAL QoS。
-- 诊断脚本：`runbooks/world-model-jazzy/check_probes.py <run_dir>`、`decode_ctun.py`(读起飞控制回路 DAlt/ThO)。
+## 下一步坑（当前前沿，尚未修）—— 2026-07-06（Codex 查证后按根因重写）
+**物理起飞已复现，但端到端 exploration 尚未全绿。剩余 3 类 gate，根因各不相同，勿混为一谈：**
+
+1. **`frame_contract_probe` → `/tf_static`（真·QoS 问题）**
+   - rosbag 实测：`/tf_static` count=3、`dur=transient_local`、`rel=reliable`（latched）。探针用 `qos_profile_sensor_data`（VOLATILE+BEST_EFFORT）→ 加入订阅时锁存样本已发完，收不到。
+   - **最小修方向**：探针模板 `templates/python/ros_probe.py.tmpl`（`sample_message_topic`，约 L169 `create_subscription(..., qos_profile_sensor_data)`）→ 订阅前用 `get_publishers_info_by_topic` 内省 publisher QoS，按其 reliability+durability 建订阅（对 /tf_static 即 reliable+transient_local）。草稿脚本 `runbooks/world-model-jazzy/patch_probe_qos.py`（**尚未应用/验证**）。
+
+2. **`frame_contract_probe` → `/ap/v1/pose/filtered`（不是 QoS 问题）**
+   - rosbag 实测：count=512、`dur=volatile`、`rel=best_effort` → **与探针 `qos_profile_sensor_data` 本就兼容**。所以 QoS 补丁**修不了它**。
+   - 疑因：探针在 EKF 位姿产出前就跑（同 run frame_contract_probe 采到的 `/navlab/slam/status` 仍 `waiting_for_scan_and_imu`、slam ready=False），或 ArduPilot DDS type-hash。**待深查**（对比 rosbag 中该话题首条时间戳 vs 探针窗口）。
+
+3. **`exploration_probe`（不是采样 bug）**
+   - 该 run `/navlab/exploration/status` 采到了数据，但 payload 自报 `ok=False`：`accepted_goals=2`（min 3）、`path_length_m=1.6095`（ok）。blocker 名义叫 `topic_sample_missing` 但真因是 `accepted_goals_below_min`（探针把 payload.ok=False 也归到该 blocker 名下）。`/navlab/landing/status` 是级联（等 task 完成）。
+   - 属探索质量/run 间波动（另一次曾达 3 目标），需稳定化，非探针 bug。
+
+- 诊断脚本：`runbooks/world-model-jazzy/` 下 `check_probes.py <run_dir>`、`verify_codex.py`（git+run 综合）、`decode_takeoff_bin.py`（SIM/RCOU/CTUN 起飞物理）、`check_rosbag_qos.py`（话题 QoS/durability）、`decode_ctun.py`（DAlt/ThO 控制回路）。
 
 ## 给作者的高价值观察（Issue 素材）
 - B1/B14/B15 说明作者**很可能从未端到端跑通过 exploration**（脚本编译不过、rangefinder 参数被固件无视、起飞被自身探索指令死锁）——任何人、任何 OS 跑到这步都会死,不是环境问题。

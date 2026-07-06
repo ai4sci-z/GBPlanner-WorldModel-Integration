@@ -1,3 +1,5 @@
+> 📌 **状态戳(2026-07-06)**:本文含历史阶段内容。**当前权威状态**以 [RESUME_新窗口接管_2026-07-06.md](../RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](../docs/world-model端到端Bug台账_给作者PR.md) 为准。要点:jazzy 镜像 **9/9 已完成并开箱验真**;无 hack 配置**物理起飞已复现**(run 20260706T110405:SIM+0.76m/电机1950/DAlt0.655m);**端到端 exploration 尚未全绿**(剩 frame_contract_probe:/tf_static=QoS、/ap/v1/pose/filtered=时序非QoS、accepted_goals 2<3);**未提交 PR**。
+
 # exploration 基线 = frontier_lite 的真实接口契约(读源码所得,2026-06-29)
 
 > 来源:`orchestration/sim/internal/tasks/helpers/runtime_specs.go`(ExplorationWorkflowSpec)、`internal/config/defaults.go`(defaultExplorationGate)、`gate_evaluation.go`。

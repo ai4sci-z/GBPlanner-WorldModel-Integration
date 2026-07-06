@@ -1,3 +1,5 @@
+> 📌 **状态戳(2026-07-06)**:本文含历史阶段内容。**当前权威状态**以 [RESUME_新窗口接管_2026-07-06.md](../RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](../docs/world-model端到端Bug台账_给作者PR.md) 为准。要点:jazzy 镜像 **9/9 已完成并开箱验真**;无 hack 配置**物理起飞已复现**(run 20260706T110405:SIM+0.76m/电机1950/DAlt0.655m);**端到端 exploration 尚未全绿**(剩 frame_contract_probe:/tf_static=QoS、/ap/v1/pose/filtered=时序非QoS、accepted_goals 2<3);**未提交 PR**。
+
 # 体积增益与 RViz 界面详解(看懂你亲手跑通的那个画面)
 
 > 目标:把 2026-07-02 你在 RViz 里亲眼看到的**每一个元素**讲透——红球、紫球、橙线、绿线、粉线、三色箭头,以及它们为什么会动。所有配色**逐行取自源码** `sources/gbplanner_ros-源码/gbplanner/src/gbplanner_rviz.cpp`,不是猜的。最后更新 2026-07-04。

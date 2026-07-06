@@ -1,3 +1,5 @@
+> 📌 **状态戳(2026-07-06)**:本文含历史阶段内容。**当前权威状态**以 [RESUME_新窗口接管_2026-07-06.md](RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](docs/world-model端到端Bug台账_给作者PR.md) 为准。要点:jazzy 镜像 **9/9 已完成并开箱验真**;无 hack 配置**物理起飞已复现**(run 20260706T110405:SIM+0.76m/电机1950/DAlt0.655m);**端到端 exploration 尚未全绿**(剩 frame_contract_probe:/tf_static=QoS、/ap/v1/pose/filtered=时序非QoS、accepted_goals 2<3);**未提交 PR**。
+
 # 交接文档 · 把本项目转给 Codex 接管(2026-07-05)
 
 > 由 Claude Code 撰写,交给 Codex(或任何接手 agent)。**先读本文第 1 节做环境自检,再决定能接哪一档任务——不要跳过。**

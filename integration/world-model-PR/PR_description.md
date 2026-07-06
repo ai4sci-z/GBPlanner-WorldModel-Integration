@@ -1,3 +1,6 @@
+> 🗄️ **早期作废版(2026-07-06)——请勿使用**。仅讲 `%%`+`gbplanner_gain`,严重滞后。
+> 当前草稿见 [`PR_BODY.md`](PR_BODY.md);事实源见 [Bug 台账](../../docs/world-model端到端Bug台账_给作者PR.md)。保留仅作历史。
+
 # PR: fix exploration script compile bug + add map-aware `gbplanner_gain` strategy
 
 > Paste the title and body below into the GitHub "Open a pull request" form.

@@ -1,12 +1,12 @@
-# PR 物料清单(2026-07-05)——要提交给 world-model 作者的东西 + jazzy 兼容诚实标注
+# PR 物料清单(2026-07-06 更新)——要提交给 world-model 作者的东西 + jazzy 兼容诚实标注
 
-> 用户要求:列清 PR 物料(代码+md),**代码必须确保作者能在 jazzy 环境运行,不能撒谎**。
-> 本清单基于 `git diff 09a5aa4..HEAD`(world-model 分支相对上游最新)的**真实改动**,逐文件如实标注。
+> 🚧 **阻断(2026-07-06):禁止提交 PR/Issue**,前置未满足:①exploration 端到端未全绿(`frame_contract_probe`:/tf_static QoS + /ap/v1/pose/filtered 时序;accepted_goals 2<3)②`PR_BODY.md`/`ISSUE_BODY.md` 虽已重写为草稿但需待全绿后定稿。
+>
+> ⚠️ **重要纠偏**:本清单(07-05)把 **humble 期特性分支** 的一堆 fix(tomllib / CYCLONEDDS / gazebo-sensor COPY / mode-switch)和 **jazzy clean 分支** 混在了一起。**真正经 jazzy 实跑验证的净变更集** = clean 分支 `fix/world-model-e2e-takeoff` 的 `CLEAN_REPRO_takeoff_fixes.diff`(**仅** B1 `%%` / B3 空launch参数 / B6-7 IMU回声 / B14 RNGFND改名 / B15 死锁,**无 hack**)。tomllib 是 humble 专用(jazzy 原生有),不在 clean diff 内。以 [Bug 台账](../../docs/world-model端到端Bug台账_给作者PR.md) 为准。
 
-## ⚠️ 一句诚实前提(先说,不藏)
-我**没有在 jazzy 上实际跑过**这些改动(当初 jazzy 构建就失败,本机没有可运行的 jazzy)。
-下面的"jazzy 兼容"是**代码级论证**(改动性质=通用 bug fix / 向后兼容写法),**不是 jazzy 实跑验证**。
-若要 100% 确证,唯一办法是**重建 jazzy 环境实跑**——这点如实告知,由你决定是否要做。
+## ⚠️ 一句诚实前提(2026-07-06 订正)
+07-05 版说"没在 jazzy 上实际跑过"**已过时**:现已在 jazzy 干净复现并**物理起飞**(run `20260706T110405`:SIM+0.760m/电机1950/DAlt0.655m)。
+但**端到端 exploration 仍未全绿**(见上"阻断")。所以:jazzy 语言层 + 起飞路径已实跑;完整 exploration gate 尚未通过。
 
 ## 一、代码物料(10 个文件,全在上游代码树内)
 
@@ -45,8 +45,7 @@
 | `rendered_*.py` | 渲染脚本证据(两策略都 py_compile 过) | 附证据 |
 | **本清单 + `docs/PR兼容性与jazzy评估.md`** | jazzy 兼容论证 | PR 描述引用 |
 
-> ⚠️ md 物料需在提交前**同步最新进展**:目前 PR_BODY 还停在早期(只讲 tomllib+%%+gbplanner_gain 三项),
-> 需补齐到现在的 8 项 bug fix。**提交是任务收尾动作,等 exploration 端到端跑通、frontier_lite 有真实指标后再做**(Codex 也建议先补对照组)。
+> 🚧 **阻断项(2026-07-06)**:`PR_BODY.md` / `ISSUE_BODY.md` 已从"tomllib+%%+gbplanner_gain"旧版**重写为当前草稿**(顶部有 DRAFT 横幅、覆盖 B1/B3/B6/B14/B15),但**仍是草稿、禁止提交**,须等 exploration 端到端全绿 + frontier_lite 真实指标(对照组)后定稿。`PR_description.md` / `ISSUE_frontier_lite_and_compile_bug.md` = 早期作废版,勿用。
 
 ## 三、humble 专用物料——**明确不进 PR**(避免污染作者 jazzy 环境)
 

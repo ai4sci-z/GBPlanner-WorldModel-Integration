@@ -1,18 +1,23 @@
 # world-model PR 物料包(给作者的有含金量 PR + Issue)
 
-本目录是**准备提交给 `SZ-surveying/world-model` 作者**的完整材料。代码改动已在 WSL
-`~/ws/world-model` 的分支 **`feat/gbplanner-gain-exploration-strategy`** 上 commit 完毕并验证通过。
+> 🚧 **阻断:当前禁止提交 PR/Issue(2026-07-06)**。前置未满足:exploration 端到端未全绿(剩 `frame_contract_probe`:`/tf_static` QoS + `/ap/v1/pose/filtered` 时序;`accepted_goals` 2<3)。
+>
+> **事实源不是本目录正文,而是** [`docs/world-model端到端Bug台账_给作者PR.md`](../../docs/world-model端到端Bug台账_给作者PR.md)。`PR_BODY.md` / `ISSUE_BODY.md` 已重写为**当前草稿(顶部有 DRAFT 横幅)**;`PR_description.md` / `ISSUE_frontier_lite_and_compile_bug.md` 为**早期作废版**,勿用。
 
-## 这份 PR 做了 4 件事(4 commit:3 fix + 1 feat)
+本目录是准备提交给 `SZ-surveying/world-model` 作者的材料。clean 验证分支在 WSL
+`~/ws-clean/world-model` 的 **`fix/world-model-e2e-takeoff`**(提交链 `79643b9` 真bug+死锁 → `77d951a` 撤 3 参数 hack);净变更集 = `CLEAN_REPRO_takeoff_fixes.diff`(无 hack,153 行)。原 `feat/gbplanner-gain-exploration-strategy` 分支承载 `gbplanner_gain` 特性。
 
-1. **fix(头号)tomllib**:humble=Py3.10 无 `tomllib`(3.11+ 才有),`navlab/common/toml_values.py` 等顶层
-   `import tomllib` → SLAM 一启动就崩 → exploration 整个起不来。改为回退 `tomli`。**这才是运行时起不来的头号根因**(实测:修后 SLAM 越过此崩溃)。
-2. **fix 空 launch 参数**:`CartographerBackend.command` 把空值参数也拼成 `name:=`,humble launch 拒绝 → SLAM 起不来。跳过空参。(实测:修后 cartographer 节点真正运行)
-3. **fix 模板 `%%`**:exploration 生成脚本 `pattern[goal_index %% len]` 经 `text/template` 原样落盘 → `SyntaxError` 无法编译。改单 `%`。(独立次要 bug,非运行时头号根因)
-4. **feat gbplanner_gain**:新增可选探索策略,**读占据栅格、按 2D 体积增益选方向**(GBPlanner 思想,arXiv:2201.07067),替代脚本式 `frontier_lite`。加法、可配置、不动默认;诚实:2D 原型,非完整 ROS1 GBPlanner。
+## 真实变更链(以净 diff 为准,非旧 tomllib 叙事)
 
-> ⚠️ 措辞订正:早期版本把 `%%` 说成"运行时起不来根因之一"是**夸大**;经查 `summary.json` 实证,头号是 tomllib。
-> **以 `ISSUE_BODY.md` / `PR_BODY.md` 为准**(已订正);`ISSUE_frontier_lite_and_compile_bug.md` / `PR_description.md` 为早期描述版,可能滞后。
+1. **B1 `%%`→`%`**(exploration 生成脚本 `text/template` 原样落盘 → SyntaxError)。
+2. **B3 跳过空 launch 参数**(ROS2 humble/jazzy 拒绝空 `name:=`)。
+3. **B6/B7 SLAM IMU 自吞回声**(桥 output 默认 `/imu` = source → cartographer Non-sorted abort;改 `/navlab/slam/imu`)。
+4. **B14 测距仪参数名漂移**(`RNGFND1_MIN_CM`→4.5 新名 `RNGFND1_MIN`,旧名被固件静默无视 → 高度源死)。
+5. **B15 起飞死锁(关键)**(起飞完成前不转发探索 intent,否则 hold 覆盖 GUIDED 爬升 → 死锁;加 `bootstrap_ready` 门)。
+6. **feat `gbplanner_gain`**:可选、读占据栅格按 2D 体积增益选向。诚实:**2D 原型,非完整 GBPlanner**。
+7. **不进 PR(已撤并提交)**:3 个参数 hack(`DISARM_DELAY 0`/`EK3_SRC1_POSZ 1`/`readiness 90`)——不符合物理实际、起飞不需要。
+
+> ⚠️ 历史订正:早期把头号根因说成 tomllib 是 humble 语境;作者仓库是 jazzy,tomllib 原生存在。jazzy 上的真实端到端 blocker 是上面 B1/B3/B6/B14/B15。
 
 ## 文件清单
 

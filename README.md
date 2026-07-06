@@ -6,7 +6,7 @@
 
 ---
 
-# 🗺️ 路线图·你在这里(2026-07-05)
+# 🗺️ 路线图·你在这里(2026-07-06)
 
 ```
 线路1·预研B(复现GBPlanner)  ██████████ 100% ✅ 终点:自主探索全闭环+量化(291m/13万体素/地图落盘)
@@ -15,17 +15,21 @@
    ⏸ humble 暂停在:takeoff TEMPORARILY_REJECTED(坑#15,EKF位置源深水区)——不死磕,主线转 jazzy
    战役全解:docs/预研A排错战役实录_35轮实验全解.md
 线路2.5·jazzy全栈重建        ██████████  9/9✅ jazzy镜像全建成+开箱验真(容器内Ubuntu24.04+jazzy+Py3.12实测)
-线路2.6·jazzy exploration首跑排障 ████████░░  ◉◉◉ ← 你在这里(2026-07-06)
-   SLAM/建图/位姿全通(rosbag实测:/slam/odom 7946、/map 38、/ap/v1/pose/filtered 614)
-   ◉ 当前站:坑#17 GUIDED起飞被接受但电机怠速不上桨(armed41s/servo1100/无爬升;VisOdom not healthy)
-   ○ 下一站:修外部导航健康→无人机真起飞→frontier_lite指标。Bug台账:docs/world-model端到端Bug台账_给作者PR.md
+线路2.6·jazzy exploration首跑排障 █████████░  ◉◉ ← 你在这里(2026-07-06)
+   SLAM/建图/位姿全通;死锁修复后**无 hack 物理起飞已复现**(run 20260706T110405:SIM+0.76m/电机1950/DAlt0.655m)
+   ◉ 当前站:端到端 exploration 未全绿——剩 frame_contract_probe(/tf_static QoS + /ap/v1/pose/filtered 时序)+ accepted_goals 波动(2<3)
+   ○ 下一站:修探针 QoS + 深查 pose/filtered + 稳定探索目标数 → 完整 exploration 全绿。Bug台账:docs/world-model端到端Bug台账_给作者PR.md
 线路3·集成                   ██████░░░░ ~60%  决策层原型✅+真版桥接地基✅;完整桥接等线路2通车
 线路4·量化对比               ███░░░░░░░ ~30%  GBPlanner侧实测✅入库;frontier_lite侧等线路2
 ```
 
-# 🔴 最新全景状态(2026-07-06 · 起飞突破)
+# 🔴 最新全景状态(2026-07-06 · 起飞突破 + Codex 查证纠偏)
 
-> 🎉 **world-model 端到端起飞跑通了**:从全新克隆的作者源码(09a5aa4)干净复现,连修 5 类真 bug,**无人机真物理离地**(SIM 物理升 0.75m/电机 1950),**原版 frontier_lite 探索首次端到端跑起来**(飞 1.61m/3 目标/exploration_probe ok=True)。关键那一刀=**死锁逻辑修复**(起飞前不转发探索 intent 给飞控,破 GUIDED takeoff 被自身探索指令死锁)。就差 `frame_contract_probe`(/tf_static 需 TRANSIENT_LOCAL QoS)。修复在 clean 分支 `fix/world-model-e2e-takeoff`;diff=`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff`;接管文档 `RESUME_新窗口接管_2026-07-06.md`。
+> 🎯 **无 hack 配置下无人机物理起飞已实测复现**:从全新克隆的作者源码(09a5aa4)干净复现,连修 5 类真 bug + 1 处死锁逻辑。实测 run `20260706T110405`(BIN 解码):**SIM 地面真值 +0.760m、四电机 PWM 峰值 1950、CTUN DAlt 0.655m、takeoff.ok=True**。关键那一刀=**死锁逻辑修复**(起飞前不转发探索 intent 给飞控,破 GUIDED takeoff 被自身探索指令死锁)。
+>
+> ⚠️ **诚实边界:端到端 exploration 尚未全绿**(别再说"就差一个探针")。同一 run:`accepted_goals=2`(<min 3)、`slam ready=False`、`frame_contract_probe`+`exploration_probe` 均 rc=20。剩余 3 类 gate 根因**各不相同**:① `/tf_static`=真 QoS(rosbag 实测 latched/`transient_local`,探针 VOLATILE 收不到)② `/ap/v1/pose/filtered`=**不是 QoS**(rosbag 实测 `volatile`/`best_effort`,与探针本就兼容;疑时序/type-hash)③ `exploration_probe`=探索只接受 2 目标(质量/波动)。**物理起飞=真;端到端全绿=尚未达到。**
+>
+> ✅ **参数 hack 撤销已提交**:clean 分支 `fix/world-model-e2e-takeoff` 提交链 `79643b9`(真bug+死锁)→ `77d951a`(撤 3 参数 hack)。`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff` 已重导为**净无 hack 变更集**(153 行)。**最新接管入口**=[RESUME_新窗口接管_2026-07-06.md](RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](docs/world-model端到端Bug台账_给作者PR.md)。**未提交 PR。**
 
 | 环节 | 状态 |
 |---|---|
@@ -41,16 +45,16 @@
 | **PR/bugfix 物料** | 🔄 **政策更正(你 2026-07-05):做完必须提交 PR**(自己账号 ai4sci-z fork);硬约束=作者 jazzy 环境能跑([docs/PR兼容性与jazzy评估.md](docs/PR兼容性与jazzy评估.md))。物料 [integration/world-model-PR/](integration/world-model-PR/);world-model 分支现 12 提交 |
 | **跑 exploration(看 frontier_lite)** | 🔵 humble 推进到:感知全通→SLAM闭环→位姿回灌→**FCU GUIDED+解锁(armed:true,坑#14 修好实测)**;takeoff 被拒(坑#15 EKF 深水区)→ **主线转 jazzy 全栈**(作者设计环境,这些深水坑可能天然不存在) |
 | **⭐ jazzy 全栈重建** | ✅ **9/9 全建成+开箱验真**(容器内实测 Ubuntu 24.04+jazzy+Py3.12;坑全解:Livox cstdint、ydlidar declare_parameter、编排器无 BuildKit 假成功、official-baseline 原版零补丁)。[施工指引](docs/jazzy全栈重建_施工指引.md) |
-| **⭐ jazzy exploration 首跑排障(当前主线)** | 🔵 SLAM/建图/位姿全通;卡**坑#17**:GUIDED 外部导航起飞被接受但电机怠速不上桨(armed 41s/servo 1100/无爬升)。逐层实锤见 [Bug台账](docs/world-model端到端Bug台账_给作者PR.md) |
+| **⭐ jazzy exploration 首跑排障(当前主线)** | 🔵 SLAM/建图/位姿全通;死锁修复后**无 hack 物理起飞已复现**(run 20260706T110405:SIM+0.76m/电机1950/DAlt0.655m/takeoff.ok=True)。**端到端未全绿**:剩 frame_contract_probe(/tf_static=QoS、/ap/v1/pose/filtered=时序非QoS)+ accepted_goals 波动(2<3)。逐层实锤见 [Bug台账](docs/world-model端到端Bug台账_给作者PR.md) |
 | 量化对比 | ⬜ 待 jazzy exploration 跑通后做 |
 
-- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器);39轮实验连修 15 个真坑,humble 推进到 FCU 解锁(armed:true)。**政策更正(2026-07-05):做完必须提交 PR,硬约束=jazzy 兼容** → 当前主线=jazzy 全栈重建(8/9)。
+- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器)。**当前主线=jazzy exploration 端到端跑通**:jazzy 镜像 **9/9 已完成并开箱验真**、无 hack 物理起飞已复现,剩 frame_contract_probe(/tf_static QoS + pose/filtered 时序)与 accepted_goals 波动。**政策(2026-07-05):做完必须提交 PR,硬约束=jazzy 兼容**;**未提交 PR**(需先 exploration 全绿 + 重写 PR_BODY/ISSUE_BODY)。
 - **你怎么自己验证 9/9**:打开 WSL 敲 `docker images | grep navlab`(应数到 9 个)。详见 [docs/WSL使用与复现.md](docs/WSL使用与复现.md)。
 - **你怎么自己验证集成代码**:WSL `cd ~/ws/world-model && git log --oneline -2`(看到 fix+feat 两提交);渲染脚本证据在 `integration/world-model-PR/rendered_*.py`。
 - **看仿真画面**:[docs/实跑操作手册_图文版.md](docs/实跑操作手册_图文版.md)。
 - 🎯 **核心发现(任务准星)**:world-model 的 `frontier_lite` 经查证**是脚本预设动作**(前进+扭头按计时器循环,**不订阅地图**),**不是探索算法**;GBPlanner 的精确插入点 = 这个探索决策节点。详见 **[docs/集成机制与frontier_lite缺陷_核心发现.md](docs/集成机制与frontier_lite缺陷_核心发现.md)**。
 - ✅ **可运行成果(可演示·真能跑)**:`gbplanner_core` 决策演示——对每个方向算体积增益、选最高且避障,出俯视决策图(`images/gain_decision.png`)。30 秒可自己复现,详见 **[docs/算法核心演示_体积增益选路.md](docs/算法核心演示_体积增益选路.md)**。这是整个任务里**真正跑通、贴 mentor md 核心**的成果。
-- **新窗口无损接管**(给下一个 Claude 读):[RESUME_恢复文档.md](RESUME_恢复文档.md)。
+- **新窗口无损接管**(给下一个 Claude 读):**最新入口** [RESUME_新窗口接管_2026-07-06.md](RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](docs/world-model端到端Bug台账_给作者PR.md);旧版 [RESUME_恢复文档.md](RESUME_恢复文档.md)(历史,含 8/9 旧口径,已被取代)。
 
 ---
 
@@ -65,7 +69,7 @@
 **整体路线:**
 | 阶段 | 名称 | 内容 | 状态 |
 |---|---|---|---|
-| P0-A | 复现 world-model | 跑通平台,看占位探索怎么工作 | 🔵 **~92%(07-05)**:humble 修到 FCU 解锁(armed:true);takeoff 卡 EKF 深水区 → **主线转 jazzy 全栈重建(8/9)** |
+| P0-A | 复现 world-model | 跑通平台,看占位探索怎么工作 | 🔵 **~92%(07-06)**:jazzy 全栈 **9/9** 已建;死锁修复后**无 hack 物理起飞已复现**(SIM+0.76m);端到端 exploration 未全绿(剩探针 QoS/时序 + accepted_goals 波动) |
 | P0-B | 复现 GBPlanner | 单独跑官方算法,看它怎么探索 | ✅ **完成(2026-07-02):自主探索全闭环实测**(291.3m/435s/地图落盘) |
 | P1→桥接 | 桥接路线落地 | 已选桥接方案:搭 ros1_bridge + 适配 + 加 3D 雷达 | 🟡 核心已起步(测试通过),路线改为桥接,见 TASKS.md |
 | P2 | ROS2 节点 | 把核心包成 ROS2 模块,接 world-model 数据 | ⚪ 未开始 |

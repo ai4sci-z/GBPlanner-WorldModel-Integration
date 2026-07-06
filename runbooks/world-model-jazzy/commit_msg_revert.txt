@@ -1,0 +1,24 @@
+fix(sim): revert 3 non-physical param hacks; keep only real bugfixes + deadlock fix
+
+Reverts the 3 parameter hacks that were wrongly committed in 79643b9. They do
+not reflect real physics and are not needed for takeoff:
+
+  - EK3_SRC1_POSZ 1 (baro) -> 2 (rangefinder): restore the author's indoor
+    vertical position source.
+  - remove DISARM_DELAY 0: restore ArduPilot's disarm safety default.
+  - ReadinessTimeoutSec 90 -> 45: restore the author's default.
+
+With all three reverted the vehicle still physically lifts off. Evidence run
+20260706T110405 (no-hack working tree): SIM ground-truth altitude rose 0.760 m
+(584.190 -> 584.950), motor PWM peaked at 1950, CTUN DAlt reached 0.655 m,
+bootstrap/takeoff ok=True.
+
+Kept (real upstream bugs + phase-order fix, all in 79643b9):
+  - exploration_workflow_runtime.py.tmpl: literal %% -> %
+  - backends.py: omit empty launch args
+  - slam.go + defaults.go: SLAM IMU output topic != /imu bridge source
+  - navlab_models.go + parm: RNGFND1_MIN_CM/MAX_CM/GNDCLEAR -> MIN/MAX/GNDCLR
+  - fcu_controller_runtime.py.tmpl: do not forward exploration intent before
+    takeoff completes (bootstrap_ready gate) -- fixes the takeoff deadlock.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
