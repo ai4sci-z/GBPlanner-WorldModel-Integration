@@ -1,6 +1,6 @@
 # world-model PR 物料包(给作者的有含金量 PR + Issue)
 
-> 🚧 **阻断:当前禁止提交 PR/Issue(2026-07-06)**。前置未满足:exploration 端到端未全绿(剩 `frame_contract_probe`:`/tf_static` QoS + `/ap/v1/pose/filtered` 时序;`accepted_goals` 2<3)。
+> 🚧 **阻断:当前禁止提交 PR/Issue(2026-07-06 晚更新)**。阻断原因**不再是"未全绿"**(run `20260706T130626` 已端到端全绿,B16 已修):现按**用户指示等真 GBPlanner 桥接集成跑通后统一定稿提交**;PR_BODY/ISSUE_BODY 需吸收 B16+基线数据。
 >
 > **事实源不是本目录正文,而是** [`docs/world-model端到端Bug台账_给作者PR.md`](../../docs/world-model端到端Bug台账_给作者PR.md)。`PR_BODY.md` / `ISSUE_BODY.md` 已重写为**当前草稿(顶部有 DRAFT 横幅)**;`PR_description.md` / `ISSUE_frontier_lite_and_compile_bug.md` 为**早期作废版**,勿用。
 

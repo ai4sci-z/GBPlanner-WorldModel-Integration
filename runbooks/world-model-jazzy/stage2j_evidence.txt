@@ -1,0 +1,25 @@
+=== STAGE2J START Mon Jul  6 22:33:45 CST 2026 ===
+--- 0. fresh 仿真 + 双端桥 + rclpy 订阅先就位 ---
+d9d6871f4e1f8a4e2178aa440650a30e02389c065c397770a55ce2f49422ad56
+已启动(host 网络)。桥容器用 ROS_MASTER_URI=http://localhost:11311 即可连。
+ca0faf0b9a2e22ee4930bc7bc44b2616c39bdbc12880b854ffc694c56ddcc81e
+6d21fe3e8184e9644372edf4951f2ed4fa10f8300b1b9be1474500571dcbf304
+--- 1. 起飞 + 触发探索 ---
+z: 0.05649999999741756
+z: 1.1981026509705237
+success: True
+z: 1.6910213633826798
+--- 2. 观察 100s ---
+--- 3. 验收 ---
+FIRST_MSG_AT=27.36s frame=map
+RESULT count=2
+[ros1端] 
+7
+[INFO] [1783348616.079548, 70.000000]: thinbridge stats: {'traj_out': 6, 'odom_in': 0, 'cloud_in': 0} clients=0
+[INFO] [1783348629.749519, 75.252000]: thinbridge: traj -> tcp (120 wp, total 7)
+[ros2端] 
+[INFO] [1783348506.999005462] [thinbridge_ros2]: traj -> /gbp/trajectory (145 wp)
+[INFO] [1783348527.486774607] [thinbridge_ros2]: traj -> /gbp/trajectory (180 wp)
+[ERROR] [1783348540.686651359] [thinbridge_ros2]: tcp link lost: ConnectionError('closed') (reconnecting)
+STAGE2=PASS (rclpy subscriber received 2 trajectories)
+=== STAGE2J END Mon Jul  6 22:37:11 CST 2026 ===

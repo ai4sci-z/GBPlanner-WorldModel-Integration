@@ -2,6 +2,15 @@
 """
 trajectory_to_intent —— 阶段4 桥接的 ROS2 侧"出口适配器"。
 
+⚠️ 状态(2026-07-06 晚,Codex 桥接 review 采纳):**骨架,未完成**。已知缺口:
+  ① 只取 transforms[0]、忽略 z 轴(可作低速冒烟,不是完整 3D 跟踪);
+  ② status_pub 创建了但从未 publish(gate 需要的 accepted_goals/path_length_m/ok/blockers
+     等字段全缺,阶段5 补);
+  ③ 无 odom/trajectory 时仍发 ok:true 的 hold intent——语义有风险,dry-run 阶段应只打印
+     不发 intent,或 status 里 ok=false+blockers 写清;
+  ④ 接 FCU 前必须补 kill/hold 条件与限速。
+阶段3 dry-run 只打印 waypoint/distance/yaw error,不发真实 intent。
+
 真版 GBPlanner(ROS1)经 PCI 把规划结果发成 trajectory_msgs/MultiDOFJointTrajectory
 (话题 <robot>/command/trajectory,源码证实 pci_general.cpp:8 advertise)。ros1_bridge 把它
 原样桥到 ROS2。本节点订阅它 + /slam/odom,把"下一航点"转成 world-model 的运动意图
@@ -52,7 +61,9 @@ def main() -> int:
     from std_msgs.msg import String
 
     SPEC = {
-        "trajectory_topic": "/rmf_obelix/command/trajectory",
+        # 薄桥 ROS2 端(thinbridge_ros2_side.py)把 ROS1 的 /rmf_obelix/command/trajectory
+        # 转发为 /gbp/trajectory(frame 已映射 world->map),本适配器订阅桥后话题。
+        "trajectory_topic": "/gbp/trajectory",
         "slam_odom_topic": "/slam/odom",
         "setpoint_intent_topic": "/navlab/fcu/setpoint/intent",
         "exploration_status_topic": "/navlab/exploration/status",

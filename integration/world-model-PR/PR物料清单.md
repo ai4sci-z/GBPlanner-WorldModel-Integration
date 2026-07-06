@@ -1,6 +1,6 @@
 # PR 物料清单(2026-07-06 更新)——要提交给 world-model 作者的东西 + jazzy 兼容诚实标注
 
-> 🚧 **阻断(2026-07-06):禁止提交 PR/Issue**,前置未满足:①exploration 端到端未全绿(`frame_contract_probe`:/tf_static QoS + /ap/v1/pose/filtered 时序;accepted_goals 2<3)②`PR_BODY.md`/`ISSUE_BODY.md` 虽已重写为草稿但需待全绿后定稿。
+> 🚧 **阻断(2026-07-06 晚更新):禁止提交 PR/Issue**。阻断原因**不再是"未全绿"**(run `20260706T130626` 已端到端全绿,B16 已修),而是:①**用户指示:等真 GBPlanner 桥接集成跑通后统一定稿提交**;②PR_BODY/ISSUE_BODY 需吸收 B16+基线定档数据后定稿;③frontier_lite 基线稳定性差(达标率 40%)应作为对比叙事写入。
 >
 > ⚠️ **重要纠偏**:本清单(07-05)把 **humble 期特性分支** 的一堆 fix(tomllib / CYCLONEDDS / gazebo-sensor COPY / mode-switch)和 **jazzy clean 分支** 混在了一起。**真正经 jazzy 实跑验证的净变更集** = clean 分支 `fix/world-model-e2e-takeoff` 的 `CLEAN_REPRO_takeoff_fixes.diff`(**仅** B1 `%%` / B3 空launch参数 / B6-7 IMU回声 / B14 RNGFND改名 / B15 死锁,**无 hack**)。tomllib 是 humble 专用(jazzy 原生有),不在 clean diff 内。以 [Bug 台账](../../docs/world-model端到端Bug台账_给作者PR.md) 为准。
 
@@ -54,7 +54,8 @@
 - 本机 tomli vendor、keepalive 等环境操作
 
 ## 四、提交前 checklist(达"做好"标准后执行)
-- [ ] exploration 端到端跑通,frontier_lite 有真实指标(对照组)
+- [x] exploration 端到端跑通(run `20260706T130626` 全绿);frontier_lite 基线已定档(达标率 40%,docs/基线定档)
+- [ ] **真 GBPlanner 桥接集成跑通(用户要求的统一定稿前置)**
 - [ ] world-model 分支 rebase 到最新 origin/main(已确认=09a5aa4,无更新)
 - [ ] pyproject 把 tomli 设为 `<3.11` 条件依赖
 - [ ] PR_BODY 补齐到 8 项 bug fix；PR-B 诚实标注 2D 原型

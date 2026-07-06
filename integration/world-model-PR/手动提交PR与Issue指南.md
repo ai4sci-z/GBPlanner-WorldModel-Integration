@@ -1,11 +1,12 @@
 # 手动提交 PR 与 Issue 给 world-model 作者 —— 分步教程
 
-> 🚧 **提交前置检查(2026-07-06,未全绿前禁止执行本教程)**:
-> 1. ❌ exploration 端到端全绿(`frame_contract_probe` 通过、`accepted_goals≥3`)——**当前未满足**。
-> 2. ✅ clean diff 无参数 hack(`77d951a` 已撤、`CLEAN_REPRO_takeoff_fixes.diff` 已重导)。
-> 3. ⏳ `PR_BODY.md`/`ISSUE_BODY.md` 定稿(现为 DRAFT)。
-> 4. `gh auth status` 已登录、fork = `ai4sci-z`。
-> 上述①③未满足前,**不要**按下面步骤提交。
+> 🚧 **提交前置检查(2026-07-06 晚更新,未满足前禁止执行本教程)**:
+> 1. ✅ exploration 端到端全绿(run `20260706T130626`,4 探针全 ok、3/3 目标)。
+> 2. ✅ clean diff 无参数 hack(提交链 `79643b9→77d951a→dada2db`,286 行)。
+> 3. ❌ **真 GBPlanner 桥接集成跑通(用户指示的统一定稿前置)——当前未满足**。
+> 4. ⏳ `PR_BODY.md`/`ISSUE_BODY.md` 定稿(现为 DRAFT,需吸收 B16+基线数据)。
+> 5. `gh auth status` 已登录、fork = `ai4sci-z`。
+> 上述③④未满足前,**不要**按下面步骤提交。
 
 > 目标:把已经做好、已验证、已 commit 的改动,作为 **1 个 Issue + 1 个 PR** 亲手提交到
 > `SZ-surveying/world-model`。本文给两条路:**A 用 `gh` 命令行**(快,gh 已登录)、**B 用网页**(直观)。

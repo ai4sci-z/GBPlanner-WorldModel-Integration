@@ -1,11 +1,12 @@
-> 🚧 **DRAFT — 请勿提交(2026-07-06 重写)**
+> 🚧 **DRAFT — 请勿提交(2026-07-06 晚更新)**
 >
-> 本文是**草稿**,不得直接用于提交 PR。前置条件未满足:
-> 1. ❌ **exploration 端到端尚未全绿**——剩 `frame_contract_probe`(`/tf_static` QoS + `/ap/v1/pose/filtered` 时序)与 `accepted_goals` 波动(实测 2<3)。
-> 2. ✅ clean diff 已去参数 hack(commit `77d951a`,`CLEAN_REPRO_takeoff_fixes.diff` 已重导为净版)。
-> 3. ⏳ 是否拆成 PR-A(通用 bugfix)/ PR-B(`gbplanner_gain` 2D 原型)待定。
+> 阻断原因(已更新,不再是"未全绿"):
+> 1. ✅ exploration **已端到端全绿**(run `20260706T130626`:TASK_STATUS_OK、4 探针全 ok、3/3 目标、物理起飞 SIM+0.72m,无 hack)。
+> 2. ✅ clean diff 净无 hack(提交链 `79643b9→77d951a→dada2db`,286 行)。
+> 3. ⏸ **用户 2026-07-06 晚指示:源码改动先保存,等真 GBPlanner 桥接集成跑通后再统一定稿提交**。
+> 4. ⏳ 本文需吸收 B16(探针双根因)与基线定档数据(frontier_lite 达标率 40%,作为对比叙事)后定稿。
 >
-> **唯一事实源** = [`docs/world-model端到端Bug台账_给作者PR.md`](../../docs/world-model端到端Bug台账_给作者PR.md)。本文所有条目以台账 + 净 diff `CLEAN_REPRO_takeoff_fixes.diff` 为准。旧版(仅 tomllib/%%/gbplanner_gain)已作废。
+> **唯一事实源** = [`docs/world-model端到端Bug台账_给作者PR.md`](../../docs/world-model端到端Bug台账_给作者PR.md)。本文所有条目以台账 + 净 diff `CLEAN_REPRO_takeoff_fixes.diff` 为准。
 
 ---
 
@@ -17,10 +18,12 @@ phase-ordering deadlock. Verified on jazzy: with these fixes (and **no** paramet
 hacks) the vehicle physically lifts off — run `20260706T110405`, BIN ground-truth
 SIM altitude +0.760 m, motor PWM peak 1950, CTUN DAlt 0.655 m, `takeoff.ok=True`.
 
-> Honesty: the **full exploration gate is not yet green** on this hardware
-> (`frame_contract_probe` still misses `/tf_static` and `/ap/v1/pose/filtered`;
-> `accepted_goals` = 2 < 3 in that run). These are probe/tuning issues, tracked
-> separately; the code changes below are the takeoff-path bugfixes.
+> Status: with B16 (probe fixes, see below) the full exploration gate went
+> **green end-to-end** — run `20260706T130626`: TASK_STATUS_OK, empty blockers,
+> all 4 probes ok, accepted_goals 3/3, path 1.06 m. Note the baseline is not
+> yet stable across runs (2/6 green; accepted_goals hit-rate 40% — root cause:
+> startup latency eats into the fixed 26 s exploration window), which is
+> relevant context for the exploration gate design.
 
 ## Real bug chain (all in `CLEAN_REPRO_takeoff_fixes.diff`, net no-hack, 153 lines)
 

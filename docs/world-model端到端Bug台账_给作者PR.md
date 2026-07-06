@@ -22,7 +22,7 @@
 ## A. 主线交付物（PR 的真正目的）
 | # | 提交 | 内容 | 状态 |
 |---|---|---|---|
-| A1 | `4a52df4` | **feat: 新增 `gbplanner_gain` 探索策略**——读 `/map`(OccupancyGrid) 做体积增益选向,替代脚本式 `frontier_lite`。加 `map_topic` 透传。 | 🔵 代码接进真实结构,go build/vet/test + py_compile 过;**端到端替换演示待 exploration 跑通** |
+| A1 | `4a52df4` | **feat: 新增 `gbplanner_gain` 探索策略**——读 `/map`(OccupancyGrid) 做体积增益选向,替代脚本式 `frontier_lite`。加 `map_topic` 透传。 | 🔵 代码接进真实结构,go build/vet/test + py_compile 过;exploration 已全绿,**待 gbplanner_gain 替换实跑/或真 GBPlanner 桥接实跑;frontier_lite 基线已定档可作对照组** |
 
 ## B. 让 exploration 能跑起来的 bug 修复（都是作者代码真 bug，通用/向后兼容）
 

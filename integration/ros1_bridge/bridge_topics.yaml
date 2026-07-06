@@ -1,4 +1,17 @@
-# ros1_bridge / parameter_bridge 话题映射(阶段4 桥接 GBPlanner 真版)
+# ⚠️ 历史设计稿(2026-07-06 晚标注):本文件是为官方 ros1_bridge/parameter_bridge 写的映射表。
+# 实验结论(stage2a-2d,证据在 runbooks/world-model-jazzy/):
+#   官方 foxy ros1_bridge 判死(jazzy→foxy RMW 层 bad_alloc,CLI+rclpy 双实验);
+#   zenoh 双桥判死(rosrust TCPROS header mismatch,beta+nightly 均复现)。
+# 当前采用 **B2.5 自写薄桥**(thinbridge_ros1_side.py + thinbridge_ros2_side.py,TCP:7601),
+# 话题映射与改名在薄桥代码内显式完成(不存在 parameter_bridge 的"同名才桥"限制):
+#   ROS2 /slam/odom  → TCP → ROS1 /wm/odom(frame 在桥层映射 map→world)
+#   ROS2 /scan(冒烟)/cloud_in(3D) → TCP → ROS1 /wm/points
+#   ROS1 /rmf_obelix/command/trajectory → TCP → ROS2 /gbp/trajectory(frame world→map)
+# ROS1 侧最后一公里(阶段2.6):/wm/odom、/wm/points 需 remap/relay 到 gbplanner/voxblox
+# 实际订阅的 topic(rmf_sim.launch 里 odometry→/<ROBOT>/ground_truth/odometry_throttled、
+# /pointcloud→/<ROBOT>/velodyne_points),用 ROS1 relay 节点或改 launch remap 完成。
+#
+# ==== 以下为原 parameter_bridge 设计(保留作历史参考,不再执行) ====
 #
 # 用法(在装有 ros1_bridge 的环境,同时 source ROS1 noetic + ROS2 humble):
 #   ros2 run ros1_bridge parameter_bridge __params:=bridge_topics.yaml
@@ -9,17 +22,18 @@
 #   GBPlanner + PCI 原样在 ROS1 侧运行;规划触发(pci_trigger,kManual)留在 ROS1 内部。
 #
 # 机器人命名空间:原版 robot_name=rmf_obelix。下面用 <ROBOT> 占位,部署时替换。
+# 注意:parameter_bridge 按同名同类型桥接;跨命名空间改名需 relay/remap 配合(历史坑,薄桥已绕开)。
 
 topics:
   # ---- ROS2(world-model)→ ROS1(GBPlanner)输入 ----
   - topic: /pointcloud                       # gbplanner_node 订阅(launch 里 remap 自 /<ROBOT>/velodyne_points)
     type: sensor_msgs/msg/PointCloud2
     queue_size: 5
-    # 注:world-model 当前无 3D 点云,需先给 navlab_iq_quad 加 3D 雷达(阶段4 步骤①)
+    # 注:world-model 3D 点云方案已定=官方 lidar_3d 组件 + 预留 /lidar/points→cloud_in 桥路
   - topic: /gbplanner/odometry               # gbplanner_node + PCI 订阅的 odometry
     type: nav_msgs/msg/Odometry
     queue_size: 50
-    # 来源:world-model 的 /slam/odom(可在 ROS2 侧重映射或加中继)
+    # 来源:world-model 的 /slam/odom(改名须 relay/remap,parameter_bridge 不会自动改名)
 
   # ---- ROS1(GBPlanner/PCI)→ ROS2(world-model)输出 ----
   - topic: /rmf_obelix/command/trajectory    # PCI 发布的规划轨迹(MultiDOFJointTrajectory)

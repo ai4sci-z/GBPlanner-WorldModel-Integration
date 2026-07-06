@@ -1,7 +1,7 @@
-> 🚧 **DRAFT — 请勿提交(2026-07-06 重写)**
+> 🚧 **DRAFT — 请勿提交(2026-07-06 晚更新)**
 >
-> 待 exploration 端到端全绿后再定稿提交。**事实源** = [`docs/world-model端到端Bug台账_给作者PR.md`](../../docs/world-model端到端Bug台账_给作者PR.md)。
-> 旧版(只讲 tomllib/%%/frontier_lite)已作废——那不是作者 jazzy 仓库的核心问题。
+> 阻断原因(已更新):exploration **已端到端全绿**(run `20260706T130626`);现按用户指示**等真 GBPlanner 桥接集成跑通后统一定稿提交**。定稿前需吸收 B16(探针双根因)与基线定档数据。
+> **事实源** = [`docs/world-model端到端Bug台账_给作者PR.md`](../../docs/world-model端到端Bug台账_给作者PR.md)。旧版(只讲 tomllib/%%/frontier_lite)已作废。
 
 ---
 
@@ -47,9 +47,16 @@ a classic critical-section / phase-ordering race. → gate forwarding on takeoff
 With 1–5 fixed (and no parameter hacks) the vehicle physically lifts off on jazzy:
 run `20260706T110405`, BIN ground-truth SIM altitude +0.760 m, motor PWM peak 1950.
 
-### Still open (probe/tuning, may be filed separately)
-- `frame_contract_probe` misses `/tf_static` (published **transient_local/latched**; the
-  probe subscribes with `qos_profile_sensor_data` = VOLATILE, so it never sees the
-  retained sample) and `/ap/v1/pose/filtered` (published volatile/best_effort — QoS is
-  already compatible, so this is a timing/type issue, not durability).
-- `accepted_goals` = 2 (< min 3) in that run — exploration-quality variance.
+### 6. Probe sampling bugs (B16, fixed; may be filed separately)
+- `frame_contract_probe` missed `/tf_static` (published **transient_local/latched**; the
+  probe subscribed with `qos_profile_sensor_data` = VOLATILE) → fixed by subscribing with
+  the publisher's introspected QoS.
+- It also missed `/ap/v1/pose/filtered`: measured with a controlled experiment, a
+  late-joining subscription takes **~29 s of DDS endpoint discovery** against the
+  ArduPilot micro-ROS agent before the publisher matches (data arrives within 40 ms once
+  matched), while the probe's per-topic budget was ~2 s and the container timeout 30 s →
+  fixed with a 45 s per-topic budget + 90 s container timeout (mirroring exploration_probe).
+- With B16 the exploration task reached **TASK_STATUS_OK end-to-end** (run
+  `20260706T130626`). Remaining observation: `accepted_goals` is timing-driven
+  (`ready_elapsed / (window/3)`), so startup latency eats into the fixed 26 s window and
+  the gate passes only ~40% of runs — worth considering for the gate design.

@@ -1,0 +1,20 @@
+=== STAGE2I START Mon Jul  6 22:29:12 CST 2026 ===
+--- 1. 两种订阅先就位 ---
+b2859e90dede84438d0fd82d0f7e1ef30c284606d50e21a2e79e517a55867df3
+e5236228d2da6e4958f2b281371af91677d32a48bf2fa3f905a5cd460ea52245
+--- 2. rclpy 发布 60 条(独立容器) ---
+published 1
+published 2
+published 3
+published 10
+published 20
+published 30
+published 40
+published 50
+published 60
+--- 3. 判定 ---
+CLI_echo received=0
+[rclpy_sub 输出] 
+FIRST_MSG_AT=9.53s frame=map
+RESULT count=60
+=== STAGE2I END Mon Jul  6 22:30:28 CST 2026 ===

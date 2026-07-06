@@ -48,7 +48,7 @@
 | **⭐ jazzy exploration 端到端(原当前主线)** | 🏁 **全绿(2026-07-06 晚)**:run `20260706T130626` TASK_STATUS_OK、blockers 空、4 探针全 ok、accepted_goals=3/3、path 1.06m、物理起飞 SIM+0.72m/电机1950、clean_repro 首次 rc=0。B15 死锁+B16 探针双根因(latched QoS+DDS慢发现28.97s实测)。详见 [Bug台账](docs/world-model端到端Bug台账_给作者PR.md) |
 | 量化对比 | ⬜ 待 jazzy exploration 跑通后做 |
 
-- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构;桥接真版地基已落(契约+适配器)。**jazzy exploration 端到端已全绿(2026-07-06 晚)**——当前主线转入:frontier_lite 基线定档 → **ros1_bridge 接真 GBPlanner**(先跑通再接)→ 三个一键 GUI 演示。**政策(2026-07-05):做完必须提交 PR,硬约束=jazzy 兼容**;**未提交 PR**(全绿✅/净diff✅,剩 PR_BODY/ISSUE_BODY 定稿+用户点头)。
+- 🎯 **任务主线**:GBPlanner 决策已作可选策略 `gbplanner_gain` 接进 world-model 真实结构。**jazzy exploration 端到端已全绿(2026-07-06 晚)**;基线已定档(达标率 40%,根因=启动耗时蚕食窗口)。当前主线=**B2.5 自写薄桥接真 GBPlanner**(官方 ros1_bridge 与 zenoh 均实验判死;薄桥 transport 三段已 PASS,入口 docs/桥接查证与执行计划)→ 3D lidar(官方 lidar_3d 组件)→ 同口径对比 → GUI 演示。**PR 延后**(用户指示:等最终桥接跑通后统一定稿,源码改动保存在 clean 分支 4 commit)。
 - **你怎么自己验证 9/9**:打开 WSL 敲 `docker images | grep navlab`(应数到 9 个)。详见 [docs/WSL使用与复现.md](docs/WSL使用与复现.md)。
 - **你怎么自己验证集成代码**:WSL `cd ~/ws/world-model && git log --oneline -2`(看到 fix+feat 两提交);渲染脚本证据在 `integration/world-model-PR/rendered_*.py`。
 - **看仿真画面**:[docs/实跑操作手册_图文版.md](docs/实跑操作手册_图文版.md)。

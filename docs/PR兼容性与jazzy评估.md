@@ -3,7 +3,7 @@
 > **背景**:作者 world-model 的目标环境是 **jazzy**(Ubuntu 24.04 / Python 3.12),我们在 **humble**(Ubuntu 22.04 / Python 3.10)上跑通。
 > 用户硬约束:**任务做完必须提交 PR,且 PR 里的代码必须保证作者 jazzy 环境能兼容跑;不能兼容就重建 jazzy。**
 > 本文**逐条审查**给 world-model 分支(`feat/gbplanner-gain-exploration-strategy`,基于上游最新 `09a5aa4`)的每个提交,判断 jazzy 兼容性。
-> **结论(2026-07-06 更新):jazzy 全栈 **9/9 已完成并开箱验真**;已在 jazzy 干净复现并**物理起飞**(run `20260706T110405`:SIM+0.760m/电机1950),不再是"代码级论证"。但**端到端 exploration 尚未全绿**(剩 frame_contract_probe 的 /tf_static QoS + /ap/v1/pose/filtered 时序 + accepted_goals 波动),故 **PR 仍不能提**。**注**:经 jazzy clean 实跑验证的净变更集只有 5 项(B1/B3/B6/B14/B15,见 `CLEAN_REPRO_takeoff_fixes.diff`);本文早期列的 12 提交含 humble 期特性分支内容,勿混。**
+> **结论(2026-07-06 晚更新):jazzy 全栈 9/9 已验真;exploration **已端到端全绿**(run `20260706T130626`:TASK_STATUS_OK/4探针全ok/3目标/SIM+0.72m,无hack;B15+B16 已修)。**PR 暂不提交的原因已变**:不再是"未全绿",而是**用户指示等真 GBPlanner 桥接集成跑通后统一定稿**;另 frontier_lite 基线稳定性差(6次全绿2/6,达标率40%)应写入 PR 叙事。**注**:经 jazzy clean 实跑验证的净变更集=B1/B3/B6/B14/B15+B16(见 `CLEAN_REPRO_takeoff_fixes.diff`,286行);本文早期列的 12 提交含 humble 期特性分支内容,勿混。**
 > ⚠️ 措辞订正:本文初版说"不需要重建 jazzy 即可提 PR"——被用户硬指令与 d8ff119 实测打脸推翻,**现行标准=必须 jazzy 实跑通过才提 PR**。
 > ⚠️ 措辞订正:本文初版说"不需要重建 jazzy 即可提 PR"——被用户硬指令与 d8ff119 实测打脸推翻,**现行标准=必须 jazzy 实跑通过才提 PR**。
 
@@ -17,7 +17,7 @@
 | gbplanner_gain / frontier_lite 脚本 py_compile | ✅ Py3.12 通过 |
 | rclpy + nav_msgs + std_msgs | ✅ jazzy 全部可 import |
 
-**诚实边界(2026-07-06 更新)**:已实测=语言层(Py3.12/tomllib)+ ROS2 消息依赖层 + **jazzy 全栈 9/9 建成开箱验真 + 干净复现物理起飞**(SIM+0.760m/电机1950)。Go 代码编译与 ROS 发行版无关。**剩余未做=jazzy exploration 端到端全绿**(剩 frame_contract_probe 探针 QoS/时序 + accepted_goals 波动,PR 前最终把关)。
+**诚实边界(2026-07-06 晚更新)**:已实测=语言层 + ROS2 消息层 + jazzy 全栈 9/9 + **exploration 端到端全绿**(run `20260706T130626`)。Go 代码编译与 ROS 发行版无关。**剩余未做=真 GBPlanner 桥接集成跑通**(用户定稿前置);frontier_lite 基线达标率 40%(启动耗时蚕食窗口)为已知波动。
 
 ## 一、逐条兼容性审查(git log 09a5aa4..HEAD)
 
@@ -47,10 +47,10 @@
 
 ## 三、结论与行动
 
-1. ~~不需要重建 jazzy~~ **(07-05 订正:必须 jazzy 实跑再提 PR,用户硬指令)**:通用 bug fix / 向后兼容改动。jazzy 全栈 **9/9 已完成**,已在 jazzy 干净复现并物理起飞;**但 exploration 端到端未全绿,PR 仍不能提**(剩探针 QoS/时序 + accepted_goals 波动)。
+1. ~~不需要重建 jazzy~~ **(07-05 订正:必须 jazzy 实跑再提 PR,用户硬指令)**:通用 bug fix / 向后兼容改动。jazzy 全栈 9/9,exploration **已全绿**(20260706T130626);**PR 暂不提=用户指示等真 GBPlanner 桥接跑通后统一定稿**。
 2. **PR 提交前的收尾动作**(任务达"做好"标准后执行):
    - 把 world-model 分支 rebase 到最新 `origin/main`(已确认 = `09a5aa4`,无更新)。
    - `pyproject.toml` 里 tomli 声明为 `python_version < "3.11"` 条件依赖(确保 jazzy 不多装)。
    - PR 描述里注明:"修复均为通用/向后兼容;humble 专用镜像适配见附录,不在本 PR。"
    - 用用户账号 `ai4sci-z` fork + 提交(照 `integration/world-model-PR/手动提交PR与Issue指南.md`)。
-3. **诚实边界(2026-07-06 更新)**:jazzy 全栈 9/9 已建、干净复现物理起飞已实测(见 §0);**完整 jazzy 全栈 e2e(exploration gate 全绿)未达成**——剩 frame_contract_probe(/tf_static QoS、/ap/v1/pose/filtered 时序)与 accepted_goals 波动。即"我改的代码在 jazzy 起飞路径跑通"已实证,"整套 exploration 在 jazzy 端到端全绿"这步待收尾。
+3. **诚实边界(2026-07-06 晚更新)**:jazzy 全栈 9/9、**exploration 端到端全绿已实证**(run `20260706T130626`,B16 探针双根因修复后)。待办=真 GBPlanner 桥接集成(阶段2 transport 已 PASS)与 3D lidar,完成后 PR 统一定稿。

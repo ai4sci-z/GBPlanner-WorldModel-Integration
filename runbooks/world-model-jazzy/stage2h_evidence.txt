@@ -1,0 +1,22 @@
+=== STAGE2H START Mon Jul  6 22:26:33 CST 2026 ===
+--- 0. thin_ros2 还活着吗 ---
+1
+--- 1. 双订阅就位 ---
+d99bb9ad58c444ced7cdc97e27e7691283000472fd1ef872b0774b186ca5b643
+8813a3e4a315a3d343acea910e411acfb57b70a6d62e1372b1830b2381251c5c
+--- 2. thin_ros2 容器内 exec 发布 5 条测试 traj ---
+published 1
+published 2
+published 3
+published 4
+published 5
+--- 3. 判定 ---
+full_echo received=0  field_echo received=0
+  ----
+--- 4. 顺带:thin_ros2 主进程当前 stats 与错误 ---
+[INFO] [1783347965.240253062] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 3}
+[INFO] [1783347975.236444582] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 3}
+[INFO] [1783347985.239323400] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 3}
+[INFO] [1783347995.236298128] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 3}
+[INFO] [1783348005.236897284] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 3}
+=== STAGE2H END Mon Jul  6 22:26:53 CST 2026 ===

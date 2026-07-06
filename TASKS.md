@@ -32,15 +32,15 @@
 | 3 | 预研A·完整复现并**实际运行** world-model | 🏁 **端到端全绿(07-06 晚)** | run `20260706T130626`:TASK_STATUS_OK、blockers 空、4 探针全 ok、accepted_goals=3/3、path 1.06m、takeoff.ok=True、物理起飞 SIM+0.72m/电机1950,**无 hack**,clean_repro 首次 rc=0。关键=B15 死锁修复+B16 探针双根因(tf_static latched QoS+pose_filtered DDS慢发现28.97s实测)。clean分支 fix/world-model-e2e-takeoff(79643b9→77d951a→dada2db) |
 | 4 | 集成落地·把 GBPlanner 决策接进 world-model | ✅ **代码完成,待你提交PR** | ROS2-native 决策层集成:新增 `gbplanner_gain` 策略读图选向,替代脚本式 frontier_lite。已在 `~/ws/world-model` 分支 `feat/gbplanner-gain-exploration-strategy` commit(2提交:bugfix+feat),go build/vet/test + py_compile 全过。物料见 `integration/world-model-PR/` |
 | 4.5 | **真 bug 发现**:exploration 生成脚本无法编译 | ✅ 已修并入PR | `%%` 经 text/template 原样落盘 → SyntaxError;`py_compile` 实测复现,改单 `%` 后通过。疑似 exploration 运行时起不来根因之一 |
-| 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | 🔵 进行中 | 代码层已铁证(脚本循环、不订阅地图);**GBPlanner 侧实测数据已到手**(291.3m/132,091点/自动返航,曲线+CSV 在 images/);frontier_lite 侧量化待 #3 运行时修好 |
-| 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ⏸ 阻塞(依赖#3) | 覆盖率/用时/路径/卡死 → 表+图,突出优势 |
+| 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | ✅ **量化证据到手(07-06 晚)** | 代码层铁证(时间驱动 goal_index=ready_elapsed/8.67s,不订阅地图)+ **基线实测**(6 run:达标率 40%、path 0.43~3.80m 方差大,根因=启动耗时蚕食 26s 窗口,docs/基线定档);GBPlanner 侧实测(291.3m/132,091点)早已入库 |
+| 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ⏸ 阻塞(依赖**真 GBPlanner 桥接跑通**,非#3) | 同口径:accepted_goals 达标率/path 均值方差/全绿率;对照组基线已定档 |
 | 7 | 文档·写预研A/预研B 独立报告(桌面+三处) | 🔵 进行中 | 两份初稿已建,随复现进展补截图/数据 |
 | 8 | 提交 PR + Issue 给 world-model 作者 | ⏸ **延后(你 2026-07-06 晚指示)** | 源码改动**先保存**(clean 分支 4 commit+净diff 286行零hack✅,全绿✅);**等最终集成任务(真 GBPlanner 桥接)跑通后再准备完整 PR 物料一并定稿**。硬约束不变=作者 jazzy 环境能跑 |
-| 9 | **阶段4·ros1_bridge 接真版 GBPlanner** | 🔵 进行中 | ✅ I/O契约源码证实+ROS2出口适配器+bridge映射(`integration/ros1_bridge/`);⬜ 加3D雷达/编译起桥/ROS1侧跑/端到端(受运行时阻塞) |
+| 9 | **⭐ B2.5 自写薄桥接真版 GBPlanner(当前主线)** | 🔵 **transport 三段已 PASS(07-06 晚)** | 运行时前置已解(全绿)。官方 foxy ros1_bridge(RMW bad_alloc)与 zenoh(rosrust mismatch,beta+nightly)**实验判死**→自写薄桥(thinbridge_*.py,TCP:7601):odom✅ cloud✅ trajectory✅(rclpy 订阅口径,stage2j;**CLI echo 对 rclpy 发布者收不到=工具坑,stage2i**)。当前阻塞=①TCP 断连稳定性(2.5)②trajectory_to_intent dry-run(阶段3)③低速 FCU(阶段4)④**3D 点云=官方 lidar_3d 组件(360×60线)+已预留 /lidar/points→cloud_in 桥路**⑤gate 对齐(阶段5)。入口 docs/桥接查证与执行计划 |
 | 10 | 修运行时头号根因 tomllib | ✅ 完成(0b85cea) | `try: tomllib / except: tomli` 兜底;jazzy 实测零影响(原生 tomllib,兜底分支不执行) |
 | 11 | **⭐ jazzy 全栈重建(用户硬指令)** | ✅ **镜像阶段 9/9 收官(07-05 晚)** | 4 缺镜像全建成+开箱验真(坑全解:BuildKit 假成功/Livox cstdint/ydlidar declare_parameter;official-baseline **原版零补丁一次过**,micro_ros_agent 58.4s=humble 最狠坑 jazzy 天然没有)。施工指引 docs/jazzy全栈重建_施工指引.md;脚本 runbooks/world-model-jazzy/ |
 | 12 | **⭐ jazzy 跑通 exploration** | 🏁 **端到端全绿(07-06 晚)** | clean_repro.sh 首次 rc=0(run `20260706T130626`)。修复链:5类真bug(%%/空launch/IMU回声/RNGFND参数名)+ **B15 死锁** + **B16 探针双根因**(/tf_static latched→publisher QoS 内省;/ap/v1/pose/filtered→DDS 慢发现 28.97s 受控实验锤死→预算45s/容器90s)+ 测试断言遗留清理,go test 全绿。✅hack已撤(77d951a),净diff 286行(dada2db)。接管文档 RESUME_新窗口接管_2026-07-06.md + Bug台账 |
-| 13 | **⭐ frontier_lite 基线定档(新主线第一步)** | ⬜ 就绪 | 多跑 clean_repro 记录指标波动区间(已观测 accepted_goals 2~3、path 1.06~1.61m),作为 GBPlanner 对比的对照组 |
+| 13 | **frontier_lite 基线定档** | ✅ **第一批完成(07-06 晚,6 run)** | 全绿 2/6、达标率 40%、path 0.43~3.80m;失败模式分类 A探索质量(主导)/B启动竞态(1次)/C探针(0复发);**根因锁定=accepted_goals 纯时间驱动,启动耗时蚕食 26s 窗口**(源码 L78-108)。详见 docs/基线定档_frontier_lite_2026-07-06.md;需要更多样本时再补跑 |
 
 ## 四、决策 & 桥接路线(你已拍板)
 集成采用「桥接方案(ros1_bridge)」。原 P1 重规划为:① 跑通 gbplanner-ref 的 rmf_sim 确认 I/O ② 搭 ros1_bridge:world-model(ROS2)点云/里程计 → 喂 GBPlanner(ROS1),航点回流 `/navlab/exploration/*` ③ 给 iq_quad 加 3D 雷达 ④ 接 exploration 替换 frontier_lite。`gbplanner_core` 转备选/加深理解。

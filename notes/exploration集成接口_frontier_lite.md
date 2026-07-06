@@ -1,4 +1,4 @@
-> 📌 **状态戳(2026-07-06)**:本文含历史阶段内容。**当前权威状态**以 [RESUME_新窗口接管_2026-07-06.md](../RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](../docs/world-model端到端Bug台账_给作者PR.md) 为准。要点:jazzy 镜像 **9/9 已完成并开箱验真**;无 hack 配置**物理起飞已复现**(run 20260706T110405:SIM+0.76m/电机1950/DAlt0.655m);**端到端 exploration 尚未全绿**(剩 frame_contract_probe:/tf_static=QoS、/ap/v1/pose/filtered=时序非QoS、accepted_goals 2<3);**未提交 PR**。
+> 📌 **状态戳(2026-07-06 晚·全绿后)**:本文含历史阶段内容。**当前权威状态**以 [RESUME_新窗口接管_2026-07-06.md](../RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](../docs/world-model端到端Bug台账_给作者PR.md) 为准。要点:jazzy 9/9 已验真;**run `20260706T130626` 已端到端全绿**(TASK_STATUS_OK/4探针全ok/3目标/SIM+0.72m,无hack,B15+B16 已修);但 frontier_lite 多跑基线**稳定性差**(6次全绿2/6,达标率40%,根因=启动耗时蚕食探索窗口);当前主线=**B2.5 自写薄桥接真 GBPlanner**(官方 ros1_bridge 与 zenoh 均已实验判死)→3D lidar(官方 lidar_3d 组件)→同口径对比;**PR 延后**(用户指示:等最终桥接跑通后统一定稿)。
 
 # exploration 基线 = frontier_lite 的真实接口契约(读源码所得,2026-06-29)
 
@@ -32,13 +32,13 @@ exploration 任务的探索策略(navigation 任务用的是 `bounded_frontier`+
 - 控制:`/navlab/fcu/setpoint/intent` → `/navlab/fcu/setpoint/output` → `/navlab/fcu/controller/status`
 
 ## 闸门评估字段(gate_evaluation.go,必须满足)
-accepted_goals≥3、path_length_m≥0.35、coverage_growth≥min、goal_success_ratio、return_home_policy=return_home_then_land、completion_policy…
+**更正(2026-07-06 晚,gate_evaluation.go L224 源码复查)**:exploration gate 读的字段= `claim/strategy/accepted_goals/min_accepted_goals/path_length_m/min_path_length_m/motion_speed_mps`(+payload `ok/blockers` 驱动 task_completed);**`coverage_growth`/`goal_success_ratio` 属 navigation task(L232),不是 exploration gate 必需字段**。实测全绿 run `20260706T130626` 亦未依赖 coverage。
 
 ## GBPlanner 集成结论(据此精确化)
 1. 在 exploration gate 加新 strategy(如 `gbplanner`),替换 `frontier_lite`。
 2. GBPlanner 的 ROS2 节点产出 → **发到 `/navlab/exploration/{goal,path,frontiers,status,markers,coverage}`**,复用现有 setpoint→FCU 控制链(`/navlab/fcu/setpoint/intent`),**不引入 RotorS**。
 3. 闸门指标(accepted_goals 等)不变,GBPlanner 只要驱动 ≥3 个目标、有覆盖增长即过闸。
-4. **传感器线索**:官方基线(jazzy)用的无人机模型是 **`iris_with_lidar`**(dry-run 报错暴露),它**带 lidar** —— 之前"无 3D 感知"的担忧可能在官方基线侧有解,需进一步确认该 lidar 是 2D 还是 3D。
+4. **传感器线索(2026-07-06 晚已确认)**:`iris_with_lidar` = iris + **官方 `lidar_3d` 组件(gpu_lidar,360×60 线,垂直±30°,15Hz,topic=lidar)——真 3D**!且 world-model bridge 模板已预留 `/lidar/points`→`cloud_in`(PointCloud2)桥路。3D 方案=给 navlab_iq_quad include lidar_3d + 走预留桥路。
 5. frontier_lite 当前基于 **2D `/map`**;GBPlanner 是 3D(voxblox),要补 3D 占据图前端(octomap_server2/nvblox),输入点云需 3D lidar。
 
 ## 跑通 exploration 的成本(已证实)

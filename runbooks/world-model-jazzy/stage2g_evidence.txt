@@ -1,0 +1,30 @@
+=== STAGE2G START Mon Jul  6 22:17:11 CST 2026 ===
+--- 0. fresh 仿真 + 双端桥 ---
+7a753c884104ad06803f47e2418f2168fae456231a29537fbbdb219fd7ac2edf
+已启动(host 网络)。桥容器用 ROS_MASTER_URI=http://localhost:11311 即可连。
+c6fe8d8b5acef72b4b402bd468760f0b4efd47acc5401815dcae1d83718d2382
+--- 1. 长驻订阅容器先就位(计数 /gbp/trajectory) ---
+e6ee89b9ac96326c58523114aa71498154e9f77712f758d9aec1536f2297324c
+--- 2. 起飞 + 触发探索 ---
+z: 0.05649999999741756
+z: 1.201582436068636
+success: True
+z: 1.4335332652538548
+--- 3. 观察 90s(飞机自主探索,轨迹持续过桥) ---
+--- 4. 验收:订阅端收到几条 trajectory ---
+SUB_RECEIVED_COUNT=0 (frame_id=map,证明 frame 映射 world->map 生效)
+[ros1端] 
+6
+[INFO] [1783347596.297923, 65.524000]: thinbridge stats: {'traj_out': 5, 'odom_in': 0, 'cloud_in': 0} clients=0
+[INFO] [1783347606.862964, 70.292000]: thinbridge: traj -> tcp (204 wp, total 6)
+[INFO] [1783347619.459631, 75.524000]: thinbridge stats: {'traj_out': 6, 'odom_in': 0, 'cloud_in': 0} clients=0
+[ros2端] 
+[INFO] [1783347509.888500856] [thinbridge_ros2]: traj -> /gbp/trajectory (131 wp)
+[INFO] [1783347526.937612994] [thinbridge_ros2]: traj -> /gbp/trajectory (83 wp)
+[INFO] [1783347538.089769851] [thinbridge_ros2]: traj -> /gbp/trajectory (182 wp)
+[ERROR] [1783347546.223811664] [thinbridge_ros2]: tcp link lost: ConnectionError('closed') (reconnecting)
+[INFO] [1783347605.235811053] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 3}
+[INFO] [1783347615.238541194] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 3}
+STAGE2=FAIL
+--- 5. 清理长驻订阅 ---
+=== STAGE2G END Mon Jul  6 22:20:22 CST 2026 ===

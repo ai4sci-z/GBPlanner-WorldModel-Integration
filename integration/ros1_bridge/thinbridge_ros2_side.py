@@ -61,10 +61,15 @@ class ThinBridge(Node):
                     if len(buf) < 4 + n:
                         break
                     payload, buf = buf[4:4 + n], buf[4 + n:]
-                    self.on_frame(json.loads(payload))
+                    # 单条坏消息只记日志,绝不断链
+                    try:
+                        self.on_frame(json.loads(payload))
+                    except Exception as exc:
+                        self.get_logger().error("on_frame failed: %r" % exc)
             except socket.timeout:
                 continue
-            except Exception:
+            except Exception as exc:
+                self.get_logger().error("tcp link lost: %r (reconnecting)" % exc)
                 with self.sock_lock:
                     try:
                         self.sock.close()
