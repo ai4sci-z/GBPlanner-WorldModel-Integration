@@ -34,6 +34,8 @@ class ThinBridge(Node):
         self.create_subscription(LaserScan, "/scan", self.on_scan, qos_profile_sensor_data)
         threading.Thread(target=self.conn_loop, daemon=True).start()
         self.create_timer(10.0, lambda: self.get_logger().info("stats: %s" % self.stats))
+        # 3s ping 心跳:保活 + 快速暴露断链方向(哪端 send/recv 先报错)
+        self.create_timer(3.0, lambda: self.send({"type": "ping", "t": time.time()}))
         self.get_logger().info("thinbridge_ros2 up: (/slam/odom,/scan)->tcp | tcp->/gbp/trajectory")
 
     # ---------- TCP ----------
@@ -44,11 +46,13 @@ class ThinBridge(Node):
                 try:
                     s = socket.create_connection(("127.0.0.1", 7601), timeout=5)
                     s.settimeout(1.0)
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                     with self.sock_lock:
                         self.sock = s
                     buf = b""
                     self.get_logger().info("connected to ros1 side :7601")
-                except Exception:
+                except Exception as exc:
+                    self.get_logger().warning("connect to :7601 failed (%r), retry in 2s" % exc)
                     time.sleep(2)
                     continue
             try:
@@ -85,7 +89,8 @@ class ThinBridge(Node):
                 return
             try:
                 self.sock.sendall(frame)
-            except Exception:
+            except Exception as exc:
+                self.get_logger().error("send failed (%r), closing link" % exc)
                 try:
                     self.sock.close()
                 except Exception:

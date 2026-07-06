@@ -1,0 +1,58 @@
+=== STAGE2K START Mon Jul  6 22:55:29 CST 2026 ===
+--- 0. fresh 仿真 + 双端桥(带心跳/日志版)+ rclpy 订阅就位 ---
+c6a39e4e8be3345a671c17ecbdb830f16f665aa5cbadc4876863d1973aa4bb8b
+已启动(host 网络)。桥容器用 ROS_MASTER_URI=http://localhost:11311 即可连。
+0f61019b154cd8d95a90f318e47a29bcd934e865e27858e4355527ff380e76ea
+389041990eaf180c1eb3d89292b340ebd14bee5c96c0e649faf96d3d05e429c1
+--- 1. [2.6] rostopic info:GBPlanner/voxblox/PCI 实际订阅谁(实证,Review_008) ---
+==== /wm/odom
+Type: nav_msgs/Odometry
+Publishers: 
+ * /thinbridge_ros1 (http://localhost:46201/)
+Subscribers: None
+==== /wm/points
+Type: sensor_msgs/PointCloud2
+Publishers: 
+ * /thinbridge_ros1 (http://localhost:46201/)
+Subscribers: None
+==== /rmf_obelix/ground_truth/odometry_throttled
+Type: nav_msgs/Odometry
+Publishers: 
+ * /rmf_obelix/odo_throttler (http://localhost:45273/)
+Subscribers: 
+ * /gbplanner_node (http://localhost:46409/)
+ * /pci_general_ros_node (http://localhost:44661/)
+==== /rmf_obelix/velodyne_points
+Type: sensor_msgs/PointCloud2
+Publishers: 
+ * /gazebo (http://localhost:44897/)
+Subscribers: 
+ * /gbplanner_node (http://localhost:46409/)
+==== /rmf_obelix/command/trajectory
+Type: trajectory_msgs/MultiDOFJointTrajectory
+Publishers: 
+ * /pci_general_ros_node (http://localhost:44661/)
+Subscribers: 
+ * /rmf_obelix/lee_position_controller_node (http://localhost:45831/)
+ * /thinbridge_ros1 (http://localhost:46201/)
+--- 2. 起飞 + 触发探索 ---
+z: 0.05649999999741756
+z: 1.2011954010577643
+success: True
+z: 1.9721875166958638
+--- 3. 观察 120s(心跳每 3s,若断连日志会锁方向) ---
+--- 4. 验收与断连诊断 ---
+FIRST_MSG_AT=31.14s frame=map
+RESULT count=2
+[ros1端全部异常/连接日志] 
+[INFO] [1783349782.008596, 16.292000]: thinbridge: client connected ('127.0.0.1', 48568)
+[ERROR] [1783349844.192783, 42.420000]: thinbridge: accept failed (timeout('timed out'))
+[INFO] [1783349931.569275, 80.000000]: thinbridge stats: {'traj_out': 5, 'odom_in': 0, 'cloud_in': 0} clients=1
+[INFO] [1783349933.886592, 81.060000]: thinbridge: traj -> tcp (219 wp, total 6)
+[INFO] [1783349953.703808, 90.000000]: thinbridge stats: {'traj_out': 6, 'odom_in': 0, 'cloud_in': 0} clients=1
+[ros2端全部异常/连接日志] 
+[INFO] [1783349782.042048916] [thinbridge_ros2]: connected to ros1 side :7601
+[INFO] [1783349942.008615147] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 6}
+[INFO] [1783349952.008819514] [thinbridge_ros2]: stats: {'odom_out': 0, 'cloud_out': 0, 'traj_in': 6}
+SUB_RECEIVED=2
+=== STAGE2K END Mon Jul  6 22:59:18 CST 2026 ===

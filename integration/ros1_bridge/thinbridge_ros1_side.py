@@ -31,10 +31,15 @@ def send_all(obj):
         for c in clients:
             try:
                 c.sendall(frame)
-            except Exception:
+            except Exception as exc:
+                rospy.logerr("thinbridge: sendall failed (%r), dropping client", exc)
                 dead.append(c)
         for d in dead:
             clients.remove(d)
+            try:
+                d.close()
+            except Exception:
+                pass
 
 
 def on_traj(msg):
@@ -58,9 +63,11 @@ def reader(conn, pub_odom, pub_cloud):
     while not rospy.is_shutdown():
         try:
             chunk = conn.recv(1 << 16)
-        except Exception:
+        except Exception as exc:
+            rospy.logerr("thinbridge: reader recv failed (%r)", exc)
             break
         if not chunk:
+            rospy.logwarn("thinbridge: client sent FIN (clean close)")
             break
         buf += chunk
         while len(buf) >= 4:
@@ -73,7 +80,15 @@ def reader(conn, pub_odom, pub_cloud):
             except Exception:
                 continue
             kind = obj.get("type")
-            if kind == "odom":
+            if kind == "ping":
+                # 心跳:原样回 pong(不占用发布通道)
+                try:
+                    pong = json.dumps({"type": "pong", "t": obj.get("t")}).encode()
+                    conn.sendall(struct.pack(">I", len(pong)) + pong)
+                except Exception as exc:
+                    rospy.logerr("thinbridge: pong send failed (%r)", exc)
+                    break
+            elif kind == "odom":
                 m = Odometry()
                 m.header.stamp = rospy.Time.now()
                 m.header.frame_id = obj.get("frame", "world")
@@ -111,11 +126,17 @@ def main():
     srv.listen(5)
 
     def acceptor():
+        # 注:环境里 socket 默认超时可能被三方库设置,accept 会周期性抛 timeout;
+        # 曾因 break 导致 acceptor 线程死亡 -> 客户端断线后永远无法重连(2k 实测锁定)。
         while not rospy.is_shutdown():
             try:
                 conn, addr = srv.accept()
-            except Exception:
-                break
+            except socket.timeout:
+                continue
+            except Exception as exc:
+                rospy.logerr("thinbridge: accept failed (%r), keep accepting", exc)
+                continue
+            conn.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             rospy.loginfo("thinbridge: client connected %s", addr)
             with lock:
                 clients.append(conn)
