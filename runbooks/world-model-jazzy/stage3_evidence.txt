@@ -1,0 +1,54 @@
+=== STAGE3 DRYRUN START Mon Jul  6 23:15:22 CST 2026 ===
+--- 0. fresh planner 栈(PCI 状态机需干净;静止 odom 下旧轨迹永不完成会挂起规划循环) ---
+/gbplanner_node
+/pci_general_ros_node
+/rosout
+/tf_5
+/tf_53
+9f739f63d638f2d9c3240f35ba5ec6be17ee5c98515b485e0e5dd0232824bb9d
+--- 1. 手工输入 + dry-run 节点就位 ---
+f812e6653d308c71b5a58b01af9c60e1aa0ed026d5624fc1e1ab9f8b41236948
+f6f76e18d899e224325b43ea318690a02128d2c84e80f22a476faa7888d83336
+46b1c9ef36f1b43abba7c2f29a08b20b834f3b489dd98dab7bfa0a72437102ae
+--- 2. 等地图积累 15s 后触发规划 ---
+success: True
+message: ''
+--- 3. 验收:dry-run 输出(应见 TRAJ 行 + DRY 行,数值合理,零发布) ---
+[s3_dry 全日志尾部 20 行]
+[INFO] [1783351012.955223501] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351013.955904694] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351014.955555176] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351015.955597359] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351016.955678486] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351017.956097952] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351018.955502865] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351019.955708622] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351020.955393526] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351021.955782524] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351022.958325115] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351023.955979903] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351025.298242813] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351025.956066462] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351026.956122741] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351027.955528332] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351028.956030377] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351029.955933625] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351030.955030878] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351031.956004543] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[TRAJ 行]
+[INFO] [1783350996.873653631] [traj_dryrun]: TRAJ frame=map wp=1 dur=0.1s first=(0.00,0.00,1.00) last=(0.00,0.00,1.00)
+[INFO] [1783350999.026369571] [traj_dryrun]: TRAJ frame=map wp=6 dur=0.3s first=(0.00,0.00,1.00) last=(0.12,0.14,1.09)
+[DRY 行]
+[INFO] [1783351026.956122741] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351027.955528332] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351028.956030377] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351029.955933625] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351030.955030878] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[INFO] [1783351031.956004543] [traj_dryrun]: DRY wp=(0.12,0.14,1.09) cur=(0.00,0.00,1.00) dist=0.18 dz=0.09 yaw_err=0.88 -> vx=0.030 yaw_rate=0.300 (NOT published)
+[薄桥 ros2 端近况]
+[INFO] [1783350999.026416056] [thinbridge_ros2]: traj -> /gbp/trajectory (6 wp)
+[INFO] [1783351005.049154689] [thinbridge_ros2]: stats: {'odom_out': 211, 'cloud_out': 110, 'traj_in': 2}
+[INFO] [1783351015.045365308] [thinbridge_ros2]: stats: {'odom_out': 273, 'cloud_out': 142, 'traj_in': 2}
+[INFO] [1783351025.298679343] [thinbridge_ros2]: stats: {'odom_out': 332, 'cloud_out': 172, 'traj_in': 2}
+STAGE3=PASS (DRY lines=37)
+=== STAGE3 DRYRUN END Mon Jul  6 23:17:13 CST 2026 ===
