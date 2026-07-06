@@ -1,0 +1,3 @@
+=== STAGE2B START Mon Jul  6 21:46:43 CST 2026 ===
+--- 0. 清场并起 gbplanner(hostnet 版) ---
+025fb11eba8015c163ea95d7490255651cac5fdcc7dea5ba92bcae6faafff803

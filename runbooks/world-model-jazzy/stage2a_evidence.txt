@@ -1,0 +1,46 @@
+=== STAGE2A START Mon Jul  6 21:39:30 CST 2026 ===
+--- 0. 清场 ---
+--- 1. foxy 发布(fastrtps 默认) -> jazzy 订阅(cyclonedds),等最长 45s ---
+17a365d77bbe19ec34e028d1a434f9f2b117361d52d48cec99c7f049c39c2bda
+F2J_RC=0 (0=收到)
+--- 2. jazzy 发布 -> foxy 订阅,等最长 45s ---
+12f5f1949b86e4921d27bb2b8c0403e473a0f4bba54e44a111f355424d64aa67
+terminate called after throwing an instance of 'std::bad_alloc'
+  what():  std::bad_alloc
+timeout: the monitored command dumped core
+J2F_RC(head截断非0正常,看有无 data 行)=0
+--- 3. 三个桥接核心消息定义对比(foxy vs jazzy) ---
+  nav_msgs/msg/Odometry : DIFF!
+1a2,5
+> builtin_interfaces/Timestamp
+> int32sec
+> uint32nanosec
+> stringframe_id
+3a8,18
+> Posepose
+> Pointposition
+> float64x
+> float64y
+  sensor_msgs/msg/PointCloud2 : DIFF!
+1a2,5
+> builtin_interfaces/Timestamp
+> int32sec
+> uint32nanosec
+> stringframe_id
+4a9,20
+> uint8INT8=1
+> uint8UINT8=2
+> uint8INT16=3
+> uint8UINT16=4
+  trajectory_msgs/msg/MultiDOFJointTrajectory : DIFF!
+1a2,5
+> builtin_interfaces/Timestamp
+> int32sec
+> uint32nanosec
+> stringframe_id
+3a8,38
+> geometry_msgs/Transform[]transforms
+> Vector3translation
+> float64x
+> float64y
+=== STAGE2A END Mon Jul  6 21:40:25 CST 2026 ===
