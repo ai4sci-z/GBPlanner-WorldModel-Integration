@@ -1,0 +1,38 @@
+=== STAGE26 START Mon Jul  6 23:04:39 CST 2026 ===
+--- 0. 起纯 planner 栈(无 gazebo)+ 薄桥两端 ---
+1953892ab4e84f2c28c45dacbceea980d8679d103c99fb9785fe98c6abca8b31
+/gbplanner_node
+/pci_general_ros_node
+/rosout
+/tf_5
+/tf_53
+d5015b837cf28c80c8e7d7c84d64b12621e2ccd46856d28c2555c1a472872ecc
+--- 1. jazzy 手工发 odom(z=1,10Hz)+ scan(带开口几何,5Hz) ---
+24058e73326b14e8baf60b2749efe7001326e5aa8107f9a84500510ed5df60cf
+676bf4b47cef3dc351c0d8bb8362d8451f9784583c26104ebbf7e638ad6b7596
+--- 2. [验收a] 消费关系:/wm/* 的 Subscribers 应含 gbplanner_node/pci ---
+Type: nav_msgs/Odometry
+
+Publishers: 
+ * /thinbridge_ros1 (http://localhost:46075/)
+
+Subscribers: 
+ * /pci_general_ros_node (http://localhost:45931/)
+ * /gbplanner_node (http://localhost:44667/)
+Type: sensor_msgs/PointCloud2
+
+Publishers: 
+ * /thinbridge_ros1 (http://localhost:46075/)
+
+Subscribers: 
+ * /gbplanner_node (http://localhost:44667/)
+
+--- 3. [验收b] voxblox 建图心跳(消费 /wm/points 的证据) ---
+average rate: 2.303
+seq: 0
+stamp: 
+  secs: 0
+  nsecs:         0
+frame_id: "world"
+--- 4. [验收c] 触发规划 -> trajectory(2D 冒烟输入,拒了如实记录) ---
+75444d8b7038009bc65e6c56bd7ed3b73467fe58545edd1b9bd72da541a6d0a6

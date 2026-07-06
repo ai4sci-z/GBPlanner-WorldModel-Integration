@@ -13,6 +13,8 @@ import threading
 
 import rospy
 import sensor_msgs.point_cloud2 as pc2
+import tf2_ros
+from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import Header
@@ -21,6 +23,7 @@ from trajectory_msgs.msg import MultiDOFJointTrajectory
 clients = []
 lock = threading.Lock()
 stats = {"traj_out": 0, "odom_in": 0, "cloud_in": 0}
+tf_broadcaster = None  # set in main(); odom -> world->base_link TF(GBPlanner 需要 TF tree)
 
 
 def send_all(obj):
@@ -101,6 +104,17 @@ def reader(conn, pub_odom, pub_cloud):
                 v = obj.get("v", [0, 0, 0])
                 m.twist.twist.linear.x, m.twist.twist.linear.y, m.twist.twist.linear.z = v
                 pub_odom.publish(m)
+                # 同步广播 world->base_link 动态 TF(阶段2.6:GBPlanner/voxblox 需要
+                # TF tree;原仿真由 RotorS 发,消费 /wm/* 时由桥补,时间戳同 odom)
+                if tf_broadcaster is not None:
+                    t = TransformStamped()
+                    t.header.stamp = m.header.stamp
+                    t.header.frame_id = m.header.frame_id
+                    t.child_frame_id = m.child_frame_id
+                    t.transform.translation.x, t.transform.translation.y, t.transform.translation.z = p
+                    (t.transform.rotation.x, t.transform.rotation.y,
+                     t.transform.rotation.z, t.transform.rotation.w) = q
+                    tf_broadcaster.sendTransform(t)
                 stats["odom_in"] += 1
             elif kind == "cloud":
                 header = Header()
@@ -115,7 +129,9 @@ def reader(conn, pub_odom, pub_cloud):
 
 
 def main():
+    global tf_broadcaster
     rospy.init_node("thinbridge_ros1")
+    tf_broadcaster = tf2_ros.TransformBroadcaster()
     pub_odom = rospy.Publisher("/wm/odom", Odometry, queue_size=10)
     pub_cloud = rospy.Publisher("/wm/points", PointCloud2, queue_size=5)
     rospy.Subscriber("/rmf_obelix/command/trajectory", MultiDOFJointTrajectory, on_traj)
