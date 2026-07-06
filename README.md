@@ -23,7 +23,9 @@
 线路4·量化对比               ███░░░░░░░ ~30%  GBPlanner侧实测✅入库;frontier_lite侧等线路2
 ```
 
-# 🔴 最新全景状态(2026-07-05)
+# 🔴 最新全景状态(2026-07-06 · 起飞突破)
+
+> 🎉 **world-model 端到端起飞跑通了**:从全新克隆的作者源码(09a5aa4)干净复现,连修 5 类真 bug,**无人机真物理离地**(SIM 物理升 0.75m/电机 1950),**原版 frontier_lite 探索首次端到端跑起来**(飞 1.61m/3 目标/exploration_probe ok=True)。关键那一刀=**死锁逻辑修复**(起飞前不转发探索 intent 给飞控,破 GUIDED takeoff 被自身探索指令死锁)。就差 `frame_contract_probe`(/tf_static 需 TRANSIENT_LOCAL QoS)。修复在 clean 分支 `fix/world-model-e2e-takeoff`;diff=`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff`;接管文档 `RESUME_新窗口接管_2026-07-06.md`。
 
 | 环节 | 状态 |
 |---|---|

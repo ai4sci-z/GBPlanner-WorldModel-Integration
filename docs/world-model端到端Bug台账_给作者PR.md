@@ -3,10 +3,14 @@
 > **用途**：①你（用户）随时查我到底找出并修了哪些真 bug；②提 PR 时的逐条依据。
 > **原则**：只小修不大修、不动大框架；每条都有失败现场证据 + 源码根因 + 最小改动 + 提交号。
 > **诚实标注**：✅已实测确认修好 / 🔵已提交但端到端尚未全绿（在验证链上推进了一个门）/ ⚠️需处理后再进 PR。
-> 分支 `feat/gbplanner-gain-exploration-strategy`（基于上游 `09a5aa4`），最后更新 2026-07-05 深夜。
+> 分支 `feat/gbplanner-gain-exploration-strategy`（基于上游 `09a5aa4`）+ clean 分支 `fix/world-model-e2e-takeoff`（干净复现验证，commit 79643b9），最后更新 **2026-07-06（起飞突破）**。
 
-## 一句话现状（不粉饰）
-end-to-end **仍未跑通**（最新 run `status=TASK_STATUS_ERROR`）。已从"机器人根本不存在"一路推进到"**takeoff 指令被接受（result 4→0）但飞机未爬升、EKF3 仍在收敛**"。当前前沿=EKF3 external-nav 收敛 / takeoff 后爬升。
+## 一句话现状（2026-07-06 更新 · 起飞突破）
+🎉 **world-model 端到端起飞跑通了**。从全新克隆的作者源码(09a5aa4)干净复现，连修 5 类真 bug，**无人机真物理离地**（SIM 物理高度升 0.75m、四电机 PWM 1950、DAlt 爬到 0.61m），**原版 frontier_lite 探索首次端到端跑起来**（`exploration_probe ok=True`、飞 1.61m、接受 3 个目标、`takeoff.ok=True state=ready`）。
+- **关键那一刀=死锁逻辑修复**（B15）：起飞完成前不把探索 intent 转发给飞控，否则"保持当前位置"指令覆盖 GUIDED takeoff 爬升（CTUN.DAlt 被摁在 0）→永不离地→死锁。这是相序互斥正解，非强改 DAlt。
+- ⚠️ **诚实边界**：我曾额外堆 3 个不符合物理实际的参数 hack（改气压计高度源/DISARM_DELAY=0/readiness 拉长），被用户正确批评已**全部撤销**——去掉后照样飞（测距仪高度源 POSZ=2、安全保护都保持作者原样）。
+- ◉ **就差最后一个**：`frame_contract_probe` 采不到 `/tf_static`（latched，需 TRANSIENT_LOCAL QoS，探针用了默认 VOLATILE）和 `/ap/v1/pose/filtered`（DDS type-hash/时序）→ 见文末"下一步坑"。
+- diff（可看）：`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff`；干净复现命令：`runbooks/world-model-jazzy/clean_repro.sh`。
 
 ---
 
@@ -41,16 +45,21 @@ end-to-end **仍未跑通**（最新 run `status=TASK_STATUS_ERROR`）。已从"
 
 ---
 
-## 下一步坑（当前前沿，尚未修）—— 2026-07-06 精确定性
-**坑#17：GUIDED 外部导航 takeoff 被接受但电机不上桨、无人机不爬升。** 逐层实锤(tlog+servo 解码)：
-- 机型确认 `MAV_TYPE=2` 四旋翼；SLAM/建图/位姿全通(rosbag:/slam/odom 7946、/map 38、/ap/v1/pose/filtered 614)。
-- 无人机**稳定 armed 41 秒**(19.77s→61.19s)，GUIDED(custom_mode=4)，mavlink NAV_TAKEOFF **ack result=0(接受)**。
-- 但 **SERVO_OUTPUT 全程 1100(spin-armed 怠速)**，从没超 1117(离地需~1500+)；throttle 0%、alt 0.00、SITL 从无 "Takeoff" 字样 → **飞控收指令却没执行爬升**。
-- 持续 `PreArm: VisOdom: not healthy`；早期(EKF 未收敛时) `Accels inconsistent`/`EKF attitude is bad`。仿真仅 72% 实时(CPU 吃紧)。
-- **根因假设**：GUIDED 自动起飞的位置质量门(VisOdom/ExternalNav 健康)没过 → 拒绝上桨。humble/jazzy 同墙 → 作者 external-nav 起飞路径疑从未验证。
-- **下一步最小修方向**：①查 ArduPilot 实收外部导航(ExternalOdometry via AP_DDS)真实频率/新鲜度,过低则提速 ②评估 VISO_TYPE=1 是否造成 spurious VisOdom 健康检查 ③或改用 DDS takeoff 服务 /ap/v1/experimental/takeoff 而非 mavlink NAV_TAKEOFF。
-- 诊断脚本(证据可复现)：`runbooks/world-model-jazzy/` 的 decode_takeoff_physics.sh(电机/油门/高度)、decode_disarm_reason.sh(arm/disarm 时间线)、inspect_ekf_timeline.sh、diag_topics.sh(rosbag 话题计数)。
+## B15（关键）· 死锁修复：takeoff 被接受但不爬升的真根因 —— 2026-07-06 已解
+**症状**：GUIDED takeoff ack=0(接受) 但 CTUN.DAlt(期望高度)全程摁在 0、电机不到悬停、无人机不爬。
+**逐层实锤(BIN 的 CTUN/RCOU/SIM 解码)**：DAlt=0 → 控制器被命令"保持当前高度"而非爬升。
+**真根因(读 fcu_controller_runtime.py.tmpl 源码)**：`on_setpoint_intent` **无条件**把探索工作流的 setpoint/intent 转成 cmd_vel + 本地位置设定点灌给飞控。起飞前 intent 是"静止 hold"，在 GUIDED 下覆盖 takeoff 的爬升目标(DAlt=当前高度) → 永不离地 → takeoff never ok → controller never ready → 工作流一直发 hold intent → **死锁**（cmd_vel 排除法：`controller_ready` 需 `takeoff.ok`，故 hold cmd_vel 不是它发的；真凶是 on_setpoint_intent 无门转发）。
+**最小改动**：`on_setpoint_intent` 加 `if bootstrap_ready(state):` 门——起飞完成前不转发探索 intent。相序互斥正解，不动大框架。
+**验证(实测)**：SIM 物理高度升 0.75m、四电机 1950、DAlt 爬到 0.61m、frontier_lite exploration_probe ok=True(飞1.61m/3目标)。
+**诚实修正**：曾额外堆 3 个参数 hack（EK3_SRC1_POSZ 改气压计/DISARM_DELAY=0/readiness 拉长），不符合物理实际，已全撤——去掉后照样飞，证明只需 B15 逻辑修复。
+
+## 下一步坑（当前前沿，尚未修）—— 2026-07-06
+**frontier_lite 探索已端到端跑通，只剩 `frame_contract_probe` 诊断探针 gate 没过。**
+- 采不到 2 个话题：`/tf_static`（latched=TRANSIENT_LOCAL QoS，探针用默认 `qos_profile_sensor_data`=VOLATILE 收不到，ROS2 经典 QoS 坑）、`/ap/v1/pose/filtered`（ArduPilot DDS 位姿，实测发布过 614 条，探针 ros2_topic_echo/rclpy 采不到，疑 DDS type-hash/时序）。其余 /imu /scan /slam/odom /tf 全 ok=True。
+- **最小修方向**：探针模板 `templates/python/ros_probe.py.tmpl` L169 `create_subscription(..., qos_profile_sensor_data)` → 对 latched 话题(/tf_static)用 TRANSIENT_LOCAL QoS。
+- 诊断脚本：`runbooks/world-model-jazzy/check_probes.py <run_dir>`、`decode_ctun.py`(读起飞控制回路 DAlt/ThO)。
 
 ## 给作者的高价值观察（Issue 素材）
-- B1/B14 说明作者**很可能从未端到端跑通过 exploration**（脚本编译不过、rangefinder 参数被固件无视）——任何人、任何 OS、Mac 或 Linux 跑到这步都会死,不是环境问题。
+- B1/B14/B15 说明作者**很可能从未端到端跑通过 exploration**（脚本编译不过、rangefinder 参数被固件无视、起飞被自身探索指令死锁）——任何人、任何 OS 跑到这步都会死,不是环境问题。
+- B15 死锁最有价值：起飞与导航指令的相序竞争，属经典临界区问题，作者代码缺相序门。
 - B14 是**跨 4 文件的系统性参数名漂移**,固件升级(4.5)后旧名静默失效,最隐蔽。
