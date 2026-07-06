@@ -1,3 +1,47 @@
 === STAGE2B START Mon Jul  6 21:46:43 CST 2026 ===
 --- 0. 清场并起 gbplanner(hostnet 版) ---
 025fb11eba8015c163ea95d7490255651cac5fdcc7dea5ba92bcae6faafff803
+已启动(host 网络)。桥容器用 ROS_MASTER_URI=http://localhost:11311 即可连。
+ERROR: Unable to communicate with master!
+--- 1. 起 zenoh-bridge-ros1(连 ROS1 master,listen tcp:7447) ---
+6a65c29a74a15d3cbca4a64b8ccaa0ed5377b5fe0666a1e19c6fc35987b47c23
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:49:46.052172Z[0m [31mERROR[0m ThreadId(147) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/vis/best_planning_paths'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:49:46.062457Z[0m [31mERROR[0m ThreadId(126) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/rmf_obelix/ground_truth/odometry_throttled'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+--- 2. 起 zenoh-bridge-ros2dds(connect tcp:7447,DDS domain 0) ---
+2333f465a719dfcb823ad901f46bd19432aa638c23c00604d45977780e40dab3
+[2m2026-07-06T13:49:46.349815Z[0m [32m INFO[0m main ThreadId(01) [2mzenoh::api::loader[0m[2m:[0m Finished loading plugins
+[2m2026-07-06T13:49:46.349961Z[0m [32m INFO[0m tokio-rt-worker ThreadId(23) [2mzenoh_plugin_ros2dds[0m[2m:[0m ROS2 plugin Config { namespace: "/", nodename: "zenoh_bridge_ros2dds", domain: 0, ros_localhost_only: false, ros_automatic_discovery_range: None, ros_static_peers: None, allowance: None, pub_max_frequencies: [], transient_local_cache_multiplier: 10, queries_timeout: Some(QueriesTimeouts { default: 5.0, transient_local_subscribers: [], services: [], actions: Some(ActionsTimeouts { send_goal: [], cancel_goal: [], get_result: [(Regex(".*"), 300.0)] }) }), reliable_routes_blocking: true, pub_priorities: [], work_thread_num: 2, max_block_thread_num: 50, __required__: None, __path__: None }
+[2m2026-07-06T13:49:46.350443Z[0m [33m WARN[0m tokio-rt-worker ThreadId(23) [2mzenoh_plugin_ros2dds::ros2_utils[0m[2m:[0m ROS_DISTRO environment variable is not set. Assuming 'iron', but this could lead to errors on 'ros_discovery_info' (see https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds/issues/21)
+[2m2026-07-06T13:49:46.372640Z[0m [32m INFO[0m            main ThreadId(01) [2mzenoh::net::runtime::orchestrator[0m[2m:[0m Zenoh can be reached at: tcp/10.255.255.254:46307
+[2m2026-07-06T13:49:46.372655Z[0m [32m INFO[0m            main ThreadId(01) [2mzenoh::net::runtime::orchestrator[0m[2m:[0m Zenoh can be reached at: tcp/10.54.233.49:46307
+--- 3. ROS1->ROS2:jazzy 侧话题列表(应见 /rmf_obelix/*) ---
+--- 4. ROS1->ROS2:jazzy 收 odometry_throttled(--once,最长 60s) ---
+R1TO2_RC=0
+--- 5. ROS2->ROS1:jazzy 发 String,ROS1 侧收 ---
+f7e3f2b9334cf0eab0552680db1f1e973cd7bfb8487a0952d7197a8a2f298b07
+WARNING: topic [/bridge_r2to1] does not appear to be published yet
+R2TO1_RC=0
+--- 6. trajectory 冒烟:起飞+触发探索,jazzy 侧收 trajectory(--once,最长 90s) ---
+TRAJ_RC=0
+--- 7. 桥日志尾部(排障用) ---
+[2m2026-07-06T13:53:37.315940Z[0m [31mERROR[0m ThreadId(177) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/vis/robot_state'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:53:37.336610Z[0m [31mERROR[0m ThreadId(206) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/move_base_simple/goal'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:53:37.396362Z[0m [31mERROR[0m ThreadId(182) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/gbplanner_node/surface_pointcloud'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:53:37.434679Z[0m [31mERROR[0m ThreadId(208) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/global_planner/waypoint_request'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+  ----
+[2m2026-07-06T13:52:16.979833Z[0m [32m INFO[0m tokio-rt-worker ThreadId(04) [2mzenoh_plugin_ros2dds[0m[2m:[0m Node /_ros2cli_1 undeclares Publisher /parameter_events: rcl_interfaces/msg/ParameterEvent - Allowed
+[2m2026-07-06T13:52:16.979923Z[0m [32m INFO[0m tokio-rt-worker ThreadId(04) [2mzenoh_plugin_ros2dds::routes_mgr[0m[2m:[0m Route Publisher (ROS:/parameter_events -> Zenoh:parameter_events) removed
+[2m2026-07-06T13:52:16.979930Z[0m [32m INFO[0m tokio-rt-worker ThreadId(04) [2mzenoh_plugin_ros2dds[0m[2m:[0m Node /_ros2cli_1 undeclares Publisher /bridge_r2to1: std_msgs/msg/String - Allowed
+[2m2026-07-06T13:52:16.979936Z[0m [32m INFO[0m tokio-rt-worker ThreadId(04) [2mzenoh_plugin_ros2dds::routes_mgr[0m[2m:[0m Route Publisher (ROS:/bridge_r2to1 -> Zenoh:bridge_r2to1) removed
+[2m2026-07-06T13:52:16.979938Z[0m [32m INFO[0m tokio-rt-worker ThreadId(04) [2mzenoh_plugin_ros2dds[0m[2m:[0m Node /_ros2cli_1 undeclares Publisher /rosout: rcl_interfaces/msg/Log - Allowed
+[2m2026-07-06T13:52:16.979942Z[0m [32m INFO[0m tokio-rt-worker ThreadId(04) [2mzenoh_plugin_ros2dds::routes_mgr[0m[2m:[0m Route Publisher (ROS:/rosout -> Zenoh:rosout) removed
+[2m2026-07-06T13:52:16.979943Z[0m [32m INFO[0m tokio-rt-worker ThreadId(04) [2mzenoh_plugin_ros2dds[0m[2m:[0m Node /_ros2cli_1 undeclares Service Server /_ros2cli_1/get_type_description: type_description_interfaces/srv/GetTypeDescription - Allowed
+[2m2026-07-06T13:52:16.979986Z[0m [32m INFO[0m tokio-rt-worker ThreadId(04) [2mzenoh_plugin_ros2dds::routes_mgr[0m[2m:[0m Route Service Server (ROS:/_ros2cli_1/get_type_description <-> Zenoh:_ros2cli_1/get_type_description) removed
+=== STAGE2B END Mon Jul  6 21:53:43 CST 2026 ===

@@ -1,0 +1,40 @@
+=== STAGE2E START Mon Jul  6 22:07:18 CST 2026 ===
+--- 0. 清 zenoh 桥,部署薄桥两端 ---
+5557996ab06a434b7c5f40d94f077d1fe4b66004397ce47758d45e0f0644a63b
+[ros1端日志头] 
+[INFO] [1783346839.863527, 0.000000]: thinbridge_ros1 up: tcp :7601 | traj->tcp | tcp->(/wm/odom,/wm/points)
+[INFO] [1783346844.283960, 532.680000]: thinbridge: client connected ('127.0.0.1', 48224)
+[ros2端日志头] 
+[INFO] [1783346844.306497730] [thinbridge_ros2]: thinbridge_ros2 up: (/slam/odom,/scan)->tcp | tcp->/gbp/trajectory
+[INFO] [1783346844.307303684] [thinbridge_ros2]: connected to ros1 side :7601
+--- A. ROS2->ROS1 odom ---
+998fa3c919012d9cea5ae635f5a27783d4847f7109c4619ee5d659ce399e7d6e
+A_ODOM=SUCCESS
+    position: 
+      x: 1.5
+      y: 2.5
+      z: 0.8
+--- B. ROS2->ROS1 scan->cloud ---
+5899a502c49cb1add924676001203d7ff30c043e586e273c7c0ca2d60fd9f83c
+B_CLOUD=SUCCESS (width=3)
+  frame_id: "rmf_obelix/rmf_obelix/velodyne"
+height: 1
+width: 3
+--- C. ROS1->ROS2 trajectory(重触发探索,90s 内收) ---
+success: True
+message: ''
+C_TRAJ=FAIL
+--- 桥两侧日志尾部 ---
+[INFO] [1783346859.710510, 540.376000]: thinbridge stats: {'traj_out': 0, 'odom_in': 34, 'cloud_in': 0} clients=1
+[INFO] [1783346879.871027, 550.376000]: thinbridge stats: {'traj_out': 0, 'odom_in': 34, 'cloud_in': 23} clients=1
+[INFO] [1783346899.378596, 560.376000]: thinbridge stats: {'traj_out': 0, 'odom_in': 34, 'cloud_in': 23} clients=1
+[INFO] [1783346918.048648, 570.376000]: thinbridge stats: {'traj_out': 0, 'odom_in': 34, 'cloud_in': 23} clients=1
+[INFO] [1783346937.109838, 580.376000]: thinbridge stats: {'traj_out': 0, 'odom_in': 34, 'cloud_in': 23} clients=0
+[INFO] [1783346956.814464, 590.376000]: thinbridge stats: {'traj_out': 0, 'odom_in': 34, 'cloud_in': 23} clients=0
+[INFO] [1783346914.284114111] [thinbridge_ros2]: stats: {'odom_out': 34, 'cloud_out': 23, 'traj_in': 0}
+[INFO] [1783346924.284033538] [thinbridge_ros2]: stats: {'odom_out': 34, 'cloud_out': 23, 'traj_in': 0}
+[INFO] [1783346928.030025918] [thinbridge_ros2]: connected to ros1 side :7601
+[INFO] [1783346934.284095441] [thinbridge_ros2]: stats: {'odom_out': 34, 'cloud_out': 23, 'traj_in': 0}
+[INFO] [1783346944.283959674] [thinbridge_ros2]: stats: {'odom_out': 34, 'cloud_out': 23, 'traj_in': 0}
+[INFO] [1783346954.284073743] [thinbridge_ros2]: stats: {'odom_out': 34, 'cloud_out': 23, 'traj_in': 0}
+=== STAGE2E END Mon Jul  6 22:09:21 CST 2026 ===

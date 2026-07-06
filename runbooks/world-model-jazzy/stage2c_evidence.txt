@@ -1,0 +1,58 @@
+=== STAGE2C DIAG START Mon Jul  6 21:55:47 CST 2026 ===
+--- 1. docker hub tags(zenoh-bridge-ros1) ---
+nightly  updated: 2025-08-14
+1.0.0-dev-82-g16ebad5  updated: 2025-08-14
+1.0.0-dev-81-g13df933  updated: 2025-05-07
+1.0.0-dev-79-gb9a9251  updated: 2025-05-02
+1.0.0-dev-78-g546632b  updated: 2025-03-20
+1.0.0-dev-77-g3d90897  updated: 2025-03-14
+1.0.0-dev-76-gb933733  updated: 2025-02-26
+1.0.0-dev-74-g83bd8a8  updated: 2024-12-20
+1.0.0-dev-73-gd421bc1  updated: 2024-12-19
+1.0.0-dev-70-g487547e  updated: 2024-12-18
+1.0.0-dev-69-gcc58959  updated: 2024-12-16
+1.0.0-dev-68-gf267e15  updated: 2024-12-13
+1.0.0-dev-65-g374a336  updated: 2024-12-11
+1.0.0-dev-63-g8dfa7da  updated: 2024-11-29
+1.0.0-dev-62-g44bb957  updated: 2024-11-27
+1.0.0-dev-61-g5de56c9  updated: 2024-11-26
+1.0.0-dev-60-gf67d3db  updated: 2024-11-22
+1.0.0-dev-59-g524c046  updated: 2024-11-21
+1.0.0-dev-58-g5e5ad1c  updated: 2024-11-15
+1.0.0-dev-57-g16e8f57  updated: 2024-11-14
+1.0.0-dev-55-g964d060  updated: 2024-11-08
+1.0.0-dev-52-gd299190  updated: 2024-11-07
+1.0.0-dev-51-g964983a  updated: 2024-11-05
+1.0.0-dev-49-gcaba56f  updated: 2024-10-31
+1.0.0-dev-48-g9d62dfd  updated: 2024-10-29
+--- 2. 两桥 zenoh 会话证据(logs 里 transport/session/link) ---
+[2m2026-07-06T13:49:40.941235Z[0m [32m INFO[0m main ThreadId(01) [2mzenoh_bridge_ros1[0m[2m:[0m Zenoh Config { id: 63ef3d9194e651dc29696fcae3cf75e6, metadata: Null, mode: Some(Peer), connect: ConnectConfig { timeout_ms: None, endpoints: Unique([]), exit_on_failure: None, retry: None }, listen: ListenConfig { timeout_ms: None, endpoints: Unique([tcp/127.0.0.1:7447]), exit_on_failure: None, retry: None }, scouting: ScoutingConf { timeout: None, delay: None, multicast: ScoutingMulticastConf { enabled: Some(false), address: None, interface: None, ttl: None, autoconnect: None, listen: None }, gossip: GossipConf { enabled: None, multihop: None, autoconnect: None } }, timestamping: TimestampingConf { enabled: None, drop_future_timestamp: None }, queries_default_timeout: None, routing: RoutingConf { router: RouterRoutingConf { peers_failover_brokering: None }, peer: PeerRoutingConf { mode: None } }, aggregation: AggregationConf { subscribers: [], publishers: [] }, transport: TransportConf { unicast: TransportUnicastConf { accept_timeout: 10000, accept_pending: 100, max_sessions: 1000, max_links: 1, lowlatency: false, qos: QoSUnicastConf { enabled: true }, compression: CompressionUnicastConf { enabled: false } }, multicast: TransportMulticastConf { join_interval: Some(2500), max_sessions: Some(1000), qos: QoSMulticastConf { enabled: false }, compression: CompressionMulticastConf { enabled: false } }, link: TransportLinkConf { protocols: None, tx: LinkTxConf { sequence_number_resolution: U32, lease: 10000, keep_alive: 4, batch_size: 65535, queue: QueueConf { size: QueueSizeConf { control: 1, real_time: 1, interactive_high: 1, interactive_low: 1, data_high: 2, data: 4, data_low: 2, background: 1 }, congestion_control: CongestionControlConf { wait_before_drop: 1000 }, batching: BatchingConf { enabled: true, time_limit: 1 } }, threads: 6 }, rx: LinkRxConf { buffer_size: 65535, max_message_size: 1073741824 }, tls: TLSConf { root_ca_certificate: None, server_private_key: None, server_certificate: None, client_auth: None, client_private_key: None, client_certificate: None, server_name_verification: None, root_ca_certificate_base64: None, server_private_key_base64: None, server_certificate_base64: None, client_private_key_base64: None, client_certificate_base64: None }, unixpipe: UnixPipeConf { file_access_mask: None } }, shared_memory: ShmConf { enabled: true }, auth: AuthConf { usrpwd: UsrPwdConf { user: None, password: None, dictionary_file: None }, pubkey: PubKeyConf { public_key_pem: None, private_key_pem: None, public_key_file: None, private_key_file: None, key_size: None, known_keys_file: None } } }, adminspace: AdminSpaceConf { enabled: true, permissions: PermissionsConf { read: true, write: false } }, downsampling: [], access_control: AclConfig { enabled: false, default_permission: Deny, rules: None, subjects: None, policies: None }, plugins_loading: PluginsLoading { enabled: true, search_dirs: LibSearchDirs([Spec(LibSearchSpec { kind: CurrentExeParent, value: None }), Path("."), Path("~/.zenoh/lib"), Path("/opt/homebrew/lib"), Path("/usr/local/lib"), Path("/usr/lib")]) }, plugins: Object {"ros1": Object {"ros_hostname": String("localhost"), "ros_master_uri": String("http://localhost:11311/")}} }
+[2m2026-07-06T13:49:41.117492Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+[2m2026-07-06T13:49:41.210238Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+[2m2026-07-06T13:49:41.220295Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+[2m2026-07-06T13:49:41.230663Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+[2m2026-07-06T13:49:41.251134Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+[2m2026-07-06T13:49:46.348605Z[0m [32m INFO[0m main ThreadId(01) [2mzenoh_bridge_ros2dds[0m[2m:[0m Zenoh Config(Config { id: None, metadata: Null, mode: Some(Peer), region_name: None, gateway: GatewayConf { south: None }, connect: ConnectConfig { timeout_ms: None, endpoints: Unique([tcp/127.0.0.1:7447]), exit_on_failure: None, retry: None }, listen: ListenConfig { timeout_ms: None, endpoints: Dependent(ModeValues { router: Some([tcp/[::]:7447]), peer: Some([tcp/[::]:0]), client: None }), exit_on_failure: None, retry: None }, open: OpenConf { return_conditions: ReturnConditionsConf { connect_scouted: None, declares: None } }, scouting: ScoutingConf { timeout: None, delay: None, multicast: ScoutingMulticastConf { enabled: Some(false), address: None, interface: None, ttl: None, autoconnect: None, autoconnect_strategy: None, listen: None }, gossip: GossipConf { enabled: None, multihop: None, target: None, autoconnect: None, autoconnect_strategy: None } }, timestamping: TimestampingConf { enabled: Some(Unique(true)), drop_future_timestamp: None }, queries_default_timeout: None, routing: RoutingConf { router: RouterRoutingConf { peers_failover_brokering: DeprecatedPeersFailoverBrokering(None), linkstate: LinkstateConf { transport_weights: [] } }, peer: DeprecatedRoutingPeer(None), interests: InterestsConf { timeout: None } }, aggregation: AggregationConf { subscribers: [], publishers: [] }, qos: QoSConfig { publication: PublisherQoSConfList([]), network: [] }, transport: TransportConf { unicast: TransportUnicastConf { open_timeout: 10000, accept_timeout: 10000, accept_pending: 100, max_sessions: 1000, max_links: 1, lowlatency: false, qos: QoSUnicastConf { enabled: true }, compression: CompressionUnicastConf { enabled: false } }, multicast: TransportMulticastConf { join_interval: Some(2500), max_sessions: Some(1000), qos: QoSMulticastConf { enabled: false }, compression: CompressionMulticastConf { enabled: false } }, link: TransportLinkConf { protocols: None, tx: LinkTxConf { sequence_number_resolution: U32, lease: 10000, keep_alive: 4, batch_size: 65535, queue: QueueConf { size: QueueSizeConf { control: 2, real_time: 2, interactive_high: 2, interactive_low: 2, data_high: 2, data: 2, data_low: 2, background: 2 }, congestion_control: CongestionControlConf { drop: CongestionControlDropConf { wait_before_drop: 1000, max_wait_before_drop_fragments: 50000 }, block: CongestionControlBlockConf { wait_before_close: 5000000 } }, batching: BatchingConf { enabled: true, time_limit: 1 }, allocation: QueueAllocConf { mode: Lazy } }, threads: 6 }, rx: LinkRxConf { buffer_size: 65535, max_message_size: 1073741824 }, tls: TLSConf { root_ca_certificate: None, listen_private_key: None, listen_certificate: None, enable_mtls: None, connect_private_key: None, connect_certificate: None, verify_name_on_connect: None, close_link_on_expiration: None, so_sndbuf: None, so_rcvbuf: None, root_ca_certificate_base64: None, listen_private_key_base64: None, listen_certificate_base64: None, connect_private_key_base64: None, connect_certificate_base64: None }, tcp: TcpConf { so_sndbuf: None, so_rcvbuf: None }, unixpipe: UnixPipeConf { file_access_mask: None } }, shared_memory: ShmConf { enabled: true, mode: Lazy, transport_optimization: LargeMessageTransportOpt { enabled: true, pool_size: 16777216, message_size_threshold: 3072 } }, auth: AuthConf { usrpwd: UsrPwdConf { user: None, password: None, dictionary_file: None }, pubkey: PubKeyConf { public_key_pem: None, private_key_pem: None, public_key_file: None, private_key_file: None, key_size: None, known_keys_file: None } } }, adminspace: AdminSpaceConf { enabled: true, permissions: PermissionsConf { read: true, write: false } }, namespace: None, downsampling: [], access_control: AclConfig { enabled: false, default_permission: Deny, rules: None, subjects: None, policies: None }, low_pass_filter: [], stats: StatsConfig { filters: [] }, plugins_loading: PluginsLoading { enabled: true, search_dirs: LibSearchDirs([Spec(LibSearchSpec { kind: CurrentExeParent, value: None }), Path("."), Path("~/.zenoh/lib"), Path("/opt/homebrew/lib"), Path("/usr/local/lib"), Path("/usr/lib")]) }, plugins: Object {"ros2dds": Object {"domain": Number(0), "ros_localhost_only": Bool(false)}} })
+--- 3. rosrust 订 rospy(rostopic pub) 发布者:能通吗 ---
+[2m2026-07-06T13:55:59.243453Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:55:59.292211Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:55:59.323379Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+--- 4. jazzy 侧能否收到 /diag_rospy(判定 rospy 路是否全通,40s) ---
+ECHO_DONE
+--- 5. ros1 桥完整错误样本(头一条,含未截断字段) ---
+[2m2026-07-06T13:49:41.117492Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:49:41.210238Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:49:41.220295Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:49:41.230663Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:49:41.251134Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T13:49:41.261533Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+=== STAGE2C DIAG END Mon Jul  6 21:56:47 CST 2026 ===

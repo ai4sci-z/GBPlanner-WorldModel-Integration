@@ -1,0 +1,26 @@
+=== STAGE2D START Mon Jul  6 21:57:53 CST 2026 ===
+--- 0. 拉 nightly + 清旧桥 ---
+docker.io/eclipse/zenoh-bridge-ros1:nightly
+--- 1. 起 nightly ros1 桥 ---
+7a6d5da19d477e9d070bdce210bbd70c0a4d70c1a19d97a66f94f23377dd8c12
+[版本] zenoh-bridge-ros1 v1.0.0-dev-84-g15536d4
+[mismatch错误数] 276
+--- 2. 起 ros2dds 桥 ---
+1dab1f582f2f25069466ead447713f03052a1f3b306a555444a126fd6cc6e1fe
+--- 3. jazzy 侧话题列表(找 rmf) ---
+0
+NO_RMF_TOPICS
+--- 4. jazzy 收 odometry_throttled(60s,按内容判定) ---
+R1TO2=FAIL
+--- 5. ROS2->ROS1(40s,按内容判定) ---
+65216c74a65bb881a286fdaec7e79ee4d1c2eb0d492d35d3d233e2a7f26d38f4
+R2TO1=FAIL
+WARNING: topic [/bridge_r2to1] does not appear to be published yet
+--- 6. nightly 桥日志尾部 ---
+[2m2026-07-06T14:00:38.219951Z[0m [31mERROR[0m ThreadId(43) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/clock'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T14:00:38.297470Z[0m [31mERROR[0m ThreadId(57) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/rosout'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+[2m2026-07-06T14:00:38.447064Z[0m [31mERROR[0m ThreadId(77) [2mrosrust::tcpros::publisher[0m[2m:[0m Failed to connect to topic '/rmf_obelix/vi_sensor/camera_depth/depth/points'
+Caused by:Data field '*' within header mismatched. Expected: '*' Actual: '*'
+=== STAGE2D END Mon Jul  6 22:00:38 CST 2026 ===

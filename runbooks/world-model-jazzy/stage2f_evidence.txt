@@ -1,0 +1,4 @@
+=== STAGE2F START Mon Jul  6 22:10:33 CST 2026 ===
+--- 0. fresh 仿真 + 双端桥 ---
+2d60efdc96a5d580a25d13d48ebe9a7c49735f7c615f883177118a39bda80bce
+已启动(host 网络)。桥容器用 ROS_MASTER_URI=http://localhost:11311 即可连。
