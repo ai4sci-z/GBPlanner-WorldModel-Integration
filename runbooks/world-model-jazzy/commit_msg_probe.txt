@@ -1,0 +1,33 @@
+fix(sim): make ros probe survive latched QoS and late-join DDS discovery
+
+The frame_contract probe could never sample two healthy topics; with both
+fixed (plus stale test assertions updated) the exploration task reaches
+TASK_STATUS_OK end-to-end for the first time (run 20260706T130626: all 4
+probes ok, accepted_goals=3, path_length=1.06m, takeoff ok, SIM ground-truth
+altitude +0.72m, motor PWM peak 1950, no parameter hacks).
+
+1. ros_probe.py.tmpl: subscribe with the publisher's actual QoS
+   (introspected via get_publishers_info_by_topic) instead of hardcoded
+   qos_profile_sensor_data. /tf_static is latched (reliable +
+   transient_local, 3 retained samples measured in the rosbag); a VOLATILE
+   subscription joining after publication never receives them.
+
+2. ros_probe.py.tmpl + FrameContractSpec.ProbeTimeoutSec + probeTimeoutSec:
+   once the topic type is discovered (a publisher exists), wait up to the
+   probe budget instead of ~2s. Measured with a controlled experiment: a
+   late-joining subscription to the ArduPilot micro-ROS agent's
+   /ap/v1/pose/filtered takes 28.97s of DDS endpoint discovery before the
+   publisher matches, then data arrives within 40ms. The old 2s per-topic
+   window (and 30s container timeout) could never see it, while long-lived
+   subscribers (rosbag) receive the same topic fine. Give the frame
+   contract probe a 45s per-topic budget and a 90s container timeout
+   (mirroring exploration_probe).
+
+3. slam_test.go / runtime_artifacts_test.go: update assertions left stale
+   by the earlier fixes (SLAM IMU output topic /navlab/slam/imu; ArduPilot
+   4.5 rangefinder param names RNGFND1_MIN/MAX/GNDCLR) and add regression
+   guards (no IMU self-echo; no pre-4.5 param names).
+
+go build ./... , go vet ./... , go test ./... all pass.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

@@ -84,6 +84,30 @@ index ccd31d7..4420a59 100644
  	lines := []string{}
  	for _, key := range keys {
  		if seen[key] {
+diff --git a/orchestration/sim/internal/tasks/helpers/runtime_specs.go b/orchestration/sim/internal/tasks/helpers/runtime_specs.go
+index 5bb6374..5779e74 100644
+--- a/orchestration/sim/internal/tasks/helpers/runtime_specs.go
++++ b/orchestration/sim/internal/tasks/helpers/runtime_specs.go
+@@ -436,6 +436,11 @@ type FrameContractSpec struct {
+ 	MaxRangefinderHeightErr float64
+ 	MaxDirectionErrorRad    float64
+ 	ProbeDurationSec        float64
++	// ProbeTimeoutSec is the per-topic sampling budget for the frame contract
++	// probe. Matching a late-joining subscription to the ArduPilot micro-ROS
++	// agent's publishers takes ~30s of DDS endpoint discovery (measured), so
++	// the default 8s template budget misses /ap/v1/pose/filtered every time.
++	ProbeTimeoutSec         float64
+ }
+ 
+ func DefaultFrameContractSpec() FrameContractSpec {
+@@ -467,6 +472,7 @@ func DefaultFrameContractSpec() FrameContractSpec {
+ 		MaxRangefinderHeightErr: 0.25,
+ 		MaxDirectionErrorRad:    0.35,
+ 		ProbeDurationSec:        12.0,
++		ProbeTimeoutSec:         45.0,
+ 	}
+ }
+ 
 diff --git a/orchestration/sim/internal/tasks/helpers/slam.go b/orchestration/sim/internal/tasks/helpers/slam.go
 index e84e55c..705439e 100644
 --- a/orchestration/sim/internal/tasks/helpers/slam.go
@@ -97,6 +121,31 @@ index e84e55c..705439e 100644
  		OdometryTopic:                      CartographerOdometryInputTopic,
  		CartographerTFTopic:                CartographerTFTopic,
  		PublishGlobalTF:                    true,
+diff --git a/orchestration/sim/internal/tasks/helpers/slam_test.go b/orchestration/sim/internal/tasks/helpers/slam_test.go
+index 4873701..2357108 100644
+--- a/orchestration/sim/internal/tasks/helpers/slam_test.go
++++ b/orchestration/sim/internal/tasks/helpers/slam_test.go
+@@ -21,7 +21,9 @@ func TestWriteSlamRuntimeConfig(t *testing.T) {
+ 		`backend = 'cartographer'`,
+ 		`scan_topic = '/scan'`,
+ 		`imu_source_topic = '/imu'`,
+-		`imu_topic = '/imu'`,
++		// The sanitising bridge output must differ from its /imu source, else the
++		// bridge re-ingests its own output and cartographer aborts (Non-sorted data).
++		`imu_topic = '/navlab/slam/imu'`,
+ 		`laser_z = '0.075077'`,
+ 		`laser_frame_id = 'base_scan'`,
+ 		`launch_fake_odom = false`,
+@@ -39,6 +41,9 @@ func TestWriteSlamRuntimeConfig(t *testing.T) {
+ 			t.Fatalf("runtime config missing %q:\n%s", want, text)
+ 		}
+ 	}
++	if strings.Contains(text, "imu_topic = '/imu'\n") {
++		t.Fatalf("imu_topic must not echo the bridge source /imu (self-ingest aborts cartographer):\n%s", text)
++	}
+ 	if strings.Contains(text, `cartographer_odometry_topic = '/odometry'`) {
+ 		t.Fatalf("runtime config must not point Cartographer odometry input at diagnostic truth /odometry:\n%s", text)
+ 	}
 diff --git a/orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl b/orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl
 index c30c132..c2de84e 100644
 --- a/orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl
@@ -151,3 +200,87 @@ index ce76043..5123a45 100644
  
      def publish_cmd_vel_from_intent(payload: dict) -> None:
          cmd = TwistStamped()
+diff --git a/orchestration/sim/internal/tasks/helpers/templates/python/ros_probe.py.tmpl b/orchestration/sim/internal/tasks/helpers/templates/python/ros_probe.py.tmpl
+index 847457a..805a076 100644
+--- a/orchestration/sim/internal/tasks/helpers/templates/python/ros_probe.py.tmpl
++++ b/orchestration/sim/internal/tasks/helpers/templates/python/ros_probe.py.tmpl
+@@ -166,8 +166,26 @@ def sample_message_topic(topic: str) -> dict:
+         def on_msg(msg) -> None:
+             holder["msg"] = msg
+ 
+-        subscription = node.create_subscription(msg_type, topic, on_msg, qos_profile_sensor_data)
+-        deadline = time.monotonic() + TOPIC_SAMPLE_TIMEOUT_SEC
++        sub_qos = qos_profile_sensor_data
++        try:
++            infos = node.get_publishers_info_by_topic(topic)
++        except Exception:
++            infos = []
++        if infos:
++            from rclpy.qos import QoSProfile, QoSHistoryPolicy
++            src_qos = infos[0].qos_profile
++            sub_qos = QoSProfile(
++                history=QoSHistoryPolicy.KEEP_LAST,
++                depth=max(1, getattr(src_qos, "depth", 0) or 10),
++                reliability=src_qos.reliability,
++                durability=src_qos.durability,
++            )
++        subscription = node.create_subscription(msg_type, topic, on_msg, sub_qos)
++        # The topic type was discovered above, so a publisher exists. Allow the
++        # full probe budget here: matching a late-joining subscription to some
++        # publishers (e.g. the ArduPilot micro-ROS agent) takes ~30s of DDS
++        # endpoint discovery, while data flows immediately once matched.
++        deadline = time.monotonic() + PROBE_TIMEOUT_SEC
+         spins = 0
+         while rclpy.ok() and time.monotonic() < deadline and holder["msg"] is None:
+             spins += 1
+diff --git a/orchestration/sim/internal/tasks/runtime_artifacts_test.go b/orchestration/sim/internal/tasks/runtime_artifacts_test.go
+index 037ae4b..fd51af3 100644
+--- a/orchestration/sim/internal/tasks/runtime_artifacts_test.go
++++ b/orchestration/sim/internal/tasks/runtime_artifacts_test.go
+@@ -629,9 +629,11 @@ func assertParamOverlayContainsExternalNavAndRangefinder(t *testing.T, path stri
+ 		"RNGFND1_PIN -1",
+ 		"RNGFND1_SCALING 3",
+ 		"RNGFND1_TYPE 20",
+-		"RNGFND1_MIN_CM 10",
+-		"RNGFND1_MAX_CM 1200",
+-		"RNGFND1_GNDCLEAR 15",
++		// ArduPilot 4.5 renamed RNGFND1_MIN_CM/MAX_CM/GNDCLEAR to MIN/MAX/GNDCLR
++		// (cm->m); the old names are silently ignored by current firmware.
++		"RNGFND1_MIN 0.05",
++		"RNGFND1_MAX 12",
++		"RNGFND1_GNDCLR 0.15",
+ 	} {
+ 		if !strings.Contains(text, want) {
+ 			t.Fatalf("generated param overlay missing %q:\n%s", want, text)
+@@ -640,9 +642,11 @@ func assertParamOverlayContainsExternalNavAndRangefinder(t *testing.T, path stri
+ 	for _, stale := range []string{
+ 		"RNGFND1_TYPE 1",
+ 		"RNGFND1_TYPE 10",
+-		"RNGFND1_MIN_CM 5",
+-		"RNGFND1_MAX_CM 600",
+-		"RNGFND1_GNDCLEAR 10",
++		// pre-4.5 param names must never appear: current firmware ignores them
++		// silently, so MIN would fall back to 0.20m and reject the sim reading.
++		"RNGFND1_MIN_CM",
++		"RNGFND1_MAX_CM",
++		"RNGFND1_GNDCLEAR",
+ 		"RNGFND1_SCALING 10",
+ 		"RNGFND1_PIN 0",
+ 		"RNGFND1_MAX 50.00",
+diff --git a/orchestration/sim/internal/tasks/runtime_specs.go b/orchestration/sim/internal/tasks/runtime_specs.go
+index 097a5a3..9f781d4 100644
+--- a/orchestration/sim/internal/tasks/runtime_specs.go
++++ b/orchestration/sim/internal/tasks/runtime_specs.go
+@@ -277,6 +277,12 @@ func probeTimeoutSec(name string, durationSec float64) float64 {
+ 	if name == "exploration_probe" {
+ 		return 90
+ 	}
++	if name == "frame_contract_probe" {
++		// The per-topic sampling budget is 45s (see FrameContractSpec) because
++		// late-joining DDS endpoint discovery against the ArduPilot micro-ROS
++		// agent takes ~30s; 30s of container budget kills the probe first.
++		return 90
++	}
+ 	if name == "slam_hover_probe" {
+ 		if durationSec+30 > 120 {
+ 			return durationSec + 30

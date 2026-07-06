@@ -3,18 +3,19 @@
 > **用途**：①你（用户）随时查我到底找出并修了哪些真 bug；②提 PR 时的逐条依据。
 > **原则**：只小修不大修、不动大框架；每条都有失败现场证据 + 源码根因 + 最小改动 + 提交号。
 > **诚实标注**：✅已实测确认修好 / 🔵已提交但端到端尚未全绿（在验证链上推进了一个门）/ ⚠️需处理后再进 PR。
-> 分支 `feat/gbplanner-gain-exploration-strategy`（基于上游 `09a5aa4`）+ clean 分支 `fix/world-model-e2e-takeoff`（干净复现验证；提交链 `09a5aa4` → `79643b9` 真bug+死锁修复 → `77d951a` 撤 3 参数 hack），最后更新 **2026-07-06（起飞突破 + 参数hack撤销已提交 + Codex查证纠偏）**。
+> 分支 `feat/gbplanner-gain-exploration-strategy`（基于上游 `09a5aa4`）+ clean 分支 `fix/world-model-e2e-takeoff`（干净复现验证；提交链 `09a5aa4` → `79643b9` 真bug+死锁 → `77d951a` 撤hack → `dada2db` 探针修复），最后更新 **2026-07-06 晚（🏁 端到端全绿）**。
 
-## 一句话现状（2026-07-06 更新 · 起飞突破 + Codex 查证纠偏）
-🎯 **无 hack 配置下无人机物理起飞已实测复现**。从全新克隆的作者源码(09a5aa4)干净复现，连修 5 类作者真 bug + 1 处死锁逻辑，起飞**不依赖任何参数 hack**。实测证据 run `20260706T110405`（BIN 解码）：**SIM 地面真值高度 +0.760 m**（584.190→584.950）、**四电机 PWM 峰值 1950**、CTUN DAlt 0.655 m、`bootstrap/takeoff.ok=True`。
-- ⚠️ **诚实边界(重要)**：**端到端 exploration 尚未全绿**。同一 run：`accepted_goals=2`（<min 3，触发 `accepted_goals_below_min`）、`slam ready=False`、`frame_contract_probe` 与 `exploration_probe` 均 rc=20。此前文档"exploration_probe ok=True / 接受 3 目标"是**过度声称**（那是另一次 run 的结果，存在 run 间波动），现按实测更正。**物理起飞=真;端到端全绿=尚未达到。**
-- **关键那一刀=死锁逻辑修复**（B15）：起飞完成前不把探索 intent 转发给飞控，否则"保持当前位置"指令覆盖 GUIDED takeoff 爬升（CTUN.DAlt 被摁在 0）→永不离地→死锁。这是相序互斥正解，非强改 DAlt。
-- **参数 hack 已撤销并提交**（Codex 查出的不自洽已修复）：原栽过 3 个不符合物理实际的 hack（EK3_SRC1_POSZ 改气压计 / DISARM_DELAY=0 / readiness 拉长）。之前**只改了工作树、从未提交、diff 也未重导**，导致 `CLEAN_REPRO_takeoff_fixes.diff` 与"已撤销"文字矛盾；现已作为 commit `77d951a` 提交到 clean 分支，diff 重新导出为**净无 hack 变更集**（153 行、零 hack 字符串）。测距仪高度源 POSZ=2、安全保护均保持作者原样。
-- ◉ **剩余 gate（按根因区分，勿混为一谈）**：
-  - `/tf_static`：latched（rosbag 实测 `dur=transient_local`、count=3），探针用 `qos_profile_sensor_data`（VOLATILE）收不到锁存样本 → **需 QoS 修复**（订阅按 publisher 内省匹配 reliable+transient_local）。
-  - `/ap/v1/pose/filtered`：rosbag 实测 `dur=volatile`、`rel=best_effort`、count=512 → **与探针 QoS 本就兼容，不是 durability 问题**；疑时序（探针在 EKF pose 产出前、SLAM 仍 `waiting_for_scan_and_imu` 时就跑）或 DDS type-hash，**待深查，QoS 补丁修不了它**。
-  - `exploration_probe`：**不是采样 bug**，是探索工作流自报 `ok=False`（accepted_goals 2<3），属探索质量/波动。
-- diff（已纠正）：`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff`；干净复现：`runbooks/world-model-jazzy/clean_repro.sh`；查证脚本：`verify_codex.py` / `decode_takeoff_bin.py` / `check_rosbag_qos.py`。
+## 一句话现状（2026-07-06 晚 · 🏁 端到端全绿）
+🏁 **world-model exploration 首次端到端全绿（无 hack，实测）**。run `20260706T130626`：`status=TASK_STATUS_OK`、`ok=True`、**blockers 空**、**4 探针全 ok**（frame_contract 8/8 话题含 /tf_static、/ap/v1/pose/filtered）、`accepted_goals=3/3`、`path_length=1.06m`、`takeoff.ok=True`、landing ok=True；BIN 物理铁证：**SIM 地面真值 +0.720m、电机 PWM 峰值 1950**。clean_repro.sh 首次 rc=0。
+- 提交链（clean 分支 `fix/world-model-e2e-takeoff`）：`09a5aa4`(上游) → `79643b9`(5类真bug+B15死锁) → `77d951a`(撤3参数hack) → `dada2db`(B16 探针修复+测试断言遗留)。净 diff 286 行、零 hack：`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff`。
+- **关键两刀**：B15 死锁修复（起飞完成前不转发探索 intent，相序互斥正解）+ B16 探针修复（见下）。
+- **B16 探针双根因（都实测锤死，勿混）**：
+  - `/tf_static`：latched（rosbag 实测 `transient_local`、count=3），探针硬编码 `qos_profile_sensor_data`(VOLATILE) 收不到锁存 → 改为**订阅按 publisher QoS 内省匹配**。
+  - `/ap/v1/pose/filtered`：**不是 QoS、不是时序**（QoS 兼容且探针窗口内 17Hz 在发）。受控实验锤死真因：**后加入 participant 对 ArduPilot micro-ROS agent endpoints 的 DDS 发现需 28.97s**（graph 可见 type 但 publisher count=0 持续 28.9s，匹配后 40ms 即收到首条）；rosbag 因先于 agent 启动而秒配。探针旧逻辑每话题只等 ~2s、容器 30s 超时 → 永远采不到。修法=type 已发现(发布者存在)时等待上限提到 probe 预算(45s) + frame_contract 容器超时 30→90(对齐 exploration_probe 先例)。
+  - 顺手清了 clean 分支两处**测试断言遗留**（slam_test 旧 `/imu`、runtime_artifacts_test 旧 RNGFND 参数名）+ 加回归守卫；`go build/vet/test ./...` 全绿。
+- 诚实边界：`slam.ready=False` 仍存在（gate 靠 /slam/odom evidence 兜底,不挡全绿）；exploration 指标有 run 间波动(1.06~1.61m/2~3目标),本次 3/3 达标。
+- 参数 hack 已撤销并提交(`77d951a`)：POSZ=2 测距仪、DISARM_DELAY 安全保护、readiness 45 均保持作者原样,**起飞与全绿都不依赖 hack**。
+- 复现：`runbooks/world-model-jazzy/clean_repro.sh`(rc=0)；证据脚本：`summary_verdict.py`/`check_probes.py`/`decode_takeoff_bin.py`/`check_rosbag_qos.py`/`pose_first_ts.py`/`sub_latency_probe.py`(受控实验)。
 
 ---
 
@@ -57,22 +58,24 @@
 **验证(实测)**：无 hack 配置 run `20260706T110405`，BIN 解码 SIM 地面真值 +0.760m、四电机 PWM 峰值 1950、CTUN DAlt 0.655m、`takeoff.ok=True`。（注：物理起飞=真；但该 run accepted_goals=2<3、两个 probe rc=20，**端到端未全绿**，见文末"下一步坑"。）
 **诚实修正**：曾额外堆 3 个参数 hack（EK3_SRC1_POSZ 改气压计/DISARM_DELAY=0/readiness 拉长），不符合物理实际。去掉后照样飞，证明只需 B15 逻辑修复。**撤销已作为 commit `77d951a` 正式提交**（此前只改工作树未提交、diff 未重导，被 Codex 查出不自洽，现已修复）。
 
-## 下一步坑（当前前沿，尚未修）—— 2026-07-06（Codex 查证后按根因重写）
-**物理起飞已复现，但端到端 exploration 尚未全绿。剩余 3 类 gate，根因各不相同，勿混为一谈：**
+## B16（收官）· frame_contract 探针双根因 —— 2026-07-06 晚已修，端到端全绿
+**症状**：frame_contract_probe 采不到 `/tf_static` 与 `/ap/v1/pose/filtered`（两话题实际都健康发布）。
+**根因A·/tf_static（QoS）**：latched 话题（rosbag 实测 `reliable+transient_local`、count=3），探针硬编码 `qos_profile_sensor_data`（VOLATILE+BEST_EFFORT），后加入的订阅收不到锁存样本。
+**根因B·/ap/v1/pose/filtered（DDS 慢发现，非 QoS 非时序）**：受控实验（同镜像/env/host 网络容器、40s 长等待订阅）锤死：**订阅创建后 28.97s publisher 才匹配（graph 早可见 type、count_publishers 持续 0），匹配后 40ms 首条即达**——cyclone 后加入 participant 对 ArduPilot micro-ROS agent（FastDDS）endpoints 的 SEDP 发现极慢；rosbag 先于 agent 启动故秒配（不对称）。探针旧逻辑每话题 ~2s 窗口 + 容器 30s 超时 → 必死。
+**最小改动**（commit `dada2db`,5 文件 +48/-9）：
+1. `ros_probe.py.tmpl`：订阅 QoS 改 publisher 内省匹配（`get_publishers_info_by_topic` → 按其 reliability+durability 订阅）。
+2. `ros_probe.py.tmpl`：type 已发现（=发布者存在）时订阅等待上限从 ~2s 提到 `PROBE_TIMEOUT_SEC`；type 未发现仍快速失败。
+3. `FrameContractSpec` 加 `ProbeTimeoutSec=45`（模板本就认此 key,exploration_probe 已有 45 先例）；`probeTimeoutSec()` frame_contract 容器 30→90（对齐 exploration_probe）。
+4. 顺手修 clean 分支测试断言遗留：`slam_test.go`（旧 `/imu`→`/navlab/slam/imu`+自吞回声守卫）、`runtime_artifacts_test.go`（RNGFND 旧参数名→4.5 新名+裸旧名守卫）。
+**验证（实测,run `20260706T130626`）**：`TASK_STATUS_OK`、blockers 空、4 探针全 ok（frame_contract 8/8 话题）、accepted_goals=3/3、path 1.06m、SIM+0.720m、电机 1950;`go build/vet/test ./...` 全绿;clean_repro.sh 首次 rc=0。
 
-1. **`frame_contract_probe` → `/tf_static`（真·QoS 问题）**
-   - rosbag 实测：`/tf_static` count=3、`dur=transient_local`、`rel=reliable`（latched）。探针用 `qos_profile_sensor_data`（VOLATILE+BEST_EFFORT）→ 加入订阅时锁存样本已发完，收不到。
-   - **最小修方向**：探针模板 `templates/python/ros_probe.py.tmpl`（`sample_message_topic`，约 L169 `create_subscription(..., qos_profile_sensor_data)`）→ 订阅前用 `get_publishers_info_by_topic` 内省 publisher QoS，按其 reliability+durability 建订阅（对 /tf_static 即 reliable+transient_local）。草稿脚本 `runbooks/world-model-jazzy/patch_probe_qos.py`（**尚未应用/验证**）。
+## 下一步（端到端全绿后）—— 2026-07-06 晚
+1. **frontier_lite 基线定档**：多跑几次 clean_repro 记录指标波动区间（accepted_goals 2~3、path 1.06~1.61m 已观测),作为 GBPlanner 对比的对照组。
+2. **ros1_bridge 接真 GBPlanner**（预研B 已能飞）：按 `integration/ros1_bridge/` 设计稿分阶段（先 ROS1 侧单独出 trajectory → 桥标准消息 → trajectory_to_intent dry-run → 低速短程接 FCU → 补 gate 话题）。**先跑通再接,不盲接**。
+3. **三个一键 GUI 演示 + 源码级讲解**：①原始 GBPlanner(预研B) ②world-model 原版 frontier_lite(现已全绿) ③gbplanner 接入后。
+4. **PR/Issue 定稿提交**（前置已达成:全绿✅ + 净diff✅;剩 PR_BODY/ISSUE_BODY 从 DRAFT 定稿,经用户同意后提交）。
 
-2. **`frame_contract_probe` → `/ap/v1/pose/filtered`（不是 QoS 问题）**
-   - rosbag 实测：count=512、`dur=volatile`、`rel=best_effort` → **与探针 `qos_profile_sensor_data` 本就兼容**。所以 QoS 补丁**修不了它**。
-   - 疑因：探针在 EKF 位姿产出前就跑（同 run frame_contract_probe 采到的 `/navlab/slam/status` 仍 `waiting_for_scan_and_imu`、slam ready=False），或 ArduPilot DDS type-hash。**待深查**（对比 rosbag 中该话题首条时间戳 vs 探针窗口）。
-
-3. **`exploration_probe`（不是采样 bug）**
-   - 该 run `/navlab/exploration/status` 采到了数据，但 payload 自报 `ok=False`：`accepted_goals=2`（min 3）、`path_length_m=1.6095`（ok）。blocker 名义叫 `topic_sample_missing` 但真因是 `accepted_goals_below_min`（探针把 payload.ok=False 也归到该 blocker 名下）。`/navlab/landing/status` 是级联（等 task 完成）。
-   - 属探索质量/run 间波动（另一次曾达 3 目标），需稳定化，非探针 bug。
-
-- 诊断脚本：`runbooks/world-model-jazzy/` 下 `check_probes.py <run_dir>`、`verify_codex.py`（git+run 综合）、`decode_takeoff_bin.py`（SIM/RCOU/CTUN 起飞物理）、`check_rosbag_qos.py`（话题 QoS/durability）、`decode_ctun.py`（DAlt/ThO 控制回路）。
+- 诊断脚本：`runbooks/world-model-jazzy/` 下 `check_probes.py`、`summary_verdict.py`（终审）、`verify_codex.py`、`decode_takeoff_bin.py`（SIM/RCOU/CTUN）、`check_rosbag_qos.py`、`pose_first_ts.py`（mcap 话题时间戳）、`sub_latency_probe.py`+`run_sub_experiment.sh`（DDS 慢发现受控实验）、`decode_ctun.py`。
 
 ## 给作者的高价值观察（Issue 素材）
 - B1/B14/B15 说明作者**很可能从未端到端跑通过 exploration**（脚本编译不过、rangefinder 参数被固件无视、起飞被自身探索指令死锁）——任何人、任何 OS 跑到这步都会死,不是环境问题。
