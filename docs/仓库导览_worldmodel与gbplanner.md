@@ -1,4 +1,4 @@
-> 📌 **状态戳(2026-07-06 晚·全绿后)**:本文含历史阶段内容。**当前权威状态**以 [RESUME_新窗口接管_2026-07-06.md](../RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](../docs/world-model端到端Bug台账_给作者PR.md) 为准。要点:jazzy 9/9 已验真;**run `20260706T130626` 已端到端全绿**(TASK_STATUS_OK/4探针全ok/3目标/SIM+0.72m,无hack,B15+B16 已修);但 frontier_lite 多跑基线**稳定性差**(6次全绿2/6,达标率40%,根因=启动耗时蚕食探索窗口);当前主线=**B2.5 自写薄桥接真 GBPlanner**(官方 ros1_bridge 与 zenoh 均已实验判死)→3D lidar(官方 lidar_3d 组件)→同口径对比;**PR 延后**(用户指示:等最终桥接跑通后统一定稿)。
+> **[REFERENCE]** 两仓库结构导览。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
 
 # 仓库导览:world-model 与 gbplanner 的文件夹都是干嘛的
 
@@ -48,12 +48,12 @@
 | `gbplanner_ui/` | RViz 交互面板 | 可视化/触发规划 | 看仿真用 |
 | `packages_https.rosinstall` | 依赖清单(voxblox、catkin_simple、rotors 等) | 构建时拉依赖 | 预研B 镜像已据此装好 |
 
-**一句话**:桥接方案下,gbplanner_ros **基本原样在 ROS1 容器里跑**;我们重点对接的是它的**输入**(点云/里程计话题)和**输出**(PCI 的航点),用 ros1_bridge 接到 world-model。
+**一句话**:桥接方案下,gbplanner_ros **基本原样在 ROS1 容器里跑**;我们重点对接的是它的**输入**(点云/里程计话题)和**输出**(PCI 的 command trajectory),用 **B2.5 自写薄桥**(官方 ros1_bridge/zenoh 已实验判死)接到 world-model。
 
 ---
 
-# 三、两者如何拼起来(回顾)
+# 三、两者如何拼起来(2026-07-06 更新为实测架构)
 ```
-world-model(ROS2):提供 点云+里程计 ──ros1_bridge──► gbplanner_ros(ROS1):算探索航点
-                    ◄──ros1_bridge── 航点(经 PCI)──► 发到 /navlab/exploration/* ──► 无人机飞
+world-model(ROS2):/slam/odom + /wm/cloud3d(3D点云) ──自写薄桥 TCP:7601──► ROS1 /wm/odom+/wm/points ──► gbplanner/voxblox 建图规划
+                  /gbp/trajectory ◄──薄桥── /rmf_obelix/command/trajectory(PCI 粉线) ──► trajectory_to_intent ──► /navlab/fcu/setpoint/intent ──► 无人机飞
 ```

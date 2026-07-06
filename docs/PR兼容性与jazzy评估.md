@@ -1,10 +1,11 @@
+> **[REFERENCE]** PR 兼容性评估;PR 延后=等真 GBPlanner 集成跑通后统一定稿。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
+
 # PR 兼容性评估:humble 上的修复能否在作者 jazzy 环境兼容跑(2026-07-05)
 
 > **背景**:作者 world-model 的目标环境是 **jazzy**(Ubuntu 24.04 / Python 3.12),我们在 **humble**(Ubuntu 22.04 / Python 3.10)上跑通。
 > 用户硬约束:**任务做完必须提交 PR,且 PR 里的代码必须保证作者 jazzy 环境能兼容跑;不能兼容就重建 jazzy。**
 > 本文**逐条审查**给 world-model 分支(`feat/gbplanner-gain-exploration-strategy`,基于上游最新 `09a5aa4`)的每个提交,判断 jazzy 兼容性。
 > **结论(2026-07-06 晚更新):jazzy 全栈 9/9 已验真;exploration **已端到端全绿**(run `20260706T130626`:TASK_STATUS_OK/4探针全ok/3目标/SIM+0.72m,无hack;B15+B16 已修)。**PR 暂不提交的原因已变**:不再是"未全绿",而是**用户指示等真 GBPlanner 桥接集成跑通后统一定稿**;另 frontier_lite 基线稳定性差(6次全绿2/6,达标率40%)应写入 PR 叙事。**注**:经 jazzy clean 实跑验证的净变更集=B1/B3/B6/B14/B15+B16(见 `CLEAN_REPRO_takeoff_fixes.diff`,286行);本文早期列的 12 提交含 humble 期特性分支内容,勿混。**
-> ⚠️ 措辞订正:本文初版说"不需要重建 jazzy 即可提 PR"——被用户硬指令与 d8ff119 实测打脸推翻,**现行标准=必须 jazzy 实跑通过才提 PR**。
 > ⚠️ 措辞订正:本文初版说"不需要重建 jazzy 即可提 PR"——被用户硬指令与 d8ff119 实测打脸推翻,**现行标准=必须 jazzy 实跑通过才提 PR**。
 
 ## 0. ✅ jazzy 实测(2026-07-05,已做,不只是论证)

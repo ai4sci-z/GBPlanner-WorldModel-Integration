@@ -1,4 +1,4 @@
-> 🗄️ **早期作废版(2026-07-06)——请勿使用**。当前草稿见 [`ISSUE_BODY.md`](ISSUE_BODY.md)(覆盖 B1/B3/B6/B14/B15 端到端 blockers);事实源见 [Bug 台账](../../docs/world-model端到端Bug台账_给作者PR.md)。保留仅作历史。
+> **[OBSOLETE]** 早期 Issue 文案;现行草稿=ISSUE_BODY.md(DRAFT,禁止提交)。当前状态以 [CURRENT_STATUS.md](../../CURRENT_STATUS.md) 为准。
 
 # Issue: exploration workflow — generated script fails to compile, and `frontier_lite` ignores the map
 

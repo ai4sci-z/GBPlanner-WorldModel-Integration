@@ -1,3 +1,5 @@
+> **[REFERENCE]** frontier_lite 基线对照组数据。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
+
 # frontier_lite 基线定档(2026-07-06 晚,B16 修复后连跑实测)
 
 > 用途:GBPlanner 接入后的**同口径对照组**。所有数字为实测,run 产物在

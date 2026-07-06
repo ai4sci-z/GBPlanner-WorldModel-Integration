@@ -1,4 +1,4 @@
-> 📌 **状态戳(2026-07-06 晚·全绿后)**:本文含历史阶段内容。**当前权威状态**以 [RESUME_新窗口接管_2026-07-06.md](../RESUME_新窗口接管_2026-07-06.md) + [Bug 台账](../docs/world-model端到端Bug台账_给作者PR.md) 为准。要点:jazzy 9/9 已验真;**run `20260706T130626` 已端到端全绿**(TASK_STATUS_OK/4探针全ok/3目标/SIM+0.72m,无hack,B15+B16 已修);但 frontier_lite 多跑基线**稳定性差**(6次全绿2/6,达标率40%,根因=启动耗时蚕食探索窗口);当前主线=**B2.5 自写薄桥接真 GBPlanner**(官方 ros1_bridge 与 zenoh 均已实验判死)→3D lidar(官方 lidar_3d 组件)→同口径对比;**PR 延后**(用户指示:等最终桥接跑通后统一定稿)。
+> **[REFERENCE]** frontier_lite 缺陷论证(接大脑现行方案=B2.5 自写薄桥)。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
 
 # 核心发现:frontier_lite 是脚本占位 + GBPlanner 精确集成机制
 
@@ -38,17 +38,17 @@ world-model 里"做探索决策"的就是上面那个 Python 节点 `navlab_expl
 | 步 | 做什么 | 为什么 |
 |---|---|---|
 | ① 装"3D 的眼睛" | 给仿真无人机加 3D 雷达(对齐 GBPlanner 的 OS064:360°×90°/20m)+ 3D 建图(octomap/voxblox)产出 occ/free/unknown 体素图 | GBPlanner 要 3D 占据地图,现仅 2D |
-| ② 接"大脑" | `ros1_bridge`:把【3D 占据图 + 位姿】喂给 ROS1 的 GBPlanner;把它输出的【航点】接回 ROS2 | GBPlanner 是 ROS1,跨框架 |
+| ② 接"大脑" | **B2.5 自写薄桥**(官方 ros1_bridge/zenoh 已实验判死):把【3D 点云+位姿】经 TCP 喂 ROS1 GBPlanner;把【command trajectory(粉线)】接回 ROS2 `/gbp/trajectory` | GBPlanner 是 ROS1,跨框架 |
 | ③ 换"决策" | 把航点转成 `/navlab/fcu/setpoint/intent`,替换 `exploration_intent` 里那段预设动作;`strategy` 标为 `gbplanner` | 让无人机真按 GBPlanner 决策飞,沿用现有验收闸门 |
 
 ## 三·五、进展实证(2026-07-03 补)
 - **GBPlanner 侧已从"纸面"变"实证"**:官方仿真在本机自主探索全闭环(起飞→voxblox 建图→RRG→巡飞→时间预算自动返航→地图落盘),全程量化 291.3m/132,091 体素点(见 [预研B_复现GBPlanner.md](预研B_复现GBPlanner.md))。
-- **frontier_lite 侧**:代码级铁证已齐(上文);量化实跑等 world-model 运行时最后一层修通(9 坑已修 8,见 [运行时排错记录_humble.md](运行时排错记录_humble.md))。
+- **frontier_lite 侧(2026-07-06 更新)**:代码级铁证+**量化基线已定档**(6 run 达标率 40%、path 方差 0.43~3.80m,根因=计时器驱动+启动耗时蚕食窗口,见 [基线定档](基线定档_frontier_lite_2026-07-06.md))。
 - 决策层原型 `gbplanner_gain` 与真版桥接地基(I/O 契约+适配器)已落地,见 `integration/`。
 
 ## 四、一句话总结(报告可直接用)
 > **frontier_lite = 闭着眼睛按脚本"前进+扭头";GBPlanner = 睁开 3D 的眼睛,看哪里没探过就往哪里去。**
-> **集成 = 给无人机装 3D 的眼睛(雷达+建图)+ 把决策大脑从脚本换成 GBPlanner(经 ros1_bridge),输出航点驱动飞行。** 插口(/navlab/exploration/* 与 setpoint/intent)不变,只换决策内核。
+> **集成 = 给无人机装 3D 的眼睛(lidar3d 净增量已实证:/wm/cloud3d z 跨度 3.3m)+ 把决策大脑从脚本换成 GBPlanner(经 B2.5 自写薄桥),输出 command trajectory 驱动飞行。** 插口(/navlab/exploration/* 与 setpoint/intent)不变,只换决策内核。
 
 ## 五、对比实验由此精确化
 - 对照不再是"两个探索算法",而是**"脚本预设动作 vs 真实地图驱动探索"**——优势对比天然成立。

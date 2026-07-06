@@ -66,9 +66,12 @@ takes off with the author's originals (rangefinder POSZ=2, disarm safety on).
 
 ## Verification (current, real)
 
-- `go build ./...`, `go vet`, `go test ./internal/tasks/helpers/` pass.
+- `go build ./...`, `go vet`, `go test ./...` pass.
 - Both strategies render scripts that pass `python3 -m py_compile`.
 - Physical takeoff (no hacks): run `20260706T110405` BIN — SIM +0.760 m, PWM 1950.
-- **Not green yet**: `frame_contract_probe` (`/tf_static` needs matched
-  TRANSIENT_LOCAL QoS; `/ap/v1/pose/filtered` is volatile/best_effort so it is a
-  timing/type issue, not QoS) and `accepted_goals` 2<3. See Bug 台账.
+- **Full exploration gate green end-to-end** with B16 probe fixes: run
+  `20260706T130626` — TASK_STATUS_OK, empty blockers, all 4 probes ok,
+  accepted_goals 3/3. Remaining context (not blockers of this PR): baseline
+  stability is ~40% across runs (startup latency eats the fixed 26 s window),
+  and the true-GBPlanner bridge integration is the user's precondition for
+  submitting. See Bug 台账 for the full evidence chain.

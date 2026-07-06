@@ -1,0 +1,41 @@
+=== STAGE3D2 DIAG START Mon Jul  6 23:29:07 CST 2026 ===
+--- 1. 后台起栈 ---
+  stack up t=6s
+--- 2. gz 侧话题清单(gazebo 容器内,找 lidar/points) ---
+gz container=nervous_black
+nervous_black	navlab/official-baseline:jazzy-latest
+boring_rubin	navlab/official-baseline:jazzy-latest
+exploration_rosbag	navlab/official-baseline:jazzy-latest
+navlab-height-estimator	navlab/official-baseline:jazzy-latest
+navlab-mavlink-external-nav	navlab/official-baseline:jazzy-latest
+navlab-exploration-workflow	navlab/official-baseline:jazzy-latest
+navlab-fcu-controller	navlab/official-baseline:jazzy-latest
+navlab-slam-backend	navlab/slam-cartographer:jazzy-latest
+navlab-official-maze-x2-sensor	navlab/gazebo-sensor:jazzy-latest
+navlab-official-maze-overlay	navlab/official-baseline:jazzy-latest
+navlab-official-baseline	navlab/official-baseline:jazzy-latest
+navlab-mavlink-router	navlab/mavlink-router:jazzy-latest
+== [nervous_black] gz topics:
+/lidar
+/lidar/points
+/rangefinder/down/scan_ideal
+/rangefinder/down/scan_ideal/points
+--- 3. gz /lidar/points 内容采样(点数/字段) ---
+== [nervous_black] /lidar/points sample:
+field {
+  name: "x"
+  count: 1
+field {
+--- 4. /cloud_in 的 ROS 发布者(graph) ---
+--- 5. run 渲染出的 bridge 配置里 lidar/cloud 条目 ---
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/bridge_override.yaml:37:- ros_topic_name: "cloud_in"
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/bridge_override.yaml:38:  gz_topic_name: "/lidar/points"
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/bridge_override.yaml:39:  ros_type_name: "sensor_msgs/msg/PointCloud2"
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/bridge_override.yaml:40:  gz_type_name: "gz.msgs.PointCloudPacked"
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/vendor_profile.yaml:1:ydlidar_ros2_driver_node:
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/vendor_profile.yaml:8:    lidar_type: 1
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/bridge_override.yaml
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/external_nav_bridge_params.yaml
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260706T152907.957687114Z/runtime/config/vendor_profile.yaml
+--- 6. 等 run 结束(不关心 rc) ---
+=== STAGE3D2 DIAG END Mon Jul  6 23:30:39 CST 2026 ===

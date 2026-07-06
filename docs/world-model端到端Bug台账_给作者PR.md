@@ -1,3 +1,5 @@
+> **[REFERENCE]** B1~B16 修复链事实源(PR 素材)。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
+
 # world-model 端到端 Bug 台账（给作者的 PR 清单）
 
 > **用途**：①你（用户）随时查我到底找出并修了哪些真 bug；②提 PR 时的逐条依据。

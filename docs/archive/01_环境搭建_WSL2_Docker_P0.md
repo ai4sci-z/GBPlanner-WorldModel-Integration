@@ -1,3 +1,5 @@
+> **[HISTORICAL]** 环境搭建教程(环境已建成)。当前状态以 [CURRENT_STATUS.md](../../CURRENT_STATUS.md) 为准。
+
 # Runbook 01 · 环境搭建(WSL2 + Docker)+ P0 启动
 
 > 适用机器:ThinkBook 16p G6,Win11 家庭版 25H2,Ultra 9 275HX / 32G / RTX5060 8G / C 盘剩 ~835G。

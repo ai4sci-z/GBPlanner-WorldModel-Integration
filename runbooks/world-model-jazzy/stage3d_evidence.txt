@@ -1,0 +1,17 @@
+=== STAGE3D CLOUD PROBE START Mon Jul  6 23:42:37 CST 2026 ===
+--- 1. 后台起 world-model exploration 栈 ---
+--- 2. 等栈起来(容器数>=6) ---
+  stack up at t=3s (navlab containers=9)
+--- 3. 采样所有 PointCloud2 话题的 z 分布(60s 窗口) ---
+pointcloud2 topics: ['/cloud_in', '/scan_matched_points2', '/wm/cloud3d']
+[WARN] [1783352574.598413245] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'ros_discovery_info' with type 'rmw_dds_common::msg::dds_::ParticipantEntitiesInfo_' from USER_DATA '(null)'.
+  /cloud_in : frame=base_scan points=640 finite=614 zmin=0.000 zmax=0.000 zstd=0.0000 -> FLAT/2D
+  /scan_matched_points2 : frame=map points=314 finite=314 zmin=-0.075 zmax=-0.075 zstd=0.0000 -> FLAT/2D
+  /wm/cloud3d : frame=lidar3d_frame points=10800 finite=10196 zmin=-0.334 zmax=2.969 zstd=0.5930 -> 3D
+RESULT=DONE
+--- 4. 等 run 结束 ---
+runtime_rosbags=1
+status=blocked
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260706T154238.073095535Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+exit status 1
+=== STAGE3D CLOUD PROBE END Mon Jul  6 23:44:00 CST 2026 ===
