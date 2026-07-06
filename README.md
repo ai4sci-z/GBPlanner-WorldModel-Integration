@@ -12,8 +12,8 @@
 - **纯 planner 栈消费 /wm/\* 闭环已打通**(GBPlanner/voxblox 真消费过桥输入并出轨迹);
 - **Stage3 dry-run 已 PASS**(轨迹→速度意图跟踪量自洽,零发布);
 - **Stage3.5 3D 数据链已贯通**(world-model 真 odom+真 3D 点云 → voxblox 3D 体素地图 90,472 点 zspan=13.2m → trajectory 回流);
-- **当前施工点 = Stage4 低速 FCU intent**(限速/kill/hold/status);
-- 未完成:Stage4、Stage5 gate 对齐+同口径对比(含 3D 对照强化)、GUI 三演示。
+- **Stage4 已过**(消费闭环直证:`/ap/v1/cmd_vel` 出现与适配器逐位吻合的 GBP-SIGNATURE;XY/Yaw 低速,fail-closed 安全门全套);
+- **当前施工点 = Stage5**:策略替换(独占 intent 去混流)→ gate 对齐 → 同口径对比+3D 行为对照;之后 GUI 三演示。
 
 ## 二、阶段表
 
@@ -25,14 +25,14 @@
 | Stage2.6 纯 planner 栈消费 /wm/\* 闭环(2D 冒烟输入) | ✅ |
 | Stage3 trajectory dry-run(零发布) | ✅ |
 | Stage3.5 3D 数据链贯通(voxblox 3D 体素 zspan 13.2m) | ✅ |
-| **Stage4 低速 FCU intent(限速/kill/hold/status)** | 🔵 **当前** |
-| Stage5 exploration gate 对齐 + 同口径对比(含 3D 对照强化) | ⬜ |
+| Stage4 低速 FCU intent(cmd_vel GBP-SIGNATURE 直证;XY/Yaw) | ✅ |
+| **Stage5 gate 对齐 + 同口径对比(策略替换去混流/3D 对照)** | 🔵 **当前** |
 | GUI 三演示(①原版GBPlanner ②frontier_lite ③接入后) | ⬜ |
 
 ## 三、不能宣称的结论
 
 1. 不能说"完整 GBPlanner 已集成完成"(Stage4/5 未做);
-2. 不能说"已实现 3D 探索"(3D 对照未完成;Stage2.6 输入是 z=0 冒烟);
+2. 不能说"已完成 3D 探索闭环/完整 gate/FCU 闭环"——可以说"**3D 数据链已贯通**,voxblox 3D 体素证据成立(90,472 点 zspan 13.2m)";Stage4 是 **XY/Yaw 低速闭环**(z 由飞控保持);
 3. RViz **绿线=planner 候选路径,粉线=执行轨迹**(`/rmf_obelix/command/trajectory`,发布者 PCI)——桥只接粉线;
 4. **PR/Issue 禁止提交**(用户指示:等真 GBPlanner 集成跑通后统一定稿);
 5. exploration gate 不需要 coverage_growth(源码实证)。

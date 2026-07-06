@@ -1,0 +1,31 @@
+=== STAGE4B START Tue Jul  7 00:28:06 CST 2026 ===
+--- 0. 栈复位(GBPlanner+薄桥+适配器 disabled+cmd_vel 探针) ---
+caef0ea82eb7486a878a9392167a25eebbb2d9e633c57833e2f438291c312b7b
+b50145f99ccb7cfb8caa957645ff9e943e200584bfdafe462649bcb1b31f0665
+2f5cd6a055815a86e39d4d2e10ff2a4adb2f7027d537049e7cce8ca2a2df2e63
+--- 1. world-model 真栈起 ---
+--- 2. ENABLE(提早) + 立即触发规划 ---
+enabled
+success: True
+message: ''
+--- 3. 适配器运动日志 ---
+[INFO] [1783355407.225336676] [gbp_traj_to_intent]: INTENT traj#1 wp[4/12]=(-0.03,0.02,0.05) odom=(-0.56,0.02) dist=0.53 dyaw=-3.14 -> v=(-0.024,-0.000) yr=-0.300
+[INFO] [1783355407.724967738] [gbp_traj_to_intent]: INTENT traj#1 wp[4/12]=(-0.03,0.02,0.05) odom=(-0.56,0.02) dist=0.53 dyaw=-3.14 -> v=(-0.024,-0.000) yr=-0.300
+[INFO] [1783355408.225219458] [gbp_traj_to_intent]: INTENT traj#1 wp[4/12]=(-0.03,0.02,0.05) odom=(-0.56,0.02) dist=0.53 dyaw=-3.14 -> v=(-0.024,-0.000) yr=-0.300
+[INFO] [1783355408.724999204] [gbp_traj_to_intent]: INTENT traj#1 wp[4/12]=(-0.03,0.02,0.05) odom=(-0.56,0.02) dist=0.53 dyaw=-3.14 -> v=(-0.024,-0.000) yr=-0.300
+[INFO] [1783355409.225491407] [gbp_traj_to_intent]: INTENT traj#1 wp[4/12]=(-0.03,0.02,0.05) odom=(-0.56,0.02) dist=0.53 dyaw=-3.14 -> v=(-0.024,-0.000) yr=-0.300
+--- 4. [核心验收] cmd_vel 探针:GBP 特征速度出现了吗 ---
+t=47.7 cmd_vel lin=(-0.024,-0.001) ang.z=-0.300  <<< GBP-SIGNATURE
+t=51.2 cmd_vel lin=(-0.024,-0.000) ang.z=-0.300  <<< GBP-SIGNATURE
+t=51.7 cmd_vel lin=(-0.024,-0.000) ang.z=-0.300  <<< GBP-SIGNATURE
+t=52.2 cmd_vel lin=(-0.024,-0.001) ang.z=-0.300  <<< GBP-SIGNATURE
+t=52.8 cmd_vel lin=(-0.024,-0.000) ang.z=-0.300  <<< GBP-SIGNATURE
+t=53.3 cmd_vel lin=(-0.024,0.000) ang.z=0.300  <<< GBP-SIGNATURE
+t=56.7 cmd_vel lin=(-0.024,-0.000) ang.z=-0.300  <<< GBP-SIGNATURE
+t=56.7 cmd_vel lin=(0.000,0.000) ang.z=0.000
+t=57.3 cmd_vel lin=(-0.024,-0.000) ang.z=-0.300  <<< GBP-SIGNATURE
+t=57.3 cmd_vel lin=(0.000,0.000) ang.z=0.000
+--- 5. 等 run 结束 ---
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260706T162853.535490679Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+exit status 1
+=== STAGE4B END Tue Jul  7 00:30:11 CST 2026 ===

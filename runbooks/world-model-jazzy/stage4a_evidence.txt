@@ -1,0 +1,42 @@
+=== STAGE4A START Tue Jul  7 00:23:23 CST 2026 ===
+--- 0. fresh GBPlanner 栈 + 薄桥 + stage4 适配器(disabled) ---
+d8414627fac0d516190595a1a9bdae9af9bdef66fa3f2b790d43c4071f44e894
+22a4a2da9d3a6e8eccf31a7f094ffbce3700f1db612bce3c58667999ec2c5ac9
+--- 1. world-model 真栈起 ---
+--- 2. ENABLE 运动(显式解锁 fail-closed) ---
+enabled
+--- 3. 触发 GBPlanner 规划 ---
+success: True
+message: ''
+--- 4. 中场:适配器 INTENT 日志(应见限速后速度/wp) ---
+[INFO] [1783355120.470199161] [gbp_traj_to_intent]: INTENT traj#1 wp[6/11]=(-0.61,2.00,0.18) odom=(-0.49,2.13) dist=0.17 dyaw=-2.99 -> v=(-0.024,-0.004) yr=-0.300
+[INFO] [1783355120.969278072] [gbp_traj_to_intent]: INTENT traj#1 wp[6/11]=(-0.61,2.00,0.18) odom=(-0.49,2.13) dist=0.17 dyaw=-2.99 -> v=(-0.024,-0.004) yr=-0.300
+[INFO] [1783355121.470126025] [gbp_traj_to_intent]: INTENT traj#1 wp[6/11]=(-0.61,2.00,0.18) odom=(-0.49,2.13) dist=0.17 dyaw=-2.99 -> v=(-0.024,-0.004) yr=-0.300
+[INFO] [1783355121.969233512] [gbp_traj_to_intent]: INTENT traj#1 wp[6/11]=(-0.61,2.00,0.18) odom=(-0.49,2.13) dist=0.17 dyaw=-2.99 -> v=(-0.024,-0.004) yr=-0.300
+[INFO] [1783355122.468547812] [gbp_traj_to_intent]: INTENT traj#1 wp[6/11]=(-0.61,2.00,0.18) odom=(-0.49,2.13) dist=0.17 dyaw=-2.99 -> v=(-0.024,-0.004) yr=-0.300
+[INFO] [1783355122.968325352] [gbp_traj_to_intent]: INTENT traj#1 wp[6/11]=(-0.61,2.00,0.18) odom=(-0.49,2.13) dist=0.17 dyaw=-3.00 -> v=(-0.024,-0.003) yr=-0.300
+[INFO] [1783355123.468034066] [gbp_traj_to_intent]: INTENT traj#1 wp[6/11]=(-0.61,2.00,0.18) odom=(-0.49,2.13) dist=0.17 dyaw=-3.00 -> v=(-0.024,-0.003) yr=-0.300
+[INFO] [1783355123.915273636] [gbp_traj_to_intent]: TRAJ#2 received: wp=1 frame=map
+--- 5. KILL 测试(fail-closed 收尾) ---
+killed
+[ERROR] [1783355130.893600312] [gbp_traj_to_intent]: KILLED via /gbp/kill: motion permanently disabled
+[ERROR] [1783355131.393222734] [gbp_traj_to_intent]: KILLED via /gbp/kill: motion permanently disabled
+--- 6. 等 run 结束 ---
+status=blocked
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260706T162409.218984702Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+exit status 1
+--- 7. [核心验收] rosbag:output/intent 里的 gbp_* 消费证据 ---
+Traceback (most recent call last):
+  File "/mnt/c/CCproject/GBPlanner-WorldModel-Integration/integration/ros1_bridge/check_output_gbp.py", line 41, in <module>
+    with open(open_mcap(path), "rb") as f:
+  File "/mnt/c/CCproject/GBPlanner-WorldModel-Integration/integration/ros1_bridge/check_output_gbp.py", line 25, in open_mcap
+    subprocess.run(["zstd", "-d", "-f", path, "-o", tmp], check=True, capture_output=True)
+  File "/usr/lib/python3.10/subprocess.py", line 503, in run
+    with Popen(*popenargs, **kwargs) as process:
+  File "/usr/lib/python3.10/subprocess.py", line 971, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/usr/lib/python3.10/subprocess.py", line 1863, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'zstd'
+run_id=20260706T162409.218984702Z
+=== STAGE4A END Tue Jul  7 00:25:41 CST 2026 ===

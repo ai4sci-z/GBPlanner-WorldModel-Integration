@@ -43,12 +43,11 @@ bash build_and_run.sh
 ```
 预期:桌面弹出 Gazebo + RViz(详见 [实跑操作手册_图文版.md](实跑操作手册_图文版.md))。
 
-### 4.2 world-model 探索(预研A)
+### 4.2 world-model 探索(**2026-07-07 更新:权威复现=jazzy clean 分支一键脚本**)
 ```bash
-cd ~/ws/world-model/orchestration/sim
-/usr/local/go/bin/go run ./cmd/navlab-sim run exploration
+bash /mnt/c/CCproject/GBPlanner-WorldModel-Integration/runbooks/world-model-jazzy/clean_repro.sh
 ```
-> ⚠️ 当前运行时管线(SLAM/探针)还在调试,可能 `status=blocked`;调通后会真正探索并出 `artifacts/.../summary.json` 指标。
+> 跑的是 `~/ws-clean/world-model`(clean 分支,B1~B16 修复,jazzy 9/9 镜像),**已实测端到端全绿**(run `20260706T130626`);因 frontier_lite 基线波动(达标率 40%),单次 rc=1 属正常,看 summary 指标。旧路径 `~/ws/world-model` 为 humble 期特性分支(历史)。当前权威状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
 
 ### 4.3 平台自检/任务清单(快速确认环境)
 ```bash

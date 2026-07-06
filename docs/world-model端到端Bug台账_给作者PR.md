@@ -71,9 +71,9 @@
 4. 顺手修 clean 分支测试断言遗留：`slam_test.go`（旧 `/imu`→`/navlab/slam/imu`+自吞回声守卫）、`runtime_artifacts_test.go`（RNGFND 旧参数名→4.5 新名+裸旧名守卫）。
 **验证（实测,run `20260706T130626`）**：`TASK_STATUS_OK`、blockers 空、4 探针全 ok（frame_contract 8/8 话题）、accepted_goals=3/3、path 1.06m、SIM+0.720m、电机 1950;`go build/vet/test ./...` 全绿;clean_repro.sh 首次 rc=0。
 
-## 下一步（端到端全绿后）—— 2026-07-06 晚
-1. **frontier_lite 基线定档**：多跑几次 clean_repro 记录指标波动区间（accepted_goals 2~3、path 1.06~1.61m 已观测),作为 GBPlanner 对比的对照组。
-2. **ros1_bridge 接真 GBPlanner**（预研B 已能飞）：按 `integration/ros1_bridge/` 设计稿分阶段（先 ROS1 侧单独出 trajectory → 桥标准消息 → trajectory_to_intent dry-run → 低速短程接 FCU → 补 gate 话题）。**先跑通再接,不盲接**。
+## 下一步（2026-07-07 更新;桥接进度详见 CURRENT_STATUS.md）
+1. ~~frontier_lite 基线定档~~ ✅ 已完成(6 run 达标率 40%,docs/基线定档)。
+2. ~~桥接接真 GBPlanner~~ **数据链已全线贯通**(B2.5 自写薄桥,Stage2~4:transport/消费闭环/3D/FCU 消费直证);**当前=Stage5**(策略替换/gate 对齐/同口径对比)。
 3. **三个一键 GUI 演示 + 源码级讲解**：①原始 GBPlanner(预研B) ②world-model 原版 frontier_lite(现已全绿) ③gbplanner 接入后。
 4. **PR/Issue 定稿提交**（前置已达成:全绿✅ + 净diff✅;剩 PR_BODY/ISSUE_BODY 从 DRAFT 定稿,经用户同意后提交）。
 
