@@ -36,14 +36,14 @@
 | 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ⏸ 阻塞(依赖**真 GBPlanner 桥接跑通**,非#3) | 同口径:accepted_goals 达标率/path 均值方差/全绿率;对照组基线已定档 |
 | 7 | 文档·预研A/B 独立报告 | ⬜ 降级(文档完善类,非主线) | 预研A/B 均已完成,报告素材齐(Bug台账/基线/预研B成果);等主线跑通后统一出报告 |
 | 8 | 提交 PR + Issue 给 world-model 作者 | ⏸ **延后(你 2026-07-06 晚指示)** | 源码改动**先保存**(clean 分支 4 commit+净diff 286行零hack✅,全绿✅);**等最终集成任务(真 GBPlanner 桥接)跑通后再准备完整 PR 物料一并定稿**。硬约束不变=作者 jazzy 环境能跑 |
-| 9 | **⭐ B2.5 自写薄桥接真版 GBPlanner(当前主线)** | 🔵 **Stage2~3.5 全 PASS;4a/4b 消费直证 PASS;4c/5 未完成;当前=Stage4c+5a external 去混流联跑** | 官方桥/zenoh 判死→薄桥:transport✅、稳定性✅、消费闭环✅、dry-run✅、3D 数据链✅(voxblox 3D 体素 90,472点 zspan13.2m)、**Stage4 FCU 消费直证✅**(stage4b:/ap/v1/cmd_vel 出现 GBP-SIGNATURE,lin=-0.024/ang.z=-0.300 与适配器逐位吻合,唯一性已论证;fail-closed 安全门全套+kill 实测;XY/Yaw 低速)。**当前=Stage5**:策略替换(独占 intent 去混流)→gate/status 严格对齐→同口径对比(基线 40% 对照)+3D 行为对照;坐标系 NED/ENU 轴向映射实测校准。入口 docs/桥接查证与执行计划 |
+| 9 | **⭐ B2.5 自写薄桥接真版 GBPlanner(当前主线)** | 🔵 **Stage2~4 全 PASS;5a 机制验收 PASS(run8);当前=Stage5b 3D 对照+5c 同口径对比** | 官方桥/zenoh 判死→薄桥:transport✅、稳定性✅、消费闭环✅、dry-run✅、3D 数据链✅、Stage4a/4b 消费直证✅、**Stage4c 去混流可归因✅**(frontier intent=0+GBP 签名+签名窗口 path 0.99m+takeoff ok)、**Stage5a 机制✅**(run8 `20260707T041455`:exploration gate 首次以 strategy=gbplanner 过 exploration_probe;accepted_goals=4 全运动到达,预到达剔除)。路上根治**上游 EKF 参考系打架真 bug**(罗盘 yaw vs SLAM 位置差 δ→运动即发散跑飞 34m=基线 path 方差根因;修复 3 件套 clean 分支 99bcfa1,诊断 runbooks/world-model-jazzy/stage5a_diagnosis.md)。**当前=Stage5b/5c**:3D 行为对照+同口径多 run 对比(基线 40%);全绿 TASK_STATUS_OK 与成功率统计归 5c。入口 docs/桥接查证与执行计划 |
 | 10 | 修运行时头号根因 tomllib | ✅ 完成(0b85cea) | `try: tomllib / except: tomli` 兜底;jazzy 实测零影响(原生 tomllib,兜底分支不执行) |
 | 11 | **⭐ jazzy 全栈重建(用户硬指令)** | ✅ **镜像阶段 9/9 收官(07-05 晚)** | 4 缺镜像全建成+开箱验真(坑全解:BuildKit 假成功/Livox cstdint/ydlidar declare_parameter;official-baseline **原版零补丁一次过**,micro_ros_agent 58.4s=humble 最狠坑 jazzy 天然没有)。施工指引 docs/jazzy全栈重建_施工指引.md;脚本 runbooks/world-model-jazzy/ |
 | 12 | **⭐ jazzy 跑通 exploration** | 🏁 **端到端全绿(07-06 晚)** | clean_repro.sh 首次 rc=0(run `20260706T130626`)。修复链:5类真bug(%%/空launch/IMU回声/RNGFND参数名)+ **B15 死锁** + **B16 探针双根因**(/tf_static latched→publisher QoS 内省;/ap/v1/pose/filtered→DDS 慢发现 28.97s 受控实验锤死→预算45s/容器90s)+ 测试断言遗留清理,go test 全绿。✅hack已撤(77d951a),净diff 286行(dada2db)。接管文档 RESUME_新窗口接管_2026-07-06.md + Bug台账 |
 | 13 | **frontier_lite 基线定档** | ✅ **第一批完成(07-06 晚,6 run)** | 全绿 2/6、达标率 40%、path 0.43~3.80m;失败模式分类 A探索质量(主导)/B启动竞态(1次)/C探针(0复发);**根因锁定=accepted_goals 纯时间驱动,启动耗时蚕食 26s 窗口**(源码 L78-108)。详见 docs/基线定档_frontier_lite_2026-07-06.md;需要更多样本时再补跑 |
 
 ## 四、决策 & 桥接路线(你已拍板;2026-07-07 更新为实测路线)
-集成采用「**B2.5 自写薄桥**」(历史名 ros1_bridge 方案;官方桥/zenoh 实验判死后确立)。实测进度:① gbplanner-ref rmf_sim I/O ✅(stage1)② 薄桥 world-model(ROS2)odom/3D点云→GBPlanner(ROS1),trajectory 回流 /gbp/trajectory ✅(stage2~35)③ 3D 雷达=lidar3d 净增量 ✅(stage3d)④ **当前=Stage4 接 FCU→Stage5 gate 替换 frontier_lite**。`gbplanner_core` 转备选/加深理解。
+集成采用「**B2.5 自写薄桥**」(历史名 ros1_bridge 方案;官方桥/zenoh 实验判死后确立)。实测进度:① gbplanner-ref rmf_sim I/O ✅(stage1)② 薄桥 world-model(ROS2)odom/3D点云→GBPlanner(ROS1),trajectory 回流 /gbp/trajectory ✅(stage2~35)③ 3D 雷达=lidar3d 净增量 ✅(stage3d)④ Stage4 FCU 闭环+去混流可归因 ✅(stage4a/b/c)⑤ Stage5a gate 以 gbplanner 策略通过 ✅(run8,机制验收)⑥ **当前=Stage5b 3D 对照+5c 同口径对比**。`gbplanner_core` 转备选/加深理解。
 
 ## 五、论证与对比要求(你新增)
 - **必须实据**:world-model 要在本机完整跑通;frontier_lite 的不足要用**实跑 demo + 量化数据**证明,不空口。

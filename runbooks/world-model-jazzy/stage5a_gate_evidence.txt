@@ -1,0 +1,73 @@
+=== STAGE5A START Tue Jul  7 12:30:26 CST 2026 ===
+--- 0. config 切 external ---
+20:  strategy: external
+--- 1. 栈复位(重启 GBPlanner 清体素图 + 新适配器 + 归因探针) ---
+4a017b8535cf0a1a721676c4bcc65e0238b2fc8000b3c15832a38fa8adb827e2
+e83f0ee3149dbdda7926714e7779b83a14370443819d1b7ec05857fc4771e099
+2a6c968551eac868c719d84aa8648636067c11a8a10c20e88bbc4fa583255249
+--- 2. world-model 真栈起(external) ---
+--- 3. ENABLE + 规划三连触发(0/25/50s) ---
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+--- 4. 适配器日志(TRAJ/GATE/INTENT 摘要) ---
+[INFO] [1783398711.412844488] [gbp_traj_to_intent]: TRAJ#1 received: wp=10 frame=map prereached=5(不计accepted)
+[INFO] [1783398711.686564324] [gbp_traj_to_intent]: TRAJ#2 received: wp=1 frame=map prereached=1(不计accepted)
+[INFO] [1783398711.845588629] [gbp_traj_to_intent]: TRAJ#3 received: wp=9 frame=map prereached=5(不计accepted)
+[INFO] [1783398712.742571541] [gbp_traj_to_intent]: TRAJ#4 received: wp=14 frame=map prereached=6(不计accepted)
+[INFO] [1783398718.019023169] [gbp_traj_to_intent]: TRAJ#5 received: wp=31 frame=map prereached=9(不计accepted)
+[INFO] [1783398747.230840199] [gbp_traj_to_intent]: INTENT traj#5 wp[9/31]=(-0.15,-0.20,0.04) odom=(1.04,0.89) dist=1.61 Rpairs=411 Rang=-75 det=1 -> v=(-0.068,0.042)
+[INFO] [1783398747.730184265] [gbp_traj_to_intent]: INTENT traj#5 wp[9/31]=(-0.15,-0.20,0.04) odom=(1.04,0.89) dist=1.61 Rpairs=411 Rang=-75 det=1 -> v=(-0.068,0.042)
+[INFO] [1783398748.229610295] [gbp_traj_to_intent]: INTENT traj#5 wp[9/31]=(-0.15,-0.20,0.04) odom=(1.03,0.90) dist=1.61 Rpairs=411 Rang=-75 det=1 -> v=(-0.068,0.042)
+[INFO] [1783398748.728836465] [gbp_traj_to_intent]: INTENT traj#5 wp[9/31]=(-0.15,-0.20,0.04) odom=(1.03,0.90) dist=1.61 Rpairs=411 Rang=-75 det=1 -> v=(-0.068,0.042)
+[INFO] [1783398749.230456988] [gbp_traj_to_intent]: INTENT traj#5 wp[9/31]=(-0.15,-0.20,0.04) odom=(1.03,0.91) dist=1.61 Rpairs=411 Rang=-75 det=1 -> v=(-0.068,0.042)
+--- 5. 等 run 结束 ---
+status=blocked
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T043112.702859408Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+exit status 1
+--- 6. 还原 config ---
+20:  strategy: frontier_lite
+--- 7. run summary:status/gate/exploration 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T043112.702859408Z/
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T043112.702859408Z//runtime/scripts/exploration_workflow_runtime.py
+external_strategy_active=True(渲染脚本直证)
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 1, "claim": "in_progress", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 0.9779, "strategy": "gbplanner"}
+probe status=sampled spec_topic=/rangefinder/down/status
+probe status=sampled spec_topic=?
+probe status=sampled spec_topic=/navlab/frame_contract/status
+probe status=sampled spec_topic=/navlab/exploration/status
+  exploration_status sample ok=False rc=0 parsed={"accepted_goals": 1, "blockers": [], "claim": "in_progress", "controller_ready": true, "enabled": true, "gate_ok_draft": false, "min_accepted_goals": 3, "min_path_length_m": 0.35, "mixed_flow": false, "motion_speed_mps": 0.08, "ok": false, "path_length_m": 0.9779, "strategy": "gbplanner", "traj_count": 5, "wp_prereached_excluded": 26}
+--- 8. 归因探针总结 ---
+t=49.3 cmd_vel lin=(0.076,0.024) ang.z=0.000 <<< GBP-SIGNATURE
+t=49.6 cmd_vel lin=(0.075,0.028) ang.z=0.000 <<< GBP-SIGNATURE
+t=50.0 cmd_vel lin=(0.073,0.033) ang.z=0.000 <<< GBP-SIGNATURE
+=== STAGE4C_PROBE_SUMMARY ===
+frontier_intent=0
+gbp_intent=489
+gbp_motion_intent=72
+other_intent=0
+cmdvel_n=1445
+cmd_nonzero=72
+gbp_sig=64
+status_gbp=488
+status_frontier=0
+status_other=0
+odom_n=16242
+path_total_m=3.3550
+path_from_first_gbp_m=3.0479
+path_cmd_active_m=2.5625
+odom_z_max=0.000
+timeline first_gbp_motion_t=42.54943706399354 last_gbp_motion_t=77.84253831199021 sig_first_t=46.70768360099464 sig_last_t=78.08065885098767
+no_frontier_intent=True
+PROBE_VERDICT=PASS
+--- 9. STAGE5A 汇总 ---
+gate_ok_latched_lines= 0
+frontier_intent=0
+no_frontier_intent=True
+STAGE5A=FAIL(未达成 gate latch 或混流,见适配器/探针日志)
+=== STAGE5A END Tue Jul  7 12:35:20 CST 2026 ===
