@@ -1,0 +1,49 @@
+OK
+=== STAGE5A START Tue Jul  7 12:14:09 CST 2026 ===
+--- 0. config 切 external ---
+20:  strategy: external
+--- 1. 栈复位(重启 GBPlanner 清体素图 + 新适配器 + 归因探针) ---
+cf73d44527f706b01d66246c094d895bf6f05593f327c4a789ddb2122504c2c1
+1089eb29f9201934420158b9130e0e42bdeedd9183beaffd4ff9b3801981f23f
+0f7707d658255bff2da5fe362a51879fd281bb4780d0fa13d34a878db86827dc
+--- 2. world-model 真栈起(external) ---
+--- 3. ENABLE + 规划三连触发(0/25/50s) ---
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+--- 4. 适配器日志(TRAJ/GATE/INTENT 摘要) ---
+[INFO] [1783397735.152283984] [gbp_traj_to_intent]: TRAJ#1 received: wp=12 frame=map prereached=4(不计accepted)
+[WARN] [1783397740.793784978] [gbp_traj_to_intent]: GATE OK latched: wp_done=4 path=0.80m controller_ready=True mixed_flow=False
+[INFO] [1783397741.114585298] [gbp_traj_to_intent]: TRAJ#2 received: wp=20 frame=map prereached=4(不计accepted)
+[INFO] [1783397770.606489817] [gbp_traj_to_intent]: INTENT traj#2 wp[7/20]=(-0.25,0.08,-0.03) odom=(0.67,-1.23) dist=1.60 Rpairs=386 Rang=-98 det=1 -> v=(0.071,0.037)
+[INFO] [1783397770.784912454] [gbp_traj_to_intent]: INTENT traj#2 wp[7/20]=(-0.25,0.08,-0.03) odom=(0.67,-1.23) dist=1.60 Rpairs=386 Rang=-98 det=1 -> v=(0.071,0.037)
+[INFO] [1783397771.282828600] [gbp_traj_to_intent]: INTENT traj#2 wp[7/20]=(-0.25,0.08,-0.03) odom=(0.67,-1.23) dist=1.60 Rpairs=386 Rang=-98 det=1 -> v=(0.071,0.037)
+[INFO] [1783397771.782002172] [gbp_traj_to_intent]: INTENT traj#2 wp[7/20]=(-0.25,0.08,-0.03) odom=(0.67,-1.23) dist=1.60 Rpairs=386 Rang=-98 det=1 -> v=(0.071,0.037)
+[INFO] [1783397772.282760448] [gbp_traj_to_intent]: INTENT traj#2 wp[7/20]=(-0.25,0.08,-0.03) odom=(0.67,-1.24) dist=1.61 Rpairs=386 Rang=-98 det=1 -> v=(0.071,0.037)
+--- 5. 等 run 结束 ---
+status=blocked
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T041455.739769427Z/summary.json: required probes failed: frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+exit status 1
+--- 6. 还原 config ---
+20:  strategy: frontier_lite
+--- 7. run summary:status/gate/exploration 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T041455.739769427Z/
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T041455.739769427Z//runtime/scripts/exploration_workflow_runtime.py
+external_strategy_active=True(渲染脚本直证)
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 4, "claim": "evaluated", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 0.8006, "strategy": "gbplanner"}
+probe status=sampled spec_topic=/rangefinder/down/status
+probe status=sampled spec_topic=?
+probe status=sampled spec_topic=/navlab/frame_contract/status
+probe status=sampled spec_topic=/navlab/exploration/status
+  exploration_status sample ok=True rc=0 parsed={"accepted_goals": 4, "blockers": [], "claim": "evaluated", "controller_ready": true, "enabled": true, "gate_ok_draft": true, "min_accepted_goals": 3, "min_path_length_m": 0.35, "mixed_flow": false, "motion_speed_mps": 0.08, "ok": true, "path_length_m": 0.8006, "strategy": "gbplanner", "traj_count": 1, "wp_prereached_excluded": 4}
+--- 8. 归因探针总结 ---
+Error response from daemon: No such container: s4c_probe
+--- 9. STAGE5A 汇总 ---
+gate_ok_latched_lines= 1
+STAGE5A=FAIL(未达成 gate latch 或混流,见适配器/探针日志)
+=== STAGE5A END Tue Jul  7 12:20:19 CST 2026 ===
