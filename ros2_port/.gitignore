@@ -1,0 +1,4 @@
+# colcon build products — never commit
+build/
+install/
+log/

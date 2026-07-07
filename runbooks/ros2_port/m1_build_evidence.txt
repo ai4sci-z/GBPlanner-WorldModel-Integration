@@ -1,0 +1,122 @@
+=== host ros2_port: /mnt/c/CCproject/GBPlanner-WorldModel-Integration/ros2_port ===
+/mnt/c/CCproject/GBPlanner-WorldModel-Integration/ros2_port/src:
+planner_msgs
+
+/mnt/c/CCproject/GBPlanner-WorldModel-Integration/ros2_port/src/planner_msgs:
+CMakeLists.txt
+msg
+package.xml
+srv
+
+/mnt/c/CCproject/GBPlanner-WorldModel-Integration/ros2_port/src/planner_msgs/msg:
+BoundMode.msg
+ExecutionPathMode.msg
+PlannerStatus.msg
+PlanningMode.msg
+TriggerMode.msg
+
+/mnt/c/CCproject/GBPlanner-WorldModel-Integration/ros2_port/src/planner_msgs/srv:
+PlannerHoming.srv
+PlannerSetPlanningMode.srv
+PlannerSrv.srv
+=== colcon build ===
+Starting >>> planner_msgs
+Finished <<< planner_msgs [4.51s]
+
+Summary: 1 package finished [4.62s]
+COLCON_RC=0
+=== ros2 interface show planner_msgs/srv/PlannerSrv ===
+# Request the planner to run and return a path
+std_msgs/Header header
+	builtin_interfaces/Time stamp
+		int32 sec
+		uint32 nanosec
+	string frame_id
+
+# Set the bound mode of the robot to use in planner.
+# Use extension to actual size. (default)
+# ROS 2 requires UPPER_SNAKE_CASE constant names (ROS 1 was kExtendedBound, ...).
+int32 K_EXTENDED_BOUND = 0
+int32 K_RELAXED_BOUND = 1
+int32 K_MIN_BOUND = 2
+int32 K_EXACT_BOUND = 3
+int32 K_NO_BOUND = 4
+# Can only be used with one of above values. Check Params/BoundModeType for more details.
+int32 bound_mode
+
+# Set root pose if requires the planner starts planning from this root.
+# Otherwise, set all to zero, planner will start at robot's current state.
+geometry_msgs/Pose root_pose
+	Point position
+		float64 x
+		float64 y
+		float64 z
+	Quaternion orientation
+		float64 x 0
+		float64 y 0
+		float64 z 0
+		float64 w 1
+---
+int32 K_FORWARD = 0
+int32 K_BACKWARD = 1
+int32 K_HOMING = 2
+int32 K_REPOSITIONING = 3
+# Status of the best path, take one of the above values.
+int32 status
+
+# Return actual bound mode used for planning
+int32 planning_bound_mode
+
+# Return best path.
+geometry_msgs/Pose[] path
+	Point position
+		float64 x
+		float64 y
+		float64 z
+	Quaternion orientation
+		float64 x 0
+		float64 y 0
+		float64 z 0
+		float64 w 1
+=== ros2 interface show planner_msgs/msg/PlannerStatus ===
+std_msgs/Header header
+	builtin_interfaces/Time stamp
+		int32 sec
+		uint32 nanosec
+	string frame_id
+
+bool success
+TriggerMode trigger_mode
+	int32 K_MANUAL = 0
+	int32 K_AUTO = 1
+	int32 mode
+BoundMode bound_mode
+	int32 K_EXTENDED_BOUND = 0
+	int32 K_RELAXED_BOUND = 1
+	int32 K_MIN_BOUND = 2
+	int32 K_EXACT_BOUND = 3
+	int32 K_NO_BOUND = 4
+	int32 mode
+PlanningMode planning_mode
+	int32 K_BASIC_EXPLORATION = 0
+	int32 K_NARROW_ENV_EXPLORATION = 1
+	int32 K_ADAPTIVE_EXPLORATION = 2
+	int32 mode
+ExecutionPathMode exe_path_mode
+	int32 K_LOCAL_PATH = 0
+	int32 K_HOMING_PATH = 1
+	int32 K_GLOBAL_PATH = 2
+	int32 mode
+	bool is_forward
+float32 max_vel
+=== all planner_msgs interfaces ===
+    planner_msgs/msg/BoundMode
+    planner_msgs/msg/ExecutionPathMode
+    planner_msgs/msg/PlannerStatus
+    planner_msgs/msg/PlanningMode
+    planner_msgs/msg/TriggerMode
+    planner_msgs/srv/PlannerHoming
+    planner_msgs/srv/PlannerSetPlanningMode
+    planner_msgs/srv/PlannerSrv
+DOCKER_RC=0
+=== DONE ===
