@@ -164,10 +164,15 @@ class TrajToIntent(Node):
         }
         self.pub_intent.publish(String(data=json.dumps(intent)))
 
+        # Stage5a gate 口径(Review_015 风险B:未经 external 去混流验证前不当完成态):
+        # gate_ok_draft 仅报告,不置 ok——ok=True 会驱动 task_completed→landing 链,
+        # 必须先在 Stage4c 证明 wp_done/path_len 可归因且时机安全后才启用。
+        gate_ok_draft = (self.wp_done >= 3) and (self.path_len >= 0.35)
         status = {
-            "claim": "draft_stage4",
+            "claim": "in_progress",
             "strategy": "gbplanner",
-            "ok": False,  # Stage4 不过早置 true;Stage5 按 gate 严格判
+            "ok": False,  # 保守:Stage4c 验证后由 gate_ok_draft 接管
+            "gate_ok_draft": gate_ok_draft,
             "blockers": blockers,
             "accepted_goals": self.wp_done,
             "min_accepted_goals": 3,

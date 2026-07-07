@@ -12,8 +12,8 @@
 - **纯 planner 栈消费 /wm/\* 闭环已打通**(GBPlanner/voxblox 真消费过桥输入并出轨迹);
 - **Stage3 dry-run 已 PASS**(轨迹→速度意图跟踪量自洽,零发布);
 - **Stage3.5 3D 数据链已贯通**(world-model 真 odom+真 3D 点云 → voxblox 3D 体素地图 90,472 点 zspan=13.2m → trajectory 回流);
-- **Stage4 已过**(消费闭环直证:`/ap/v1/cmd_vel` 出现与适配器逐位吻合的 GBP-SIGNATURE;XY/Yaw 低速,fail-closed 安全门全套);
-- **当前施工点 = Stage5**:策略替换(独占 intent 去混流)→ gate 对齐 → 同口径对比+3D 行为对照;之后 GUI 三演示。
+- **Stage4a/4b 消费直证已过**(`/ap/v1/cmd_vel` 出现与适配器逐位吻合的 GBP-SIGNATURE,唯一性已论证);**Stage4c 执行效果未验**(飞机运动可归因性——4a/4b 均在 frontier_lite 混流下跑);
+- **当前施工点 = Stage4c+5a:external 去混流联跑**(验运动可归因/gate 对齐)→ Stage5b 3D 行为对照 → 5c 同口径对比 → GUI 三演示。
 
 ## 二、阶段表
 
@@ -25,8 +25,8 @@
 | Stage2.6 纯 planner 栈消费 /wm/\* 闭环(2D 冒烟输入) | ✅ |
 | Stage3 trajectory dry-run(零发布) | ✅ |
 | Stage3.5 3D 数据链贯通(voxblox 3D 体素 zspan 13.2m) | ✅ |
-| Stage4 低速 FCU intent(cmd_vel GBP-SIGNATURE 直证;XY/Yaw) | ✅ |
-| **Stage5 gate 对齐 + 同口径对比(策略替换去混流/3D 对照)** | 🔵 **当前** |
+| Stage4 低速 FCU intent(4a/4b 消费直证;**4c 执行效果未验**) | 🟡 |
+| **Stage4c+5a:external 去混流联跑(运动可归因+gate 对齐)** | 🔵 **当前** |
 | GUI 三演示(①原版GBPlanner ②frontier_lite ③接入后) | ⬜ |
 
 ## 三、不能宣称的结论

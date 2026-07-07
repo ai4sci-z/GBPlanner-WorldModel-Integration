@@ -6,10 +6,10 @@
 ## 一、当前一句话状态
 
 > world-model jazzy exploration 已端到端全绿;frontier_lite 基线已定档(达标率 40%);
-> B2.5 自写薄桥 transport/消费闭环/dry-run 全 PASS;
-> **3D 数据链已贯通(stage35 史诗同框)**:world-model 真 odom+真 3D 点云 → GBPlanner/voxblox
-> 3D 体素地图(90,472 点,zspan 13.2m)→ trajectory 回流;
-> **当前施工点 = Stage4 低速 FCU intent**(限速/kill/hold/status);Stage5 gate 对齐与同口径对比未完成。
+> B2.5 自写薄桥 transport/消费闭环/dry-run 全 PASS;**3D 数据链已贯通**(voxblox 3D 体素 90,472 点 zspan 13.2m);
+> **Stage4a/4b 消费直证已过**(cmd_vel GBP-SIGNATURE 逐位吻合),**4c 执行效果未验**(混流下运动不可归因);
+> **当前施工点 = Stage4c+5a:external 去混流联跑**(材料已备:external 策略补丁+config 入口+适配器 status;
+> 验收=无 frontier intent+GBP 签名+odom path 增长可归因+takeoff ok);后续 5b 3D 对照、5c 同口径对比。
 
 ## 二、阶段表(全部有证据文件)
 
@@ -24,7 +24,7 @@
 | Stage2.6 纯 planner 栈消费 /wm/\* 闭环 | ✅ | stage26_evidence:订阅关系+voxblox 2.303Hz+19 条 trajectory。**边界:输入是 2D 冒烟(z=0),非 3D** |
 | Stage3 trajectory dry-run(零发布) | ✅ | stage3_evidence:37 条 DRY 跟踪量数学自洽(首跑曾 FAIL=PCI 状态机挂起,fresh 时序后 PASS) |
 | **Stage3.5 3D 数据链贯通** | ✅ **三判据过(stage35_evidence)** | lidar3d 净增量(点云源 z 跨度 3.3m)→ 薄桥 cloud3d 直通(base64/2Hz,3D 优先自动停 2D 冒烟)→ **史诗同框**:world-model 真栈(SITL 真 odom 604 条+真 3D 点云 115 帧)喂 GBPlanner → **voxblox 3D 体素地图 90,472 点 zspan=13.2m(判据②)**→ trajectory 回流(32wp,z 分量存在,判据③初步——大 z 机动待 Stage4 真飞) |
-| **Stage4 低速 FCU intent(XY/Yaw)** | ✅ **消费闭环直证(stage4a/4b_evidence)** | 安全版适配器 `trajectory_to_intent_stage4.py`(fail-closed 默认 disabled/须 /gbp/enable、/gbp/kill 一票禁用、限速 0.08+yaw 0.30、无 odom/轨迹超时/**超龄30s**即 hold、frame 校验、status draft)全功能实测;**直证:`/ap/v1/cmd_vel` 出现 GBP-SIGNATURE 多条(lin.x=-0.024, ang.z=-0.300,与适配器输出逐位吻合)**。**Signature 唯一性论证**:`-0.300`=我们的 YAW_RATE_MAX 限幅值、`0.024`=0.3×0.08 大偏航减速档——frontier_lite 值域是 yaw 0.18/0.20/-0.12、lin 0.10/0.06,hold=0,**均不可能产生这组数值**。intent 上总线 108 条(4a rosbag 三源:gbp/hold/frontier)。诚实边界:①**仅 XY/Yaw 低速闭环**(intent 契约无 z 速度,高度由飞控保持——不是"3D 飞行动作闭环");②与 frontier_lite **混流**,独占驱动属 Stage5;③**坐标系发现**:fcu_controller 两下发路语义不一致(cmd_vel=机体 frame,MAVLink 主路=LOCAL_NED 世界系不旋转)——适配器已改发世界系投影,NED/ENU 轴向映射待 Stage5 实测校准;④accepted_goals=wp 到达数(draft),≠gate 语义,Stage5 另定义 |
+| **Stage4 低速 FCU intent(XY/Yaw)** | 🟡 **4a/4b 过(消费直证);4c 执行效果未验**(飞机运动可归因性待 external 去混流联跑) | 安全版适配器 `trajectory_to_intent_stage4.py`(fail-closed 默认 disabled/须 /gbp/enable、/gbp/kill 一票禁用、限速 0.08+yaw 0.30、无 odom/轨迹超时/**超龄30s**即 hold、frame 校验、status draft)全功能实测;**直证:`/ap/v1/cmd_vel` 出现 GBP-SIGNATURE 多条(lin.x=-0.024, ang.z=-0.300,与适配器输出逐位吻合)**。**Signature 唯一性论证**:`-0.300`=我们的 YAW_RATE_MAX 限幅值、`0.024`=0.3×0.08 大偏航减速档——frontier_lite 值域是 yaw 0.18/0.20/-0.12、lin 0.10/0.06,hold=0,**均不可能产生这组数值**。intent 上总线 108 条(4a rosbag 三源:gbp/hold/frontier)。诚实边界:①**仅 XY/Yaw 低速闭环**(intent 契约无 z 速度,高度由飞控保持——不是"3D 飞行动作闭环");②与 frontier_lite **混流**,独占驱动属 Stage5;③**坐标系发现**:fcu_controller 两下发路语义不一致(cmd_vel=机体 frame,MAVLink 主路=LOCAL_NED 世界系不旋转)——适配器已改发世界系投影,NED/ENU 轴向映射待 Stage5 实测校准;④accepted_goals=wp 到达数(draft),≠gate 语义,Stage5 另定义 |
 | **Stage5 gate 对齐 + 同口径对比(当前)** | ⬜ 下一步 | ①策略替换(独占 intent,去混流)②status 字段严格对 gate ③同口径对比(基线 40% 对照)④3D 行为对照(改场景验 voxblox/trajectory 随输入变化) |
 | GUI 三演示 | ⬜(用户指示:跑通后建) | — |
 
