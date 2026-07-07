@@ -1,0 +1,43 @@
+=== STAGE5B VARIANT B_FOV5 START Tue Jul  7 13:04:48 CST 2026 ===
+--- 变量确认(vertical FOV / strategy) ---
+109:              <min_angle>-0.0873</min_angle>
+20:  strategy: external
+--- 栈复位 ---
+8bc2600f9d75e81ae6dd4eef9cd4479bc1b2f1693769840d28ec269792dfeb8c
+1042aca4020ce52d1d2e84ed5d83c5d84767bb70fbd44fdbaac3617cfae84abc
+9552c038b8d5054e6ed58fe68bff73c08859fafc391169c6bbe463a1524de7fb
+--- world-model 真栈起(external) ---
+enabled
+success: True
+message: ''
+--- [核心] 输入点云 z 分布(/wm/points) ---
+/wm/points : points=5555 zmin=-0.248 zmax=0.232 zspan=0.479 -> 3D
+--- [核心] voxblox TSDF z 分布 ---
+/gbplanner_node/tsdf_pointcloud : points=54129 zmin=-3.500 zmax=6.700 zspan=10.200 -> 3D
+--- 等 run 结束 ---
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T050535.841886174Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+exit status 1
+--- trajectory z 分布(全程) ---
+TRAJ#1 wp=14 zmin=0.000 zmax=0.108 zspan=0.108 frame=map
+TRAJ#2 wp=6 zmin=0.000 zmax=0.001 zspan=0.001 frame=map
+TRAJ#3 wp=25 zmin=0.000 zmax=0.048 zspan=0.048 frame=map
+TRAJ#4 wp=13 zmin=0.000 zmax=0.128 zspan=0.128 frame=map
+TRAJ#5 wp=10 zmin=0.000 zmax=0.166 zspan=0.166 frame=map
+TRAJ#6 wp=18 zmin=0.000 zmax=0.166 zspan=0.166 frame=map
+--- gate.exploration 指标 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T050535.841886174Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 0, "claim": "in_progress", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 1.543, "strategy": "gbplanner"}
+--- 适配器 GATE/TRAJ 摘要 ---
+[INFO] [1783400773.891996813] [gbp_traj_to_intent]: TRAJ#1 received: wp=14 frame=map prereached=5(不计accepted)
+[INFO] [1783400790.466136165] [gbp_traj_to_intent]: TRAJ#2 received: wp=6 frame=map prereached=3(不计accepted)
+[INFO] [1783400790.958011152] [gbp_traj_to_intent]: TRAJ#3 received: wp=25 frame=map prereached=3(不计accepted)
+[INFO] [1783400792.629149389] [gbp_traj_to_intent]: TRAJ#4 received: wp=13 frame=map prereached=5(不计accepted)
+[WARN] [1783400799.890292844] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=1
+[WARN] [1783400799.893398787] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=2
+[WARN] [1783400799.896707942] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=3
+[WARN] [1783400799.902125679] [gbp_traj_to_intent]: GATE OK latched: wp_done=3 path=2.76m controller_ready=True mixed_flow=False
+--- 已还原 ---
+109:              <min_angle>-0.523599</min_angle>
+20:  strategy: frontier_lite
+=== STAGE5B VARIANT B_FOV5 END Tue Jul  7 13:07:24 CST 2026 ===

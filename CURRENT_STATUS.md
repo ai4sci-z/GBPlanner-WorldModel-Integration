@@ -1,17 +1,17 @@
 > **[CURRENT] 本文件是全项目唯一当前事实源。其他文档与本文冲突时,以本文为准。**
 > 维护规则:每完成/失败一个阶段就更新本文;README 只引用本文,不另行维护状态。
 
-# CURRENT_STATUS(最后更新:2026-07-07 中午)
+# CURRENT_STATUS(最后更新:2026-07-07 下午)
 
 ## 一、当前一句话状态
 
-> **Stage4c PASS**(external 去混流,运动可归因:frontier intent=0、GBP 签名 cmd_vel、签名窗口 odom path 0.99m、takeoff ok);
-> **Stage5a 机制验收 PASS**(run8 `20260707T041455`:exploration gate 首次以 **strategy=gbplanner** 通过 exploration_probe——
-> status ok=True 闩锁、accepted_goals=4 全运动到达(预到达剔除)、path 0.80m、blockers=[]);
-> 路上顺手根治**上游 EKF 参考系打架真 bug**(罗盘 yaw vs SLAM 位置差 δ→一动就 stopped aiding/position lost/估计跑飞 34m,
-> =基线 path 方差根因;修复 3 件套已提交 clean 分支 99bcfa1,BIN 验尸全程留痕 stage5a_diagnosis.md);
-> **全绿 TASK_STATUS_OK 未达成**:run8 卡 frame_contract_probe 波动(B16 同款,非 GBPlanner 链路),run9 探索质量波动
-> (accepted=1,与基线 40% 同性质)——**多 run 成功率统计归 Stage5c 正题**。当前施工点 = **5b 3D 行为对照 + 5c 同口径多 run 对比**。
+> **Stage2~5 主链全部有实证**:4c 去混流可归因 PASS;5a gate 机制 PASS(run8)且已 3 次重现;
+> **runA(`stage5b` 变体A)= GBPlanner 策略下首个 TASK_STATUS_OK 完整全绿 run**;
+> **5b 3D 行为对照成立**(FOV ±30°→±5°:输入云 zspan 9.08→0.48,TSDF 点数 121k→54k,trajectory zspan 收缩一个量级);
+> **5c 同口径 6 run 统计**:gate 达标率 3/6=50%(vs 基线 40%,且我方 accepted=真实运动到达),全绿 1/6=17%
+> (失败=A类探索质量 3 次 + B类 frame_contract 波动,B类与 GBPlanner 无关);path 方差远小于基线(0.30 vs 3.4)。
+> 上游 EKF 参考系真 bug 已根治(clean 99bcfa1);**ROS2 复核:未发现官方 ROS2 版 GBPlanner**(16 分支全 ROS1,0 tag),
+> 短期维持 B2.5 薄桥路线(Review_017 判断一致)。当前施工点 = **成功率提升(A类波动)→ 基线修复后重跑 → GUI/PR 定稿**。
 
 ## 二、阶段表(全部有证据文件)
 
@@ -29,12 +29,14 @@
 | **Stage4 低速 FCU intent(XY/Yaw)** | ✅ **4a/4b 消费直证 + 4c 去混流可归因全过** | 4a/4b:`/ap/v1/cmd_vel` GBP-SIGNATURE 逐位吻合+唯一性论证(frontier 值域不可能产生)。**4c(stage4c_external_evidence)**:external 策略下 frontier intent=0/status frontier=0(双零),GBP 运动 intent 61 条、签名 cmd_vel 14 条,**签名活跃窗口 odom path=0.99m≥0.10m**(环境漂移率 ~8 倍),takeoff_ok=True,渲染脚本 external 直证。适配器=fail-closed 全套(enable/kill/限速/超龄/frame 校验) |
 | **Stage5cal 轴向校准+上游 EKF 真 bug 根治** | ✅ **根因链 BIN 验尸定案([stage5a_diagnosis](runbooks/world-model-jazzy/stage5a_diagnosis.md))** | ①坐标语义:intent(x,y) 不经旋转直进 NED;fcu 主路="胡萝卜"**位置目标**(目标=当前+v×2s),实际速度 ~0.3m/s 由 AP 增益决定与命令幅值无关;②**上游真 bug:EK3_SRC1_YAW=1(罗盘/世界系)与 POSXY=6(SLAM/map 系)参考系差 δ→运动即 stopped aiding→position lost→估计跑飞 34m**(=frontier_lite 基线 path 0.43~3.80m 方差的根因);③修复 3 件套(YAW→6、COMPASS_USE 全关、--no-align-yaw-to-fcu 显式传——argparse 默认 True=yaw 循环自证)已提交 **clean 分支 99bcfa1**,go test 全绿;④教训:parm 模板只是测试 fixture,真源头=docker/profiles/*.parm(只改模板 BIN 实测不生效) |
 | **Stage5a gate/status 严格对齐** | ✅ **机制验收 PASS(run8 `20260707T041455`)**;全绿待 5c 统计 | **exploration gate 首次以 strategy=gbplanner 通过 exploration_probe**:适配器五条件闩锁(enable+无混流闩+controller_ready+accepted_goals≥3+path≥0.35+blockers 空)触发 GATE OK(wp_done=4 **全运动到达**,wp_prereached=4 另行剔除不计,path 0.80m);探针采样 ok=True rc=0,summary gate.exploration 收录 claim=evaluated。适配器最终形态:双坐标系(map vs /navlab/fcu/local_position_pose)**Procrustes 在线对齐**(实测旋转 −87° det=+1,396 对)+yaw_rate 恒 0(旋转致 2D SLAM 失锁)+slam_frozen blocker+近距比例减速(防胡萝卜越过 wp 的 0.5m 极限环)。**诚实边界**:run8 全绿被 frame_contract_probe 波动挡住(B16 同款,非 GBPlanner 链路);run9 accepted=1(探索质量 run 间波动,与基线 40% 同性质)→ 成功率统计归 5c |
-| **Stage5b 3D 行为对照 + 5c 同口径对比(当前)** | ⬜ 下一步 | 5b:改 3D 障碍/开口验 voxblox z 分布/trajectory/gate 随输入变化;5c:GBPlanner 接入后 3~6 run vs 基线 40%(TASK_STATUS_OK 率/accepted 达标率/path 均值方差/失败分类) |
-| GUI 三演示 | ⬜(用户指示:跑通后建) | — |
+| **Stage5b 3D 行为对照** | ✅ **成立([stage5b_evidence](runbooks/world-model-jazzy/stage5b_evidence.txt))** | 同参数只改 lidar3d 垂直 FOV(±30°→±5°):输入云 zspan 9.08→0.48(19×),TSDF 点数 121,479→54,129,trajectory zspan 0.434→0.001~0.166 且 1 条→6 条频繁重规划,gate 结果改变——**GBPlanner 行为确受 3D 输入影响**。诚实边界:是传感 FOV 对照而非障碍物对照(动官方迷宫伤基线可比性,列为增强项);TSDF zspan 含推断体素,点数+输入 zspan 才是主信号。**意外收获:变体 A(基线配置)= 首个 TASK_STATUS_OK 完整全绿 run** |
+| **Stage5c 同口径多 run 对比** | ✅ **首批 6 样本定档([stage5c_summary](runbooks/world-model-jazzy/stage5c_summary_evidence.txt))** | run8/9/A/1/2/3(全部修复后同口径):**gate 达标率 3/6=50%**(vs 基线 40%,且我方 accepted=真实运动到达,基线是纯时间驱动)、全绿 1/6=17%、path 均值 0.90m 方差 0.30(基线跨 3.4m);失败分类:A类·探索质量 3 次 / B类·frame_contract 波动 3 次现身(2 次为唯一拦路,与 GBPlanner 无关)。**§7.3 失真补证表**:cmd_vel↔intent 方向差 0~14°(FCU 转发忠实);odom↔intent 差均值落在 map↔NED 固定旋转附近,段间散布来自换向瞬态(稳态段细化留增强)。⚠️公平性:基线跑于 EKF 修复前(path 含跑飞成分),严格对比需基线重跑 |
+| **ROS2 路线复核(Review_017 §5)** | ✅ 已复核(2026-07-07 联网) | **未发现作者官方发布的 ROS2 版 GBPlanner**:ntnu-arl/gbplanner_ros 16 分支(master/gbplanner1/2/3/dev-noetic 等)全 ROS1 系,0 tag/release,无 ros2/humble/jazzy/foxy 关键词分支;NTNU unified_autonomy_stack 亦无明确 ROS2 GBPlanner 移植声明;第三方 fork 均为镜像非移植。**当前官方可复现路线仍是 ROS1/catkin;短期维持 B2.5 薄桥**(与 Review_017 判断一致) |
+| 成功率提升(A类波动)+ 基线修复后重跑 + GUI 三演示 | ⬜ 下一步 | A类=GBPlanner 侧轨迹 wp 距离/窗口时长/触发时机可调;基线在 EKF 修复后重跑保公平;GUI 用户指示跑通后建 |
 
 ## 三、不能宣称的结论(汇报/文档纪律)
 
-1. **不能说"完整 GBPlanner 已集成完成/全绿"**——Stage4 全过、5a 机制过(run8 exploration_probe PASS),但 **TASK_STATUS_OK 全绿未达成**(frame_contract 波动+探索质量 run 间波动),5b/5c/GUI 未做;成功率要等 5c 多 run 统计才可宣称;
+1. **不能说"完整 GBPlanner 已集成完成/稳定全绿"**——主链 4c/5a/5b/5c 全有实证且已出现完整全绿 run(runA),但**全绿率仅 1/6**,受 A类探索质量波动+B类探针波动影响;**不能说"GBPlanner 显著优于基线"**——gate 达标率 50% vs 40% 且计数口径更严,方向有利,但基线跑于 EKF 修复前(path 污染),严格结论需基线重跑;**不能说"3D 障碍物级行为对照已做"**(5b 是传感 FOV 对照);
 2. **不能说"已完成 3D 探索闭环/完整 gate/FCU 闭环"**——可以说"**3D 数据链已贯通**,voxblox 3D 体素证据成立(90,472 点 zspan 13.2m)";Stage3.5 证明数据链,**不证明完整任务成功**(stage35 的 world-model run 本身 status=blocked=exploration_probe 波动+尚无 Stage4/5,见证据定性);
 3. **不能把 Stage2.6 说成完整 world-model 闭环**——那是"纯 planner 栈+手工输入";stage2k 证据是反例(完整原仿真栈里 GBPlanner 吃原生 topic,/wm/\* 无订阅者);
 4. **RViz 绿线(best planning path)≠执行轨迹**——执行轨迹=粉线=`/rmf_obelix/command/trajectory`(发布者 PCI,已实证),桥只接它,绝不接 `/vis/*`;

@@ -1,0 +1,38 @@
+=== STAGE5B VARIANT A_FOV30 START Tue Jul  7 13:00:54 CST 2026 ===
+--- 变量确认(vertical FOV / strategy) ---
+109:              <min_angle>-0.523599</min_angle>
+20:  strategy: external
+--- 栈复位 ---
+18bb523be038eed8a9c94a707a4f3b145265c2fc33d55de924c177ab4a3d1762
+3f52c666578f23e5bc703dc287926ba51cf70b2528efd6aad608e76dbcf50d89
+175ab1a55bfd74e31e98c3c80cefd98c670c6bf86cf1bff4b6a1702d72718b76
+--- world-model 真栈起(external) ---
+enabled
+success: True
+message: ''
+--- [核心] 输入点云 z 分布(/wm/points) ---
+/wm/points : points=6754 zmin=-4.969 zmax=4.110 zspan=9.080 -> 3D
+--- [核心] voxblox TSDF z 分布 ---
+/gbplanner_node/tsdf_pointcloud : points=121479 zmin=-4.700 zmax=7.100 zspan=11.800 -> 3D
+--- 等 run 结束 ---
+runtime_rosbags=1
+status=ok
+--- trajectory z 分布(全程) ---
+TRAJ#1 wp=27 zmin=-0.344 zmax=0.089 zspan=0.434 frame=map
+--- gate.exploration 指标 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T050141.033465433Z/
+task_status = TASK_STATUS_OK
+gate.exploration = {"accepted_goals": 3, "claim": "evaluated", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 0.4073, "strategy": "gbplanner"}
+--- 适配器 GATE/TRAJ 摘要 ---
+[INFO] [1783400539.999725657] [gbp_traj_to_intent]: TRAJ#1 received: wp=27 frame=map prereached=5(不计accepted)
+[WARN] [1783400543.861395515] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=1
+[WARN] [1783400544.799693072] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=2
+[WARN] [1783400545.301032838] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=3
+[WARN] [1783400545.306973404] [gbp_traj_to_intent]: GATE OK latched: wp_done=3 path=0.41m controller_ready=True mixed_flow=False
+[WARN] [1783400546.298628102] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=4
+[WARN] [1783400546.301270200] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=5
+[WARN] [1783400546.799133838] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=6
+--- 已还原 ---
+109:              <min_angle>-0.523599</min_angle>
+20:  strategy: frontier_lite
+=== STAGE5B VARIANT A_FOV30 END Tue Jul  7 13:03:13 CST 2026 ===
