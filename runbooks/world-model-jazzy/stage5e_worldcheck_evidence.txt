@@ -1,0 +1,28 @@
+=== WORLDCHECK START Tue Jul  7 20:26:44 CST 2026 ===
+--- [1] 清 voxblox:restart planner(不动 orig/gzgui);新 RViz ---
+--- [1a] 旧图残留排除:重启后 tsdf 应无消息/空 ---
+/gbplanner_node/tsdf_pointcloud : points=22686 zmin=-0.300 zmax=3.300 zspan=3.600 -> 3D
+cbe121df2b35e0bb4d4e5ae211756c8cf2abb579bfd450876c1fecb55ff98fe8
+42f701568ec4217411347028547a06e2acd75194476c688f480d1d0d411e044c
+c98223a3e35d3d2124a4ef0d19032cea78060a244a88842ac2780b6b1edabb96
+RViz 启动中(容器 gbp_rviz)。看不到窗口时:docker logs gbp_rviz
+手动添加显示(Add→By topic):/wm/points(输入点云)、/gbplanner_node/tsdf_pointcloud(voxblox)、/rmf_obelix/command/trajectory 无法直接显示,轨迹看 /vis/* markers(仅可视化,不进控制链)
+--- [2] live run(external) ---
+enabled
+success: True
+message: ''
+--- [3] TF 链取证(ROS2 侧) ---
+[INFO] [1783427338.072633766] [tf2_echo]: Waiting for transform base_link ->  lidar3d_frame: Invalid frame ID "base_link" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1783427339.934884442] [tf2_echo]: Waiting for transform base_link ->  lidar3d_frame: Invalid frame ID "lidar3d_frame" passed to canTransform argument source_frame - frame does not exist
+--- [3b] TF(ROS1 侧,桥广播) ---
+--- [3c] world↔map 恒等验证:同刻 /wm/odom(ROS1,world) vs /slam/odom(ROS2,map) ---
+--- [4] 体素几何 vs 迷宫地标(等地图积累) ---
+frame=world points=92038
+x:[-8.50,8.50] y:[-8.50,8.50] z:[-0.50,3.50]
+wall_band_points=63627
+x_wall_peaks(前8): [(-3.2, 2054), (-1.8, 1509), (-1.0, 1464), (4.4, 1464), (5.0, 1464), (6.4, 1464), (7.0, 1821), (8.4, 1727)]
+y_wall_peaks(前8): [(2.2, 1810), (3.2, 2064), (4.0, 2061), (4.4, 2064), (5.0, 2062), (5.6, 2064), (6.4, 2064), (7.0, 2060)]
+--- [5] 等 run 结束 ---
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T122729.385939808Z/summary.json: task_runtime_timeout after 150.0s during probes:exploration_probe,frame_contract_probe
+exit status 1
+=== WORLDCHECK END Tue Jul  7 20:31:13 CST 2026 ===

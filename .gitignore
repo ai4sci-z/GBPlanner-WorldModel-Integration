@@ -4,3 +4,9 @@ __pycache__/
 ~$*
 package-lock.json
 code/gbplanner_core/build/
+# 外部协作/浏览材料(不入库,归属各自所有者)
+Codex_GBPlanner_工作区/
+_GBPlanner旧散落文档存档_2026-07-04/
+gbplanner源码浏览/
+world-model源码浏览/
+组会演示_2026-07-07/

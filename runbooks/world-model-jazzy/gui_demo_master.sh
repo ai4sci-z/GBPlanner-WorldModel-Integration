@@ -15,8 +15,8 @@ E() { docker exec gbplanner_ref bash -c "source /opt/ros/noetic/setup.bash; sour
 restore_yaml() { sed -i 's/strategy: external/strategy: frontier_lite/' "$YAML"; }
 trap restore_yaml EXIT
 
-echo "=== [1/6] 桥接栈复位 ==="
-docker rm -f thin_ros2 s4_adapter s5c_probe gbp_rviz wm_gzgui >/dev/null 2>&1 || true
+echo "=== [1/6] 桥接栈复位(不动 wm_gzgui:用户在用) ==="
+docker rm -f thin_ros2 s4_adapter s5c_probe gbp_rviz >/dev/null 2>&1 || true
 docker restart gbplanner_ref >/dev/null
 sleep 25
 docker exec -d gbplanner_ref bash -c "source /opt/ros/noetic/setup.bash; source /root/gbp_ws/devel/setup.bash; export ROS_MASTER_URI=http://localhost:11311 ROS_HOSTNAME=localhost; python3 /tmp/thinbridge_ros1_side.py > /tmp/thinbridge_ros1.log 2>&1"
@@ -38,8 +38,7 @@ go run ./cmd/navlab-sim run exploration --live-preflight > /home/ai4s/gui_demo_r
 RUN_PID=$!
 sleep 12
 
-echo "=== [4/6] Gazebo GUI(GUI1)附着 ==="
-bash "$HERE/gui1_gazebo.sh" || echo "Gazebo GUI 启动失败,fallback=RViz+结果面板"
+echo "=== [4/6] Gazebo GUI:跳过(现有 wm_gzgui 窗口保留不动;需要时手动 bash gui1_gazebo.sh)==="
 
 echo "=== [5/6] ENABLE + 触发规划(RViz 里将出现点云/体素/轨迹)==="
 sleep 15
