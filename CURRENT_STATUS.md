@@ -26,7 +26,7 @@
 > 修复后 gate 达标连续段出现(v3run3/5、v4run1、final1/2),**final2=修复链后再次 TASK_STATUS_OK 完整全绿(accepted=5)**;
 > ⚠️ 最终口径正式批仅 3 样本(组会中断),**成功率统计未定档**——full 批(≥6 run)为下一步首项。
 > **GUI 三演示已交付(阶段性可视化口径)**:gui_demo_master.sh + results_panel.html + 演示手册。
-> 当前施工点 = **组会后:最终口径 full 批(6 run)定档成功率 → 基线同口径重跑(探针修复也惠及基线,须复跑公平)→ PR 统一定稿**。
+> **⚠️ 以上全部为桥接期结论,已冻结为 oracle(仍成立,不再演进)。当前施工点 = ROS2 原生迁移 M0→M5**(见本文件顶部横幅 + [TASKS.md](TASKS.md) M0-M5 + [任务书](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)):M0 入口文档收口(README/TASKS/索引/接力棒/0_总览 ✅ + stage6 修⑥收尾)→ M1 planner_msgs → M2 voxblox → M3 core → M4 node → M5 直连联跑。
 
 ## 二、阶段表(全部有证据文件)
 

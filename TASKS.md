@@ -24,7 +24,30 @@
 - **预研 A / 预研 B** = 复现任务(A=复现 world-model,B=复现 GBPlanner)。均已完成。
 - **集成方案** = **「B2.5 自写薄桥」(现行,实测选型)**;历史名称曾为「桥接方案(ros1_bridge)」——官方 ros1_bridge 与 zenoh 均已实验判死(stage2a-2d);「重写方案(gbplanner_core)」为备选/理解材料。
 
-## 三、当前任务表(2026-07-06 更新)
+## 三、当前主线任务表:GBPlanner **ROS2 原生迁移**(2026-07-08 · 路线切换后)
+
+> 🔄 **导师最高指示(07-07 晚)**:放弃桥接,GBPlanner 迁移 ROS2 原生。桥接线冻结为 oracle + 阶段性证据(下方"桥接期任务表"全部 ✅ 结论仍成立,不再演进)。
+> 权威任务书:[docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
+
+| ID | 里程碑 | 状态 | 验收 / 备注 |
+|---|---|---|---|
+| **M0** | 侦察 + 路线冻结 + 入口文档收口 | 🔵 **收口中** | 侦察三件套 ✅(包清单/voxblox 选型/直连契约)+ 理解报告 1-3 ✅ + 迁移任务书入库 ✅;**收口中**=README/TASKS/文档索引/接力棒切 ROS2 口径 + 补 0_总览 + stage6 修⑥收尾。验收=任何新窗口读入口不再回桥接路线 |
+| **M1** | `planner_msgs` ROS2 最小消息包 | ⬜ | 新分支 `feat/gbplanner-ros2-port` + 新目录 `ros2_port/`;**只迁最小集**(planner_srv/planner_set_planning_mode/PlanningMode/BoundMode 等,勿 13msg+24srv 全家桶)。验收=`colcon build` 通过 + `ros2 interface show` + 无 ROS1/catkin/actionlib 依赖 |
+| **M2** | voxblox ROS2 后端落地 | ⬜ | 沿用 voxblox core(snt-arg minimal 底座 + Jazzy 适配),**不用 nvblox**;订 PointCloud2 → 出 TSDF/ESDF → RViz2 可见;与 ROS1 oracle 对拍 voxel/zspan/occupied/ESDF/raycast。最大风险层 |
+| **M3** | 算法核心 ROS-free 剥离 | ⬜ | rrg.cpp/planner_common/adaptive_obb/kdtree 去 ros/ros.h、ROS_INFO、ros::Time、ROS1 TF/param;先做成 ROS-free C++ library。验收=ament_cmake 编译 + 不 include ros/ros.h + 可被单测调用 |
+| **M4** | ROS2 planner 节点壳 | ⬜ | 订 /slam/odom + /wm/cloud3d、查 TF、调 voxblox、触发 RRG、发 /gbp/trajectory + RViz2 marker;PCI 先替换为最小定时 trigger。验收=节点起+建图+触发一次规划+出轨迹+RViz2 可见(**不要求 exploration 全绿**) |
+| **M5** | world-model 直连联跑 + oracle 回归 | ⬜ | 沿用 `trajectory_to_intent_stage4.py` + /navlab/fcu/setpoint/intent + stage5c probe 口径。三层验收:M5-a 可视化 / M5-b 控制消费 / M5-c ≥3 run 对比(accepted/path/TASK_STATUS,与桥接 oracle 及 frontier_lite 同口径对照) |
+
+**M0 当前施工点(下一棒四件事)**:①clean 分支 stage6 修⑥收尾+提交(config/defaults.go frame_contract default)②补 docs/worldmodel理解_0_总览 ③入口文档收口(本轮进行中)④新分支 feat/gbplanner-ros2-port + ros2_port/ + M1 最小 planner_msgs。
+
+**第一轮纪律**(勿一次碰 messages+voxblox+rrg+params+TF+RViz2):M1 只做消息层地基;每个 M 阶段单独 commit + 留 evidence;行为等价靠 ROS1 oracle 对照;不因"能编译"就宣称迁移成功。
+
+---
+
+## 三·附、桥接期任务表(**已冻结**,历史证据 / oracle,不再演进)
+
+> 以下为桥接式融合(B2.5 薄桥)阶段的任务台账,全部 ✅ 结论仍成立,冻结为迁移 oracle。不再追 final 批跑 / thinbridge 稳定性 / 桥接 PR。
+
 | ID | 任务 | 状态 | 备注 |
 |---|---|---|---|
 | 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | ✅ **完成:自主探索全闭环(2026-07-02 实测)** | 排 6 坑后:起飞→voxblox 3D建图→RRG规划→**无人机自主巡飞覆盖迷宫**(轨迹实测 (5.7,-1.3)→(4.4,6.4),RViz 可视化在桌面)。复现:`run_light.sh` + `takeoff_and_explore.sh`;全记录 docs/预研B_仿真实跑排错记录.md |
@@ -36,14 +59,17 @@
 | 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ✅ **公平对比定档(07-07 下午)** | **修复后同口径:GBPlanner 达标 3/6=50% vs frontier_lite 0/6=0%,显著占优**(基线 accepted 恒=2 零方差=窗口结构性失败;修复前的 2/6 全绿实为 EKF 跑飞馈赠);且我方 accepted=真实运动到达,口径更严。GBPlanner 全绿 1/6(runA),v5(PD)后全绿率待 v2 批跑。stage5c_summary_evidence + baseline_postfix_evidence |
 | 7 | 文档·预研A/B 独立报告 | ⬜ 降级(文档完善类,非主线) | 预研A/B 均已完成,报告素材齐(Bug台账/基线/预研B成果);等主线跑通后统一出报告 |
 | 8 | 提交 PR + Issue 给 world-model 作者 | ⏸ **延后(你 2026-07-06 晚指示)** | 源码改动**先保存**(clean 分支 4 commit+净diff 286行零hack✅,全绿✅);**等最终集成任务(真 GBPlanner 桥接)跑通后再准备完整 PR 物料一并定稿**。硬约束不变=作者 jazzy 环境能跑 |
-| 9 | **⭐ B2.5 自写薄桥接真版 GBPlanner(当前主线)** | 🔵 **Stage2~5 主链全实证:4c✅ 5a✅(3次重现)5b✅ 5c 首批✅;runA=首个完整全绿;当前=成功率提升+基线重跑+GUI/PR** | 4c 去混流可归因(签名窗口 path 0.99m);5a gate 机制(run8 accepted=4 全运动到达);**5b 3D 对照成立**(FOV ±30°→±5°:输入 zspan 19× 压缩→TSDF 点数减半→trajectory z 收缩一个量级);**5c 六样本**:gate 达标 50% vs 基线 40%、全绿 1/6(runA=TASK_STATUS_OK)、失败分类 A类探索质量/B类探针波动;失真补证表=cmd_vel↔intent 0~14°(FCU 转发忠实)。上游 EKF 真 bug 根治(clean 99bcfa1,stage5a_diagnosis 必读);**ROS2 复核:无官方 ROS2 版 GBPlanner(16 分支全 ROS1/0 tag),短期维持薄桥**。入口 docs/桥接查证与执行计划 |
+| 9 | **⭐ B2.5 自写薄桥接真版 GBPlanner(~~当前主线~~ → 已冻结为 oracle)** | ⛔ **冻结(路线切换 07-07 晚)**;桥接期成果全部坐实:**Stage2~5 主链全实证:4c✅ 5a✅(3次重现)5b✅ 5c 首批✅;runA=首个完整全绿;公平对比 50% vs 0% 定档**。不再演进(不追 final 批跑/GUI/桥接 PR)——迁移主线见 §三 M0-M5 | 4c 去混流可归因(签名窗口 path 0.99m);5a gate 机制(run8 accepted=4 全运动到达);**5b 3D 对照成立**(FOV ±30°→±5°:输入 zspan 19× 压缩→TSDF 点数减半→trajectory z 收缩一个量级);**5c 六样本**:gate 达标 50% vs 基线 40%、全绿 1/6(runA=TASK_STATUS_OK)、失败分类 A类探索质量/B类探针波动;失真补证表=cmd_vel↔intent 0~14°(FCU 转发忠实)。上游 EKF 真 bug 根治(clean 99bcfa1,stage5a_diagnosis 必读);**ROS2 复核:无官方 ROS2 版 GBPlanner(16 分支全 ROS1/0 tag),短期维持薄桥**。入口 docs/桥接查证与执行计划 |
 | 10 | 修运行时头号根因 tomllib | ✅ 完成(0b85cea) | `try: tomllib / except: tomli` 兜底;jazzy 实测零影响(原生 tomllib,兜底分支不执行) |
 | 11 | **⭐ jazzy 全栈重建(用户硬指令)** | ✅ **镜像阶段 9/9 收官(07-05 晚)** | 4 缺镜像全建成+开箱验真(坑全解:BuildKit 假成功/Livox cstdint/ydlidar declare_parameter;official-baseline **原版零补丁一次过**,micro_ros_agent 58.4s=humble 最狠坑 jazzy 天然没有)。施工指引 docs/jazzy全栈重建_施工指引.md;脚本 runbooks/world-model-jazzy/ |
 | 12 | **⭐ jazzy 跑通 exploration** | 🏁 **端到端全绿(07-06 晚)** | clean_repro.sh 首次 rc=0(run `20260706T130626`)。修复链:5类真bug(%%/空launch/IMU回声/RNGFND参数名)+ **B15 死锁** + **B16 探针双根因**(/tf_static latched→publisher QoS 内省;/ap/v1/pose/filtered→DDS 慢发现 28.97s 受控实验锤死→预算45s/容器90s)+ 测试断言遗留清理,go test 全绿。✅hack已撤(77d951a),净diff 286行(dada2db)。接管文档 RESUME_新窗口接管_2026-07-06.md + Bug台账 |
 | 13 | **frontier_lite 基线定档** | ✅ **两批完成:修复前(07-06)+修复后复档(07-07)** | 修复前:全绿 2/6、达标 40%、path 0.43~3.80(**已判定被 EKF 跑飞污染**);**修复后(公平口径):全绿 0/6、达标 0/6、accepted 恒=2 零方差、path 0.15~2.63**——"启动耗时蚕食 26s 窗口"从源码判断升级为实测确定性结论(时间片只装得下 2 个 goal)。baseline_postfix_evidence.txt |
 
-## 四、决策 & 桥接路线(你已拍板;2026-07-07 更新为实测路线)
-集成采用「**B2.5 自写薄桥**」(历史名 ros1_bridge 方案;官方桥/zenoh 实验判死后确立)= **GBPlanner-in-world-model 桥接式融合**(非 ROS2 原生移植,联网复核无官方 ROS2 版)。实测进度:① gbplanner-ref 单侧 ✅ ② 薄桥数据链+3D 雷达 ✅(stage2~3.5)③ Stage4 FCU 闭环+去混流归因 ✅ ④ Stage5a gate 机制 ✅(3 次重现)⑤ Stage5b 3D 行为对照 ✅ ⑥ Stage5c 首批+**公平对比定档 ✅(50% vs 0%)**⑦ v2 批证伪 kp0.45 ⑧ **成功率战役 ✅**(探针预算 C/B 类根因全修+适配器 v6b;final2 再次全绿)⑨ **GUI 三演示 ✅ 交付** ⑩ **当前=组会后 full 批定档+基线复跑+PR 定稿**。`gbplanner_core` 转备选/加深理解。
+## 四、决策 & 路线(2026-07-08 · 路线切换后)
+
+**当前路线 = GBPlanner ROS2 原生迁移**(导师最高指示 07-07 晚:ROS1+ROS2 双栈过重,放弃桥接)。桥接线冻结为 oracle + 阶段性证据。
+
+**桥接期路线复盘(已冻结,仅追溯)**:曾采用「**B2.5 自写薄桥**」(历史名 ros1_bridge 方案;官方桥/zenoh 实验判死后确立)= GBPlanner-in-world-model 桥接式融合。实测进度全部坐实:① gbplanner-ref 单侧 ✅ ② 薄桥数据链+3D 雷达 ✅(stage2~3.5)③ Stage4 FCU 闭环+去混流归因 ✅ ④ Stage5a gate 机制 ✅(3 次重现)⑤ Stage5b 3D 行为对照 ✅ ⑥ Stage5c 首批+**公平对比定档 ✅(50% vs 0%)**⑦ v2 批证伪 kp0.45 ⑧ 成功率战役 ✅(探针预算 C/B 类根因全修+适配器 v6b;final2 再次全绿)⑨ GUI 三演示 ✅ 交付。**这些结论作为迁移 oracle 保留,不再追后续桥接收尾**;`gbplanner_core` 重写路线的理解材料在 ROS2 迁移 M3 复用。
 
 ## 五、论证与对比要求(你新增)
 - **必须实据**:world-model 要在本机完整跑通;frontier_lite 的不足要用**实跑 demo + 量化数据**证明,不空口。

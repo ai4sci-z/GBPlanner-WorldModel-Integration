@@ -4,13 +4,43 @@
 
 把 **GBPlanner**(DARPA 地下赛冠军队 CERBERUS 的 3D 自主探索规划器,ROS1)接入 **world-model**(ROS2 jazzy 无人机仿真平台),替换其占位探索策略 `frontier_lite`,并用同口径数据证明升级价值。
 
-## 一、这个项目到底做成了什么(2026-07-07)
+## 一、当前主线(2026-07-08):GBPlanner **ROS2 原生迁移**
 
-**这不是"原始 GBPlanner 和原始 world-model 各跑各的对比实验",融合确实做了,主链已打通并有全程实证。** 准确定名:
+> 🔄 **2026-07-07 晚·导师最高指示**:放弃 ROS1↔ROS2 桥接,把 GBPlanner **迁移到 ROS2 原生**(ROS1+ROS2 双栈过重)。
+> 桥接线**冻结为 oracle 回归基准 + 科研叙事素材**(下方 §二 桥接期结论全部仍成立,不再演进);
+> world-model 侧资产(EKF/探针修复、ROS2 适配器 `trajectory_to_intent`、lidar3d、评测口径)**全部直接复用**。
+> 权威蓝图:[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md) + [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
 
-> **GBPlanner-in-world-model 的桥接式融合**——ROS1 原版 GBPlanner 通过自写薄桥(B2.5)接入 ROS2 world-model,在 world-model 仿真里形成 3D 数据链、规划链、控制消费链、去混流运动归因、gate 机制通过与公平对比。**不是 ROS2 原生移植**(联网复核:官方无 ROS2 版 GBPlanner)。
+目标架构(从"双栈过桥"改为"ROS2 直连"):
 
-融合链路(每一段都有证据文件,非方案想象):
+```text
+Gazebo / world-model ROS2(/wm/cloud3d、/slam/odom、TF)
+        ↓  (无桥,ROS2 原生订阅)
+GBPlanner ROS2 原生节点(voxblox ROS2 + RRG/gain/collision)
+        ↓  /gbp/trajectory(ROS2 MultiDOFJointTrajectory,frame=map)
+trajectory_to_intent 适配器(桥接期资产,直接复用)
+        ↓  /navlab/fcu/setpoint/intent
+world-model FCU 控制链 / Gazebo
+```
+
+**迁移里程碑**(拆解与验收见任务书):
+
+| 里程碑 | 内容 | 状态 |
+|---|---|---|
+| **M0** | 侦察 + 路线冻结 + 入口文档收口 | 🔵 **收口中** |
+| M1 | `planner_msgs` ROS2 最小消息包(colcon build 通过) | ⬜ |
+| M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF/gain) | ⬜ |
+| M3 | 算法核心 ROS-free 剥离(rrg/planner_common) | ⬜ |
+| M4 | ROS2 planner 节点壳(订 odom/cloud → 出 /gbp/trajectory,RViz2 可见) | ⬜ |
+| M5 | world-model 直连联跑 + oracle 回归 + 同口径公平对比 | ⬜ |
+
+> 最大技术风险 = **voxblox 地图后端**(gain/碰撞语义变则 GBPlanner 行为变):第一版沿用 voxblox core(snt-arg minimal 底座 + Jazzy 适配),**不用 nvblox**,用 ROS1 原版做逐体素对拍。
+
+## 二、桥接阶段(已冻结,作为 oracle 与阶段性证据)
+
+> 桥接阶段已完成使命:**证明 GBPlanner 接入 world-model 有探索增益,并暴露双 ROS 栈维护成本**;结论冻结为迁移 oracle,不再追桥接 final 批跑 / thinbridge 稳定性 / ROS1 RViz / 桥接 PR。以下为已坐实的桥接期成果(不夸大):
+
+**桥接式融合**(B2.5 自写薄桥)—— ROS1 原版 GBPlanner 通过自写 TCP 薄桥接入 ROS2 world-model,链路每段都有证据文件:
 
 ```text
 world-model 3D lidar(lidar3d 净增量)/ odom
@@ -24,24 +54,22 @@ world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
 飞机实际 odom 运动(去混流可归因)+ exploration gate(以 strategy=gbplanner 通过)
 ```
 
-**三大鸿沟逐项定性**(诚实边界,勿夸大):
+**三大鸿沟逐项定性**(诚实边界,勿夸大)——这些正是 ROS2 迁移要从根上消除的:
 
-| 鸿沟 | 状态 | 证据 | 不能夸大的边界 |
+| 鸿沟 | 桥接期状态 | 证据 | ROS2 迁移如何消除 |
 |---|---|---|---|
-| ROS1 GBPlanner ↔ ROS2 world-model | **已打通** | B2.5 薄桥;odom/3D 点云/trajectory 全过桥(stage2~3.5) | 桥接式融合,**不是 ROS2 原生移植** |
-| 2D 雷达平台 ↔ GBPlanner 需要 3D | **已做一版** | 独立 lidar3d 净增量;voxblox TSDF zspan 13.2m;5b FOV 对照证明行为随 3D 输入变化 | 3D 体现在感知/建图/规划行为,**尚未证明完整 z 方向飞行动作闭环** |
-| trajectory ↔ FCU 控制接口 | **已适配并可归因** | 适配器消费 /gbp/trajectory;cmd_vel 签名;4c 去混流归因;5a gate 通过 | trajectory→intent 是工程适配,**不是无损轨迹执行**;控制仍是低速 XY/Yaw |
+| ROS1 GBPlanner ↔ ROS2 world-model | 桥接式打通 | B2.5 薄桥;odom/3D 点云/trajectory 全过桥(stage2~3.5) | **M1-M4 原生 ROS2 节点,无桥** |
+| 2D 雷达平台 ↔ GBPlanner 需要 3D | 已做一版 | 独立 lidar3d 净增量;voxblox TSDF zspan 13.2m;5b FOV 对照证明行为随 3D 输入变化 | M2 voxblox ROS2 直接消费 /wm/cloud3d |
+| trajectory ↔ FCU 控制接口 | 已适配并可归因 | 适配器消费 /gbp/trajectory;cmd_vel 签名;4c 去混流归因;5a gate 通过 | M5 沿用同一适配器(**此资产迁移后复用**) |
 
-## 二、当前状态与核心数字
+**桥接期已坐实的核心数字**(冻结为 oracle,汇报可引):
 
-- **Stage2~5 主链全有实证**:transport→消费闭环→dry-run→3D 数据链→FCU 消费直证→**4c 去混流可归因 PASS**→**5a gate 机制 PASS(3 次重现)**→**5b 3D 行为对照成立**→**5c 首批 6 run 定档**;
+- **Stage2~5 主链全有实证**:transport→消费闭环→dry-run→3D 数据链→FCU 消费直证→4c 去混流可归因 PASS→5a gate 机制 PASS(3 次重现)→5b 3D 行为对照成立→5c 6 run 定档;
 - **runA = GBPlanner 策略下首个 TASK_STATUS_OK 完整全绿 run**(零探针失败);
-- **🏆 公平对比定档(同 EKF 修复、同环境、同窗口口径)**:
-  **GBPlanner gate 达标 3/6=50% vs frontier_lite 0/6=0%**——修复后基线 accepted 恒=2(零方差,窗口结构性失败);修复前基线的 2/6 全绿被证实是 EKF 跑飞"馈赠";且 GBPlanner 的 accepted=真实运动到达(预到达剔除),口径更严;
-- 路上根治 **world-model 上游 EKF 参考系真 bug**(罗盘 yaw vs SLAM 位置差 δ→运动即发散跑飞;修复 3 件套入 clean 分支 99bcfa1,BIN 验尸全程留痕);
-- **当前施工点 = GBPlanner v2 系统性批跑(v5/PD 适配器的全绿率)→ GUI 三演示 → PR 统一定稿**。
+- **🏆 公平对比定档(同 EKF 修复、同环境、同窗口口径)**:GBPlanner gate 达标 **3/6=50% vs frontier_lite 0/6=0%**——基线 accepted 恒=2(窗口结构性失败),修复前 2/6 全绿实为 EKF 跑飞"馈赠";我方 accepted=真实运动到达,口径更严;
+- 路上根治 **world-model 上游 EKF 参考系真 bug**(罗盘 yaw vs SLAM 位置差 δ→运动即发散跑飞;修复入 clean 分支 99bcfa1,BIN 验尸全程留痕)——此修复 world-model 侧**迁移后继续受益**。
 
-## 三、阶段表
+## 三、桥接阶段表(已冻结,历史证据 / oracle)
 
 | 阶段 | 状态 |
 |---|---|
@@ -56,27 +84,30 @@ world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
 | v2 批跑(v5/kp0.45 证伪)+ 成功率战役:C/B 类探针预算根因全修 + 适配器 v6b | ✅ |
 | **final2 = 修复链后再次 TASK_STATUS_OK 完整全绿**(最终口径批仅 3 样本,统计未定档) | ✅/🔵 |
 | **GUI 三演示(阶段性可视化口径)**:gui_demo_master.sh + results_panel.html + 演示手册 | ✅ |
-| 组会后:最终口径 full 批定档 + 基线同口径复跑 + PR 定稿 | ⬜ **当前** |
+| ~~组会后:最终口径 full 批 + 基线复跑 + 桥接 PR~~ | ⛔ **已冻结**(路线切换,桥接不再演进) |
+| **ROS2 原生迁移 M0-M5**(见 §一) | 🔵 **当前主线**,详见 [TASKS.md](TASKS.md) |
 
-## 四、不能宣称的结论
+## 四、不能宣称的结论(桥接期诚实边界,仍适用于 oracle 引用)
 
 1. **不能说"稳定全绿"**——全绿率首批 1/6,v5(PD)后的全绿率待 v2 批跑定档;
 2. **不能说"完整 3D 飞行动作闭环"**——已完成的是低速 XY/Yaw 控制链、gate 机制与 3D 输入行为对照;z 由飞控高度环保持;
 3. **不能说"3D 障碍物级对照已做"**——5b 是传感 FOV 对照(动官方迷宫会伤基线可比性,列为增强项);
 4. **不能说"v5/PD 已提升全绿率"**——目前只有 wp 捕获 0→9 的有效性直证;
 5. RViz **绿线=planner 候选路径,粉线=执行轨迹**(`/rmf_obelix/command/trajectory`,发布者 PCI)——桥只接粉线,颜色不作证据;
-6. **PR/Issue 暂缓提交**(等 v2 结果与文档口径收口后统一定稿);
+6. **不再追桥接 final 批跑 / 桥接 PR**——路线已切换,桥接冻结为 oracle;world-model 侧修复(EKF/探针)的 PR 物料等 ROS2 迁移联跑后再统一定稿;
 7. 汇报必须区分三类实验:①原始 GBPlanner 复现(预研B)②原始 world-model/frontier_lite 基线(全绿复现+修复后 0/6)③**融合后 GBPlanner-in-world-model**(3D 链/消费链/归因/gate/公平对比)——不混写。
 
-## 五、当前入口(新人只看这 5 个)
+## 五、当前入口(新窗口只看这 5 个)
 
 | 文件 | 作用 |
 |---|---|
 | [CURRENT_STATUS.md](CURRENT_STATUS.md) | **唯一事实源**:阶段/证据/卡点/纪律 |
-| [TASKS.md](TASKS.md) | 任务表 |
+| [TASKS.md](TASKS.md) | 任务表(ROS2 迁移 M0-M5) |
 | [接力棒_当前值班.md](接力棒_当前值班.md) | 值班交接 |
-| [docs/桥接查证与执行计划_2026-07-06.md](docs/桥接查证与执行计划_2026-07-06.md) | 桥接技术主文档(架构/分阶段验收/ROS2 复核) |
+| [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md) | **当前主线任务书**(M0-M5 拆解/voxblox 风险/验收) |
 | [文档索引.md](文档索引.md) | 全部文档带状态标签的索引 |
+
+> 桥接技术主文档 [docs/桥接查证与执行计划_2026-07-06.md](docs/桥接查证与执行计划_2026-07-06.md) 已降级为 **REFERENCE / HISTORICAL**(oracle 与历史证据,不再作为施工入口)。
 
 复现命令:`bash runbooks/world-model-jazzy/clean_repro.sh`(world-model 全绿)· `runbooks/world-model-jazzy/stage5c_run.sh <n>`(融合联跑一键)· `runbooks/gbplanner_ref/run_light.sh`(GBPlanner 单侧)· 证据全在 `runbooks/world-model-jazzy/*_evidence.txt`。
 
