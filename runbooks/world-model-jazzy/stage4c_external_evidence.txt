@@ -1,0 +1,203 @@
+=== STAGE4C START Tue Jul  7 10:36:36 CST 2026 ===
+--- 0. config 切 external(trap 保证还原) ---
+20:  strategy: frontier_lite
+20:  strategy: external
+--- 1. 栈复位(GBPlanner+薄桥+适配器+4c归因探针) ---
+cc52bb394c7b5913c7b7e1b4026740b0948ca5e14fbb1559d9665c4a288c7430
+0a7896859d28c1b3614d00fc3edcc739a8b25a8438e8eda29cc4434777cae238
+c0bbe42c75d393598e45fa2e98dc2a8444046787ad54c0fcc2427e538cd72037
+--- 2. world-model 真栈起(strategy=external) ---
+--- 3. ENABLE(提早)+ 触发规划 ---
+enabled
+success: True
+message: ''
+--- 3b. 二次触发规划(防轨迹超龄断档) ---
+success: True
+message: ''
+--- 4. 适配器运动日志(尾8条) ---
+[INFO] [1783391912.192284337] [gbp_traj_to_intent]: INTENT traj#1 wp[4/15]=(0.10,0.09,-0.02) odom=(0.47,3.49) dist=3.42 dyaw=0.30 -> v=(-0.009,-0.080) yr=0.297
+[INFO] [1783391912.692723603] [gbp_traj_to_intent]: INTENT traj#1 wp[4/15]=(0.10,0.09,-0.02) odom=(0.46,3.48) dist=3.42 dyaw=0.30 -> v=(-0.008,-0.080) yr=0.300
+[INFO] [1783391913.191608490] [gbp_traj_to_intent]: INTENT traj#1 wp[4/15]=(0.10,0.09,-0.02) odom=(0.44,3.47) dist=3.41 dyaw=0.30 -> v=(-0.008,-0.080) yr=0.300
+[INFO] [1783391913.693089846] [gbp_traj_to_intent]: INTENT traj#1 wp[4/15]=(0.10,0.09,-0.02) odom=(0.42,3.46) dist=3.39 dyaw=0.31 -> v=(-0.008,-0.080) yr=0.300
+[INFO] [1783391914.192911905] [gbp_traj_to_intent]: INTENT traj#1 wp[4/15]=(0.10,0.09,-0.02) odom=(0.40,3.45) dist=3.37 dyaw=0.32 -> v=(-0.007,-0.080) yr=0.300
+[INFO] [1783391914.692604958] [gbp_traj_to_intent]: INTENT traj#1 wp[4/15]=(0.10,0.09,-0.02) odom=(0.39,3.45) dist=3.37 dyaw=0.32 -> v=(-0.007,-0.080) yr=0.300
+[INFO] [1783391915.192072852] [gbp_traj_to_intent]: INTENT traj#1 wp[4/15]=(0.10,0.09,-0.02) odom=(0.41,3.46) dist=3.39 dyaw=0.31 -> v=(-0.007,-0.080) yr=0.300
+[INFO] [1783391915.692119024] [gbp_traj_to_intent]: INTENT traj#1 wp[4/15]=(0.10,0.09,-0.02) odom=(0.42,3.47) dist=3.40 dyaw=0.31 -> v=(-0.008,-0.080) yr=0.300
+--- 5. 等 run 结束 ---
+status=blocked
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T023726.540933500Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+exit status 1
+--- 6. 还原 config ---
+20:  strategy: frontier_lite
+--- 7. run artifacts:external 直证 + takeoff ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T023726.540933500Z/
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T023726.540933500Z/runtime/scripts/exploration_workflow_runtime.py
+/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T023726.540933500Z/probes/exploration_probe.json
+SUMMARY=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T023726.540933500Z/summary.json
+.status=TASK_STATUS_ERROR
+.metrics.gate.controller.takeoff_alt_m=0.5
+.metrics.gate.exploration.strategy=gbplanner
+.metrics.gate.slam.output.status_topic=/navlab/slam/status
+.metrics.gate.startup_readiness.height.rosbag_height_status_count=83
+.metrics.gate.startup_readiness.probe_semantics.samples.exploration_probe:/navlab/exploration/status.probe=exploration_probe
+.metrics.gate.startup_readiness.probe_semantics.samples.frame_contract_probe:/navlab/slam/status.probe=frame_contract_probe
+.metrics.gate.startup_readiness.probe_semantics.samples.rangefinder_probe:/rangefinder/down/status.probe=rangefinder_probe
+.metrics.gate.startup_readiness.rangefinder.rosbag_status_count=0
+.metrics.gate.startup_readiness.rangefinder.status_sample_ok=True
+.metrics.gate.startup_readiness.rosbag_message_counts./height/status=83
+.metrics.gate.startup_readiness.rosbag_message_counts./rangefinder/down/status=0
+.metrics.gate.rosbag_message_counts.exploration_rosbag./external_nav/status=84
+.metrics.gate.rosbag_message_counts.exploration_rosbag./height/status=83
+.metrics.gate.rosbag_message_counts.exploration_rosbag./mavlink_external_nav/status=84
+.metrics.gate.rosbag_message_counts.exploration_rosbag./navlab/exploration/status=84
+.metrics.gate.rosbag_message_counts.exploration_rosbag./navlab/fcu/controller/status=594
+.metrics.gate.rosbag_message_counts.exploration_rosbag./navlab/hover/status=586
+.metrics.gate.rosbag_message_counts.exploration_rosbag./navlab/landing/status=586
+.metrics.gate.rosbag_message_counts.exploration_rosbag./navlab/slam/status=83
+.metrics.gate.rosbag_message_counts.exploration_rosbag./navlab/x2/scan_time_normalizer/status=311
+.metrics.gate.rosbag_message_counts.exploration_rosbag./sim/x2/status=85
+.evidence.landingEvidence.landing_config.landing_status_topic=/navlab/landing/status
+.evidence.probeOutputs[0].status=sampled
+.evidence.probeOutputs[0].payload.spec.probe_timeout_sec=45
+.evidence.probeOutputs[0].payload.spec.status_topic=/rangefinder/down/status
+.evidence.probeOutputs[0].payload.status=sampled
+.evidence.probeOutputs[1].status=sampled
+.evidence.probeOutputs[1].payload.status=sampled
+.evidence.probeOutputs[2].status=sampled
+.evidence.probeOutputs[2].payload.samples./navlab/slam/status.parsed.output.status_topic=/navlab/slam/status
+.evidence.probeOutputs[2].payload.spec.ControllerStatusTopic=/navlab/fcu/controller/status
+.evidence.probeOutputs[2].payload.spec.FCUStatusTopic=/ap/v1/status
+.evidence.probeOutputs[2].payload.spec.OwnerStatusTopic=/navlab/fcu/owner/status
+.evidence.probeOutputs[2].payload.spec.ProbeDurationSec=16
+.evidence.probeOutputs[2].payload.spec.ProbeTimeoutSec=45
+.evidence.probeOutputs[2].payload.spec.RangefinderStatusTopic=/rangefinder/down/status
+.evidence.probeOutputs[2].payload.spec.SlamStatusTopic=/navlab/slam/status
+.evidence.probeOutputs[2].payload.spec.StatusTopic=/navlab/frame_contract/status
+.evidence.probeOutputs[2].payload.status=sampled
+.evidence.probeOutputs[3].status=sampled
+.evidence.probeOutputs[3].payload.samples./navlab/exploration/status.parsed.strategy=gbplanner
+.evidence.probeOutputs[3].payload.samples./navlab/fcu/controller/status.parsed.takeoff_alt_m=0.5
+.evidence.probeOutputs[3].payload.spec.ControllerStatusTopic=/navlab/fcu/controller/status
+.evidence.probeOutputs[3].payload.spec.ExplorationStatusTopic=/navlab/exploration/status
+.evidence.probeOutputs[3].payload.spec.ProbeTimeoutSec=35
+.evidence.probeOutputs[3].payload.spec.Strategy=external
+.evidence.probeOutputs[3].payload.status=sampled
+.evidence.rosbagHandles[0].finalize_status=metadata_ready
+.evidence.rosbagProfiles[0].message_counts./external_nav/status=84
+.evidence.rosbagProfiles[0].message_counts./height/status=83
+.evidence.rosbagProfiles[0].message_counts./mavlink_external_nav/status=84
+.evidence.rosbagProfiles[0].message_counts./navlab/exploration/status=84
+.evidence.rosbagProfiles[0].message_counts./navlab/fcu/controller/status=594
+.evidence.rosbagProfiles[0].message_counts./navlab/hover/status=586
+.evidence.rosbagProfiles[0].message_counts./navlab/landing/status=586
+.evidence.rosbagProfiles[0].message_counts./navlab/slam/status=83
+.evidence.rosbagProfiles[0].message_counts./navlab/x2/scan_time_normalizer/status=311
+.evidence.rosbagProfiles[0].message_counts./sim/x2/status=85
+.runtime_spec_counts.probes=4
+.runtime_execution.rosbag_handles[0].finalize_status=metadata_ready
+.result_gates[0].status=ported_partial
+.result_gates[1].status=ported_partial
+.result_gates[2].status=ported_partial
+.result_gates[3].status=ported_basic
+.gate_parity.status=evaluated_from_runtime_artifacts
+.gate_evaluation.probe_outputs[0].status=sampled
+.gate_evaluation.probe_outputs[0].payload.spec.probe_timeout_sec=45
+.gate_evaluation.probe_outputs[0].payload.spec.status_topic=/rangefinder/down/status
+.gate_evaluation.probe_outputs[0].payload.status=sampled
+.gate_evaluation.probe_outputs[1].status=sampled
+.gate_evaluation.probe_outputs[1].payload.status=sampled
+.gate_evaluation.probe_outputs[2].status=sampled
+.gate_evaluation.probe_outputs[2].payload.samples./navlab/slam/status.parsed.output.status_topic=/navlab/slam/status
+.gate_evaluation.probe_outputs[2].payload.spec.ControllerStatusTopic=/navlab/fcu/controller/status
+.gate_evaluation.probe_outputs[2].payload.spec.FCUStatusTopic=/ap/v1/status
+.gate_evaluation.probe_outputs[2].payload.spec.OwnerStatusTopic=/navlab/fcu/owner/status
+.gate_evaluation.probe_outputs[2].payload.spec.ProbeDurationSec=16
+.gate_evaluation.probe_outputs[2].payload.spec.ProbeTimeoutSec=45
+.gate_evaluation.probe_outputs[2].payload.spec.RangefinderStatusTopic=/rangefinder/down/status
+.gate_evaluation.probe_outputs[2].payload.spec.SlamStatusTopic=/navlab/slam/status
+.gate_evaluation.probe_outputs[2].payload.spec.StatusTopic=/navlab/frame_contract/status
+.gate_evaluation.probe_outputs[2].payload.status=sampled
+.gate_evaluation.probe_outputs[3].status=sampled
+.gate_evaluation.probe_outputs[3].payload.samples./navlab/exploration/status.parsed.strategy=gbplanner
+.gate_evaluation.probe_outputs[3].payload.samples./navlab/fcu/controller/status.parsed.takeoff_alt_m=0.5
+.gate_evaluation.probe_outputs[3].payload.spec.ControllerStatusTopic=/navlab/fcu/controller/status
+.gate_evaluation.probe_outputs[3].payload.spec.ExplorationStatusTopic=/navlab/exploration/status
+.gate_evaluation.probe_outputs[3].payload.spec.ProbeTimeoutSec=35
+.gate_evaluation.probe_outputs[3].payload.spec.Strategy=external
+.gate_evaluation.probe_outputs[3].payload.status=sampled
+.gate_evaluation.rosbag_profiles[0].message_counts./external_nav/status=84
+.gate_evaluation.rosbag_profiles[0].message_counts./height/status=83
+.gate_evaluation.rosbag_profiles[0].message_counts./mavlink_external_nav/status=84
+.gate_evaluation.rosbag_profiles[0].message_counts./navlab/exploration/status=84
+.gate_evaluation.rosbag_profiles[0].message_counts./navlab/fcu/controller/status=594
+.gate_evaluation.rosbag_profiles[0].message_counts./navlab/hover/status=586
+.gate_evaluation.rosbag_profiles[0].message_counts./navlab/landing/status=586
+.gate_evaluation.rosbag_profiles[0].message_counts./navlab/slam/status=83
+.gate_evaluation.rosbag_profiles[0].message_counts./navlab/x2/scan_time_normalizer/status=311
+.gate_evaluation.rosbag_profiles[0].message_counts./sim/x2/status=85
+.gate_evaluation.landing_acceptance.landing_config.landing_status_topic=/navlab/landing/status
+.gate_evaluation.metrics.controller.takeoff_alt_m=0.5
+.gate_evaluation.metrics.exploration.strategy=gbplanner
+.gate_evaluation.metrics.slam.output.status_topic=/navlab/slam/status
+.gate_evaluation.metrics.startup_readiness.height.rosbag_height_status_count=83
+.gate_evaluation.metrics.startup_readiness.probe_semantics.samples.exploration_probe:/navlab/exploration/status.probe=exploration_probe
+.gate_evaluation.metrics.startup_readiness.probe_semantics.samples.frame_contract_probe:/navlab/slam/status.probe=frame_contract_probe
+.gate_evaluation.metrics.startup_readiness.probe_semantics.samples.rangefinder_probe:/rangefinder/down/status.probe=rangefinder_probe
+.gate_evaluation.metrics.startup_readiness.rangefinder.rosbag_status_count=0
+.gate_evaluation.metrics.startup_readiness.rangefinder.status_sample_ok=True
+.gate_evaluation.metrics.startup_readiness.rosbag_message_counts./height/status=83
+.gate_evaluation.metrics.startup_readiness.rosbag_message_counts./rangefinder/down/status=0
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./external_nav/status=84
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./height/status=83
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./mavlink_external_nav/status=84
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./navlab/exploration/status=84
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./navlab/fcu/controller/status=594
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./navlab/hover/status=586
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./navlab/landing/status=586
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./navlab/slam/status=83
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./navlab/x2/scan_time_normalizer/status=311
+.gate_evaluation.metrics.rosbag_message_counts.exploration_rosbag./sim/x2/status=85
+--- 8. 归因探针总结(等窗口收口) ---
+[WARN] [1783391893.288868275] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rt/clock' with type 'rosgraph_msgs::msg::dds_::Clock_' from USER_DATA '(null)'.
+[WARN] [1783391893.288921943] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rt/ap/v1/joy' with type 'sensor_msgs::msg::dds_::Joy_' from USER_DATA '(null)'.
+[WARN] [1783391893.288928879] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rt/ap/v1/tf' with type 'tf2_msgs::msg::dds_::TFMessage_' from USER_DATA '(null)'.
+[WARN] [1783391893.288933206] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rt/ap/v1/cmd_vel' with type 'geometry_msgs::msg::dds_::TwistStamped_' from USER_DATA '(null)'.
+[WARN] [1783391893.290592490] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rt/ap/v1/cmd_gps_pose' with type 'ardupilot_msgs::msg::dds_::GlobalPosition_' from USER_DATA '(null)'.
+[WARN] [1783391893.290711594] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rq/ap/v1/arm_motorsRequest' with type 'ardupilot_msgs::srv::dds_::ArmMotors_Request_' from USER_DATA '(null)'.
+[WARN] [1783391893.290738599] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rq/ap/v1/mode_switchRequest' with type 'ardupilot_msgs::srv::dds_::ModeSwitch_Request_' from USER_DATA '(null)'.
+[WARN] [1783391893.290743807] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rq/ap/v1/prearm_checkRequest' with type 'std_srvs::srv::dds_::Trigger_Request_' from USER_DATA '(null)'.
+[WARN] [1783391893.293629400] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rq/ap/v1/experimental/takeoffRequest' with type 'ardupilot_msgs::srv::dds_::Takeoff_Request_' from USER_DATA '(null)'.
+[WARN] [1783391893.293693601] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rq/ap/v1/set_parametersRequest' with type 'rcl_interfaces::srv::dds_::SetParameters_Request_' from USER_DATA '(null)'.
+[WARN] [1783391893.293702971] [rmw_cyclonedds_cpp]: Failed to parse type hash for topic 'rq/ap/v1/get_parametersRequest' with type 'rcl_interfaces::srv::dds_::GetParameters_Request_' from USER_DATA '(null)'.
+=== STAGE4C_PROBE_SUMMARY ===
+frontier_intent=0
+gbp_intent=487
+gbp_motion_intent=61
+other_intent=0
+cmdvel_n=214
+cmd_nonzero=14
+gbp_sig=14
+status_gbp=487
+status_frontier=0
+status_other=0
+odom_n=11143
+path_total_m=4.2439
+path_from_first_gbp_m=4.0148
+path_cmd_active_m=0.9935
+odom_z_max=0.000
+timeline first_gbp_motion_t=42.539368559999275 last_gbp_motion_t=72.02075243800937 sig_first_t=42.69109505400411 sig_last_t=49.22933937900234
+no_frontier_intent=True
+PROBE_VERDICT=PASS
+--- 9. STAGE4C 汇总判定 ---
+takeoff_ok(summary)=True
+frontier_intent=0
+gbp_intent=487
+gbp_motion_intent=61
+gbp_sig=14
+path_from_first_gbp_m=4.0148
+path_cmd_active_m=0.9935
+odom_z_max=0.000
+no_frontier_intent=True
+PROBE_VERDICT=PASS
+STAGE4C=PASS
+=== STAGE4C END Tue Jul  7 10:41:33 CST 2026 ===

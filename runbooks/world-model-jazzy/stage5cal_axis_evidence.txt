@@ -1,0 +1,27 @@
+=== STAGE5CAL START Tue Jul  7 10:47:16 CST 2026 ===
+--- 0. config 切 external ---
+20:  strategy: external
+--- 1. 清适配器容器(校准探针独占 intent),起校准探针 ---
+8f647a5aa852a6f9d79f7f648cb2833e334bd416ece02678864ee6dc4f6feaac
+--- 2. world-model 真栈起(external) ---
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T024720.617021799Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+exit status 1
+--- 3. 还原 config ---
+20:  strategy: frontier_lite
+--- 4. 校准结果 ---
+cal_axis probe up: waiting controller ready
+t=35.2 CONTROLLER READY -> start calibration sequence
+t=35.2 PHASE hold0 start odom=(0.017135902557848137, 0.01257682084907633) ap=None
+t=37.2 PHASE plus_x start odom=(0.016140871785485424, 0.012860279725369126) ap=None
+t=47.2 PHASE hold1 start odom=(0.17940005994206393, 1.167373091829888) ap=None
+t=49.2 PHASE plus_y start odom=(0.1483458030159252, 1.7657215193779034) ap=None
+t=59.2 PHASE hold2 start odom=(-0.32583329651175447, 3.5765108795048746) ap=None
+t=61.2 PHASE zero_tail start odom=(-0.5093369602982893, 3.718688404217273) ap=None
+=== CAL_SUMMARY ===
+phase=hold0 dur=2.0s odom_delta=(-0.001, 0.0) ap_delta=None
+phase=plus_x dur=10.0s odom_delta=(0.163, 1.155) ap_delta=None odom_angle=82deg
+phase=hold1 dur=2.0s odom_delta=(-0.031, 0.598) ap_delta=None odom_angle=93deg
+phase=plus_y dur=10.0s odom_delta=(-0.474, 1.811) ap_delta=None odom_angle=105deg
+phase=hold2 dur=2.0s odom_delta=(-0.184, 0.142) ap_delta=None odom_angle=142deg
+=== CAL_DONE ===
+=== STAGE5CAL END Tue Jul  7 10:49:27 CST 2026 ===
