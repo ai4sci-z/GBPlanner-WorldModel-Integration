@@ -1,0 +1,36 @@
+=== STAGE5C v2run7 START Tue Jul  7 16:48:40 CST 2026 ===
+7811aa97657fbadc2ba71388c4140ea2bb04fa0538b4e82045c29fbacbce926e
+f7c165959c1c4a9b8de0f1762df798a9dfd065ee378ea177300de59a0eea5691
+9d689f9ae34a8ec36f90ff30f7817ac0cf2d9173530928ad96e8aafc7f826226
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T084926.616001472Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+exit status 1
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T084926.616001472Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 0, "claim": "in_progress", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 1.888, "strategy": "gbplanner"}
+required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+gate_ok_latched= 0
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 35- 40s | gbp_t1_w5 | (-0.062,0.017)165 | (-0.062,0.017)165 | (0.008,0.112)86 | -79
+ 40- 45s | gbp_t1_w5 | (-0.013,0.069)101 | (-0.013,0.069)101 | (0.158,-0.418)-69 | -170
+ 45- 50s | gbp_t1_w5 | (-0.050,0.014)164 | (-0.050,0.014)164 | (-0.120,0.627)101 | -63
+ 50- 55s | gbp_t1_w5 | (-0.040,0.063)122 | (-0.040,0.063)122 | (0.736,-0.648)-41 | -164
+ 55- 60s | gbp_t1_w5 | (0.006,0.080)85 | (0.006,0.080)85 | (-0.171,-0.016)-175 | +100
+ 60- 65s | gbp_t1_w5 | (-0.016,0.078)102 | (-0.016,0.078)102 | (-0.462,0.265)150 | +49
+ 65- 70s | gbp_t1_w5 | (0.013,0.079)80 | (0.013,0.079)80 | (0.087,-0.012)-8 | -88
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=487 status_frontier=0 status_gbp=487 odom_n=18109
+moving_segments=7 delta_mean=-59deg delta_spread=270deg (恒定=方向关系稳定/无失真)
+direction_consistency=UNSTABLE
+cmdvel_vs_intent_mean_absdiff=0deg (≈0=FCU 忠实转发)
+no_frontier_intent=True
+=== STAGE5C v2run7 END Tue Jul  7 16:53:41 CST 2026 ===

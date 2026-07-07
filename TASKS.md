@@ -43,7 +43,7 @@
 | 13 | **frontier_lite 基线定档** | ✅ **两批完成:修复前(07-06)+修复后复档(07-07)** | 修复前:全绿 2/6、达标 40%、path 0.43~3.80(**已判定被 EKF 跑飞污染**);**修复后(公平口径):全绿 0/6、达标 0/6、accepted 恒=2 零方差、path 0.15~2.63**——"启动耗时蚕食 26s 窗口"从源码判断升级为实测确定性结论(时间片只装得下 2 个 goal)。baseline_postfix_evidence.txt |
 
 ## 四、决策 & 桥接路线(你已拍板;2026-07-07 更新为实测路线)
-集成采用「**B2.5 自写薄桥**」(历史名 ros1_bridge 方案;官方桥/zenoh 实验判死后确立)。实测进度:① gbplanner-ref rmf_sim I/O ✅(stage1)② 薄桥 world-model(ROS2)odom/3D点云→GBPlanner(ROS1),trajectory 回流 /gbp/trajectory ✅(stage2~35)③ 3D 雷达=lidar3d 净增量 ✅(stage3d)④ Stage4 FCU 闭环+去混流可归因 ✅(stage4a/b/c)⑤ Stage5a gate 以 gbplanner 策略通过 ✅(run8,机制验收)⑥ **当前=Stage5b 3D 对照+5c 同口径对比**。`gbplanner_core` 转备选/加深理解。
+集成采用「**B2.5 自写薄桥**」(历史名 ros1_bridge 方案;官方桥/zenoh 实验判死后确立)= **GBPlanner-in-world-model 桥接式融合**(非 ROS2 原生移植,联网复核无官方 ROS2 版)。实测进度:① gbplanner-ref 单侧 ✅ ② 薄桥数据链+3D 雷达 ✅(stage2~3.5)③ Stage4 FCU 闭环+去混流归因 ✅ ④ Stage5a gate 机制 ✅(3 次重现)⑤ Stage5b 3D 行为对照 ✅ ⑥ Stage5c 首批+**公平对比定档 ✅(50% vs 0%)**⑦ **当前=v2 系统性批跑(v5 后全绿率)→ GUI → PR 定稿**。`gbplanner_core` 转备选/加深理解。
 
 ## 五、论证与对比要求(你新增)
 - **必须实据**:world-model 要在本机完整跑通;frontier_lite 的不足要用**实跑 demo + 量化数据**证明,不空口。
