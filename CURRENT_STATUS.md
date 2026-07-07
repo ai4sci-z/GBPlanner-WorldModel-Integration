@@ -26,7 +26,10 @@
 > 修复后 gate 达标连续段出现(v3run3/5、v4run1、final1/2),**final2=修复链后再次 TASK_STATUS_OK 完整全绿(accepted=5)**;
 > ⚠️ 最终口径正式批仅 3 样本(组会中断),**成功率统计未定档**——full 批(≥6 run)为下一步首项。
 > **GUI 三演示已交付(阶段性可视化口径)**:gui_demo_master.sh + results_panel.html + 演示手册。
-> **⚠️ 以上全部为桥接期结论,已冻结为 oracle(仍成立,不再演进)。当前施工点 = ROS2 原生迁移 M0→M5**(见本文件顶部横幅 + [TASKS.md](TASKS.md) M0-M5 + [任务书](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)):M0 入口文档收口(README/TASKS/索引/接力棒/0_总览 ✅ + stage6 修⑥收尾)→ M1 planner_msgs → M2 voxblox → M3 core → M4 node → M5 直连联跑。
+> **⚠️ 以上全部为桥接期结论,已冻结为 oracle(仍成立,不再演进)。当前施工点 = ROS2 原生迁移 M0→M5**(见本文件顶部横幅 + [TASKS.md](TASKS.md) M0-M5 + [任务书](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)):
+> **M0 ✅ 收口(07-08)**:入口文档全切 ROS2 口径 + 0_总览补齐 + stage6 修⑥真源头修复(clean 分支 ff24087:config/defaults.go frame_contract FCUPoseTopic default→/navlab/fcu/local_position_pose;go test 三包全绿 + dry-run/live 渲染双确认;⚠️ live 全绿 PASS 因整栈冷启动环境失败未观测,留 warm 会话复跑)。
+> **M1 ✅ 完成(07-08)**:分支 `feat/gbplanner-ros2-port`(e343421)+ `ros2_port/src/planner_msgs` 最小 8 接口,jazzy 容器 colcon build rc=0 + interface show 8/8(证据 runbooks/ros2_port/)。
+> **当前 = M2 voxblox ROS2 底座** → M3 core 剥离 → M4 node 壳 → M5 直连联跑。
 
 ## 二、阶段表(全部有证据文件)
 

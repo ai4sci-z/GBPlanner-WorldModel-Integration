@@ -27,9 +27,9 @@ world-model FCU 控制链 / Gazebo
 
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
-| **M0** | 侦察 + 路线冻结 + 入口文档收口 | 🔵 **收口中** |
-| M1 | `planner_msgs` ROS2 最小消息包(colcon build 通过) | ⬜ |
-| M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF/gain) | ⬜ |
+| **M0** | 侦察 + 路线冻结 + 入口文档收口 | ✅(07-08 收口) |
+| **M1** | `planner_msgs` ROS2 最小消息包(colcon build 通过) | ✅(07-08,分支 `feat/gbplanner-ros2-port`,证据 runbooks/ros2_port/) |
+| M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF/gain) | ⬜ **当前** |
 | M3 | 算法核心 ROS-free 剥离(rrg/planner_common) | ⬜ |
 | M4 | ROS2 planner 节点壳(订 odom/cloud → 出 /gbp/trajectory,RViz2 可见) | ⬜ |
 | M5 | world-model 直连联跑 + oracle 回归 + 同口径公平对比 | ⬜ |

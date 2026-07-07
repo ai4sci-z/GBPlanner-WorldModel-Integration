@@ -32,7 +32,7 @@
 | ID | 里程碑 | 状态 | 验收 / 备注 |
 |---|---|---|---|
 | **M0** | 侦察 + 路线冻结 + 入口文档收口 | 🔵 **收口中** | 侦察三件套 ✅(包清单/voxblox 选型/直连契约)+ 理解报告 1-3 ✅ + 迁移任务书入库 ✅;**收口中**=README/TASKS/文档索引/接力棒切 ROS2 口径 + 补 0_总览 + stage6 修⑥收尾。验收=任何新窗口读入口不再回桥接路线 |
-| **M1** | `planner_msgs` ROS2 最小消息包 | ⬜ | 新分支 `feat/gbplanner-ros2-port` + 新目录 `ros2_port/`;**只迁最小集**(planner_srv/planner_set_planning_mode/PlanningMode/BoundMode 等,勿 13msg+24srv 全家桶)。验收=`colcon build` 通过 + `ros2 interface show` + 无 ROS1/catkin/actionlib 依赖 |
+| **M1** | `planner_msgs` ROS2 最小消息包 | ✅ **完成(07-08,分支 `feat/gbplanner-ros2-port` e343421)** | `ros2_port/src/planner_msgs` 最小集 8 接口(srv:PlannerSrv/SetPlanningMode/Homing + msg:PlanningMode/BoundMode/TriggerMode/ExecutionPathMode/PlannerStatus);**验收全达成**:jazzy 容器 colcon build rc=0(4.51s)+ `ros2 interface show` 8/8 + 无 ROS1/catkin/actionlib 依赖。证据 runbooks/ros2_port/m1_build_evidence.txt;迁移差异(PascalCase/UPPER_SNAKE 常量/Header)诚实标注 ros2_port/README.md |
 | **M2** | voxblox ROS2 后端落地 | ⬜ | 沿用 voxblox core(snt-arg minimal 底座 + Jazzy 适配),**不用 nvblox**;订 PointCloud2 → 出 TSDF/ESDF → RViz2 可见;与 ROS1 oracle 对拍 voxel/zspan/occupied/ESDF/raycast。最大风险层 |
 | **M3** | 算法核心 ROS-free 剥离 | ⬜ | rrg.cpp/planner_common/adaptive_obb/kdtree 去 ros/ros.h、ROS_INFO、ros::Time、ROS1 TF/param;先做成 ROS-free C++ library。验收=ament_cmake 编译 + 不 include ros/ros.h + 可被单测调用 |
 | **M4** | ROS2 planner 节点壳 | ⬜ | 订 /slam/odom + /wm/cloud3d、查 TF、调 voxblox、触发 RRG、发 /gbp/trajectory + RViz2 marker;PCI 先替换为最小定时 trigger。验收=节点起+建图+触发一次规划+出轨迹+RViz2 可见(**不要求 exploration 全绿**) |
