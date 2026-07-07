@@ -98,7 +98,9 @@ def on_status(m):
 
 
 node.create_subscription(String, "/navlab/fcu/setpoint/intent", on_intent, 50)
-node.create_subscription(TwistStamped, "/ap/v1/cmd_vel", on_cmdvel, qos_profile_sensor_data)
+# 注:不再订 /ap/v1/cmd_vel——micro-ROS agent 的端点匹配在多 participant 负载下退化
+# (frame_contract 探针实测 97s 不匹配),每个 agent 话题的晚加入订阅者都会加剧;
+# cmd_vel 消费证据已在 4b/4c/5c 首批定档,毋需每 run 重采。
 node.create_subscription(Odometry, "/slam/odom", on_odom, qos_profile_sensor_data)
 node.create_subscription(String, "/navlab/exploration/status", on_status, 50)
 print("stage5c probe up (%.0fs, seg=%.0fs)" % (DURATION_S, SEG_S), flush=True)

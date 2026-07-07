@@ -1,0 +1,38 @@
+=== STAGE5C v3run1 START Tue Jul  7 17:21:56 CST 2026 ===
+0d02689366d584d59faf8da118934c09ecf5b22b6e851e016aacd09581a966d0
+15010d306297b12f784aa962250999b14aa8489e777469b2c2fe257a8df91f95
+27b1855947c9c88424348cf7b485af51717140cb035f3c2a38fddff41e3c7309
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T092243.548935072Z/summary.json: required probes failed: frame_contract_probe: docker sdk probe frame_contract_probe returned code 20; exploration_probe: docker sdk probe exploration_probe failed: context deadline exceeded
+exit status 1
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T092243.548935072Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {}
+required probes failed: frame_contract_probe: docker sdk probe frame_contract_probe returned code 20; exploration_probe: docker sdk probe exploration_probe failed: context deadline exceeded
+gate_ok_latched= 0
+[WARN] [1783416203.659298892] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=1
+[WARN] [1783416209.662087384] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=2
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 40- 45s | gbp_t1_w5,gbp_t1_w6 | (0.019,-0.044)-66 | (0.019,-0.044)-66 | (-0.004,-0.213)-91 | -25
+ 45- 50s | gbp_t1_w6,gbp_t1_w7,gbp_t2_w | (0.025,-0.034)-54 | (0.025,-0.034)-54 | (0.138,0.181)53 | +107
+ 50- 55s | gbp_t2_w4 | (-0.038,-0.047)-129 | (-0.038,-0.047)-129 | (-0.120,-0.076)-148 | -19
+ 55- 60s | gbp_t2_w4 | (-0.056,-0.028)-153 | (-0.056,-0.028)-153 | (0.137,0.087)32 | -174
+ 65- 70s | gbp_t2_w4 | (-0.072,-0.002)-178 | (-0.072,-0.002)-178 | (0.061,0.043)35 | -146
+ 70- 75s | gbp_t2_w4 | (-0.043,0.041)137 | (-0.043,0.041)137 | (0.251,-0.007)-2 | -138
+ 75- 80s | gbp_t2_w4 | (-0.044,0.067)123 | (-0.044,0.067)123 | (0.308,0.290)43 | -80
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=488 status_frontier=0 status_gbp=487 odom_n=22708
+moving_segments=7 delta_mean=-68deg delta_spread=281deg (恒定=方向关系稳定/无失真)
+direction_consistency=UNSTABLE
+cmdvel_vs_intent_mean_absdiff=0deg (≈0=FCU 忠实转发)
+no_frontier_intent=True
+=== STAGE5C v3run1 END Tue Jul  7 17:26:51 CST 2026 ===

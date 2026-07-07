@@ -1,0 +1,41 @@
+=== STAGE5C v3run5 START Tue Jul  7 17:51:39 CST 2026 ===
+fd48d57932cc77abef33d0ddc9091cfc1835631b2312ca802546ffd55ee86b13
+829eed15448d3a688b8567deb7aa2870f8630b5a0193cdf142a25a131b7698cb
+8b84c05c9a71d744066f28adf7ce1103892672a379e7b81f274cafb144eed95b
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T095226.437493367Z/summary.json: required probes failed: frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+exit status 1
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T095226.437493367Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 3, "claim": "evaluated", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 0.5304, "strategy": "gbplanner"}
+required probes failed: frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+gate_ok_latched= 1
+[WARN] [1783417987.037220439] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=3
+[WARN] [1783417987.043763941] [gbp_traj_to_intent]: GATE OK latched: wp_done=3 path=0.53m controller_ready=True mixed_flow=False
+[WARN] [1783417987.536138675] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=4
+[WARN] [1783417987.538271210] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=5
+[WARN] [1783417988.038226698] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=6
+[WARN] [1783418003.037151773] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=7
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 35- 40s | gbp_t2_w4,gbp_t3_w4 | (-0.032,-0.051)-122 | (-0.032,-0.051)-122 | (-0.056,0.020)160 | -78
+ 40- 45s | gbp_t3_w10,gbp_t3_w4,gbp_t3_ | (-0.039,-0.000)-180 | (-0.039,-0.000)-180 | (0.250,-0.144)-30 | +150
+ 45- 50s | gbp_t3_w10 | (-0.035,-0.055)-122 | (-0.006,-0.067)-95 | (0.049,0.114)67 | -171
+ 50- 55s | gbp_t3_w10 | (-0.023,-0.039)-121 | - | (-0.448,-0.227)-153 | -32
+ 60- 65s | gbp_t4_w3 | (0.049,0.061)51 | - | (0.617,-0.484)-38 | -89
+ 65- 70s | gbp_t4_w3 | (0.071,0.035)26 | - | (0.109,-0.508)-78 | -104
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=488 status_frontier=0 status_gbp=488 odom_n=15029
+moving_segments=6 delta_mean=-54deg delta_spread=178deg (恒定=方向关系稳定/无失真)
+direction_consistency=UNSTABLE
+cmdvel_vs_intent_mean_absdiff=9deg (≈0=FCU 忠实转发)
+no_frontier_intent=True
+=== STAGE5C v3run5 END Tue Jul  7 17:56:37 CST 2026 ===

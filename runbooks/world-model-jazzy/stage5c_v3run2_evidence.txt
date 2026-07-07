@@ -1,0 +1,35 @@
+=== STAGE5C v3run2 START Tue Jul  7 17:29:31 CST 2026 ===
+2fe9c662deca9a592d4d5ecd35b26ca910ef2ccd7ac448a0cbb8e1c9317b4cf3
+58094446736c5ee183fe11c1e53a08603a8c9308388feb9800588f64ce78e94e
+e01314d80df14cd814562e3eb46507f9a68117700294e7a4eda32cae1412a956
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T093016.048382662Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+exit status 1
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T093016.048382662Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 0, "claim": "in_progress", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 2.5275, "strategy": "gbplanner"}
+required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+gate_ok_latched= 0
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 35- 40s | gbp_t1_w5 | (0.009,-0.011)-52 | (0.023,-0.010)-23 | (0.008,0.065)83 | +135
+ 40- 45s | gbp_t1_w5 | (-0.031,0.043)126 | (-0.030,0.040)127 | (-0.020,-0.128)-99 | +135
+ 45- 50s | gbp_t1_w5 | (0.029,0.006)12 | (0.021,0.007)18 | (-0.147,-0.439)-109 | -121
+ 50- 55s | gbp_t1_w5 | (0.074,-0.014)-11 | (0.075,-0.012)-9 | (0.470,-0.069)-8 | +3
+ 55- 60s | gbp_t1_w5 | (0.059,0.032)29 | (0.062,0.022)19 | (0.613,-0.049)-5 | -33
+ 60- 65s | gbp_t1_w5 | (0.024,0.076)73 | (0.025,0.076)72 | (0.119,0.069)30 | -43
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=487 status_frontier=0 status_gbp=487 odom_n=23336
+moving_segments=6 delta_mean=13deg delta_spread=256deg (恒定=方向关系稳定/无失真)
+direction_consistency=UNSTABLE
+cmdvel_vs_intent_mean_absdiff=8deg (≈0=FCU 忠实转发)
+no_frontier_intent=True
+=== STAGE5C v3run2 END Tue Jul  7 17:34:25 CST 2026 ===

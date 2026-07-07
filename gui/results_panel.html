@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GBPlanner × world-model 融合 · 组会结果面板 (2026-07-07)</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #181f30;
+    --panel2: #1e2740;
+    --border: #2e3a58;
+    --text: #e8edf7;
+    --muted: #9fb0cc;
+    --accent: #4fc3f7;
+    --gold: #ffd54f;
+    --green: #66d97e;
+    --red: #ff7a7a;
+    --orange: #ffb74d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    font-size: 20px;
+    line-height: 1.65;
+    padding: 0 0 60px 0;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+  /* 顶部横幅 */
+  .banner {
+    background: linear-gradient(90deg, #7a4a00, #a35c00);
+    border-bottom: 4px solid var(--gold);
+    padding: 22px 28px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff8e1;
+    letter-spacing: 1px;
+  }
+  .banner .sub { display: block; font-size: 20px; font-weight: 500; margin-top: 6px; color: #ffe9b0; }
+
+  h1 { font-size: 34px; margin: 36px 0 8px; color: var(--accent); }
+  h2 {
+    font-size: 28px; margin: 44px 0 16px; padding-left: 14px;
+    border-left: 6px solid var(--accent);
+  }
+  h3 { font-size: 23px; margin: 22px 0 10px; color: var(--gold); }
+  p { margin: 10px 0; }
+  .muted { color: var(--muted); font-size: 17px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin: 16px 0;
+  }
+  .quote {
+    background: var(--panel2);
+    border-left: 6px solid var(--gold);
+    padding: 16px 22px;
+    border-radius: 8px;
+    font-size: 22px;
+    margin: 14px 0;
+  }
+  pre.chain {
+    background: #0a0e18;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 19px;
+    line-height: 1.8;
+    overflow-x: auto;
+    color: #cfe8ff;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 14px 0;
+    font-size: 19px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    text-align: left;
+  }
+  th { background: var(--panel2); color: var(--accent); font-size: 19px; }
+  tr:nth-child(even) td { background: #151c2c; }
+  .tbl-scroll { overflow-x: auto; }
+  .big { font-size: 30px; font-weight: 800; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .gold { color: var(--gold); }
+  .orange { color: var(--orange); }
+  .center { text-align: center; }
+
+  .vs-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 18px 0; }
+  .vs-box {
+    flex: 1; min-width: 300px;
+    background: var(--panel2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .vs-box.win { border-color: var(--green); }
+  .vs-box.lose { border-color: var(--red); }
+  .vs-box .label { font-size: 20px; color: var(--muted); }
+  .vs-box .num { font-size: 46px; font-weight: 800; margin: 6px 0; }
+
+  /* 时间线 */
+  .timeline { margin: 18px 0 6px; padding-left: 8px; }
+  .tl-item {
+    position: relative;
+    padding: 4px 0 22px 34px;
+    border-left: 3px solid var(--border);
+    margin-left: 10px;
+  }
+  .tl-item:last-child { border-left-color: transparent; }
+  .tl-item::before {
+    content: "";
+    position: absolute; left: -11px; top: 8px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--bg);
+  }
+  .tl-item .tl-title { font-size: 21px; font-weight: 700; color: var(--accent); }
+  .tl-item .tl-body { font-size: 18px; color: var(--text); margin-top: 4px; }
+  code {
+    font-family: Consolas, "Courier New", monospace;
+    background: #0a0e18; padding: 2px 7px; border-radius: 5px;
+    font-size: 0.92em; color: #ffd9a0;
+  }
+
+  .honest {
+    background: #241a10;
+    border: 2px solid var(--orange);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin: 20px 0;
+  }
+  .honest h2 { border-left-color: var(--orange); margin-top: 0; }
+  .honest li { margin: 10px 0 10px 26px; font-size: 19px; }
+
+  ul.pts li { margin: 8px 0 8px 26px; }
+  .footer { margin-top: 44px; text-align: center; color: var(--muted); font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  ⚠ 阶段性可视化演示 · 2026-07-07 —— 非稳定最终版
+  <span class="sub">live 演示失败不代表系统失败,证据以存档为准</span>
+</div>
+
+<div class="wrap">
+
+<h1>GBPlanner × world-model 融合 · 结果面板</h1>
+<p class="muted">数据来源:runbooks/world-model-jazzy/ 下证据文件(baseline_postfix / stage5b / stage5c_summary / stage5c_final2 / stage5a_diagnosis),数字逐一对照,未做修饰。</p>
+
+<!-- ① 融合定性 + 链路 -->
+<h2>① 融合定性与链路</h2>
+<div class="quote">
+  <b>GBPlanner-in-world-model 的桥接式融合</b>——ROS1 原版 GBPlanner 通过自写薄桥(B2.5)接入 ROS2 world-model,在 world-model 仿真里形成 3D 数据链、规划链、控制消费链、去混流运动归因、gate 机制通过与公平对比。<b>不是 ROS2 原生移植</b>(官方无 ROS2 版 GBPlanner)。
+</div>
+<p>融合链路(每一段都有证据文件,非方案想象):</p>
+<pre class="chain">world-model 3D lidar(lidar3d 净增量)/ odom
+        ↓  ROS2 → ROS1 自写 TCP 薄桥(官方 ros1_bridge 与 zenoh 均实验判死)
+GBPlanner / voxblox 3D 建图 / trajectory 规划
+        ↓  ROS1 → ROS2 薄桥回流(/gbp/trajectory,只接 PCI 执行轨迹)
+trajectory_to_intent 适配器(fail-closed + Procrustes 坐标对齐 + PD + 诚实计数)
+        ↓
+world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
+        ↓
+飞机实际 odom 运动(去混流可归因)+ exploration gate(以 strategy=gbplanner 通过)</pre>
+
+<!-- ② 公平对比主表 -->
+<h2>🏆 ② 公平对比主表(同 EKF 修复、同环境、同 26s 窗口口径)</h2>
+<div class="vs-row">
+  <div class="vs-box lose">
+    <div class="label">frontier_lite 基线(EKF 修复后重跑)</div>
+    <div class="num red">0 / 6</div>
+    <div>gate 达标率 0%,全绿 0/6</div>
+    <div class="muted">accepted 恒 = 2(6/6,零方差)</div>
+  </div>
+  <div class="vs-box win">
+    <div class="label">GBPlanner 桥接(5c 首批 6 run)</div>
+    <div class="num green">3 / 6 = 50%</div>
+    <div>gate 达标率 50%,全绿 1/6(runA)</div>
+    <div class="muted">accepted = 真实运动到达(预到达剔除)</div>
+  </div>
+</div>
+<div class="tbl-scroll"><table>
+  <tr><th>策略</th><th>gate 达标(accepted≥3 + path≥0.35)</th><th>全绿(TASK_STATUS_OK)</th><th>accepted_goals</th><th>path(m)</th></tr>
+  <tr>
+    <td>frontier_lite(修复后)</td>
+    <td class="red"><b>0/6 = 0%</b></td>
+    <td class="red">0/6</td>
+    <td>恒 = 2(6/6 一致,零方差)</td>
+    <td>均值 1.33,范围 0.147 ~ 2.634</td>
+  </tr>
+  <tr>
+    <td>GBPlanner 桥接(5c 首批)</td>
+    <td class="green"><b>3/6 = 50%</b></td>
+    <td>1/6(runA)</td>
+    <td>{4, 1, 3, 0, 3, 0},均值 1.83</td>
+    <td>均值 0.90,范围 0.41 ~ 1.30(std≈0.30)</td>
+  </tr>
+</table></div>
+<p class="muted">附注:计数口径不对等且<b>严于我方</b>——GBPlanner 侧 accepted = 真实运动到达(预到达剔除);基线 accepted = 纯时间驱动(源码 L78-108,ready_elapsed / 8.67s,26s 窗口只装得下 2 个时间片,故恒=2,不反映探索质量)。基线的 0% 是该策略在此窗口口径下的<b>结构性失败</b>,不是随机波动。修复前基线的 2/6 全绿是 EKF bug 的"馈赠"(估计跑飞使时间计数偶然凑满)。</p>
+
+<!-- ③ 全绿证据 -->
+<h2>✅ ③ 完整全绿证据(TASK_STATUS_OK,零探针失败)</h2>
+<div class="vs-row">
+  <div class="vs-box win">
+    <div class="label">runA —— GBPlanner 策略下<b>首个</b>完整全绿</div>
+    <div class="num green">TASK_STATUS_OK</div>
+    <div>accepted_goals = 3(全部真实运动到达)</div>
+    <div>path = 0.41 m · 无任何探针失败</div>
+    <div class="muted">= Stage5b 变体 A(±30° 基线配置),计入 5c 样本</div>
+  </div>
+  <div class="vs-box win">
+    <div class="label">final2 —— 修复链后<b>再次</b>全绿(run 20260707T111217)</div>
+    <div class="num green">TASK_STATUS_OK</div>
+    <div>accepted_goals = <b>5</b> · path = <b>1.3259 m</b></div>
+    <div>gate_ok_latched = 1 · 零探针失败</div>
+    <div class="muted">GATE OK latched: wp_done=5 path=1.33m controller_ready=True mixed_flow=False</div>
+  </div>
+</div>
+<p class="muted">final2 附加实证:no_frontier_intent=True(去混流稳定);frontier_intent=0,gbp_intent=487 —— 运动全程仅由 GBPlanner 意图驱动,可归因。</p>
+
+<!-- ④ Stage5b 3D 行为对照 -->
+<h2>🧪 ④ Stage5b 3D 行为对照(唯一变量 = lidar3d 垂直 FOV)</h2>
+<div class="tbl-scroll"><table>
+  <tr><th>指标</th><th>A(±30°)</th><th>B(±5°)</th><th>判读</th></tr>
+  <tr><td>输入云 /wm/points zspan</td><td>9.080 m(6754 点)</td><td>0.479 m(5555 点)</td><td>3D 输入被压扁 ✓</td></tr>
+  <tr><td>voxblox TSDF 点数</td><td>121,479</td><td>54,129</td><td>建图覆盖近半 ↓</td></tr>
+  <tr><td>voxblox TSDF zspan</td><td>11.8 m</td><td>10.2 m</td><td>含推断/自由空间,点数才是主信号</td></tr>
+  <tr><td>/gbp/trajectory zspan</td><td>0.434(1 条 27wp)</td><td>0.001~0.166(6 条)</td><td>z 机动收缩 + 频繁重规划 ✓</td></tr>
+  <tr><td>gate.exploration</td><td>accepted=3 path 0.41</td><td>accepted=0 path 1.54</td><td>行为/结果改变</td></tr>
+  <tr><td>task_status</td><td class="green"><b>TASK_STATUS_OK</b></td><td class="red">TASK_STATUS_ERROR</td><td>—</td></tr>
+</table></div>
+<p><b>可宣称结论:</b>GBPlanner 行为确实受 3D 输入影响——垂直 FOV 压扁 19 倍后,voxblox 建图点数近半、trajectory z 机动收缩一个量级、重规划模式改变、gate 结果改变。</p>
+
+<!-- ⑤ 今日修复链时间线 -->
+<h2>🔧 ⑤ 今日修复链时间线(2026-07-07)</h2>
+<div class="card"><div class="timeline">
+  <div class="tl-item">
+    <div class="tl-title">1. EKF 参考系真 bug(上游根因,BIN 飞控日志铁证)</div>
+    <div class="tl-body">
+      external_nav 把 SLAM map 系位置直接喂 AP,而 AP yaw 参考是罗盘世界系——静止无感,一动即发散(位置环正反馈,估计跑飞 34.8m → "stopped aiding" → "EKF variance: position lost")。修复三连:
+      ① <code>EK3_SRC1_YAW 1→6</code>(yaw 与位置同源=外部导航);
+      ② <code>COMPASS_USE/USE2/USE3 → 0</code>(消除罗盘世界系参照);
+      ③ <code>--no-align-yaw-to-fcu</code>(掐断 yaw 循环自证)。
+      验证:漂移 0.25~0.4 → <b>0.03 m/s</b>,发散消失;该 bug 同时解释基线 path 0.43~3.80m 巨大方差。
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-title">2. 坐标对齐 v6b(适配器侧)</div>
+    <div class="tl-body">
+      双坐标系同步观测 Procrustes(零滞后)收敛出稳定 map↔AP 映射 <b>R_align = 旋转 −87°(det=+1)</b>;针对"胡萝卜"位置目标越过 wp 导致 0.5m 极限环打圈,加近距按比例减速 <code>forward=min(0.08, 0.4·dist)</code> + 诚实 wp_done(预到达剔除)+ 严格 ok 闩锁。
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-title">3. 探针预算三连修(B 类波动收敛)</div>
+    <div class="tl-body">
+      ① 探针等待预算 <code>35 → 90s</code>;② 容器超时 <code>→ 150s</code>;③ 类型已发现时给<b>全预算</b>等待 publisher 匹配(DDS 慢发现);frame_contract 预算 <code>45 → 90s</code>。修复后 final2 零探针失败复现全绿。
+    </div>
+  </div>
+</div></div>
+
+<!-- ⑥ 诚实边界 -->
+<div class="honest">
+  <h2>⚖ ⑥ 诚实边界(不宣称清单)</h2>
+  <ul>
+    <li><b>不宣称稳定全绿。</b>修复后小样本:final1 gate 过、final2 全绿、final3 A 类波动;首批 6 run 全绿率 1/6,受 A 类(探索质量)+ B 类(探针/上游)波动共同影响。</li>
+    <li><b>不宣称完整 z 向飞行闭环。</b>3D 体现在感知 / 建图 / 规划行为(voxblox zspan、trajectory z 机动),尚未证明完整 z 方向飞行动作闭环。</li>
+    <li><b>不宣称 3D 障碍物级对照。</b>Stage5b 是<b>传感 FOV 对照</b>(唯一变量=垂直 FOV),不是障碍物级对照;±5° 变体失败也不能完全归因 3D 输入(单次 run,含 gate 采样时序波动)。</li>
+    <li><b>样本量小</b>(n = 6 + 6),对比结论为"同口径下 GBPlanner 显著优于 frontier_lite(50% vs 0%)",非统计学显著性宣称。</li>
+    <li><b>方向一致性尚未逐段稳定</b>(final2 探针 direction_consistency=UNSTABLE,段间散布主要来自换向瞬态与执行滞后)——可宣称的是:去混流、消费链、转发忠实、总体可归因、gate 机制全部成立。</li>
+  </ul>
+</div>
+
+<div class="footer">
+  单文件离线面板 · 无外部依赖 · 生成于 2026-07-07 · 证据存档:runbooks/world-model-jazzy/
+</div>
+
+</div>
+</body>
+</html>

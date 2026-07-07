@@ -1,0 +1,50 @@
+=== STAGE5D 成功率战役记录(2026-07-07,Review_020 落实)===
+
+## 一、C类根因链(全部源码+实测定案,修复入 clean 分支)
+
+1. **探针语义查证**:exploration_probe 在服务拉起后即并发启动;对 String status 话题
+   = "等到 ok=True 或预算耗尽"(best 机制);对消息话题 = 类型发现→订阅→取第一条。
+2. **C类根因①·预算不覆盖任务**:exploration ProbeTimeoutSec=35s,而 accepted≥3 需
+   takeoff(~45s)后再运动若干秒——实测:过的 run 37.08s 踩线拿到 ok,挂的 run 43s 耗尽。
+   **基线 accepted 恒=2 同机制**(关门时计时器刚累计到 2)。→ 修复:35→90。
+3. **C类根因②·容器上限**:脚本预算 90 超容器 90 上限 → context deadline exceeded 实测
+   → 容器上限 90→150。
+4. **B类根因①·类型发现小门**(B16 补洞):类型发现循环用 2s 小预算,micro-ROS 话题类型
+   传播慢时 45s 消息预算被挡在门外(失败签名 lat=2.2s)→ 类型发现改用全预算。
+5. **B类根因②·端点匹配退化**:全预算后实测 /ap/v1/pose/filtered rclpy 等待 48.96s 才匹配
+   (B16 孤立测 29s;多 participant 负载下退化)→ frame_contract 预算 45→90+容器 150。
+6. **B类根因③·我方负载**:90s 仍现 97.4s 不匹配 → 5c 探针瘦身(去 /ap/v1/cmd_vel 订阅,
+   减少 agent 话题晚加入订阅者;消费证据已定档毋需重采)。
+   ↑ 修复 1-5 已提交 clean 分支 e7ca9fc(go test 全绿);6 为实验侧脚本。
+
+## 二、适配器方向解算最终形态(v6b,冻结)
+
+- kp0.35/kd0.5(v2run1 唯一直证参数组;kp0.45 经 v2 批证伪);
+- **累计位移基线法**:D_ned=R·D_map 对任意弯曲路径严格成立 → 累计 ≥0.35m(信噪比>15:1)
+  一次解 θ 并冻结;冻结前用历史众数 −90°。
+  (演进:窗口 Procrustes 低速失稳(v3run2 Rang 乱跳实录)→ ±25° 信任域会锁死漂出基准的
+  run(v3run4 实录)→ 基线法。)
+
+## 三、修复后连跑结果(开发过程 run + 定档批中断存档)
+
+| run | 口径 | gate(probe采样) | 全绿 | accepted | 备注 |
+|---|---|---|---|---|---|
+| v3run3 | v6+probe90 | **PASS** | ✗(fc波动) | 9 | |
+| v3run4 | v6 | FAIL | ✗ | 0 | ±25°信任域锁死错误基准(v6b 动机) |
+| v3run5 | v6b | **PASS** | ✗(fc波动) | 3 | |
+| v3run6 | v6b | FAIL | ✗ | 1 | A类 |
+| v4run1 | v6b+type修 | **PASS** | ✗(fc 48.96s>45) | 3 | fc预算根因实锤 run |
+| final1 | v6b+fc90 | **PASS** | ✗(fc 97s不匹配) | 3 | 探针瘦身动机 run |
+| **final2** | **最终口径** | **PASS** | **✅ TASK_STATUS_OK** | **5** | **修复链后首个全绿** |
+| final3 | 最终口径 | FAIL | ✗ | 0 | A类+fc |
+| final4 | 最终口径 | FAIL | ✗ | 2 | A类(差1) |
+
+**诚实读数**:修复后 gate 达标 5/9(dev+final 混计,含 3 个连续 PASS 段);
+**最终口径正式批仅 3 样本(final2 全绿/final3/final4),因组会中断未满 6,统计不定档**;
+探索质量 A类波动仍在(与基线同性质)。full 批(≥6 run)为下一步首项。
+
+## 四、GUI 交付(阶段性可视化演示口径)
+
+- gui_demo_master.sh(总控:桥栈+external live run+两 GUI)/ gui1_gazebo.sh / gui2_rviz.sh;
+- gui/results_panel.html(离线结果面板)+ gui/组会演示手册_2026-07-07.md(图例/讲稿/fallback);
+- RViz 实测可弹窗(WSLg),对象一律按 topic+类型+发布者讲解,不按颜色。

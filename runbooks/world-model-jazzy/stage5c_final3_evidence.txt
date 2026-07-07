@@ -1,0 +1,31 @@
+=== STAGE5C final3 START Tue Jul  7 19:16:53 CST 2026 ===
+271a955fe9a64c7fcce462d4c0c6e27e7816df00f8db0f4b7eb1b51632e07e13
+7adb0b389c29dd341e408341ce3c450c8f9a3f75b28ce1ccae8fe36fda3356ec
+4eab541c3a150b809a17a302fe6387577f6e578d7506bfd10fffb0a915554ae7
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T111739.116237830Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+exit status 1
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T111739.116237830Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 0, "claim": "in_progress", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 0.8209, "strategy": "gbplanner"}
+required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+gate_ok_latched= 0
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 35- 40s | gbp_t1_w5 | (0.052,0.015)16 | - | (0.057,0.060)46 | +31
+ 40- 45s | gbp_t1_w5 | (0.051,0.007)8 | - | (-0.061,-0.041)-146 | -154
+ 45- 50s | gbp_t1_w5 | (0.047,0.027)30 | - | (0.146,0.043)16 | -13
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=486 status_frontier=0 status_gbp=486 odom_n=24978
+moving_segments=3 delta_mean=-46deg delta_spread=184deg (恒定=方向关系稳定/无失真)
+direction_consistency=UNSTABLE
+no_frontier_intent=True
+=== STAGE5C final3 END Tue Jul  7 19:21:50 CST 2026 ===

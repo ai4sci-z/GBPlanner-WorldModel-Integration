@@ -1,0 +1,35 @@
+=== STAGE5C v3run6 START Tue Jul  7 17:57:20 CST 2026 ===
+0f74254e7ee3067b897f7dafce057ad59bb7cd0af4607b609ed82edb23d2b9d6
+599e7336883d640a63a638ba31ce4f9b9a92b9564f2e60c6e003dad257314a8d
+6d8c5ec6cd0a3c9742041856a6e30ec63be77bbd40abf23dee235b573fc55ae0
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T095806.410121645Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+exit status 1
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T095806.410121645Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 1, "claim": "in_progress", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 2.2719, "strategy": "gbplanner"}
+required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+gate_ok_latched= 0
+[WARN] [1783418321.878556575] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=1
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 35- 40s | gbp_t1_w5,gbp_t1_w6 | (0.041,-0.013)-18 | (0.041,-0.013)-18 | (-0.037,0.134)106 | +123
+ 40- 45s | gbp_t1_w6 | (0.062,-0.016)-14 | (0.062,-0.016)-14 | (-0.005,-0.266)-91 | -77
+ 45- 50s | gbp_t1_w6 | (0.059,-0.042)-36 | (0.059,-0.042)-36 | (0.262,-0.725)-70 | -34
+ 50- 55s | gbp_t1_w6 | (0.040,-0.069)-60 | (0.040,-0.069)-60 | (-0.116,-0.559)-102 | -42
+ 55- 60s | gbp_t1_w6 | (0.040,-0.069)-60 | (0.040,-0.069)-60 | (0.026,-0.067)-69 | -9
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=487 status_frontier=0 status_gbp=487 odom_n=23899
+moving_segments=5 delta_mean=-8deg delta_spread=200deg (恒定=方向关系稳定/无失真)
+direction_consistency=UNSTABLE
+cmdvel_vs_intent_mean_absdiff=0deg (≈0=FCU 忠实转发)
+no_frontier_intent=True
+=== STAGE5C v3run6 END Tue Jul  7 18:02:14 CST 2026 ===

@@ -1,0 +1,35 @@
+=== STAGE5C final4 START Tue Jul  7 19:22:23 CST 2026 ===
+2bc74ea4158c0e0c4f4c2356cab509df5e3e5b1460f4eaceeda03131159b9f3f
+b83d6dc8d97415e47e2b2681a37a4ef11e03e044dcff827b2152734782eca796
+63668e48c99e36839f7b345394e0ebf60239dd8410f49358c3bf72280ff78732
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T112311.775809321Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+exit status 1
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T112311.775809321Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 2, "claim": "in_progress", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 2.5974, "strategy": "gbplanner"}
+required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20; frame_contract_probe: docker sdk probe frame_contract_probe returned code 20
+gate_ok_latched= 0
+[WARN] [1783423439.602830909] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=1
+[WARN] [1783423440.102660533] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=2
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 35- 40s | gbp_t2_w4 | (-0.064,0.008)173 | - | (0.016,0.083)79 | -94
+ 40- 45s | gbp_t2_w4 | (-0.073,-0.015)-169 | - | (-0.241,0.045)169 | -22
+ 45- 50s | gbp_t2_w4 | (-0.031,0.010)163 | - | (0.468,-0.341)-36 | +161
+ 50- 55s | gbp_t2_w4,gbp_t4_w5,gbp_t4_w | (0.026,-0.022)-41 | - | (-0.488,-0.486)-135 | -94
+ 55- 60s | gbp_t5_w4 | (0.072,-0.035)-26 | - | (-0.265,-0.218)-141 | -114
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=486 status_frontier=0 status_gbp=486 odom_n=25105
+moving_segments=5 delta_mean=-33deg delta_spread=177deg (恒定=方向关系稳定/无失真)
+direction_consistency=UNSTABLE
+no_frontier_intent=True
+=== STAGE5C final4 END Tue Jul  7 19:27:22 CST 2026 ===

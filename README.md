@@ -53,9 +53,10 @@ world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
 | Stage5a gate 机制(strategy=gbplanner 通过 exploration_probe) | ✅ |
 | Stage5b 3D 行为对照(FOV ±30°→±5° 三层变化) | ✅ |
 | Stage5c 首批 6 run + **基线修复后复档(公平对比 50% vs 0%)** | ✅ |
-| 适配器 v5(PD 阻尼,wp 捕获 0→9 直证) | ✅ 有效性直证 |
-| **v2 系统性批跑(v5 后全绿率)** | 🔵 **当前** |
-| GUI 三演示(①原版GBPlanner ②frontier_lite ③接入后)+ PR 定稿 | ⬜ |
+| v2 批跑(v5/kp0.45 证伪)+ 成功率战役:C/B 类探针预算根因全修 + 适配器 v6b | ✅ |
+| **final2 = 修复链后再次 TASK_STATUS_OK 完整全绿**(最终口径批仅 3 样本,统计未定档) | ✅/🔵 |
+| **GUI 三演示(阶段性可视化口径)**:gui_demo_master.sh + results_panel.html + 演示手册 | ✅ |
+| 组会后:最终口径 full 批定档 + 基线同口径复跑 + PR 定稿 | ⬜ **当前** |
 
 ## 四、不能宣称的结论
 

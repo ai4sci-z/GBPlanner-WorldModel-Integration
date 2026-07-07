@@ -1,0 +1,38 @@
+=== STAGE5C final2 START Tue Jul  7 19:11:30 CST 2026 ===
+b3482b994543b23aee12434c866a78bf891f1df171f403f5a0ddba5e727e2be8
+886a335d2c76c2b2634fa8ecd3aa86f6b502a22ec717cea4b72b94c2c936d1a5
+dc7991473040ae9b4308fff84150b7afcfce448cd32b4b9220bc48ab02f2ce5f
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+runtime_rosbags=1
+status=ok
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T111217.602423463Z/
+task_status = TASK_STATUS_OK
+gate.exploration = {"accepted_goals": 5, "claim": "evaluated", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 1.3259, "strategy": "gbplanner"}
+gate_ok_latched= 1
+[WARN] [1783422783.148948719] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=1
+[WARN] [1783422783.152703437] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=2
+[WARN] [1783422783.157006713] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=3
+[WARN] [1783422783.159490941] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=4
+[WARN] [1783422783.162255473] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=5
+[WARN] [1783422783.168722036] [gbp_traj_to_intent]: GATE OK latched: wp_done=5 path=1.33m controller_ready=True mixed_flow=False
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 35- 40s | gbp_t2_w4 | (-0.029,-0.049)-121 | - | (-0.020,0.079)104 | -135
+ 40- 45s | gbp_t2_w4 | (0.026,-0.029)-48 | - | (0.055,-0.530)-84 | -36
+ 45- 50s | gbp_t2_w4,gbp_t2_w9 | (0.025,0.002)6 | - | (0.167,0.676)76 | +71
+ 50- 55s | gbp_t2_w9 | (-0.072,-0.034)-155 | - | (-0.018,1.248)91 | -114
+ 55- 60s | gbp_t2_w9 | (-0.066,-0.045)-146 | - | (-0.310,0.834)110 | -104
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=487 status_frontier=0 status_gbp=486 odom_n=12109
+moving_segments=5 delta_mean=-64deg delta_spread=205deg (恒定=方向关系稳定/无失真)
+direction_consistency=UNSTABLE
+no_frontier_intent=True
+=== STAGE5C final2 END Tue Jul  7 19:16:25 CST 2026 ===

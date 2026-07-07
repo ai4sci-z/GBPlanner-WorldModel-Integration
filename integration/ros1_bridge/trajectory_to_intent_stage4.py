@@ -47,11 +47,13 @@ TRAJ_MAX_AGE_S = 30.0   # 轨迹绝对最大年龄:超龄即弃(Review_014-①,�
 # 持续旋转是 5a-1 SLAM 失锁根因)。
 import numpy as np
 
-# EKF 修复(yaw同源+罗盘关)后系统实测映射≈恒等(6跑 Rang=4° det=+1):
-# sender 直接把 map 坐标喂 AP,全链 map 自洽 → intent→map ≈ I,恒等为正确初值。
-R_ALIGN_INIT = np.array([[1.0, 0.0], [0.0, 1.0]])
-PAIR_MIN_STEP_M = 0.01    # 位移对最小步长(低于视为噪声不入账;慢爬也要能供数据)
-M_DECAY = 0.995           # 累积矩阵缓慢遗忘(容忍 SLAM yaw 缓漂)
+# v6b 方向解算·累计位移基线法(v3run2/4 验尸:窗口 Procrustes 低速失稳;±25° 信任域
+# 又会在 per-run 旋转漂出基准时锁死错误值):
+# 两坐标系观测同一物理路径 → D_ned = R·D_map 对任意弯曲路径严格成立(线性),
+# 累计位移 ≥ BASELINE_MIN_M(噪声 ±2cm,信噪比 >15:1)时一次解 θ=ang(D_ned)−ang(D_map)
+# 并冻结;冻结前用历史众数基准 −90°(post-EKF-fix 多数 run 实测值)。
+THETA_BASE_RAD = -math.pi / 2.0
+BASELINE_MIN_M = 0.35
 SLAM_FROZEN_S = 4.0       # 运动指令活跃但 odom 位置基本不动 → slam_frozen blocker
 FROZEN_EPS_M = 0.02       # "基本不动"阈值(SLAM 抖动 ±1cm,5a-2 实测)
 
@@ -79,11 +81,12 @@ class TrajToIntent(Node):
         self.controller_ready = False   # /navlab/fcu/controller/status ok(bootstrap 含 takeoff)
         self.mixed_flow = False         # intent 总线上出现过非本适配器来源 → 永久闩锁
         self.ok_latched = False         # 五条件一旦达成即闩锁(尾段 stale blocker 不回撤已达成事实)
-        # 双坐标系同步观测 → R_align(map位移 → ned位移)
-        self.R_align = R_ALIGN_INIT.copy()
-        self.M_acc = np.zeros((2, 2))   # Σ dn·dmᵀ(带遗忘)
-        self.pair_count = 0
-        self.lpp_hist = []              # [(t, ned_xy, map_xy)] ~1.2s 基线(慢爬也凑得出位移对)
+        # 双坐标系累计位移基线 → theta 一次解并冻结
+        self.theta = THETA_BASE_RAD
+        self.R_align = self._rot(self.theta)
+        self.R_frozen = False
+        self.pair_count = 0             # 兼容日志字段:冻结前=0,冻结后=1
+        self.anchor = None              # (map_xy, ned_xy) 运动起始锚点
         self.odom_hist = []             # [(t,x,y)] 1.5s 滑窗(slam_frozen 判定)
         self.last_move_cmd_t = 0.0      # 最近一次非零运动指令时刻
         self.frozen_since = None        # odom 位置基本不动的起始时刻
@@ -187,28 +190,36 @@ class TrajToIntent(Node):
             b.append("frame_mismatch:%s" % self.traj.header.frame_id)
         return b
 
+    @staticmethod
+    def _rot(theta):
+        return np.array([[math.cos(theta), -math.sin(theta)],
+                         [math.sin(theta), math.cos(theta)]])
+
     def on_lpp(self, m):
-        # AP NED 位姿采样(~4Hz):与同刻 map 位置组成位移对(~1.2s 基线),Procrustes 更新 R_align
-        if self.last_xy is None:
+        # 累计位移基线法:运动开始处设锚,双系累计位移够长(信噪比足)即一次解 θ 并冻结
+        if self.last_xy is None or self.R_frozen:
             return
-        now = time.monotonic()
         ned = (m.pose.position.x, m.pose.position.y)
         map_xy = self.last_xy
-        if self.lpp_hist:
-            t0, ned0, map0 = self.lpp_hist[0]
-            dn = np.array([ned[0] - ned0[0], ned[1] - ned0[1]])
-            dm = np.array([map_xy[0] - map0[0], map_xy[1] - map0[1]])
-            if np.hypot(*dn) > PAIR_MIN_STEP_M and np.hypot(*dm) > PAIR_MIN_STEP_M:
-                self.M_acc = M_DECAY * self.M_acc + np.outer(dn, dm)
-                self.pair_count += 1
-                try:
-                    U, _, Vt = np.linalg.svd(self.M_acc)
-                    self.R_align = U @ Vt   # 正交(含反射)最优拟合:dn ≈ R_align·dm
-                except np.linalg.LinAlgError:
-                    pass
-        self.lpp_hist.append((now, ned, map_xy))
-        while self.lpp_hist and now - self.lpp_hist[0][0] > 1.2:
-            self.lpp_hist.pop(0)
+        if not self.enabled or time.monotonic() - self.last_move_cmd_t > 2.0:
+            # 未在运动期:锚点跟随当前位置(避免把起飞前漂移算进基线)
+            self.anchor = (map_xy, ned)
+            return
+        if self.anchor is None:
+            self.anchor = (map_xy, ned)
+            return
+        (m0, n0) = self.anchor
+        dm = (map_xy[0] - m0[0], map_xy[1] - m0[1])
+        dn = (ned[0] - n0[0], ned[1] - n0[1])
+        if math.hypot(*dm) >= BASELINE_MIN_M and math.hypot(*dn) >= BASELINE_MIN_M * 0.6:
+            self.theta = math.atan2(dn[1], dn[0]) - math.atan2(dm[1], dm[0])
+            self.R_align = self._rot(self.theta)
+            self.R_frozen = True
+            self.pair_count = 1
+            self.get_logger().warning(
+                "R_align FROZEN(baseline) theta=%.1fdeg  D_map=(%.2f,%.2f) D_ned=(%.2f,%.2f)" % (
+                    math.degrees((self.theta + math.pi) % (2 * math.pi) - math.pi),
+                    dm[0], dm[1], dn[0], dn[1]))
 
     def slam_frozen(self):
         # 运动指令活跃但 odom 位置基本不动(SLAM 失锁/顶墙卡死的典型形态)
@@ -251,8 +262,9 @@ class TrajToIntent(Node):
                     (t0h, x0h, y0h), (t1h, x1h, y1h) = self.odom_hist[0], self.odom_hist[-1]
                     if t1h - t0h >= 0.4:
                         vox, voy = (x1h - x0h) / (t1h - t0h), (y1h - y0h) / (t1h - t0h)
-                ex = 0.45 * dx - 0.45 * vox
-                ey = 0.45 * dy - 0.45 * voy
+                # v6 = kp0.35/kd0.5(v2run1 wp捕获0→9 的唯一直证参数组;kp0.45 经 v2 批跑证伪)
+                ex = 0.35 * dx - 0.5 * vox
+                ey = 0.35 * dy - 0.5 * voy
                 mag = math.hypot(ex, ey)
                 forward = min(SPEED_MAX, 0.3 * dist, mag)
                 # 期望 map 方向(PD 输出方向)→ R_align(双坐标系 Procrustes 实测)→ intent(NED 分量)
