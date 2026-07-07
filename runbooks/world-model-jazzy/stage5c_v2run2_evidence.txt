@@ -1,0 +1,36 @@
+=== STAGE5C v2run2 START Tue Jul  7 13:49:10 CST 2026 ===
+f26388732885067e4f73abcdd5335690f17674f5ae6634a3f4139c2579d483c0
+a2a3feb05819ee74a7dd888b15d93e02673160de0848d87d19a9c0884a327c43
+e5a957b4907e137185d8971eff198f6ac7240a6826c45a3e536256ddcd730275
+enabled
+success: True
+message: ''
+success: True
+message: ''
+success: True
+message: ''
+error: task "exploration" live run failed; summary: ../../artifacts/sim/exploration/20260707T054957.950915674Z/summary.json: required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+exit status 1
+--- run 判定 ---
+RUNDIR=/home/ai4s/ws-clean/world-model/artifacts/sim/exploration/20260707T054957.950915674Z/
+task_status = TASK_STATUS_ERROR
+gate.exploration = {"accepted_goals": 1, "claim": "in_progress", "min_accepted_goals": 3, "min_path_length_m": 0.35, "motion_speed_mps": 0.08, "path_length_m": 1.3843, "strategy": "gbplanner"}
+required probes failed: exploration_probe: docker sdk probe exploration_probe returned code 20
+gate_ok_latched= 0
+[WARN] [1783403432.984035703] [gbp_traj_to_intent]: WP REACHED by motion: wp_done=1
+--- §7.3 对齐表 ---
+=== STAGE5C_ALIGN_TABLE(仅运动段) ===
+seg_t | goals | intent(vx,vy)ang | cmd_vel(vx,vy)ang | odom_d(dx,dy)ang | d_odom-intent
+ 40- 45s | gbp_t1_w5 | (0.014,0.052)75 | (0.011,0.051)78 | (0.046,-0.187)-76 | -151
+ 45- 50s | gbp_t1_w5 | (0.016,0.004)16 | (0.016,0.018)48 | (-0.868,-0.069)-175 | +169
+ 50- 55s | gbp_t1_w5 | (0.015,-0.078)-79 | (0.018,-0.077)-77 | (-0.664,0.715)133 | -148
+ 55- 60s | gbp_t1_w5 | (0.030,-0.074)-68 | (0.031,-0.074)-67 | (-0.507,0.743)124 | -168
+ 60- 65s | gbp_t1_w5 | (0.020,-0.077)-76 | (0.020,-0.077)-75 | (-0.401,0.574)125 | -159
+ 65- 70s | gbp_t1_w5 | (0.016,-0.078)-79 | (0.016,-0.078)-79 | (-0.284,0.374)127 | -154
+=== STAGE5C_PROBE_SUMMARY ===
+frontier_intent=0 gbp_intent=487 status_frontier=0 status_gbp=487 odom_n=14449
+moving_segments=6 delta_mean=-102deg delta_spread=43deg (恒定=方向关系稳定/无失真)
+direction_consistency=STABLE
+cmdvel_vs_intent_mean_absdiff=6deg (≈0=FCU 忠实转发)
+no_frontier_intent=True
+=== STAGE5C v2run2 END Tue Jul  7 13:54:03 CST 2026 ===

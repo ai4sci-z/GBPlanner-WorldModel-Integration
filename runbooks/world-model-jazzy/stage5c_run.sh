@@ -37,10 +37,12 @@ sleep 5
 cd "$CLEAN/orchestration/sim" || exit 9
 go run ./cmd/navlab-sim run exploration --live-preflight > /home/ai4s/s5c_run.log 2>&1 &
 RUN_PID=$!
-sleep 30
+sleep 25
 JRUN "timeout 5 ros2 topic pub /gbp/enable std_msgs/msg/Bool '{data: true}' -r 2 >/dev/null 2>&1; echo enabled"
 E "timeout 10 rosservice call /planner_control_interface/std_srvs/automatic_planning '{}' 2>&1 | head -2"
-sleep 40
+sleep 15
+E "timeout 10 rosservice call /planner_control_interface/std_srvs/automatic_planning '{}' 2>&1 | head -2"
+sleep 15
 E "timeout 10 rosservice call /planner_control_interface/std_srvs/automatic_planning '{}' 2>&1 | head -2"
 wait $RUN_PID
 tail -2 /home/ai4s/s5c_run.log

@@ -243,11 +243,20 @@ class TrajToIntent(Node):
                 wp = self.traj.points[self.wp_idx].transforms[0].translation
                 dx, dy = wp.x - p.x, wp.y - p.y
                 dist = math.hypot(dx, dy)
-                # fcu 主路是"胡萝卜"位置目标(当前+v×2s):目标不得越过 wp(否则 0.15m
-                # 到达圈套不住 ~0.3m/s 的追赶,7 跑实测 0.5m 极限环)→ 近距按比例减速。
-                forward = min(SPEED_MAX, 0.4 * dist)
-                # 期望 map 方向 → R_align(双坐标系 Procrustes 实测)→ intent(NED 分量)
-                d = np.array([dx, dy]) / max(dist, 1e-6)
+                # 外环 PD(5c run3 验尸:P-only 在 2Hz 指令+1~2s 执行滞后下极限环 ±0.3m,
+                # 0.15m 捕获圈差 4cm 套不住)→ 期望速度 = kp·误差 − kd·观测速度(阻尼),
+                # 再叠加"胡萝卜不过 wp"限幅(近距比例减速)。
+                vox = voy = 0.0
+                if len(self.odom_hist) >= 2:
+                    (t0h, x0h, y0h), (t1h, x1h, y1h) = self.odom_hist[0], self.odom_hist[-1]
+                    if t1h - t0h >= 0.4:
+                        vox, voy = (x1h - x0h) / (t1h - t0h), (y1h - y0h) / (t1h - t0h)
+                ex = 0.45 * dx - 0.45 * vox
+                ey = 0.45 * dy - 0.45 * voy
+                mag = math.hypot(ex, ey)
+                forward = min(SPEED_MAX, 0.3 * dist, mag)
+                # 期望 map 方向(PD 输出方向)→ R_align(双坐标系 Procrustes 实测)→ intent(NED 分量)
+                d = np.array([ex, ey]) / max(mag, 1e-6)
                 v_ned = self.R_align @ (d * forward)
                 vx, vy = float(v_ned[0]), float(v_ned[1])
                 yaw_rate = 0.0  # X2 360°lidar 无需对头;持续旋转曾致 SLAM 失锁(5a-1)
