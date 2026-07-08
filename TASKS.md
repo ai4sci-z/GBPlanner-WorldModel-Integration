@@ -31,14 +31,14 @@
 
 | ID | 里程碑 | 状态 | 验收 / 备注 |
 |---|---|---|---|
-| **M0** | 侦察 + 路线冻结 + 入口文档收口 | 🔵 **收口中** | 侦察三件套 ✅(包清单/voxblox 选型/直连契约)+ 理解报告 1-3 ✅ + 迁移任务书入库 ✅;**收口中**=README/TASKS/文档索引/接力棒切 ROS2 口径 + 补 0_总览 + stage6 修⑥收尾。验收=任何新窗口读入口不再回桥接路线 |
+| **M0** | 侦察 + 路线冻结 + 入口文档收口 | ✅ **完成(07-08)** | 侦察三件套 ✅ + 理解报告 0-3 ✅ + 任务书入库 ✅ + 入口文档全切 ROS2 口径 ✅ + **stage6 探针修复链全收口 ✅**(修⑥ ff24087 frame_contract 采样消费链路 pose + 修⑦ 050ee94 rosbag required 集合同口径;**live 复跑 20260708T101402=TASK_STATUS_OK 完整全绿** blockers=[];证据 runbooks/world-model-jazzy/stage6_live_evidence.txt) |
 | **M1** | `planner_msgs` ROS2 最小消息包 | ✅ **完成(07-08,分支 `feat/gbplanner-ros2-port` e343421)** | `ros2_port/src/planner_msgs` 最小集 8 接口(srv:PlannerSrv/SetPlanningMode/Homing + msg:PlanningMode/BoundMode/TriggerMode/ExecutionPathMode/PlannerStatus);**验收全达成**:jazzy 容器 colcon build rc=0(4.51s)+ `ros2 interface show` 8/8 + 无 ROS1/catkin/actionlib 依赖。证据 runbooks/ros2_port/m1_build_evidence.txt;迁移差异(PascalCase/UPPER_SNAKE 常量/Header)诚实标注 ros2_port/README.md |
 | **M2** | voxblox ROS2 后端落地 | ⬜ | 沿用 voxblox core(snt-arg minimal 底座 + Jazzy 适配),**不用 nvblox**;订 PointCloud2 → 出 TSDF/ESDF → RViz2 可见;与 ROS1 oracle 对拍 voxel/zspan/occupied/ESDF/raycast。最大风险层 |
 | **M3** | 算法核心 ROS-free 剥离 | ⬜ | rrg.cpp/planner_common/adaptive_obb/kdtree 去 ros/ros.h、ROS_INFO、ros::Time、ROS1 TF/param;先做成 ROS-free C++ library。验收=ament_cmake 编译 + 不 include ros/ros.h + 可被单测调用 |
 | **M4** | ROS2 planner 节点壳 | ⬜ | 订 /slam/odom + /wm/cloud3d、查 TF、调 voxblox、触发 RRG、发 /gbp/trajectory + RViz2 marker;PCI 先替换为最小定时 trigger。验收=节点起+建图+触发一次规划+出轨迹+RViz2 可见(**不要求 exploration 全绿**) |
 | **M5** | world-model 直连联跑 + oracle 回归 | ⬜ | 沿用 `trajectory_to_intent_stage4.py` + /navlab/fcu/setpoint/intent + stage5c probe 口径。三层验收:M5-a 可视化 / M5-b 控制消费 / M5-c ≥3 run 对比(accepted/path/TASK_STATUS,与桥接 oracle 及 frontier_lite 同口径对照) |
 
-**M0 当前施工点(下一棒四件事)**:①clean 分支 stage6 修⑥收尾+提交(config/defaults.go frame_contract default)②补 docs/worldmodel理解_0_总览 ③入口文档收口(本轮进行中)④新分支 feat/gbplanner-ros2-port + ros2_port/ + M1 最小 planner_msgs。
+**当前施工点 = M2 voxblox ROS2 底座**(snt-arg minimal + Jazzy 适配 + ROS1 oracle 对拍;源码已 clone 到 WSL `~/ros2_port_ws/`,src=底座 / ref=Gabriele-Jazzy 参照+ntnu/ethz diff 参照)。⚠️ 新工程事实:`navlab-sim --artifact-root` 只能指 workspace 内路径(docker 探针按 workspace 前缀映射输出路径,指 /tmp 必致 4 探针全挂假象,详见 stage6_live_evidence.txt take1 翻案)。
 
 **第一轮纪律**(勿一次碰 messages+voxblox+rrg+params+TF+RViz2):M1 只做消息层地基;每个 M 阶段单独 commit + 留 evidence;行为等价靠 ROS1 oracle 对照;不因"能编译"就宣称迁移成功。
 

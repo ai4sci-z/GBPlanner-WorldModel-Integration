@@ -27,7 +27,7 @@
 > ⚠️ 最终口径正式批仅 3 样本(组会中断),**成功率统计未定档**——full 批(≥6 run)为下一步首项。
 > **GUI 三演示已交付(阶段性可视化口径)**:gui_demo_master.sh + results_panel.html + 演示手册。
 > **⚠️ 以上全部为桥接期结论,已冻结为 oracle(仍成立,不再演进)。当前施工点 = ROS2 原生迁移 M0→M5**(见本文件顶部横幅 + [TASKS.md](TASKS.md) M0-M5 + [任务书](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)):
-> **M0 ✅ 收口(07-08)**:入口文档全切 ROS2 口径 + 0_总览补齐 + stage6 修⑥真源头修复(clean 分支 ff24087:config/defaults.go frame_contract FCUPoseTopic default→/navlab/fcu/local_position_pose;go test 三包全绿 + dry-run/live 渲染双确认;⚠️ live 全绿 PASS 因整栈冷启动环境失败未观测,留 warm 会话复跑)。
+> **M0 ✅ 收口(07-08)**:入口文档全切 ROS2 口径 + 0_总览补齐 + **stage6 探针修复链全收口**:修⑥(clean ff24087,frame_contract 采样消费链路 /navlab/fcu/local_position_pose)+ 修⑦(clean 050ee94,exploration rosbag required 集合去 /ap/v1 flaky 调试流、换消费链路 pose;同病根不同器官)。**live 复跑 20260708T101402 = TASK_STATUS_OK 完整全绿**(blockers=[],四探针全过,rosbag recorder completed;证据 runbooks/world-model-jazzy/stage6_live_evidence.txt)。上窗口"冷启动环境失败"已翻案:真因=--artifact-root 指到 workspace 外的脚本 bug(docker 探针按 workspace 前缀映射路径),非环境问题。
 > **M1 ✅ 完成(07-08)**:分支 `feat/gbplanner-ros2-port`(e343421)+ `ros2_port/src/planner_msgs` 最小 8 接口,jazzy 容器 colcon build rc=0 + interface show 8/8(证据 runbooks/ros2_port/)。
 > **当前 = M2 voxblox ROS2 底座** → M3 core 剥离 → M4 node 壳 → M5 直连联跑。
 

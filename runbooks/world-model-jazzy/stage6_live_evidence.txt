@@ -1,0 +1,43 @@
+# stage6 live 收口证据(2026-07-08 傍晚,clean 分支 ff24087 + 修⑦ 工作区)
+# 三跑时间线:take1 翻案 → take2 修⑥验证+揪出修⑦ → take3 TASK_STATUS_OK 全绿
+
+## take1(18:07 前,历史):--artifact-root /tmp 翻案
+- 复现上窗口"环境冷启动失败"同签名:4 探针全 rc=1 + probe_output_missing,+6s 拆栈
+- 验尸真因(非环境):stage6_live.sh 用 --artifact-root /tmp/stage6_live(workspace 外);
+  docker 探针容器按 workspace 前缀映射输出路径(挂载 ws->/workspace,见
+  runtime_specs_test.go:619 断言 /workspace/artifacts/...),/tmp 根映射成
+  /workspace/tmp/... 容器内不存在 → bash 重定向秒挂:
+  bash: line 1: /workspace/tmp/stage6_live/.../rangefinder_probe.txt: No such file or directory
+- gazebo_sensor RCLError=required probes failed 后拆栈的级联噪声
+- ⚠️ 工程事实:navlab-sim --artifact-root 只能指向 workspace 内路径
+
+## take2(run 20260708T100753,artifact 根改回默认):修⑥ live 验证 ✅ + 发现修⑦
+- frame_contract: ok=True blockers=[](采样 TOPICS 含 /navlab/fcu/local_position_pose,
+  bag 内该 topic 463 条消息)→ 修⑥(ff24087)live 欠账清了
+- exploration: ok=True
+- 唯一 blocker= rosbag_profile_failed:rosbag recorder FSM 终态 required_topics_missing;
+  bag 31 topic 里 /ap/v1/pose/filtered 与 /ap/v1/twist/filtered 缺席(micro-ROS DDS
+  发现 flaky,与修⑥ 同病根)而 ExplorationTaskRequiredTopics 仍硬性要求这两条调试流
+  (helpers/rosbag_topic_sets.go L88-89)
+
+## 修⑦:rosbag required 集合换到消费链路(与修⑥ 同一叙事)
+- 改 helpers/rosbag_topic_sets.go ExplorationTaskRequiredTopics:
+  去 /ap/v1/pose/filtered + /ap/v1/twist/filtered,加 /navlab/fcu/local_position_pose
+- 录制清单(ExplorationTaskReviewTopics/matureWorldSLAMReviewTopics)不动:调试流
+  仍照录(review 价值保留),只是不再作为 gate 必需证据
+- NavigationTaskRequiredTopics 同款问题存在,本次不动(非验证路径,记欠账)
+- go build OK;go test config/helpers/tasks 三包全绿一次过(tasks 16.381s)
+
+## take3(run 20260708T101402,修⑦ 后首跑):TASK_STATUS_OK 完整全绿 ✅
+- RUN_RC=0 status=ok
+- task_status= TASK_STATUS_OK,blockers= []
+- frame_contract: ok=True blockers=[](TOPICS 含 /navlab/fcu/local_position_pose)
+- exploration: ok=True blockers=[]
+- rosbag recorder FSM: state=completed ok=True blocked=False
+- 四探针全过(summary 无任何 probe blocker;imu/rangefinder 输出为 .txt 报告属正常)
+
+## 复现入口
+- live 跑:~/ws-clean/stage6_live2.sh(默认 artifact 根;RUNDIR 自检段找错目录是
+  已知小瑕疵,以 world-model/artifacts/sim/exploration/<runid>/summary.json 为准)
+- 验证:~/stage6_verify3.sh(改 RUNDIR 即可复用)
+- 前置:WSL keepalive(wsl.exe -- sleep 7200 后台挂住,防空闲关机杀 docker)
