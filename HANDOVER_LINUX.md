@@ -14,6 +14,8 @@ STEP 0: 探测环境,填出下表(本文件所有 ${VAR} 按此代换)
   ${WM}     = world-model 仓 clone 路径(§3 恢复后填)
   ${HOME}   = Linux 用户家目录
   探测: go version(须 ≥1.24)/ docker info / nproc / df -h
+  迁移策略(用户 07-09 拍板): 一切经 GitHub,单次 clone 拿全;镜像全部重新编译,
+  不用移动硬盘、不挂载 Windows 盘。
 STEP 1: 通读入口四件套(顺序): CURRENT_STATUS.md → TASKS.md → 接力棒_当前值班.md
         → docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md(任务书)
 STEP 2: 若做 ROS2 迁移主线,再读: ros2_port/README.md(feat 分支)
@@ -73,9 +75,8 @@ git:
 git fetch origin && git branch -a          # 确认 main + feat/gbplanner-ros2-port
 
 # 2. world-model(clean 分支含全部修复,必须恢复):
-#    路线 A(推荐): 挂载 Windows 盘取 bundle(双系统可 mount NTFS)
-sudo mount /dev/<win盘分区> /mnt/win       # 或文件管理器挂载
-git clone /mnt/win/CCproject/backups/world-model-clean-050ee94.bundle ${WM}
+#    bundle(4.9MB,含 main+clean 分支完整历史)就在本仓里,clone 即达:
+git clone ${REPO}/runbooks/migration/world-model-clean-050ee94.bundle ${WM}
 cd ${WM} && git checkout fix/world-model-e2e-takeoff
 git remote set-url origin https://github.com/SZ-surveying/world-model.git
 #    路线 B: 旧 WSL 还活着 → 从 WSL 侧 push 到用户自己 fork 再 clone
@@ -92,12 +93,14 @@ git remote set-url origin https://github.com/SZ-surveying/world-model.git
 GATE-0 宿主: docker engine + go ≥1.24(装 /usr/local/go,勿用发行版旧包)+ git
         宿主不装 ROS——全部容器化。国内网络:docker registry mirror + apt 清华源。
 GATE-1 拉底图: docker pull ros:jazzy-ros-base
-GATE-2 镜像恢复(优先 load,别重建):WSL 已把全部 jazzy 镜像 docker save 到
-        Windows 盘 C:\CCprojectackups\images\(12 个 tar 共 ~60GB,含 manifest.txt)。
-        挂载该 NTFS 分区后: bash ${REPO}/runbooks/migration/m0_import_images.sh /mnt/win/CCproject/backups/images
-        验收: 逐行对照 manifest,镜像 ID 一致(gbplanner-ref/voxblox_ros2_deps/ros:jazzy-ros-base 也在包里,
-        GATE-1/GATE-5/GATE-7 随之免做)。fallback(tar 缺失/损坏时)才走重建:
-        bash runbooks/world-model-jazzy/build_jazzy.sh(坑见 docs/jazzy全栈重建_施工指引.md)
+GATE-2 navlab 镜像重建(用户拍板:全部重新编译,不用硬盘介质):
+        bash ${REPO}/runbooks/world-model-jazzy/build_jazzy.sh(先通读改 WSL 路径;
+        坑全记录在 docs/jazzy全栈重建_施工指引.md,预计 1.5-3h 挂机)
+        验收: docker images | grep navlab → jazzy 系齐:official-baseline/fast-lio/
+        gazebo-headless/slam-cartographer/gazebo-sensor/companion/mavlink-router/
+        ardupilot-sitl/ros-base(humble 系不用建)
+        (备用不启用:旧 WSL 的 C 盘 backups/images/ 留有 save 好的 12 个 tar+manifest,
+        某镜像重建卡死时可回 WSL 应急,当前策略不依赖)
 GATE-3 go test: cd ${WM}/orchestration/sim && go build ./... &&
         go test -count=1 ./internal/config/... ./internal/tasks/helpers/... ./internal/tasks/
         (tasks 包偶发 flaky FAIL,重跑即过——已知,记录在案)
@@ -108,8 +111,9 @@ GATE-5 voxblox deps 镜像: docker build -t voxblox_ros2_deps:jazzy \
         -f ${REPO}/runbooks/ros2_port/m2_deps.Dockerfile ${REPO}/runbooks/ros2_port
 GATE-6 M2 复验: 跑 m2_build3.sh 口径(SRC 改 ${REPO}/ros2_port/src/voxblox_ros2_minimal)
         验收: COLCON_RC=0 + test_sdf_integrators 10/10 PASSED
-GATE-7 gbplanner-ref oracle 镜像:已含在 GATE-2 的 tar 包里(load 即得)。
-        fallback 重建入口: runbooks/gbplanner_ref/(Dockerfile + build_and_run.sh)
+GATE-7 gbplanner-ref oracle 镜像重建(切片5 的 ESDF 对拍要用):
+        入口 runbooks/gbplanner_ref/(Dockerfile + build_and_run.sh;ROS1 栈编译较久,
+        排坑记录见 docs/预研B_仿真实跑排错记录.md)
 ```
 
 **硬编码路径清单(新机首次用前必改,均在 feat 分支)**:
