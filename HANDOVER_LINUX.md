@@ -92,9 +92,12 @@ git remote set-url origin https://github.com/SZ-surveying/world-model.git
 GATE-0 宿主: docker engine + go ≥1.24(装 /usr/local/go,勿用发行版旧包)+ git
         宿主不装 ROS——全部容器化。国内网络:docker registry mirror + apt 清华源。
 GATE-1 拉底图: docker pull ros:jazzy-ros-base
-GATE-2 navlab 九镜像: bash ${REPO}/runbooks/world-model-jazzy/build_jazzy.sh
-        (脚本可能含 WSL 路径,先通读改路径;坑全记录在 docs/jazzy全栈重建_施工指引.md)
-        验收: docker images | grep navlab → jazzy 系 5-6 个镜像齐(humble 系不用建)
+GATE-2 镜像恢复(优先 load,别重建):WSL 已把全部 jazzy 镜像 docker save 到
+        Windows 盘 C:\CCprojectackups\images\(12 个 tar 共 ~60GB,含 manifest.txt)。
+        挂载该 NTFS 分区后: bash ${REPO}/runbooks/migration/m0_import_images.sh /mnt/win/CCproject/backups/images
+        验收: 逐行对照 manifest,镜像 ID 一致(gbplanner-ref/voxblox_ros2_deps/ros:jazzy-ros-base 也在包里,
+        GATE-1/GATE-5/GATE-7 随之免做)。fallback(tar 缺失/损坏时)才走重建:
+        bash runbooks/world-model-jazzy/build_jazzy.sh(坑见 docs/jazzy全栈重建_施工指引.md)
 GATE-3 go test: cd ${WM}/orchestration/sim && go build ./... &&
         go test -count=1 ./internal/config/... ./internal/tasks/helpers/... ./internal/tasks/
         (tasks 包偶发 flaky FAIL,重跑即过——已知,记录在案)
@@ -105,9 +108,8 @@ GATE-5 voxblox deps 镜像: docker build -t voxblox_ros2_deps:jazzy \
         -f ${REPO}/runbooks/ros2_port/m2_deps.Dockerfile ${REPO}/runbooks/ros2_port
 GATE-6 M2 复验: 跑 m2_build3.sh 口径(SRC 改 ${REPO}/ros2_port/src/voxblox_ros2_minimal)
         验收: COLCON_RC=0 + test_sdf_integrators 10/10 PASSED
-GATE-7 gbplanner-ref oracle 镜像(切片5 的 ESDF 对拍要用):
-        入口 runbooks/gbplanner_ref/(Dockerfile + build_and_run.sh);或从旧 WSL
-        docker save gbplanner-ref:latest | gzip 导出再 load(10.7GB,ROS1 栈编译较久,save/load 更稳)
+GATE-7 gbplanner-ref oracle 镜像:已含在 GATE-2 的 tar 包里(load 即得)。
+        fallback 重建入口: runbooks/gbplanner_ref/(Dockerfile + build_and_run.sh)
 ```
 
 **硬编码路径清单(新机首次用前必改,均在 feat 分支)**:
