@@ -115,6 +115,8 @@ inline TsdfIntegratorBase::Config getTsdfIntegratorConfigFromRosParam(
 
   double truncation_distance = integrator_config.default_truncation_distance;
   double max_weight = integrator_config.max_weight;
+  double clearing_ray_weight_factor =
+      integrator_config.clearing_ray_weight_factor;
   // nh_private.param("voxel_carving_enabled",
   //                  integrator_config.voxel_carving_enabled,
   //                  integrator_config.voxel_carving_enabled);
@@ -146,12 +148,6 @@ inline TsdfIntegratorBase::Config getTsdfIntegratorConfigFromRosParam(
   //                  integrator_config.max_integration_time_s);
   // nh_private.param("anti_grazing", integrator_config.enable_anti_grazing,
   //                  integrator_config.enable_anti_grazing);
-  // nh_private.param("use_sparsity_compensation_factor",
-  //                  integrator_config.use_sparsity_compensation_factor,
-  //                  integrator_config.use_sparsity_compensation_factor);
-  // nh_private.param("sparsity_compensation_factor",
-  //                  integrator_config.sparsity_compensation_factor,
-  //                  integrator_config.sparsity_compensation_factor);
   // nh_private.param("integration_order_mode",
   //                  integrator_config.integration_order_mode,
   //                  integrator_config.integration_order_mode);
@@ -207,14 +203,19 @@ inline TsdfIntegratorBase::Config getTsdfIntegratorConfigFromRosParam(
     node_ptr->declare_parameter("anti_grazing",
                                 integrator_config.enable_anti_grazing);
   }
-  if (!node_ptr->has_parameter("use_sparsity_compensation_factor")) {
-    node_ptr->declare_parameter(
-        "use_sparsity_compensation_factor",
-        integrator_config.use_sparsity_compensation_factor);
+  // NTNU dev/noetic weighting params (sparsity_compensation removed upstream
+  // in the fork GBPlanner actually pins; see ros2_port/docs/m2_scout_2).
+  if (!node_ptr->has_parameter("clearing_ray_weight_factor")) {
+    node_ptr->declare_parameter("clearing_ray_weight_factor",
+                                clearing_ray_weight_factor);
   }
-  if (!node_ptr->has_parameter("sparsity_compensation_factor")) {
-    node_ptr->declare_parameter("sparsity_compensation_factor",
-                                integrator_config.sparsity_compensation_factor);
+  if (!node_ptr->has_parameter("weight_ray_by_range")) {
+    node_ptr->declare_parameter("weight_ray_by_range",
+                                integrator_config.weight_ray_by_range);
+  }
+  if (!node_ptr->has_parameter("use_symmetric_weight_dropoff")) {
+    node_ptr->declare_parameter("use_symmetric_weight_dropoff",
+                                integrator_config.use_symmetric_weight_dropoff);
   }
   if (!node_ptr->has_parameter("integration_order_mode")) {
     node_ptr->declare_parameter("integration_order_mode",
@@ -244,16 +245,20 @@ inline TsdfIntegratorBase::Config getTsdfIntegratorConfigFromRosParam(
                           integrator_config.max_integration_time_s);
   node_ptr->get_parameter("anti_grazing",
                           integrator_config.enable_anti_grazing);
-  node_ptr->get_parameter("use_sparsity_compensation_factor",
-                          integrator_config.use_sparsity_compensation_factor);
-  node_ptr->get_parameter("sparsity_compensation_factor",
-                          integrator_config.sparsity_compensation_factor);
+  node_ptr->get_parameter("clearing_ray_weight_factor",
+                          clearing_ray_weight_factor);
+  node_ptr->get_parameter("weight_ray_by_range",
+                          integrator_config.weight_ray_by_range);
+  node_ptr->get_parameter("use_symmetric_weight_dropoff",
+                          integrator_config.use_symmetric_weight_dropoff);
   node_ptr->get_parameter("integration_order_mode",
                           integrator_config.integration_order_mode);
 
   integrator_config.default_truncation_distance =
       static_cast<float>(truncation_distance);
   integrator_config.max_weight = static_cast<float>(max_weight);
+  integrator_config.clearing_ray_weight_factor =
+      static_cast<float>(clearing_ray_weight_factor);
 
   return integrator_config;
 }

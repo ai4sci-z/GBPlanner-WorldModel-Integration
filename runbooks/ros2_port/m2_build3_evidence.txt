@@ -1,0 +1,40 @@
+=== source: repo vendored copy (post ntnu patch) ===
+=== colcon build minimal set (up-to voxblox_ros, tests on) ===
+      |                                    ^~~
+---
+Finished <<< voxblox_ros [1min 4s]
+
+Summary: 7 packages finished [1min 54s]
+  7 packages had stderr output: eigen_checks minkindr minkindr_conversions voxblox voxblox_msgs voxblox_ros xmlrpcpp
+COLCON_RC=0
+=== gtest: test_sdf_integrators (ntnu-ported thresholds) ===
+ num non-overlapping voxels: 29255
+ num ignored voxels:         0
+ error min:                  0
+ error max:                  2.81155
+ RMSE:                       0.374197
+========================================
+Max distance: 4
+[       OK ] VoxelSizes/SdfIntegratorsTest.EsdfIntegrators/4 (279 ms)
+[----------] 10 tests from VoxelSizes/SdfIntegratorsTest (19909 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (19909 ms total)
+[  PASSED  ] 10 tests.
+SM Timing
+-----------
+esdf                   	    260	07.022978	(00.027011 +- 00.000663)	[00.001605,00.454631]
+esdf/propagate_tsdf    	    260	00.179223	(00.000689 +- 00.000020)	[00.000042,00.014346]
+esdf/raise_esdf        	    260	00.942171	(00.003624 +- 00.000113)	[00.000000,00.017727]
+esdf/update_esdf       	    260	05.901000	(00.022696 +- 00.000715)	[00.001250,00.442138]
+inserting_missed_blocks	   1500	00.001517	(00.000001 +- 00.000000)	[00.000000,00.000022]
+integrate/clear        	    500	01.400386	(00.002801 +- 00.000037)	[00.000146,00.015338]
+integrate/fast         	    250	01.221914	(00.004888 +- 00.000275)	[00.001860,00.014177]
+integrate/merged       	    500	03.859520	(00.007719 +- 00.000192)	[00.001818,00.035179]
+integrate/simple       	    250	06.872934	(00.027492 +- 00.001213)	[00.014383,00.055116]
+sim/generate_sdf       	     20	00.094840	(00.004742 +- 00.007297)	[00.000510,00.027356]
+GTEST_RC=0
+=== grep: no sparsity symbol must survive outside comments ===
+/ws/src/voxblox_ros2_minimal/voxblox_ros/include/voxblox_ros/ros_params.h:206:  // NTNU dev/noetic weighting params (sparsity_compensation removed upstream
+DOCKER_RC=0
+=== DONE ===

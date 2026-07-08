@@ -66,7 +66,7 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
 |---|---|---|
 | 1 | **纯净底座 Jazzy 全量构建**(零源码改动,复刻 Gabriele CI 口径) | ✅ 9/9 包 2min27s,COLCON_RC=0;6 executables;esdf_server 冒烟能跑(证据 [../runbooks/ros2_port/m2_build_evidence.txt](../runbooks/ros2_port/m2_build_evidence.txt)) |
 | 2 | 维护补丁:删 voxblox_ros 幽灵依赖 voxblox_rviz_plugin;采纳 Gabriele b5c3911(rclcpp 先 init+auto-declare,修 gflags 吃 --ros-args,冒烟已实锤该 bug)并补齐其漏掉的 esdf/intensity server node | ✅ 最小集 7 包成立(rviz_plugin 不再被拖入);9/9 全量 rc=0;**参数管道 E2E 实证:`ros2 param get /voxblox world_frame`→`map`**,弃用警告消失(证据 [../runbooks/ros2_port/m2_build2_evidence.txt](../runbooks/ros2_port/m2_build2_evidence.txt)) |
-| 3 | **行为等价补丁**:ntnu dev/noetic 的 tsdf_integrator 定制移植(3 新权重字段+删 sparsity+fast 提前终止)+ ros_params 对齐 + test_sdf_integrators 单测 | ⬜ |
+| 3 | **行为等价补丁**:ntnu dev/noetic 的 tsdf_integrator 定制移植(3 新权重字段+删 sparsity+fast 提前终止)+ ros_params 对齐 + test_sdf_integrators 单测 | ✅ 补丁=`git diff 8d1b843 dev-noetic`(原件 [../runbooks/ros2_port/ntnu_tsdf_integrator.patch](../runbooks/ros2_port/ntnu_tsdf_integrator.patch),19/20 hunk 干净套上+1 个 header hunk 手补虚函数声明);ros_params 三参数换血(clearing_ray_weight_factor/weight_ray_by_range/use_symmetric_weight_dropoff 进,sparsity 两参数出);**gtest 10/10 PASSED**+sparsity 符号零残留(证据 [../runbooks/ros2_port/m2_build3_evidence.txt](../runbooks/ros2_port/m2_build3_evidence.txt)) |
 | 4 | oracle 对拍:同点云 ROS1(ntnu dev/noetic)vs ROS2,save_map 层文件按体素查询比对(proto 字节级一致已证) | ⬜ |
 
 **构建配方**(禁 rosdep——package.xml 有 ROS1 时代 key):deps 镜像 [../runbooks/ros2_port/m2_deps.Dockerfile](../runbooks/ros2_port/m2_deps.Dockerfile)(镜像名 `voxblox_ros2_deps:jazzy`,apt 清单源自 Gabriele Jazzy CI),构建脚本 [../runbooks/ros2_port/m2_build.sh](../runbooks/ros2_port/m2_build.sh)。

@@ -1,0 +1,507 @@
+diff --git a/voxblox/include/voxblox/integrator/tsdf_integrator.h b/voxblox/include/voxblox/integrator/tsdf_integrator.h
+index d7dfe58..8b89b0e 100644
+--- a/voxblox/include/voxblox/integrator/tsdf_integrator.h
++++ b/voxblox/include/voxblox/integrator/tsdf_integrator.h
+@@ -57,15 +57,63 @@ class TsdfIntegratorBase {
+     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+ 
+     float default_truncation_distance = 0.1;
+-    float max_weight = 10000.0;
+     bool voxel_carving_enabled = true;
+     FloatingPoint min_ray_length_m = 0.1;
+     FloatingPoint max_ray_length_m = 5.0;
+-    bool use_const_weight = false;
+     bool allow_clear = true;
++
++    // Weighting functions
++    // ===================
++    // Maximum weight a voxel can achieve. Influences how big of an impact a new
++    // measurment has on an existing voxel. The influence continously drops
++    // until the voxel reaches max weight, then it remains constant.
++    float max_weight = 10000.0;
++    // Fraction of the weight the clearing ray receives compared to the weight
++    // at the highest point along the ray, the zero crossing. Set to 1.0 if a
++    // clearing ray should be equally powerful.
++    float clearing_ray_weight_factor = 1.0;
++    // If enabled, the base-weight for each ray is set to 1/z^2, otherwise it is
++    // set to 1.0
++    bool weight_ray_by_range = false;
++    /*
++      Symmetric weight dropoff
++      ------------------------
++                                                          _ 1 or 1/z^2
++                                                    /\   |
++                                     --------------/  \  |_ 0
++                                                   _____
++                                                   | | |
++                                                   t 0 -t
++       Weight drops off to clearing ray weight at both sides of the zero
++       crossing.
++    */
++    bool use_symmetric_weight_dropoff = false;
++
++    /*
++      Weight dropoff
++      --------------
++                                                 ___      _ 1 or 1/z^2
++                                                    \    |
++                                     ------------    \   |_ 0
++                                                 _____
++                                                 | || |
++                                                 t 0v -t
++       Weight drops off to 0 one voxel distance behind the zero crossing.
++    */
+     bool use_weight_dropoff = true;
+-    bool use_sparsity_compensation_factor = false;
+-    float sparsity_compensation_factor = 1.0f;
++
++    /*
++      Const weight
++      ------------
++                                                  ____    _ 1 or 1/z^2
++                                                         |
++                                     -------------       |_ 0
++                                                  _____
++                                                  | | |
++                                                  t 0 -t
++       Weight is constant at ray weight within the truncation distance.
++    */
++    bool use_const_weight = false;
+ 
+     size_t integrator_threads = std::thread::hardware_concurrency();
+ 
+@@ -79,7 +127,7 @@ class TsdfIntegratorBase {
+     /// fast integrator specific
+     float start_voxel_subsampling_factor = 2.0f;
+     /// fast integrator specific
+-    int max_consecutive_ray_collisions = 2;
++    int max_consecutive_ray_collisions = 0;
+     /// fast integrator specific
+     int clear_checks_every_n_frames = 1;
+     /// fast integrator specific
+@@ -108,9 +156,12 @@ class TsdfIntegratorBase {
+   void setLayer(Layer<TsdfVoxel>* layer);
+ 
+  protected:
++  virtual bool shouldAbortIntegration(const GlobalIndex& global_voxel_idx,
++                                      const bool is_in_truncation_distance) = 0;
++
+   /// Thread safe.
+   inline bool isPointValid(const Point& point_C, const bool freespace_point,
+-                    bool* is_clearing) const {
++                           bool* is_clearing) const {
+     DCHECK(is_clearing != nullptr);
+     const FloatingPoint ray_distance = point_C.norm();
+     if (ray_distance < config_.min_ray_length_m) {
+@@ -150,10 +201,10 @@ class TsdfIntegratorBase {
+   void updateLayerWithStoredBlocks();
+ 
+   /// Updates tsdf_voxel, Thread safe.
+-  void updateTsdfVoxel(const Point& origin, const Point& point_G,
++  bool updateTsdfVoxel(const Point& origin, const Point& point_G,
+                        const GlobalIndex& global_voxel_index,
+-                       const Color& color, const float weight,
+-                       TsdfVoxel* tsdf_voxel);
++                       const Color& color, const float ray_weight,
++                       const float clearing_ray_weight, TsdfVoxel* tsdf_voxel);
+ 
+   /// Calculates TSDF distance, Thread safe.
+   float computeDistance(const Point& origin, const Point& point_G,
+@@ -227,6 +278,12 @@ class SimpleTsdfIntegrator : public TsdfIntegratorBase {
+                          const Pointcloud& points_C, const Colors& colors,
+                          const bool freespace_points,
+                          ThreadSafeIndex* index_getter);
++
++ protected:
++  bool shouldAbortIntegration(const GlobalIndex& /*global_voxel_idx*/,
++                              const bool /*is_in_truncation_distance*/) {
++    return false;
++  }
+ };
+ 
+ /**
+@@ -269,19 +326,24 @@ class MergedTsdfIntegrator : public TsdfIntegratorBase {
+       const Colors& colors, bool enable_anti_grazing, bool clearing_ray,
+       const LongIndexHashMapType<AlignedVector<size_t>>::type& voxel_map,
+       const LongIndexHashMapType<AlignedVector<size_t>>::type& clear_map);
++
++  bool shouldAbortIntegration(const GlobalIndex& /*global_voxel_idx*/,
++                              const bool /*is_in_truncation_distance*/) {
++    return false;
++  }
+ };
+ 
+ /**
+  * An integrator that prioritizes speed over everything else. Rays are cast from
+  * the pointcloud to the sensor origin. If a ray intersects
+- * max_consecutive_ray_collisions voxels in a row that have already been updated
+- * by other rays from the same cloud, it is terminated early. This results in a
+- * large reduction in the number of freespace updates and greatly improves
+- * runtime while ensuring all voxels receive at least a minimum number of
+- * updates. Speed is further enhanced through limiting the number of rays cast
+- * from each voxel as set by start_voxel_subsampling_factor and use of the
+- * ApproxHashSet. Up to an order of magnitude faster then the other integrators
+- * for small voxels.
++ * a voxel that has already been updated by other rays from the same cloud,
++ * it is terminated early, unless the ray is within the truncation distance.
++ * This results in a large reduction in the number of freespace updates and
++ * greatly improves runtime while ensuring all voxels receive at least a minimum
++ * number of updates. Speed is further enhanced through limiting the number of
++ * rays cast from each voxel as set by start_voxel_subsampling_factor and use of
++ * the ApproxHashSet. Up to an order of magnitude faster then the other
++ * integrators for small voxels.
+  */
+ class FastTsdfIntegrator : public TsdfIntegratorBase {
+  public:
+@@ -299,6 +361,10 @@ class FastTsdfIntegrator : public TsdfIntegratorBase {
+                            const Pointcloud& points_C, const Colors& colors,
+                            const bool freespace_points = false);
+ 
++ protected:
++  bool shouldAbortIntegration(const GlobalIndex& global_voxel_idx,
++                              const bool is_in_truncation_distance);
++
+  private:
+   /**
+    * Two approximate sets are used below. The limitations of these sets are
+@@ -329,9 +395,9 @@ class FastTsdfIntegrator : public TsdfIntegratorBase {
+ 
+   /**
+    * This set records which voxels a scans rays have passed through. If a ray
+-   * moves through max_consecutive_ray_collisions voxels in a row that have
+-   * already been seen this scan, it is deemed to be adding no new information
+-   * and the casting stops.
++   * moves a voxel that has already been seen in this scan, it is deemed to be
++   * adding no new information and the casting stops, unless the ray is within
++   * its truncation distance.
+    */
+   ApproxHashSet<masked_bits_, full_reset_threshold_, GlobalIndex, LongIndexHash>
+       voxel_observed_approx_set_;
+diff --git a/voxblox/src/integrator/tsdf_integrator.cc b/voxblox/src/integrator/tsdf_integrator.cc
+index 24580be..7f1fcf4 100644
+--- a/voxblox/src/integrator/tsdf_integrator.cc
++++ b/voxblox/src/integrator/tsdf_integrator.cc
+@@ -62,6 +62,14 @@ TsdfIntegratorBase::TsdfIntegratorBase(const Config& config,
+   if (config_.allow_clear && !config_.voxel_carving_enabled) {
+     config_.allow_clear = false;
+   }
++
++  CHECK_GT(config_.default_truncation_distance, 0.0);
++  CHECK_GT(config_.max_weight, 0.0);
++  CHECK_GT(config_.min_ray_length_m, 0.0);
++  CHECK_GT(config_.max_ray_length_m, 0.0);
++
++  CHECK_GT(config_.start_voxel_subsampling_factor, 0.0);
++  CHECK_GT(config_.start_voxel_subsampling_factor, 0.0);
+ }
+ 
+ void TsdfIntegratorBase::setLayer(Layer<TsdfVoxel>* layer) {
+@@ -145,66 +153,109 @@ void TsdfIntegratorBase::updateLayerWithStoredBlocks() {
+   temp_block_map_.clear();
+ }
+ 
++bool FastTsdfIntegrator::shouldAbortIntegration(
++    const GlobalIndex& global_voxel_idx, const bool is_in_truncation_distance) {
++  // Check if the current voxel has been seen by any ray cast this scan, if it
++  // is we stop casting as the ray is deemed to be contributing too little new
++  // information. We never abort inside the truncation distance.
++  if (!voxel_observed_approx_set_.replaceHash(global_voxel_idx) &&
++      !is_in_truncation_distance) {
++    return true;
++  }
++  return false;
++}
++
+ // Updates tsdf_voxel. Thread safe.
+-void TsdfIntegratorBase::updateTsdfVoxel(const Point& origin,
++bool TsdfIntegratorBase::updateTsdfVoxel(const Point& origin,
+                                          const Point& point_G,
+                                          const GlobalIndex& global_voxel_idx,
+-                                         const Color& color, const float weight,
++                                         const Color& color,
++                                         const float ray_weight,
++                                         const float clearing_ray_weight,
+                                          TsdfVoxel* tsdf_voxel) {
+   DCHECK(tsdf_voxel != nullptr);
++  // TODO(mfehr): remove
++  CHECK_GT(ray_weight, 0.0f);
++  CHECK_GT(clearing_ray_weight, 0.0f);
++  CHECK_LE(clearing_ray_weight, ray_weight);
+ 
+   const Point voxel_center =
+       getCenterPointFromGridIndex(global_voxel_idx, voxel_size_);
+ 
+   const float sdf = computeDistance(origin, point_G, voxel_center);
++  const bool is_in_truncation_distance =
++      sdf < config_.default_truncation_distance;
+ 
+-  float updated_weight = weight;
+-  // Compute updated weight in case we use weight dropoff. It's easier here
+-  // that in getVoxelWeight as here we have the actual SDF for the voxel
+-  // already computed.
+-  const FloatingPoint dropoff_epsilon = voxel_size_;
+-  if (config_.use_weight_dropoff && sdf < -dropoff_epsilon) {
+-    updated_weight = weight * (config_.default_truncation_distance + sdf) /
+-                     (config_.default_truncation_distance - dropoff_epsilon);
+-    updated_weight = std::max(updated_weight, 0.0f);
++  if (shouldAbortIntegration(global_voxel_idx, is_in_truncation_distance)) {
++    // Abort integration.
++    return false;
+   }
+ 
+-  // Compute the updated weight in case we compensate for sparsity. By
+-  // multiplicating the weight of occupied areas (|sdf| < truncation distance)
+-  // by a factor, we prevent to easily fade out these areas with the free
+-  // space parts of other rays which pass through the corresponding voxels.
+-  // This can be useful for creating a TSDF map from sparse sensor data (e.g.
+-  // visual features from a SLAM system). By default, this option is disabled.
+-  if (config_.use_sparsity_compensation_factor) {
+-    if (std::abs(sdf) < config_.default_truncation_distance) {
+-      updated_weight *= config_.sparsity_compensation_factor;
++  float update_weight = -1.0;
++  if (is_in_truncation_distance) {
++    // If inside the truncation distance we apply one of the weighting functions
++    // below and assign a weight between the clearing ray weight and the
++    // ray weight.
++    if (config_.use_symmetric_weight_dropoff) {
++      const float truncation_ray_weight_range =
++          ray_weight - clearing_ray_weight;
++      const float truncation_ray_weight_factor =
++          std::max(0.f, (config_.default_truncation_distance - std::abs(sdf)) /
++                            config_.default_truncation_distance);
++
++      // TODO(mfehr): remove
++      CHECK_GE(truncation_ray_weight_range, 0.0f);
++      CHECK_GE(truncation_ray_weight_factor, 0.0f);
++      CHECK_LE(truncation_ray_weight_factor, 1.0f);
++
++      update_weight = clearing_ray_weight + truncation_ray_weight_range *
++                                                truncation_ray_weight_factor;
++    } else if (config_.use_const_weight) {
++      update_weight = ray_weight;
++    } else if (config_.use_weight_dropoff) {
++      if (sdf < -voxel_size_) {
++        update_weight = ray_weight *
++                        (config_.default_truncation_distance + sdf) /
++                        (config_.default_truncation_distance - voxel_size_);
++        update_weight = std::max(update_weight, clearing_ray_weight);
++      } else {
++        update_weight = ray_weight;
++      }
+     }
++  } else {
++    // If outside the truncation distance we apply a constant weight along the
++    // ray based on the ray weight and the clearling ray weight factor.
++    update_weight = clearing_ray_weight;
+   }
++  CHECK_GE(update_weight, clearing_ray_weight - kFloatEpsilon);
++  CHECK_LE(update_weight, ray_weight + kFloatEpsilon);
+ 
+   // Lookup the mutex that is responsible for this voxel and lock it
+   std::lock_guard<std::mutex> lock(mutexes_.get(global_voxel_idx));
+ 
+-  const float new_weight = tsdf_voxel->weight + updated_weight;
++  const float new_weight = tsdf_voxel->weight + update_weight;
+ 
+   // it is possible to have weights very close to zero, due to the limited
+   // precision of floating points dividing by this small value can cause nans
+   if (new_weight < kFloatEpsilon) {
+-    return;
++    return true;
+   }
+ 
+   const float new_sdf =
+-      (sdf * updated_weight + tsdf_voxel->distance * tsdf_voxel->weight) /
++      (sdf * update_weight + tsdf_voxel->distance * tsdf_voxel->weight) /
+       new_weight;
+ 
+   // color blending is expensive only do it close to the surface
+   if (std::abs(sdf) < config_.default_truncation_distance) {
+     tsdf_voxel->color = Color::blendTwoColors(
+-        tsdf_voxel->color, tsdf_voxel->weight, color, updated_weight);
++        tsdf_voxel->color, tsdf_voxel->weight, color, update_weight);
+   }
+   tsdf_voxel->distance =
+       (new_sdf > 0.0) ? std::min(config_.default_truncation_distance, new_sdf)
+                       : std::max(-config_.default_truncation_distance, new_sdf);
+   tsdf_voxel->weight = std::min(config_.max_weight, new_weight);
++
++  return true;
+ }
+ 
+ // Thread safe.
+@@ -228,7 +279,7 @@ float TsdfIntegratorBase::computeDistance(const Point& origin,
+ 
+ // Thread safe.
+ float TsdfIntegratorBase::getVoxelWeight(const Point& point_C) const {
+-  if (config_.use_const_weight) {
++  if (!config_.weight_ray_by_range) {
+     return 1.0f;
+   }
+   const FloatingPoint dist_z = std::abs(point_C.z());
+@@ -289,6 +340,11 @@ void SimpleTsdfIntegrator::integrateFunction(const Transformation& T_G_C,
+                          config_.max_ray_length_m, voxel_size_inv_,
+                          config_.default_truncation_distance);
+ 
++    // Determine the weight for the whole ray and for the clearing ray part.
++    const float ray_weight = getVoxelWeight(point_C);
++    const float clearing_ray_weight =
++        config_.clearing_ray_weight_factor * ray_weight;
++
+     Block<TsdfVoxel>::Ptr block = nullptr;
+     BlockIndex block_idx;
+     GlobalIndex global_voxel_idx;
+@@ -296,9 +352,8 @@ void SimpleTsdfIntegrator::integrateFunction(const Transformation& T_G_C,
+       TsdfVoxel* voxel =
+           allocateStorageAndGetVoxelPtr(global_voxel_idx, &block, &block_idx);
+ 
+-      const float weight = getVoxelWeight(point_C);
+-
+-      updateTsdfVoxel(origin, point_G, global_voxel_idx, color, weight, voxel);
++      updateTsdfVoxel(origin, point_G, global_voxel_idx, color, ray_weight,
++                      clearing_ray_weight, voxel);
+     }
+   }
+ }
+@@ -381,7 +436,7 @@ void MergedTsdfIntegrator::integrateVoxel(
+   const Point& origin = T_G_C.getPosition();
+   Color merged_color;
+   Point merged_point_C = Point::Zero();
+-  FloatingPoint merged_weight = 0.0;
++  FloatingPoint merged_ray_weight = 0.0;
+ 
+   for (const size_t pt_idx : kv.second) {
+     const Point& point_C = points_C[pt_idx];
+@@ -391,11 +446,12 @@ void MergedTsdfIntegrator::integrateVoxel(
+     if (point_weight < kEpsilon) {
+       continue;
+     }
+-    merged_point_C = (merged_point_C * merged_weight + point_C * point_weight) /
+-                     (merged_weight + point_weight);
+-    merged_color =
+-        Color::blendTwoColors(merged_color, merged_weight, color, point_weight);
+-    merged_weight += point_weight;
++    merged_point_C =
++        (merged_point_C * merged_ray_weight + point_C * point_weight) /
++        (merged_ray_weight + point_weight);
++    merged_color = Color::blendTwoColors(merged_color, merged_ray_weight, color,
++                                         point_weight);
++    merged_ray_weight += point_weight;
+ 
+     // only take first point when clearing
+     if (clearing_ray) {
+@@ -403,6 +459,9 @@ void MergedTsdfIntegrator::integrateVoxel(
+     }
+   }
+ 
++  const float clearing_ray_weight =
++      config_.clearing_ray_weight_factor * merged_ray_weight;
++
+   const Point merged_point_G = T_G_C * merged_point_C;
+ 
+   RayCaster ray_caster(origin, merged_point_G, clearing_ray,
+@@ -426,7 +485,7 @@ void MergedTsdfIntegrator::integrateVoxel(
+         allocateStorageAndGetVoxelPtr(global_voxel_idx, &block, &block_idx);
+ 
+     updateTsdfVoxel(origin, merged_point_G, global_voxel_idx, merged_color,
+-                    merged_weight, voxel);
++                    merged_ray_weight, clearing_ray_weight, voxel);
+   }
+ }
+ 
+@@ -525,28 +584,30 @@ void FastTsdfIntegrator::integrateFunction(const Transformation& T_G_C,
+ 
+     int64_t consecutive_ray_collisions = 0;
+ 
++    // Determine the weight for the whole ray and for the clearing ray part.
++    const float ray_weight = getVoxelWeight(point_C);
++    const float clearing_ray_weight =
++        config_.clearing_ray_weight_factor * ray_weight;
++
+     Block<TsdfVoxel>::Ptr block = nullptr;
+     BlockIndex block_idx;
+     while (ray_caster.nextRayIndex(&global_voxel_idx)) {
++      TsdfVoxel* voxel =
++          allocateStorageAndGetVoxelPtr(global_voxel_idx, &block, &block_idx);
++
+       // Check if the current voxel has been seen by any ray cast this scan.
+       // If it has increment the consecutive_ray_collisions counter, otherwise
+       // reset it. If the counter reaches a threshold we stop casting as the
+       // ray is deemed to be contributing too little new information.
+-      if (!voxel_observed_approx_set_.replaceHash(global_voxel_idx)) {
++      if (!updateTsdfVoxel(origin, point_G, global_voxel_idx, color, ray_weight,
++                           clearing_ray_weight, voxel)) {
+         ++consecutive_ray_collisions;
+       } else {
+-        consecutive_ray_collisions = 0;
++        consecutive_ray_collisions = 0u;
+       }
+       if (consecutive_ray_collisions > config_.max_consecutive_ray_collisions) {
+         break;
+       }
+-
+-      TsdfVoxel* voxel =
+-          allocateStorageAndGetVoxelPtr(global_voxel_idx, &block, &block_idx);
+-
+-      const float weight = getVoxelWeight(point_C);
+-
+-      updateTsdfVoxel(origin, point_G, global_voxel_idx, color, weight, voxel);
+     }
+   }
+ }
+@@ -594,15 +655,16 @@ std::string TsdfIntegratorBase::Config::print() const {
+   ss << "================== TSDF Integrator Config ====================\n";
+   ss << " General: \n";
+   ss << " - default_truncation_distance:               " << default_truncation_distance << "\n";
+-  ss << " - max_weight:                                " << max_weight << "\n";
+   ss << " - voxel_carving_enabled:                     " << voxel_carving_enabled << "\n";
+   ss << " - min_ray_length_m:                          " << min_ray_length_m << "\n";
+   ss << " - max_ray_length_m:                          " << max_ray_length_m << "\n";
+-  ss << " - use_const_weight:                          " << use_const_weight << "\n";
+   ss << " - allow_clear:                               " << allow_clear << "\n";
++  ss << " - max_weight:                                " << max_weight << "\n";
++  ss << " - weight_ray_by_range:                       " << weight_ray_by_range << "\n";
++  ss << " - clearing_ray_weight_factor:                " << clearing_ray_weight_factor << "\n";
++  ss << " - use_symmetric_weight_dropoff:              " << use_symmetric_weight_dropoff << "\n";
+   ss << " - use_weight_dropoff:                        " << use_weight_dropoff << "\n";
+-  ss << " - use_sparsity_compensation_factor:          " << use_sparsity_compensation_factor << "\n";
+-  ss << " - sparsity_compensation_factor:              "  << sparsity_compensation_factor << "\n";
++  ss << " - use_const_weight:                          " << use_const_weight << "\n";
+   ss << " - integrator_threads:                        " << integrator_threads << "\n";
+   ss << " MergedTsdfIntegrator: \n";
+   ss << " - enable_anti_grazing:                       " << enable_anti_grazing << "\n";
+diff --git a/voxblox/test/test_sdf_integrators.cc b/voxblox/test/test_sdf_integrators.cc
+index fef8dd7..9e55699 100644
+--- a/voxblox/test/test_sdf_integrators.cc
++++ b/voxblox/test/test_sdf_integrators.cc
+@@ -156,13 +156,13 @@ TEST_P(SdfIntegratorsTest, TsdfIntegrators) {
+ 
+   size_t total_voxels = simple_result.num_overlapping_voxels +
+                         simple_result.num_non_overlapping_voxels;
+-  size_t one_percent_of_voxels = static_cast<size_t>(total_voxels * 0.01);
++  size_t difference_threshold = static_cast<size_t>(total_voxels * 0.03);
+ 
+   // Make sure they're all similar.
+   EXPECT_NEAR(simple_result.num_overlapping_voxels,
+-              merged_result.num_overlapping_voxels, one_percent_of_voxels);
++              merged_result.num_overlapping_voxels, difference_threshold);
+   EXPECT_NEAR(simple_result.num_overlapping_voxels,
+-              fast_result.num_overlapping_voxels, one_percent_of_voxels);
++              fast_result.num_overlapping_voxels, difference_threshold);
+ 
+   // Make sure they're all reasonable.
+   EXPECT_NEAR(simple_result.min_error, 0.0, kFloatingPointToleranceHigh);
+@@ -177,6 +177,13 @@ TEST_P(SdfIntegratorsTest, TsdfIntegrators) {
+   EXPECT_LT(merged_result.rmse, voxel_size_ * 2);
+   EXPECT_LT(fast_result.rmse, voxel_size_ * 2);
+ 
++  LOG(INFO) << "Simple - RMSE: " << simple_result.rmse
++            << " max error: " << simple_result.max_error;
++  LOG(INFO) << "Merged - RMSE: " << merged_result.rmse
++            << " max error: " << merged_result.max_error;
++  LOG(INFO) << "Fast - RMSE: " << fast_result.rmse
++            << " max error: " << fast_result.max_error;
++
+   io::SaveLayer(merged_layer, "tsdf_fast_test.voxblox", true);
+ }
+ 
