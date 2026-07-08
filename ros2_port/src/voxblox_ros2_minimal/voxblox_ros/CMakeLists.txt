@@ -90,4 +90,8 @@ target_link_libraries(visualize_tsdf ${PROJECT_NAME} ${ADITIONAL_LIBS})
 ##########
 # EXPORT #
 ##########
-ament_auto_package()
+ament_auto_package(INSTALL_TO_SHARE
+  launch
+  cfg
+  mesh_results
+)

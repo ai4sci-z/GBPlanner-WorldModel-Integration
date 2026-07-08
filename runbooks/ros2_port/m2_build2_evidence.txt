@@ -1,0 +1,31 @@
+=== source: repo vendored copy ===
+=== minimal set check: packages-up-to voxblox_ros (expect 7, NO rviz_plugin) ===
+eigen_checks
+minkindr
+minkindr_conversions
+voxblox
+voxblox_msgs
+voxblox_ros
+xmlrpcpp
+=== full colcon build (9 pkgs, merge-install, Release) ===
+[libprotobuf WARNING google/protobuf/compiler/parser.cc:646] No syntax specified for the proto file: skeleton.proto. Please use 'syntax = "proto2";' or 'syntax = "proto3";' to specify a syntax version. (Defaulted to proto2 syntax.)
+---
+Finished <<< voxblox_skeleton [23.4s]
+
+Summary: 9 packages finished [2min 23s]
+  9 packages had stderr output: eigen_checks minkindr minkindr_conversions voxblox voxblox_msgs voxblox_ros voxblox_rviz_plugin voxblox_skeleton xmlrpcpp
+COLCON_RC=0
+=== param plumbing E2E: esdf_server -p world_frame:=map ===
+param world_frame readback: String value is: map
+OK: no deprecated-remap warning
+=== launch/cfg installed to share (INSTALL_TO_SHARE) ===
+cfg
+cmake
+environment
+hook
+launch
+local_setup.bash
+local_setup.dsv
+local_setup.sh
+DOCKER_RC=0
+=== DONE ===

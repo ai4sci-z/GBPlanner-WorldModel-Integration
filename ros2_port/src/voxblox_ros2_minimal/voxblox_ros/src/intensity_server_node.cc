@@ -9,9 +9,11 @@ int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   google::ParseCommandLineFlags(&argc, &argv, false);
   google::InstallFailureSignalHandler();
-  /* ros::NodeHandle nh;
-  ros::NodeHandle nh_private("~"); */
-  auto nh = rclcpp::Node::make_shared("voxblox_intensity_server");
+
+  rclcpp::NodeOptions node_options;
+  node_options.automatically_declare_parameters_from_overrides(true);
+
+  auto nh = rclcpp::Node::make_shared("voxblox_intensity_server", node_options);
 
   voxblox::IntensityServer node(nh.get());
 

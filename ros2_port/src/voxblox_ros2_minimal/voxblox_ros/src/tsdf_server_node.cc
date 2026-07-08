@@ -10,13 +10,21 @@ int main(int argc, char** argv) {
   // Init logging first (so FLAGS_* affect glog)
   google::InitGoogleLogging(argv[0]);
 
-  // Parse only non-help flags and REMOVE recognized ones from argv
-  // so the remaining argv is clean for rclcpp.
-  gflags::ParseCommandLineNonHelpFlags(&argc, &argv, /*remove_flags=*/true);
-
+  // Initialize ROS first so --ros-args/--params-file are consumed by rclcpp
+  // before any gflags processing can alter argv.
   rclcpp::init(argc, argv);
 
-  rclcpp::Node::SharedPtr node_ptr = rclcpp::Node::make_shared("voxblox_node");
+  // Parse gflags without mutating argv that has already been consumed by ROS.
+  int gflags_argc = argc;
+  char** gflags_argv = argv;
+  gflags::ParseCommandLineNonHelpFlags(&gflags_argc, &gflags_argv,
+                                       /*remove_flags=*/false);
+
+  rclcpp::NodeOptions node_options;
+  node_options.automatically_declare_parameters_from_overrides(true);
+
+  rclcpp::Node::SharedPtr node_ptr =
+      rclcpp::Node::make_shared("voxblox_node", node_options);
   voxblox::TsdfServer node(node_ptr.get());
 
   rclcpp::spin(node_ptr);

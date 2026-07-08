@@ -31,7 +31,8 @@
   <depend>sensor_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
-  <depend>voxblox_rviz_plugin</depend>
+  <!-- voxblox_rviz_plugin dependency removed: no code in this package uses it,
+       and it drags Qt/rviz into headless builds (see m2_scout_1 audit). -->
   <depend>xmlrpcpp</depend>
 
 
