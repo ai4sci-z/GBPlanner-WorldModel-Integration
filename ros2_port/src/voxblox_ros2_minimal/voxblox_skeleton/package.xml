@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>voxblox_skeleton</name>
+  <version>0.0.0</version>
+  <description>
+    Skeletonization (Generalized Voronoi Diagrams + Graphs) of an ESDF for global planning. Port to ROS2 of the original voxblox_skeleton package.
+  </description>
+
+  <maintainer email="miguel.fernandez@uni.lu">Miguel Fernandez</maintainer>
+  <author email="helen.oleynikova@mavt.ethz.ch">Helen Oleynikova</author>
+
+
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>voxblox</depend>
+  <depend>voxblox_ros</depend>
+  <depend>backward_ros</depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

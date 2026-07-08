@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>minkindr_conversions</name>
+  <version>0.0.0</version>
+  <description>Conversions between minkindr and ROS messages and TF. Migration to ROS 2 from original repo</description>
+  <maintainer email="miguel.fernandez@uni.lu">Miguel Fernandez-Cortizas</maintainer>
+  <author email="helenoleynikova@gmail.com">Helen Oleynikova</author>
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- <depend>eigen_conversions</depend> -->
+  <depend>rclcpp</depend>
+  <depend>Eigen3</depend>
+  <depend>geometry_msgs</depend>
+  <depend>gflags_catkin</depend>
+  <depend>glog_catkin</depend>
+  <depend>minkindr</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_eigen</depend>
+  <depend>xmlrpcpp</depend>
+
+  
+  <!-- <depend>tf_conversions</depend> -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>
+

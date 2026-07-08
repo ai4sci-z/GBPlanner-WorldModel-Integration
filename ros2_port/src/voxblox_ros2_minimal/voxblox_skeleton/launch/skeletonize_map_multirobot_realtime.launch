@@ -1,0 +1,46 @@
+<launch>
+  <arg name="base_path" default="/home/hriday" />
+  <arg name="input_map_name" default="rs_esdf_0.10.voxblox" />
+  <arg name="output_map_name" default="rs_skeleton_0.10.voxblox" />
+  <arg name="sparse_graph_name" default="rs_sparse_graph_0.10.voxblox" />
+  <arg name="namespace" default=""/>
+
+  <arg name="voxblox_path" default="$(arg base_path)/$(arg input_map_name)" />
+  <arg name="output_path" default="$(arg base_path)/$(arg output_map_name)" />
+  <arg name="sparse_graph_path" default="$(arg base_path)/$(arg sparse_graph_name)" />
+
+  <arg name="frame_id" default="map"/>
+
+  <arg name="final_frame_id" default="$(eval namespace + '/' + frame_id if len(namespace) else frame_id)" />
+  
+  <group ns="$(eval namespace if len(namespace) else '/')">
+  <node name="voxblox_skeletonizer" pkg="voxblox_skeleton" type="skeletonizer_realtime" output="screen" clear_params="true" respawn="true" args="-v=1">
+    <remap from="pointcloud" to="filtered_points"/>
+    <param name="color_mode" value="lambert" />
+    <param name="max_block_distance_from_body" value="10.0" />
+    <param name="input_filepath" value="$(arg voxblox_path)" />
+    <param name="output_filepath" value="$(arg output_path)" />
+    <param name="sparse_graph_filepath" value="$(arg sparse_graph_path)" />
+    <param name="generate_by_layer_neighbors" value="false" />
+    <param name="enable_icp" value="false" />
+    <param name="icp_refine_roll_pitch" value="false" />
+    <!-- If using full euclidean: 0.78 (45 degrees) -->
+    <!-- If using quasi-Euclidean: 1.57 (90 degrees) -->
+    <param name="min_separation_angle" value="0.78" />
+    <param name="update_esdf" value="true" />
+    <param name="min_gvd_distance" value="0.5" />
+    <param name="tsdf_voxel_size" value="0.2" />
+    <param name="esdf_max_distance_m" value="5.0" />
+    <param name="esdf_min_diff_m" value="0.0" />
+    <param name="esdf_add_occupied_crust" value="true" />
+    <param name="publish_pointclouds" value="true" />
+    <!--<param name="publish_slices" value="true" />-->
+    <!--<param name="slice_level" value="1.0" /> -->
+    <param name="world_frame" value="$(arg final_frame_id)" />
+    <param name="frame_id" value="$(arg final_frame_id)" />
+    <param name="verbose" value="false" />
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="map_to_map_elevated" args="0 0 0.0 0 0 0 $(arg final_frame_id) map_elevated 100" />
+</group>
+
+</launch>

@@ -1,0 +1,77 @@
+=== base HEAD ===
+d08e9d4 [fix] make private publishers and service names
+=== colcon build (merge-install, Release) ===
+-- Installing: /ws/install/share/voxblox_skeleton/cmake/ament_cmake_export_dependencies-extras.cmake
+-- Installing: /ws/install/share/voxblox_skeleton/cmake/ament_cmake_export_include_directories-extras.cmake
+-- Installing: /ws/install/share/voxblox_skeleton/cmake/ament_cmake_export_libraries-extras.cmake
+-- Installing: /ws/install/share/voxblox_skeleton/cmake/voxblox_skeletonConfig.cmake
+-- Installing: /ws/install/share/voxblox_skeleton/cmake/voxblox_skeletonConfig-version.cmake
+-- Installing: /ws/install/share/voxblox_skeleton/package.xml
+---
+--- stderr: voxblox_skeleton
+CMake Warning (dev) at /usr/lib/x86_64-linux-gnu/cmake/pcl/Modules/FindFLANN.cmake:45 (find_package):
+  Policy CMP0144 is not set: find_package uses upper-case <PACKAGENAME>_ROOT
+  variables.  Run "cmake --help-policy CMP0144" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+
+  CMake variable FLANN_ROOT is set to:
+
+    /usr
+
+  For compatibility, find_package is ignoring the variable, but code in a
+  .cmake module might still use it.
+Call Stack (most recent call first):
+  /usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:261 (find_package)
+  /usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:306 (find_flann)
+  /usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:570 (find_external_library)
+  /opt/ros/jazzy/share/pcl_conversions/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/pcl_conversions/cmake/pcl_conversionsConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/pcl_ros/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/pcl_ros/cmake/pcl_rosConfig.cmake:41 (include)
+  /ws/install/share/voxblox_ros/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /ws/install/share/voxblox_ros/cmake/voxblox_rosConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/ament_cmake_auto/cmake/ament_auto_find_build_dependencies.cmake:67 (find_package)
+  CMakeLists.txt:7 (ament_auto_find_build_dependencies)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+In this package, headers install destination is set to `include` by ament_auto_package. It is recommended to install `include/voxblox_skeleton` instead and will be the default behavior of ament_auto_package from ROS 2 Kilted Kaiju. On distributions before Kilted, ament_auto_package behaves the same way when you use USE_SCOPED_HEADER_INSTALL_DIR option.
+[libprotobuf WARNING google/protobuf/compiler/parser.cc:646] No syntax specified for the proto file: skeleton.proto. Please use 'syntax = "proto2";' or 'syntax = "proto3";' to specify a syntax version. (Defaulted to proto2 syntax.)
+---
+Finished <<< voxblox_skeleton [24.3s]
+
+Summary: 9 packages finished [2min 27s]
+  9 packages had stderr output: eigen_checks minkindr minkindr_conversions voxblox voxblox_msgs voxblox_ros voxblox_rviz_plugin voxblox_skeleton xmlrpcpp
+COLCON_RC=0
+=== packages built ===
+eigen_checks
+minkindr
+minkindr_conversions
+voxblox
+voxblox_msgs
+voxblox_ros
+voxblox_rviz_plugin
+voxblox_skeleton
+xmlrpcpp
+=== voxblox_ros executables ===
+esdf_server
+intensity_server
+simulation_eval
+tsdf_server
+visualize_tsdf
+voxblox_eval
+=== voxblox_msgs interfaces ===
+    voxblox_msgs/msg/Block
+    voxblox_msgs/msg/Layer
+    voxblox_msgs/msg/Mesh
+    voxblox_msgs/msg/MeshBlock
+    voxblox_msgs/msg/VoxelEvaluationDetails
+    voxblox_msgs/srv/FilePath
+=== esdf_server smoke (3s, expect param/topic init then timeout-kill) ===
+[WARN] [1783506634.442742730] [rcl]: Found remap rule 'world_frame:=map'. This syntax is deprecated. Use '--ros-args --remap world_frame:=map' instead.
+[ERROR] [1783506634.539706474] [voxblox]: Verbose mode is on
+[INFO] [1783506635.543903501] [voxblox]: Updating mesh.
+[INFO] [1783506636.543874681] [voxblox]: Updating mesh.
+[INFO] [1783506637.419082469] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+SMOKE_DONE
+DOCKER_RC=0
+=== DONE ===

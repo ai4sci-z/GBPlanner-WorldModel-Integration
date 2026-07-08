@@ -1,0 +1,19 @@
+<package format="3">
+  <name>eigen_checks</name>
+  <version>0.0.1</version>
+  <description>Glog and Gtest check, assert, expect macros for eigen types. Port to Ament</description>
+  <maintainer email="miguel.fernandez@uni.lu">Miguel Fernandez-Cortizas</maintainer>
+  <author email="simon.lynen@mavt.ethz.ch">Simon Lynen</author>
+
+  <license>New BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>eigen</depend>
+  <depend>glog_vendor</depend>
+  <depend>ament_cmake_gtest</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

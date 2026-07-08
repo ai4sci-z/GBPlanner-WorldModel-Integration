@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>voxblox_ros</name>
+  <version>0.0.0</version>
+  <description>Voxblox ROS 2 interface</description>
+
+  
+  <maintainer email="miguel.fernandez@uni.lu">Miguel Fernandez-Cortizas</maintainer>
+  <author email="helen.oleynikova@mavt.ethz.ch">Helen Oleynikova</author>
+  <author email="marius.fehr@mavt.ethz.ch">Marius Fehr</author>
+
+
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+
+  <depend>eigen</depend>
+  <depend>rclcpp</depend>
+  <depend>pcl_ros</depend>
+  <depend>libpcl-all</depend>
+  <depend>voxblox_msgs</depend>
+  <depend>voxblox</depend>
+  <depend>cv_bridge</depend>
+  <depend>gflags_catkin</depend>
+  <depend>interactive_markers</depend>
+  <depend>minkindr_conversions</depend>
+  <depend>pcl_conversions</depend>
+  <depend>std_srvs</depend>
+
+  <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>voxblox_rviz_plugin</depend>
+  <depend>xmlrpcpp</depend>
+
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>
