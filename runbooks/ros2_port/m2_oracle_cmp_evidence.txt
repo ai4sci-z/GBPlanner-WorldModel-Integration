@@ -1,0 +1,63 @@
+# M2 切片4:ROS1 oracle ↔ ROS2 port 逐体素对拍证据(2026-07-08 晚)
+
+## 对拍设计(harness = ros2_port/oracle_cmp/)
+- 输入:确定性合成场景(8x8x3m 房间 4 墙+地板+方柱,固定网格采样;12 个环形
+  传感器位姿,位姿量化到 1/1024 二进制分数防 libm ulp 漂移),两侧共享同一份
+  frames_common.py → **输入逐字节一致,SHA 双侧互证 = b6a5282b8fd073f3**
+- oracle 侧:gbplanner-ref:latest 容器(ntnu-arl/voxblox @ dev/noetic 0ee88c2,
+  GBPlanner 实际 pin 的 commit),rosrun tsdf_server,save_map 出层文件
+- port 侧:voxblox_ros2_deps:jazzy 容器,仓库 vendored 副本(ntnu 行为补丁后)
+  现场 colcon 构建,同参数(voxel 0.2/vps 16/trunc 0.6/clearing_ray_weight_factor
+  0.01/min_time 0),save_map 出层文件
+- 比对:compare_layers.py(零依赖手工 proto 解析;逐块逐体素;先 oracle 自比对
+  验证解析器 = RMS 0 max 0 PASS)
+- 线程数两侧均不可锁(integrator_threads 非 ROS 参数)→ 判据=体素集合零差 +
+  距离场差在浮点合并次序噪声量级(非逐位)
+
+## method=simple 主对拍:VERDICT PASS
+```
+block sets: common=46  only_oracle=0  only_port=0
+observed voxels: oracle=35323 port=35323 common=35323 obs_mismatch=0 (0.0000%)
+near-surface voxels (|d|<voxel): oracle=6851 port=6851
+zspan: oracle=(-0.5000000074505806, 3.500000052154064) port=(same)
+distance diff over 35323 common observed voxels: RMS=9.99706e-05 max=0.0102714
+文件大小两侧一字节不差(1,510,142);md5 不同=线程浮点次序噪声(预期内)
+```
+判读:块集合/观测体素集合/近表面体素数/zspan **完全一致**;距离场差
+RMS 1e-4 m(体素 0.2m 的 0.05%)= hardware_concurrency 线程合并次序噪声。
+**ROS1 ntnu oracle 与 ROS2 移植版语义等价。**
+
+## 对拍路上抓到并修复的真移植 bug(方法论直证)
+1. **min_time_between_msgs 节流 1 秒无操作 bug**(tsdf_server.cc):snt-arg 港版
+   把 `rclcpp::Duration::from_seconds`(静态工厂)当实例方法调,返回值被丢弃,
+   成员停在构造函数的 1 秒 —— ROS1 原版 fromSec 原地修改、默认 0.0。
+   后果:>1Hz 的点云会被静默丢帧(GBPlanner 场景 2Hz 点云会丢一半)。
+   修复:显式赋值 + 默认还原 0.0。
+2. **ROS2 订阅名是私有名** `/voxblox_node/pointcloud`(generate_private_name),
+   与 ROS1 公共名 /pointcloud 不同 —— M4/M5 接线必须用私有名(侦察报告①的
+   "pointcloud 是公共名"结论有误,已实测纠正)。
+
+## method=fast 二级对拍(统计口径,fast 有竞态早终止):VERDICT PASS
+```
+block sets: common=46  only_oracle=0  only_port=0
+observed voxels: oracle=34506 port=34506 common=34505 obs_mismatch=2 (0.0058%)
+near-surface voxels (|d|<voxel): oracle=6766 port=6767
+zspan: 两侧一致 (-0.5, 3.5)
+distance diff over 34505 common observed voxels: RMS=0.000707167 max=0.0864898
+输入 SHA 双侧再次互证 b6a5282b8fd073f3
+```
+判读:fast 的 ApproxHashSet 早终止依赖线程竞态,同侧重跑亦有此量级抖动;
+2/34506 的体素集差异与 RMS 7e-4 均在竞态噪声内。**GBPlanner 实际使用的
+fast 积分器亦语义等价。**
+
+## 结论
+双积分器(simple 主对拍 + fast 二级)全部 PASS:
+**ROS2 移植版 voxblox(ntnu 行为补丁后)与 GBPlanner 实际依赖的 ROS1
+ntnu dev/noetic oracle 行为等价。** M2 剩余:ESDF 对拍(esdf_server 在
+TSDF 上的确定性传播,同 core)+ world-model 场景建图 + RViz2 可见。
+
+## 复现
+runbooks 侧:m2_deps.Dockerfile(镜像)
+ros2_port/oracle_cmp/:run_oracle_ros1.sh [method] → run_port_ros2.sh [method]
+  → python compare_layers.py oracle.voxblox port.voxblox
+输出目录 WSL ~/cmp_out/

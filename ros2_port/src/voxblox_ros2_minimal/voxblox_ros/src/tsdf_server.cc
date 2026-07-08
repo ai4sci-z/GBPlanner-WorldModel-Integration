@@ -390,7 +390,11 @@ void TsdfServer::getServerConfigFromRosParam(rclcpp::Node * node_ptr)
 
   node_ptr->get_parameter("min_time_between_msgs_sec",
                           min_time_between_msgs_sec);
-  min_time_between_msgs_.from_seconds(min_time_between_msgs_sec);
+  // rclcpp::Duration::from_seconds is a static factory; calling it on the
+  // member discarded the result and left the ctor's 1s throttle in place
+  // (ROS 1 fromSec mutated in place, default 0.0 - restore that semantic).
+  min_time_between_msgs_ =
+      rclcpp::Duration::from_seconds(min_time_between_msgs_sec);
   node_ptr->get_parameter("max_block_distance_from_body",
                           max_block_distance_from_body_);
   node_ptr->get_parameter("slice_level", slice_level_);
