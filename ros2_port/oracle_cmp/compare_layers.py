@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-"""Voxel-level comparison of two voxblox TSDF layer files (.voxblox).
+"""Voxel-level comparison of two voxblox layer files (.voxblox): TSDF or ESDF.
 
 Zero-dependency: hand-parses the varint-delimited proto2 stream
 (format: varint message_count, then [varint size + msg]*; msg[0]=LayerProto,
-rest=BlockProto; TsdfVoxel = 3 uint32: distance f32 bits, weight f32 bits,
-color RGBA — see voxblox/src/core/block.cc).
+rest=BlockProto).  Voxel layouts, from voxblox/src/core/block.cc:
 
-Usage: compare_layers.py oracle.voxblox port.voxblox [--max-abs 5e-2 --rms 1e-3]
+  TsdfVoxel = 3 uint32: | f32 distance | f32 weight | color RGBA |
+              observed  <=> weight > eps
+  EsdfVoxel = 2 uint32: | f32 distance | 3x int8 parent | 8b flags |
+              flags bit0=observed bit1=hallucinated bit2=in_queue bit3=fixed
+              observed  <=> flags bit0
+
+Layer kind comes from the LayerProto type string; --kind overrides it.
+
+Usage: compare_layers.py oracle.voxblox port.voxblox [--kind tsdf|esdf]
+                                                     [--max-abs 5e-2 --rms 1e-3]
 Exit 0 = PASS, 1 = FAIL, 2 = parse error.
 """
 import math
@@ -51,7 +59,29 @@ def parse_message(buf):
     return fields
 
 
-def parse_layer_file(path):
+WEIGHT_EPS = 1e-6
+# stride in uint32 words, and how to tell "this voxel was actually observed"
+VOXEL_KINDS = {
+    'tsdf': (3, lambda words: u32_to_f32(words[1]) > WEIGHT_EPS),
+    'esdf': (2, lambda words: bool(words[1] & 0b1)),
+}
+
+
+def u32_to_f32(x):
+    return struct.unpack('<f', struct.pack('<I', x))[0]
+
+
+def layer_kind(layer_type, override):
+    if override:
+        return override
+    t = layer_type.lower()
+    for kind in VOXEL_KINDS:
+        if kind in t:
+            return kind
+    raise ValueError('cannot infer voxel kind from layer type %r; pass --kind' % layer_type)
+
+
+def parse_layer_file(path, kind_override=None):
     buf = open(path, 'rb').read()
     pos = 0
     count, pos = read_varint(buf, pos)
@@ -69,6 +99,8 @@ def parse_layer_file(path):
         'voxels_per_side': hdr[2][0],
         'type': hdr[3][0].decode() if 3 in hdr else '',
     }
+    layer['kind'] = layer_kind(layer['type'], kind_override)
+    stride, is_observed = VOXEL_KINDS[layer['kind']]
     blocks = {}
     for m in msgs[1:]:
         f = parse_message(m)
@@ -86,21 +118,20 @@ def parse_layer_file(path):
         bs = layer['voxel_size'] * layer['voxels_per_side']
         key = tuple(int(round(o / bs)) for o in origin)
         voxels = []
-        for i in range(0, len(vdata), 3):
-            d = struct.unpack('<f', struct.pack('<I', vdata[i]))[0]
-            w = struct.unpack('<f', struct.pack('<I', vdata[i + 1]))[0]
-            voxels.append((d, w))
+        for i in range(0, len(vdata), stride):
+            words = vdata[i:i + stride]
+            voxels.append((u32_to_f32(words[0]), is_observed(words)))
         blocks[key] = voxels
     return layer, blocks
 
 
-def zspan(blocks, layer, weight_eps):
+def zspan(blocks, layer):
     vps = int(layer['voxels_per_side'])
     vs = layer['voxel_size']
     zmin, zmax = None, None
     for key, voxels in blocks.items():
-        for idx, (d, w) in enumerate(voxels):
-            if w > weight_eps:
+        for idx, (d, observed) in enumerate(voxels):
+            if observed:
                 lz = idx // (vps * vps)
                 z = (key[2] * vps + lz + 0.5) * vs
                 zmin = z if zmin is None else min(zmin, z)
@@ -112,10 +143,13 @@ def main():
     a_path, b_path = sys.argv[1], sys.argv[2]
     max_abs_th = float(sys.argv[sys.argv.index('--max-abs') + 1]) if '--max-abs' in sys.argv else 5e-2
     rms_th = float(sys.argv[sys.argv.index('--rms') + 1]) if '--rms' in sys.argv else 1e-3
-    weight_eps = 1e-6
+    kind = sys.argv[sys.argv.index('--kind') + 1] if '--kind' in sys.argv else None
+    if kind is not None and kind not in VOXEL_KINDS:
+        print('unknown --kind %r (expected: %s)' % (kind, '/'.join(VOXEL_KINDS)))
+        sys.exit(2)
 
-    la, ba = parse_layer_file(a_path)
-    lb, bb = parse_layer_file(b_path)
+    la, ba = parse_layer_file(a_path, kind)
+    lb, bb = parse_layer_file(b_path, kind)
     print('A(oracle): %s  blocks=%d  layer=%s' % (a_path, len(ba), la))
     print('B(port):   %s  blocks=%d  layer=%s' % (b_path, len(bb), lb))
 
@@ -143,8 +177,7 @@ def main():
         if len(va) != len(vb):
             fail.append('block %s voxel count differs' % (key,))
             continue
-        for (da, wa), (db, wb) in zip(va, vb):
-            oa, ob = wa > weight_eps, wb > weight_eps
+        for (da, oa), (db, ob) in zip(va, vb):
             n_obs_a += oa
             n_obs_b += ob
             n_occ_a += oa and abs(da) < occ_th
@@ -160,7 +193,7 @@ def main():
                 n_cmp += 1
     rms = math.sqrt(sum_sq / n_cmp) if n_cmp else float('nan')
 
-    za, zb = zspan(ba, la, weight_eps), zspan(bb, lb, weight_eps)
+    za, zb = zspan(ba, la), zspan(bb, lb)
     print('observed voxels: oracle=%d port=%d common=%d obs_mismatch=%d (%.4f%%)' %
           (n_obs_a, n_obs_b, n_obs_common, obs_mismatch,
            100.0 * obs_mismatch / max(1, n_obs_a)))
