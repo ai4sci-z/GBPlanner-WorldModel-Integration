@@ -1,0 +1,41 @@
+=== 代理是否会被固化进镜像?——实证(2026-07-13,原生 Linux 迁移期) ===
+
+背景:GATE-2 的 official-baseline 与 GATE-7 的 gbplanner-ref 因需从 GitHub 克隆大仓
+(ArduPilot 全家桶 / wstool 拉 voxblox 等),必须走本机 Clash 代理(http://127.0.0.1:7897)
+才能构建通过(直连实测 ~90s 被掐:GnuTLS recv error -110)。
+由此产生的疑问:代理会不会被焊进镜像?将来换网络/换端口是否要重建镜像?
+
+结论:❌ 不会。代理只存在于构建期,不进入镜像。已建镜像在无代理环境下照常运行,
+      **换代理或换网络不需要重建任何镜像**。需要代理的只有"重建镜像"这一个场景。
+
+--- 实验方法(可复现) ---
+用最小 Dockerfile(FROM navlab/ros-base:jazzy-latest)构建,喂入与真实构建相同的
+--build-arg HTTP_PROXY/HTTPS_PROXY/NO_PROXY,然后三查:
+
+① 构建期 RUN 里是否真被注入代理?
+   docker run --rm proxy-probe:test cat /tmp/proxy-at-buildtime.txt
+   → 是。且 Docker 同时注入大小写两种形式:
+       HTTP_PROXY=http://127.0.0.1:7897    http_proxy=http://127.0.0.1:7897
+       HTTPS_PROXY=http://127.0.0.1:7897   https_proxy=http://127.0.0.1:7897
+       NO_PROXY=localhost,127.0.0.1        no_proxy=localhost,127.0.0.1
+   (故 apt/git/wget 无论认哪种写法都能用上——这也是构建能过的原因)
+
+② 运行期镜像 Env 是否残留?
+   docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' proxy-probe:test | grep -i proxy
+   → 无任何 proxy 变量。HTTP_PROXY 等是 Docker **预定义构建参数**,作为 RUN 的环境变量
+     注入,但不写入镜像 Config.Env(与 ENV 指令的本质区别)。
+
+③ 是否被写进配置文件(唯一能真正焊死的途径)?
+   grep -ris proxy /etc/apt/apt.conf.d/ /etc/environment /root/.gitconfig /etc/gitconfig
+   → 无。
+   并复查两个真正用代理的 Dockerfile,均无 `git config --global http.proxy` /
+   `apt.conf.d` 写入 / `ENV *_proxy` / pip.conf 之类语句:
+     world-model/docker/images/runtime/official-baseline.Dockerfile   ✅ 只靠构建期 env
+     GBPlanner.../runbooks/gbplanner_ref/Dockerfile                   ✅ 只靠构建期 env
+
+--- 推论 ---
+- 运行期(GATE-4 live run / slice5 联跑)容器不需要联网,更不需要代理。
+- 若将来某人给 Dockerfile 加了 `ENV http_proxy=...` 或写 apt.conf,则上述结论作废——
+  那会让镜像在无代理环境里直接连不上网。评审 Dockerfile 时注意这一点。
+- 网络瓶颈画像:apt 部分已走国内镜像(阿里云/清华),换线收益有限;
+  GitHub 克隆才是痛点,对线路质量敏感。且这是一次性成本(镜像建完即不再需要)。
