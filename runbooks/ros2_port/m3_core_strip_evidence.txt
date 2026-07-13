@@ -1,0 +1,36 @@
+=== M3 · GBPlanner 算法核心 ROS-free 剥离 PASS (2026-07-14, 原生 Linux) ===
+
+产物: ros2_port/src/gbplanner_core/ (ament 包, STATIC 库 + gtest)
+上游钉版: ntnu-arl/gbplanner_ros@7301b535 (主仓 sources/ gitlink 同值)
+          ntnu-arl/adaptive_obb_ros@7dc24c9 (rosinstall 未钉版,以此为准)
+体量: 12,143 行 vendored (rrg 6,039 / planner_common 5,712 / kdtree 114+.c / adaptive_obb 264)
+
+任务书 §7-M3 验收:
+  ① ament_cmake 编译 rc=0 ✓ (jazzy, voxblox_ros2_minimal 底座)
+  ② 全树零 ros/ros.h、零 ros:: 运行时 ✓ (grep 终检,port/ 垫片除外)
+  ③ 单元测试调用 ✓ test_core_callable 4/4 PASSED
+     (图+Dijkstra / GBP1 持久化往返 / 参数垫片 / Rrg 无头构造+注入 IO)
+
+剥离架构(垫片全在 include/planner_common/port/):
+  log.h      ROS_INFO/WARN/ERROR(_COND/_THROTTLE) 同名宏 → 204 调用点零改动
+  time.h     pshim::Time/Duration/TimerEvent (chrono)
+  param.h    pshim::param::get/set 进程级注册表 → ~150 处 ros::param::get 一键换名
+  io.h       RrgIO 注入接口(free_cloud/pci_reset 发布、landing 调用、TF 查询)
+  tf_convert.h  tf::pointMsgToTF 等同名转换(8 调用点零改动)
+  visualization_if.h  24 个 rrg 实调方法的无操作虚基类(壳层子类化)
+结构改动:
+  - Rrg 单构造器 Rrg(MapManagerVoxblox*),4 个 ROS1 自有定时器 → 公开 tick*() 由壳层调度
+  - MapManagerVoxblox ctor (nh,nh_private) → (rclcpp::Node*) [任务书点名的签名适配]
+  - 图持久化 ros::serialization → GBP1 二进制布局(magic+版本,测试有往返验证)
+  - PlannerSrv/SemanticClass 常量 kCamelCase → UPPER_SNAKE(rosidl 强制,M1 同例)
+  - planner_msgs 补 Vertex/Edge/Graph/PlanningBound + PlannerDynamicGlobalBound(13 接口)
+  - 新包 planner_semantic_msgs (2 msg)
+构建坑(已编码进 CMakeLists 注释):
+  - voxblox .a 无 -fPIC → core 用 STATIC
+  - CMake 去重打乱静态档案顺序 → $<LINK_GROUP:RESCAN> + --no-as-needed
+  - tf2_geometry_msgs jazzy 为 header-only → getYaw(msg) 的 TU 须 include .hpp
+
+诚实边界:
+  * "编译+单测可调用" ≠ 行为等价——RRG 规划行为的对拍/联跑归 M5;
+  * 可视化(gbplanner_rviz 2,632 行)与 ROS 壳(gbplanner.cpp)未迁,是 M4 的料;
+  * rrg 内 DARPA 特性(gate/darpa frame)编译通过但未在 ROS2 侧验证。

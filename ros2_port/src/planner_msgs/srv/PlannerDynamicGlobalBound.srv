@@ -1,0 +1,15 @@
+# reset_to_default:
+#   true:  reset to the default bounding box
+#   false: set new bounding box
+bool reset_to_default
+
+# Header contains the frame in which the bounding box is expressed
+std_msgs/Header header
+
+# All coordinates are absolute and expressed in global frame
+geometry_msgs/Point center
+geometry_msgs/Point left
+geometry_msgs/Point front
+geometry_msgs/Point up
+---
+bool success

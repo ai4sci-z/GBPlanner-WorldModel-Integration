@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>planner_semantic_msgs</name>
+  <version>0.1.0</version>
+  <description>GBPlanner semantic messages, ROS2 port (M3)</description>
+  <maintainer email="jiaogali2580@gmail.com">ai4sci-z</maintainer>
+  <license>BSD-3-Clause</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+</package>

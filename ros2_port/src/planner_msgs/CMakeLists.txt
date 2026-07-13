@@ -19,9 +19,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/TriggerMode.msg"
   "msg/ExecutionPathMode.msg"
   "msg/PlannerStatus.msg"
+  "msg/Vertex.msg"
+  "msg/Edge.msg"
+  "msg/Graph.msg"
+  "msg/PlanningBound.msg"
   "srv/PlannerSrv.srv"
   "srv/PlannerSetPlanningMode.srv"
   "srv/PlannerHoming.srv"
+  "srv/PlannerDynamicGlobalBound.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
