@@ -1,0 +1,40 @@
+=== source: /home/ai4s/projects/gbp-feat/ros2_port/src/voxblox_ros2_minimal (repo vendored copy, post ntnu patch) ===
+=== colcon build minimal set (up-to voxblox_ros, tests on) ===
+      |                                    ^~~
+---
+Finished <<< voxblox_ros [42.5s]
+
+Summary: 7 packages finished [1min 13s]
+  7 packages had stderr output: eigen_checks minkindr minkindr_conversions voxblox voxblox_msgs voxblox_ros xmlrpcpp
+COLCON_RC=0
+=== gtest: test_sdf_integrators (ntnu-ported thresholds) ===
+ num non-overlapping voxels: 29255
+ num ignored voxels:         0
+ error min:                  0
+ error max:                  2.81155
+ RMSE:                       0.374197
+========================================
+Max distance: 4
+[       OK ] VoxelSizes/SdfIntegratorsTest.EsdfIntegrators/4 (241 ms)
+[----------] 10 tests from VoxelSizes/SdfIntegratorsTest (18968 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (18968 ms total)
+[  PASSED  ] 10 tests.
+SM Timing
+-----------
+esdf                   	    260	06.151045	(00.023658 +- 00.000629)	[00.001483,00.414844]
+esdf/propagate_tsdf    	    260	00.139066	(00.000535 +- 00.000011)	[00.000035,00.012056]
+esdf/raise_esdf        	    260	00.810993	(00.003119 +- 00.000076)	[00.000000,00.016531]
+esdf/update_esdf       	    260	05.200838	(00.020003 +- 00.000681)	[00.001223,00.404724]
+inserting_missed_blocks	   1500	00.000766	(00.000001 +- 00.000000)	[00.000000,00.000019]
+integrate/clear        	    500	01.172034	(00.002344 +- 00.000011)	[00.000144,00.010574]
+integrate/fast         	    250	01.217713	(00.004871 +- 00.000092)	[00.001979,00.014214]
+integrate/merged       	    500	03.537335	(00.007075 +- 00.000065)	[00.001759,00.024053]
+integrate/simple       	    250	07.270164	(00.029081 +- 00.000496)	[00.017509,00.052525]
+sim/generate_sdf       	     20	00.082910	(00.004145 +- 00.006132)	[00.000402,00.021429]
+GTEST_RC=0
+=== grep: no sparsity symbol must survive outside comments ===
+/ws/src/voxblox_ros2_minimal/voxblox_ros/include/voxblox_ros/ros_params.h:206:  // NTNU dev/noetic weighting params (sparsity_compensation removed upstream
+DOCKER_RC=0
+=== DONE ===
