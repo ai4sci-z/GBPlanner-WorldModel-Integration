@@ -9,7 +9,9 @@
 > ②fcu bootstrap 心跳竞态——companion GCS 心跳抢先,target_system=0 广播失效(**上游真 bug,B15 同族**,
 > 修=等真飞控心跳,clean `8df2690`)。迁移期还找回 bundle 丢失的 2 修复(fast-lio cstdint / B9 QoS)。
 > 详情与证据索引:`接力棒_当前值班.md` 顶部 + `runbooks/world-model-jazzy/gate4_native_pass_evidence.txt`。
-> **主线不变 = M2 切片5(ESDF 对拍+场景建图+RViz2)**,前置已备好(compare_layers 已支持 ESDF,feat `15c8969`)。
+> **🏁 M2 已收口(07-14):五切片全过**——切片5 = ESDF oracle 对拍 PASS(RMS 2.5e-05,零失配)+
+> world-model 场景建图落盘(3.0MB 双层,18,202 体素)+ RViz2 可视化;路上根治移植真 bug
+> (canTransform 阻塞等待饿死服务,修复后对拍复验 PASS)。**当前 = M3 算法核心 ROS-free 剥离**。
 
 > **🔄 2026-07-07 晚·导师最高指示:放弃桥接方案,GBPlanner 迁移 ROS2 原生**(ROS1+ROS2 双栈过于笨重)。
 > 权威记录与迁移蓝图:[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md)。
