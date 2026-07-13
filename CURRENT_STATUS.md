@@ -1,7 +1,15 @@
 > **[CURRENT] 本文件是全项目唯一当前事实源。其他文档与本文冲突时,以本文为准。**
 > 维护规则:每完成/失败一个阶段就更新本文;README 只引用本文,不另行维护状态。
 
-# CURRENT_STATUS(最后更新:2026-07-07 晚,🔄 路线切换)
+# CURRENT_STATUS(最后更新:2026-07-13,🖥️ 原生 Linux 迁移收官)
+
+> **🖥️ 2026-07-13:WSL → 原生 Ubuntu 24.04 迁移完成,八道验收门全过(GATE-0~7 ✅)**,
+> 终门 GATE-4 = live run **TASK_STATUS_OK 全绿**(run `20260713T100104`)。
+> 路上根治两个死锁:①容器 EGL→Mesa 段错误杀死 gz-sim(修=GPU 直通+钉 NVIDIA vendor,clean `79cbb9f`)
+> ②fcu bootstrap 心跳竞态——companion GCS 心跳抢先,target_system=0 广播失效(**上游真 bug,B15 同族**,
+> 修=等真飞控心跳,clean `8df2690`)。迁移期还找回 bundle 丢失的 2 修复(fast-lio cstdint / B9 QoS)。
+> 详情与证据索引:`接力棒_当前值班.md` 顶部 + `runbooks/world-model-jazzy/gate4_native_pass_evidence.txt`。
+> **主线不变 = M2 切片5(ESDF 对拍+场景建图+RViz2)**,前置已备好(compare_layers 已支持 ESDF,feat `15c8969`)。
 
 > **🔄 2026-07-07 晚·导师最高指示:放弃桥接方案,GBPlanner 迁移 ROS2 原生**(ROS1+ROS2 双栈过于笨重)。
 > 权威记录与迁移蓝图:[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md)。
