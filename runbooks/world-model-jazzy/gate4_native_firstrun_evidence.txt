@@ -1,0 +1,51 @@
+=== GATE-4 原生 Linux 首跑 —— 未达成(FAIL) ===
+时间: 2026-07-13 16:07 CST   run_id: 20260713T080704.957094192Z
+world-model HEAD: 43da557  (clean 分支 fix/world-model-e2e-takeoff)
+
+--- summary ---
+ task_status = TASK_STATUS_ERROR
+ blockers    = ['accepted_goals_below_min', 'controller_not_ready', 'path_length_below_min', 'probe_failed', 'probe_output_not_ok', 'return_home_required_before_landing_not_satisfied', 'runtime_execution_failed', 'task_completion_required_before_landing', 'topic_sample_missing']
+
+--- 根因链(已定位到的部分) ---
+1. exploration_probe rc=20 → path_length_m=0.0722 (<0.35), accepted_goals=0 → 飞机基本没动
+2. 飞机没动的原因: FCU 从未起飞。fcu_controller: state=guided_failed
+   bootstrap: mode_switch ok=false / arm ok=false / takeoff ok=false
+   fcu_mode_window: observed_mode=UNKNOWN (342 采样全 UNKNOWN)
+3. 为何 bootstrap 失败: mavlink_bootstrap 的 target_system=0 / target_component=0
+   → fcu_controller 在 udpin:0.0.0.0:14551 上**一个 MAVLink 心跳都没收到**
+4. MAVLink 从哪来: ardupilot_sitl 的 MAVProxy(launch.py:308-311)
+   --out {out} --out 127.0.0.1:14551 --master tcp:127.0.0.1:5760
+   即 MAVProxy 直连 SITL(5760) 后把 MAVLink 直接喂到 14551(不经 mavlink-router)
+5. mavlink-router 日志佐证: 反复 "messages to unknown endpoints"
+   = 它收到无处可送的消息(我方发出的 arm/mode_switch 命令),说明飞控端不在
+6. 整个 run 的日志里**没有任何 mavproxy / 5760 的痕迹**
+7. Gazebo 侧唯一线索: [gazebo-1] [Wrn] ArduPilotPlugin.cc:1619 "ArduPilot controller has reset"
+   → Gazebo 的 ArduPilot 插件在等 SITL,连接被重置
+
+--- 关键对照实验(排除镜像问题) ---
+单独跑 SITL(docker run --network=host official-baseline + ros2 launch ardupilot_sitl
+sitl_dds_udp.launch.py) → **完全正常**:
+  arducopter 启动 / bind port 5760 for SERIAL0 / "Connection on serial port 5760"
+  / MAVProxy master=tcp:127.0.0.1:5760 out=127.0.0.1:14550 / 参数加载 / Home 点设定
+⇒ 镜像本身没问题(arducopter 二进制在 /opt/navlab_official_ws/install/ardupilot_sitl/bin/)
+⇒ 问题出在**编排环境下**的 SITL↔Gazebo↔MAVProxy 链路
+
+--- 诚实边界 ---
+* 未能宣称"新环境 world-model 可跑通"——GATE-4 未过,这是环境重建的最后一道门。
+* 根因尚未最终定案。差别在于:standalone 用 model=quad(纯 SITL);编排跑走
+  iris_lidar.launch.py → SITL 是 model=json 模式,必须靠 Gazebo 的 ArduPilot 插件
+  在 127.0.0.1:5501/9002 连过来才算启动完成。若机体在 Gazebo 里 spawn 失败/延迟,
+  SITL 就会卡在 "Waiting for connection ....",MAVProxy 等不到心跳 → 与观测一致。
+  (文档里的"坑#9 gpu_lidar/sdformat spawn 崩"是 humble 特有,当时判断 jazzy 可能没有、
+   未打 robot.launch.py 补丁——现在需要在 jazzy 上重新确认这一点)
+
+--- 下一棒的确定性动作(按序) ---
+A. 拿到 official-baseline 容器的**完整** stdout(现在 start.log 只有探针失败后的 403 行截断),
+   确认 SITL 节点(node 名形如 "copter.parm --use_sim_time True -N")到底有没有被 launch 起来。
+B. 若 SITL 起了但卡 "Waiting for connection":查 Gazebo 是否成功 spawn iris_with_lidar
+   (gz model list / ArduPilotPlugin 的 fdm 端口 9002/5501 是否建立)。
+C. 若 SITL 根本没被 launch:核对 iris_maze.launch.py 在**镜像内那份**是否真的 include SITL
+   (宿主 clone 的 ardupilot_gz@8df4dc1 与镜像内 build 期 clone 的 main 分支可能不同版本!
+    ⚠️ official-baseline.Dockerfile 用 --branch master/main --depth 1 克隆 ArduPilot 全家桶,
+    **没有 pin commit** → 2026-07-05(WSL 建)与 2026-07-13(本机建)拉到的是不同代码。
+    这是可重现性风险,也是本次 GATE-4 与历史全绿 run 的**最大环境差异**,优先查!)
