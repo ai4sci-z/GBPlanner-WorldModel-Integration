@@ -1,0 +1,26 @@
+=== GATE-4 原生 Linux 全绿 PASS(2026-07-13 18:01 CST) ===
+run_id: 20260713T100104.032291620Z   world-model HEAD: 8df2690(clean 分支)
+验收: task_status=TASK_STATUS_OK, blockers=[], 四探针全过
+关键指标: target_system=1 / mode_switch+arm+takeoff 全 true / observed_mode=GUIDED
+          accepted_goals=3(≥3) / path=0.6248m(≥0.35) / strategy=frontier_lite
+
+--- 两个死锁的根因链(每一环均为测量,非推断) ---
+死锁① Gazebo↔SITL 锁步:
+  容器内 glvnd 将 EGL 路由至 libEGL_mesa → libgallium driCreateNewScreen3 段错误
+  (完整 backtrace 在 ~/build-logs-jazzy/gate4dbg2_launch.log:214-234)→ gz-sim 整体死亡
+  → ArduPilotPlugin 未绑 9002 → SITL(JSON 后端,lock_step=1)循环等待物理回包 → 零心跳。
+  修复 = nvidia-container-toolkit(宿主,default-runtime=nvidia)+ official-baseline 容器
+  三 env(NVIDIA_VISIBLE_DEVICES/CAPABILITIES + __EGL_VENDOR_LIBRARY_FILENAMES 钉 NVIDIA)。
+  → world-model clean 79cbb9f。分层验证: 裸 server 活/直接 spawn 活/launch 路径修后活,
+  修后 standalone 12s 收 12 心跳,gpu_lidar 出 /lidar/points。
+死锁② 心跳竞态(B15 同族,上游真 bug,新台账条目 B17):
+  tcpdump(lo, udp dst 14551)实证: 首个 HEARTBEAT = sysid191/comp197(companion 外部导航,
+  GCS 型),飞控 sysid1 晚 296ms。pymavlink wait_heartbeat 收任意心跳即返回,但 GCS 心跳
+  不更新 target → target_system=0,set_mode/arm/takeoff 全成广播被无视 → guided_failed。
+  WSL 上飞控总先到,纯时序运气掩盖。修复 = bootstrap 循环消费心跳直到 target_system!=0
+  → world-model clean 8df2690。修后本 run target_system=1,链路全绿。
+
+--- 排障中被证伪的假设(留档防止后人再走) ---
+✗ ArduPilot master 版本漂移(07-05→07-13 无 Copter/JSON 链路改动,且症状与之无关)
+✗ 软渲染拖垮仿真(llvmpipe 实测 RTF=1.0)
+✗ 容器泄漏端口互抢(实查端口干净)
