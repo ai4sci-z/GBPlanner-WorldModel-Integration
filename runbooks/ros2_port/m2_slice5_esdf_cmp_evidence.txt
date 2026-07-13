@@ -1,0 +1,30 @@
+=== M2 slice5 · ESDF oracle comparison PASS (2026-07-13 19:28 CST, native Linux) ===
+
+Harness: ros2_port/oracle_cmp/{run_oracle_ros1_esdf.sh, run_port_ros2_esdf.sh}
+  oracle = ntnu voxblox esdf_server @ dev/noetic (gbplanner-ref:latest, ROS1 noetic)
+  port   = our vendored voxblox_ros2_minimal esdf_server (voxblox_ros2_deps:jazzy, ROS2)
+  input  = 12 deterministic frames, frames_common.py ALL_FRAMES_SHA b6a5282b8fd073f3
+           (same file mounted read-only into both containers)
+  params pinned identically: method=simple, voxel 0.2/16, trunc 0.6, ray 0.1-12,
+           esdf_max_distance_m=4.0, esdf_default_distance_m=4.0
+  file format note: esdf_server save_map appends the ESDF layer AFTER the TSDF
+           layer in one file (esdf_server.cc kClearFile=false) -> compare_layers.py
+           gained multi-layer parsing + --kind selection (regressions: single-layer
+           TSDF self-compare byte-identical numbers; 2-layer file errors without
+           --kind; --kind selects correctly).
+
+ESDF layer (--kind esdf):
+  blocks 46/46 common, only_oracle=0 only_port=0
+  observed voxels 35,323 = 35,323, obs_mismatch=0 (0.0000%)
+  near-surface (|d|<voxel) 6,847 = 6,847
+  zspan identical (-0.5 .. 3.5)
+  distance diff: RMS=2.52111e-05 (limit 1e-3), max=0.00162882 (limit 5e-2)
+  VERDICT: PASS
+
+Embedded TSDF layer (--kind tsdf, cross-check):
+  RMS=0.000116457, max=0.0102714 -> PASS (consistent with slice-4 simple result)
+
+Honest boundary: this is the 'simple' integrator lane. The 'fast' lane carried a
+known 2/34,506 mismatch at TSDF level in slice-4; its ESDF projection was not
+measured here. Scene-scale ESDF behaviour is covered by the wm-mapping half of
+slice5, not by these synthetic frames.

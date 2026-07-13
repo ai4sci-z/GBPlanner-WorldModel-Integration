@@ -57,12 +57,16 @@ def stamp_plus(node, sec):
 
 def main():
     out_path = sys.argv[1] if len(sys.argv) > 1 else '/tmp/port_tsdf.voxblox'
+    # tsdf_server names its node "voxblox_node", esdf_server names it "voxblox"
+    # (see *_server_node.cc) -- the private pointcloud topic and save_map
+    # service move with it.
+    node_name = sys.argv[2] if len(sys.argv) > 2 else 'voxblox_node'
     rclpy.init()
     node = Node('cmp_feeder')
     br = TransformBroadcaster(node)
     # ROS2 port subscribes the PRIVATE name <node>/pointcloud
     # (generate_private_name in tsdf_server.cc), unlike ROS1's public /pointcloud.
-    pub = node.create_publisher(PointCloud2, '/voxblox_node/pointcloud', 2)
+    pub = node.create_publisher(PointCloud2, '/%s/pointcloud' % node_name, 2)
     time.sleep(2.0)
 
     for k in range(fc.N_FRAMES):
@@ -76,7 +80,7 @@ def main():
         time.sleep(0.9)
 
     time.sleep(3.0)
-    cli = node.create_client(FilePath, '/voxblox_node/save_map')
+    cli = node.create_client(FilePath, '/%s/save_map' % node_name)
     if not cli.wait_for_service(timeout_sec=20.0):
         raise RuntimeError('save_map service not available')
     fut = cli.call_async(FilePath.Request(file_path=out_path))

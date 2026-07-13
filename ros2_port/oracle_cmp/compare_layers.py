@@ -71,19 +71,43 @@ def u32_to_f32(x):
     return struct.unpack('<f', struct.pack('<I', x))[0]
 
 
-def layer_kind(layer_type, override):
-    if override:
-        return override
+def layer_kind(layer_type, fallback):
     t = layer_type.lower()
     for kind in VOXEL_KINDS:
         if kind in t:
             return kind
+    if fallback:
+        return fallback
     raise ValueError('cannot infer voxel kind from layer type %r; pass --kind' % layer_type)
 
 
 def parse_layer_file(path, kind_override=None):
+    """Parse a .voxblox file, return ONE (layer, blocks) selected by kind.
+
+    esdf_server's save_map appends the ESDF layer after the TSDF layer in the
+    SAME file (esdf_server.cc: kClearFile=false), so a file may hold several
+    varint-delimited layer streams back to back. Parse them all; --kind picks
+    which one to compare (mandatory when the file holds more than one layer).
+    """
     buf = open(path, 'rb').read()
+    layers = []
     pos = 0
+    while pos < len(buf):
+        (layer, blocks), pos = parse_stream(buf, pos, kind_override, path)
+        layers.append((layer, blocks))
+    if kind_override:
+        for layer, blocks in layers:
+            if layer['kind'] == kind_override:
+                return layer, blocks
+        raise ValueError('%s: no %s layer (found: %s)'
+                         % (path, kind_override, [l['kind'] for l, _ in layers]))
+    if len(layers) == 1:
+        return layers[0]
+    raise ValueError('%s holds %d layers (%s); pass --kind to choose'
+                     % (path, len(layers), [l['kind'] for l, _ in layers]))
+
+
+def parse_stream(buf, pos, kind_override, path):
     count, pos = read_varint(buf, pos)
     msgs = []
     while pos < len(buf) and len(msgs) < count:
@@ -122,7 +146,7 @@ def parse_layer_file(path, kind_override=None):
             words = vdata[i:i + stride]
             voxels.append((u32_to_f32(words[0]), is_observed(words)))
         blocks[key] = voxels
-    return layer, blocks
+    return (layer, blocks), pos
 
 
 def zspan(blocks, layer):
