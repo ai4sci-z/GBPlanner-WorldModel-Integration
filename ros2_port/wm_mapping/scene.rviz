@@ -1,0 +1,44 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Name: TF
+    - Class: rviz_default_plugins/PointCloud2
+      Enabled: true
+      Name: LidarCloud
+      Topic:
+        Value: /cloud_in
+      Size (m): 0.03
+      Color Transformer: AxisColor
+      Style: Points
+    - Class: rviz_default_plugins/PointCloud2
+      Enabled: true
+      Name: VoxbloxSurface
+      Topic:
+        Value: /voxblox/surface_pointcloud
+      Size (m): 0.18
+      Style: Boxes
+      Color Transformer: AxisColor
+    - Class: rviz_default_plugins/PointCloud2
+      Enabled: true
+      Name: EsdfSlice
+      Topic:
+        Value: /voxblox/esdf_pointcloud
+      Size (m): 0.15
+      Style: Flat Squares
+  Fixed Frame: map
+  Global Options:
+    Background Color: 35; 38; 48
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 22
+      Pitch: 0.6
+      Yaw: 0.75
+Window Geometry:
+  Height: 900
+  Width: 1400

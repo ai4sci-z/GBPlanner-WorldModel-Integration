@@ -157,10 +157,15 @@ bool Transformer::lookupTransformTf(const std::string& from_frame,
     from_frame_modified = sensor_frame_;
   }
 
-  // Previous behavior was just to use the latest transform if the time is in
-  // the future. Now we will just wait.
-  if (!tf_buffer_->canTransform(to_frame, from_frame_modified, time_to_lookup,
-                                rclcpp::Duration::from_seconds(0.1))) {
+  // Non-blocking check, matching the ROS1 oracle's canTransform semantics.
+  // The 0.1s blocking wait this port had added runs on the node's only
+  // executor thread, once per queued pointcloud per processing tick; clouds
+  // whose TF has been pruned from the buffer (default 10s cache) can never
+  // resolve, so a handful of stale queue entries saturates the executor and
+  // starves every service (save_map never answers). Requeue/retry already
+  // handles late transforms -- waiting here buys nothing.
+  if (!tf_buffer_->canTransform(to_frame, from_frame_modified,
+                                time_to_lookup)) {
     return false;
   }
 

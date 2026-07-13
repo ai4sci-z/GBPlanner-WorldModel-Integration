@@ -1,0 +1,37 @@
+=== M2 slice5 · world-model 场景建图 + RViz2 可见 (2026-07-14 凌晨, take 10) ===
+
+链路: world-model live run(exploration, GATE-4 口径) → gz /lidar/points → 桥接 ROS2
+      /cloud_in(base_scan 帧, 640 pts) → tf_clean_relay(/tf 净化) + cloud_gate →
+      我方 ROS2 esdf_server(use_sim_time, world_frame=map) → save_map
+
+验收数据(save 落盘 wm_scene_esdf.voxblox, 3,018,744 字节, 双层):
+  ESDF 层: 66 blocks, 18,202 观测体素, zspan=(-1.9, 5.5) ≈ 7.4m 垂直结构
+  TSDF 层: 同 18,202 观测体素, zspan 一致
+  实时话题(第二证据): esdf_pointcloud 峰值 18,202 点 / surface 2,273 点, frame=map
+  RViz2 可见: images/slice5_rviz_wm_scene.png(take-5 飞行中实拍, surface+esdf 切片
+  axis-color 渲染, 31fps 软渲染)
+
+=== 路上根治的移植真 bug(M2 台账素材) ===
+transformer.cc lookupTransformTf 的 canTransform 带 0.1s 阻塞超时 —— ROS2 移植时
+新增(ROS1 oracle 是非阻塞)。后果: TF 已被 10s 缓存剪枝的陈旧队列头点云永远无法解析,
+每处理周期每条僵尸云阻塞 0.1s → 单线程执行器饱和 → save_map 等所有服务饿死
+(实测 90s 超时不回)。修复=去掉阻塞超时,恢复 oracle 语义(feat 分支 transformer.cc)。
+修复后: save 秒回; ESDF oracle 对拍复验双层 PASS(RMS 5.3e-06 / 1.1e-04)——行为等价未破坏。
+
+=== 环境适配台账(wm_mapping/ 工具全部入库) ===
+① mapper 容器必须带编排器同款 CYCLONEDDS_URI(MaxAutoParticipantIndex=512),
+   否则 participant 索引耗尽, 新节点 SIGABRT("Failed to find a free participant index")。
+② /tf 有墙钟时间戳毒样本(companion 侧某节点未开 use_sim_time;一条毒样本即让 tf2
+   剪枝拒收后续全部仿真时间样本) → tf_clean_relay.py 过滤。嫌疑=pose_mirror(frames
+   配置恰为 laser_mount+imu), 未最终定位——上游 bug 台账待补。
+③ 双显卡笔记本: X 由 Intel 核显驱动 → 容器内 rviz2 用 LIBGL_ALWAYS_SOFTWARE=1;
+   gz 传感器渲染走 NVIDIA EGL(__EGL_VENDOR_LIBRARY_FILENAMES 钉住), 两者并存。
+④ jazzy `ros2 topic echo` 对 rclpy 发布者收不到(交接铁律重踩一次) → 探测一律 rclpy。
+
+=== 诚实边界 ===
+* RViz 截图取自 take-5(阻塞修复前;当时积分工作正常,仅 save 饿死), take-10 截图时
+  用户桌面前台被占未抓到 rviz——地图数据以 take-10 落盘文件为准。
+* cloud_gate 是 harness 工具(排空队列的确定性手段), 非产品代码;修复后其实
+  save 不再依赖闸门, 保留作为工程保险。
+* 场景 ESDF 未与 ROS1 oracle 逐体素对拍(oracle 无法喂同一实况流);行为等价由
+  合成帧对拍(PASS)背书, 场景侧验收=数量级合理性+可视化。
