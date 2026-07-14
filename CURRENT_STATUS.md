@@ -1,7 +1,34 @@
-> **[CURRENT] 本文件是全项目唯一当前事实源。其他文档与本文冲突时,以本文为准。**
+> **[CURRENT] 本文件是全项目状态事实源(仅 main 分支维护)。其他文档与本文冲突时,以本文为准。**
+> ⚠️ **代码事实源 = `feat/gbplanner-ros2-port` 分支**(M1-M5 全部源码只在 feat,当前 `76bde0b`;main 只有文档/证据)。
+> world-model 修复历史 = 本地 `/home/ai4s/projects/world-model` + 私有镜像 `github.com/ai4sci-z/world-model`(勿向上游 SZ-surveying push)。
 > 维护规则:每完成/失败一个阶段就更新本文;README 只引用本文,不另行维护状态。
 
-# CURRENT_STATUS(最后更新:2026-07-13,🖥️ 原生 Linux 迁移收官)
+# CURRENT_STATUS(最后更新:2026-07-14 晚,🔴 GATE-4 拆分重开 + M5 BLOCKED)
+
+> **🔴 2026-07-14 晚·两份外部 Review(ClaudeCode_Reviews/Review_001、Review_002)裁定,当前工程判定如下:**
+>
+> | 项 | 判定 |
+> |---|---|
+> | GATE-4a 短时起飞链路 | ✅ PASS(历史事实,保留) |
+> | **GATE-4b 60s 稳定悬停** | **❌ FAIL / REOPENED**——不带 GBPlanner 的 hover 任务同样在 t≈13-22s 翻机;07-13"GATE-4 全绿"实为探针在坠机前采完样的**时间窗运气绿** |
+> | M5 数据链 | ⚠️ PARTIAL PASS(真 odom/点云进、RRG 出图、轨迹/intent 持续发布,run 20260714T095739) |
+> | M5 飞行闭环 | ❌ FAIL(accepted_goals=0,机体不动,TASK_STATUS_ERROR) |
+> | M5 z 闭环 | ❌ NOT IMPLEMENTED(当前 adapter 明确丢弃 trajectory z——只能算 XY 诊断切片) |
+> | **M5 总状态** | **⏸ BLOCKED_BY_PLATFORM_STABILITY**(GATE-4b 不过,一切 live 结果不作数) |
+>
+> **M5 重新切片(Review 002 §6.1,原"accepted≥3/path≥0.35"只覆盖 M5-3 的一部分)**:
+> `M5-0 GATE-4b 稳定悬停(前置)→ M5-1 planner open-loop → M5-2 XY 单目标 → M5-3 XY 多目标 →
+> M5-4 z 单次升降 → M5-5 XYZ 闭环+oracle 回归 → M5-6 ≥3 run 正式收口`。
+> **最终落地方向 = 无 GPS 室内多层立体探索 Demo**(会议预研 2026-07-09;z 能力是硬要求,Demo 2/3 必须等硬门)。
+>
+> **已确认缺陷(各自独立 commit,均非翻机充分根因,修后仍翻机)**:B18 origin 半空注入(wm `f51976c`)/
+> B19 external_nav 墙钟三毒(wm `3da9c8a`)/ B20 桥 2Hz 定时器限流(wm `99fe8de`)+ ArduPilot 可 pin SHA(wm `13b11e0`)。
+> **悬停翻机主案状态 = HYPOTHESIS**(高嫌疑:ArduPilotPlugin/物理层时序;"物理层外力矩定案"表述过强已撤回;
+> 反事实 3-5 次重复通过前禁止写 ROOT_CAUSE)。版本基线:`runbooks/world-model-jazzy/pins_2026-07-14.yaml`。
+> **问题状态词纪律(强制)**:OBSERVED / HYPOTHESIS / CONFIRMED_BUG / ROOT_CAUSE / FIXED / REGRESSED,
+> 禁用"换脸/收敛/洗清全部/主案定案"。**下一步主战场 = L0-L2 平台二分**(不含 GBPlanner 的 60s hover 硬门,5/5 过才关门)。
+> Review 001 的 P0-1~P0-4、P1-1~P1-8(executor 单线程/永久 enable/sed 改基线/无 readiness/轨迹无防御与 identity 等)
+> 是 M5 恢复前的**未清零阻塞清单**,不是已读建议。
 
 > **🖥️ 2026-07-13:WSL → 原生 Ubuntu 24.04 迁移完成,八道验收门全过(GATE-0~7 ✅)**,
 > 终门 GATE-4 = live run **TASK_STATUS_OK 全绿**(run `20260713T100104`)。
@@ -11,7 +38,7 @@
 > 详情与证据索引:`接力棒_当前值班.md` 顶部 + `runbooks/world-model-jazzy/gate4_native_pass_evidence.txt`。
 > **🏁 M2 已收口(07-14):五切片全过**——切片5 = ESDF oracle 对拍 PASS(RMS 2.5e-05,零失配)+
 > world-model 场景建图落盘(3.0MB 双层,18,202 体素)+ RViz2 可视化;路上根治移植真 bug
-> (canTransform 阻塞等待饿死服务,修复后对拍复验 PASS)。**M3 ✅ 收口(07-14):核心 12,143 行剥离为 ament 库,零 ros/ros.h,单测 4/4**(feat `e61052d`)。**M4 ✅ 收口(07-14):壳+PCI 替身冒烟过,RRG 纯 ROS2 出 12wp 轨迹**(feat `be7d6e0`)。**当前 = M5 直连联跑**。
+> (canTransform 阻塞等待饿死服务,修复后对拍复验 PASS)。**M3 ✅ 收口(07-14):核心 12,143 行剥离为 ament 库,零 ros/ros.h,单测 4/4**(feat `e61052d`)。**M4a ✅ 合成冒烟收口(07-14):壳+PCI 替身,RRG 纯 ROS2 出 12wp 轨迹**(feat `be7d6e0`;M4b 真场景长时 open-loop **未测**)。~~当前 = M5 直连联跑~~ → **M5 已 BLOCKED,见顶部横幅**。
 
 > **🔄 2026-07-07 晚·导师最高指示:放弃桥接方案,GBPlanner 迁移 ROS2 原生**(ROS1+ROS2 双栈过于笨重)。
 > 权威记录与迁移蓝图:[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md)。
