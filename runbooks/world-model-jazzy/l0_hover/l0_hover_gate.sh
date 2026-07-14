@@ -62,25 +62,33 @@ cd $ART_CTR/sitl
 exec ros2 launch ardupilot_gz_bringup iris_maze.launch.py serial7:=uart:/tmp/navlab_benewake_tfmini:115200 use_gz_sim_gui:=false rviz:=false use_dds_agent:=true use_gz_sim_server:=true spawn_robot:=true
 " > "$ART_HOST/logs/container_start.log"
 
-echo "[l0] container $CNAME up; waiting for SITL tcp:5760 ..."
+# mavproxy (started by the launch) owns tcp:5760; the mission driver uses
+# SITL's second serial port tcp:5762 instead.
+echo "[l0] container $CNAME up; waiting for SITL tcp:5762 ..."
 for i in $(seq 1 120); do
-  if docker exec "$CNAME" bash -c 'exec 3<>/dev/tcp/127.0.0.1/5760' 2>/dev/null; then break; fi
-  if [ "$i" = 120 ]; then echo "[l0] SITL never opened 5760"; docker logs "$CNAME" | tail -30; exit 91; fi
+  if docker exec "$CNAME" bash -c 'exec 3<>/dev/tcp/127.0.0.1/5762' 2>/dev/null; then break; fi
+  if [ "$i" = 120 ]; then echo "[l0] SITL never opened 5762"; docker logs "$CNAME" | tail -30; exit 91; fi
   sleep 1
 done
 echo "[l0] SITL is up; starting mission (alt=${ALT}m hover=${HOVER_SEC}s)"
 
 set +e
-docker exec "$CNAME" bash -lc "source /opt/ros/jazzy/setup.bash && python3 /l0/l0_hover_mission.py --alt $ALT --hover-sec $HOVER_SEC --out $ART_CTR/mission.json" \
+docker exec "$CNAME" bash -lc "source /opt/ros/jazzy/setup.bash && python3 /l0/l0_hover_mission.py --endpoint tcp:127.0.0.1:5762 --alt $ALT --hover-sec $HOVER_SEC --out $ART_CTR/mission.json" \
   2>&1 | tee "$ART_HOST/logs/mission.log"
 MISSION_RC=${PIPESTATUS[0]}
 
-docker exec "$CNAME" bash -lc "python3 /l0/l0_bin_verdict.py --logdir $ART_CTR/sitl --alt $ALT --hover-sec $HOVER_SEC --out $ART_CTR/verdict.json" \
+docker logs "$CNAME" > "$ART_HOST/logs/container_full.log" 2>&1 || true
+
+# The dataflash BIN is only fully flushed once ArduPilot exits — judging it
+# while SITL still runs truncates the log (observed: 25 s of a 85 s flight).
+echo "[l0] stopping SITL so the BIN flushes ..."
+docker stop -t 30 "$CNAME" >/dev/null 2>&1 || true
+
+docker run --rm -v "$WM:/workspace" -v "$HERE:/l0:ro" --entrypoint bash "$IMAGE" -lc \
+  "python3 /l0/l0_bin_verdict.py --logdir $ART_CTR/sitl --alt $ALT --hover-sec $HOVER_SEC --out $ART_CTR/verdict.json" \
   2>&1 | tee "$ART_HOST/logs/verdict.log"
 VERDICT_RC=${PIPESTATUS[0]}
 set -e
-
-docker logs "$CNAME" > "$ART_HOST/logs/container_full.log" 2>&1 || true
 echo "[l0] run $RUN_ID: mission_rc=$MISSION_RC verdict_rc=$VERDICT_RC (artifacts: $ART_HOST)"
 # business verdict decides the exit code (Review 001 P1-8)
 exit "$VERDICT_RC"
