@@ -1,0 +1,43 @@
+# sources/ 来源清单(机器可读;Review 001 P0-6/P2-4 整改)
+# 规则:本目录只放"浏览/归档"材料;可运行/可提交的完整仓库一律在 GitHub 独立仓。
+# verified_at: 2026-07-14(原生 Ubuntu 24.04)
+
+components:
+  - name: gbplanner_ros
+    kind: local_untracked_clone        # 曾是损坏 gitlink(无 .gitmodules),2026-07-14 起不再入库
+    path: sources/gbplanner_ros-源码/
+    upstream: https://github.com/ntnu-arl/gbplanner_ros
+    commit: 7301b5350915cf3a4055072ad559842db37b4ca9   # 2024-06-13, gbplanner2 线
+    license: BSD-3-Clause (仓级 LICENSE;package.xml 均为 TODO)
+    used_by:
+      - ros2_port/src/gbplanner_core(M3 vendor 基线,同 commit)
+      - ROS1 oracle 对拍(gbplanner-ref 镜像)
+    restore: git clone https://github.com/ntnu-arl/gbplanner_ros && git checkout 7301b535
+
+  - name: adaptive_obb_ros
+    kind: local_untracked_clone        # 同上,不再入库
+    path: sources/adaptive_obb_ros-源码/
+    upstream: https://github.com/ntnu-arl/adaptive_obb_ros
+    commit: 7dc24c973d233f63d73f2a8548e6f5227bc422bb   # 2021-11-02
+    license: 未声明(无 LICENSE 文件,package.xml=TODO)——仅研究参考,分发前须与上游确认
+    used_by:
+      - ros2_port/src/gbplanner_core 的 adaptive_obb 依赖剥离参照
+    restore: git clone https://github.com/ntnu-arl/adaptive_obb_ros && git checkout 7dc24c97
+
+  - name: world-model(浏览快照)
+    kind: tracked_snapshot             # 588 个普通文件,无 .git,不含 third_party 大件
+    path: sources/world-model-源码/
+    upstream: https://github.com/SZ-surveying/world-model   # 红线:勿向上游 push/PR
+    authoritative_copy: https://github.com/ai4sci-z/world-model   # 私有镜像,含全部修复分支历史(2026-07-14 起)
+    working_clone: /home/ai4s/projects/world-model(分支 fix/world-model-e2e-takeoff)
+    license: 上游未附 LICENSE(私有协作仓)
+    note: 快照仅供离线查阅;修复 commit 一律进 working_clone 并推 authoritative_copy,不改快照
+
+  - name: GBPlanner 原始论文
+    kind: document
+    path: sources/GBPlanner原始论文_JFR2020_Dang_et_al.pdf
+    upstream: Dang et al., JFR 2020(DOI 10.1002/rob.21993)
+
+  - name: mentor 原始任务
+    kind: document
+    path: sources/mentor原始任务_自主探索决策(GBPlanner算法).md
