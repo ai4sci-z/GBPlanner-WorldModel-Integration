@@ -135,8 +135,10 @@ class GbplannerNode : public rclcpp::Node {
     rrg_->setIO(io);
 
     // --- inputs ---
+    // /slam/odom publishes with sensor-data (BEST_EFFORT) QoS; a RELIABLE
+    // subscription would silently receive nothing (bug-ledger B9 pattern).
     odometry_sub_ = create_subscription<nav_msgs::msg::Odometry>(
-        "odometry", 100,
+        "odometry", rclcpp::SensorDataQoS(),
         [this](const nav_msgs::msg::Odometry& odo) {
           StateVec state;
           state[0] = odo.pose.pose.position.x;
