@@ -1,0 +1,44 @@
+# 版本 pin 清单 — GATE-4b 排障基线(Review 002 第一阶段第 4 条)
+# 2026-07-14 实测采集(原生 Ubuntu 24.04);L0-L7 对照矩阵实验一律引用本清单。
+# 规则:实验期间任何一项变动都必须在 evidence 里显式声明,否则结果之间不可比。
+
+repos:
+  GBPlanner-WorldModel-Integration:
+    main: 219ca53          # gitlink 整改 + sources MANIFEST
+    feat/gbplanner-ros2-port: 76bde0b   # M5 bring-up WIP(blocked by GATE-4b)
+    remote: github.com/ai4sci-z/GBPlanner-WorldModel-Integration
+  world-model:
+    branch: fix/world-model-e2e-takeoff
+    head: 13b11e0          # B18/B19/B20 + Dockerfile pin 支持,四修复各自独立 commit
+    backup_remote: github.com/ai4sci-z/world-model   # 唯一可 push 远端;origin=SZ-surveying 勿碰
+  ardupilot_gz(宿主同级 clone):
+    head: 8df4dc1726e37504e6fc8b952d02e554cfa3176f   # 2026-04-11
+
+firmware:
+  ardupilot:
+    commit: e0fa4a47e18beb0b19108dd02053b5e675c9bf92  # 2026-07-11, master(V4.8.0-dev)
+    note: >
+      官方镜像内实测(docker run official-baseline git log)。Dockerfile 的
+      ARG ARDUPILOT_REF=master 未 pin —— 13b11e0 已支持传 SHA,下次重建镜像时
+      传 ARDUPILOT_REF=e0fa4a47e18beb0b19108dd02053b5e675c9bf92 固定住。
+  未pin的其余 REF: [ARDUPILOT_ROS_REF=humble, ARDUPILOT_GZ_REF=main, ARDUPILOT_GAZEBO_REF=ros2, ARDUPILOT_SITL_MODELS_REF=main, MICRO_ROS_AGENT_REF=jazzy]
+
+images:   # docker images 实测(IMAGE ID = 本机层 ID,跨机需 digest;本机实验以 ID 为准)
+  navlab/official-baseline:jazzy-latest: e13af8bbf517   # 2026-07-14 17:57 重建(含 GPU/EGL 修复)
+  navlab/slam-cartographer:jazzy-latest: b7a30f6eb465   # 2026-07-14 17:13(含 B20 bridge overlay)
+  navlab/companion:jazzy-8df2690bdba2: 649ad9cef83f     # ⚠️ STALE:tag 绑 HEAD=8df2690,现 HEAD=13b11e0
+  navlab/gazebo-headless:jazzy-latest: 49697c8304ae
+  navlab/gazebo-sensor:jazzy-latest: ef6bd28fa256
+  navlab/ardupilot-sitl:jazzy-latest: 63c54b6c59c2
+  navlab/fast-lio:jazzy-latest: 94655d3fce42
+  navlab/mavlink-router:jazzy-latest: bd1bf40ac2fb
+  navlab/ros-base:jazzy-latest: fd3943dd5506
+  gbplanner_stack:jazzy: 00e977ad4b5f                   # M5 栈(QoS 修复已入镜)
+  gbplanner-ref:latest: 5e46c5ac4b89                    # ROS1 oracle
+  voxblox_ros2_port:jazzy: ceec46ff5e80
+
+blockers_before_live:
+  - companion 镜像须按新 HEAD 重建/retag(tag_policy=distro-git-commit → jazzy-13b11e0xxxx)
+  - external_nav.py 由 official-baseline 挂载 /workspace 直跑,改 host 即生效(勘误已录),
+    但 companion tag 校验仍会因 HEAD 失配拦 run
+  - world seed / world 文件本轮未固定,L0 实验开跑前补记到本文件
