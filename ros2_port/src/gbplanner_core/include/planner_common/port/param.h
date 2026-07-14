@@ -7,8 +7,11 @@
 // the ROS2 node shell (M4) or a unit test fills the registry first
 // (pshim::param::set), then the loaders read from it.
 #include <any>
+#include <cstdint>
 #include <map>
 #include <string>
+#include <type_traits>
+#include <vector>
 
 namespace pshim {
 namespace param {
@@ -27,10 +30,38 @@ template <typename T>
 inline bool get(const std::string& name, T& out) {
   const auto it = registry().find(name);
   if (it == registry().end()) return false;
-  const T* v = std::any_cast<T>(&it->second);
-  if (v == nullptr) return false;  // wrong type stored
-  out = *v;
-  return true;
+  if (const T* v = std::any_cast<T>(&it->second)) {
+    out = *v;
+    return true;
+  }
+  // Numeric tolerance: the ROS2 shell stores YAML integers as int64_t and
+  // reals as double; the vendored loaders ask for int/float/double/bool.
+  if constexpr (std::is_arithmetic_v<T>) {
+    if (const int64_t* v = std::any_cast<int64_t>(&it->second)) {
+      out = static_cast<T>(*v);
+      return true;
+    }
+    if (const double* v = std::any_cast<double>(&it->second)) {
+      out = static_cast<T>(*v);
+      return true;
+    }
+    if (const int* v = std::any_cast<int>(&it->second)) {
+      out = static_cast<T>(*v);
+      return true;
+    }
+    if (const bool* v = std::any_cast<bool>(&it->second)) {
+      out = static_cast<T>(*v);
+      return true;
+    }
+  }
+  if constexpr (std::is_same_v<T, std::vector<double>>) {
+    if (const auto* v =
+            std::any_cast<std::vector<int64_t>>(&it->second)) {
+      out.assign(v->begin(), v->end());
+      return true;
+    }
+  }
+  return false;  // wrong type stored
 }
 
 inline void clear() { registry().clear(); }

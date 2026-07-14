@@ -20,7 +20,10 @@ typedef pshim::Time TIMER;
 
 enum Verbosity { SILENT = 0, PLANNER_STATUS = 1, ERROR = 2, WARN = 3, INFO = 4, DEBUG = 5 };
 
-#define global_verbosity Verbosity::ERROR
+// Overridable at build time (-Dglobal_verbosity=Verbosity::DEBUG for smoke).
+#ifndef global_verbosity
+#define global_verbosity Verbosity::PLANNER_STATUS
+#endif
 #define param_verbosity Verbosity::SILENT
 
 #define ROSPARAM_ERROR(param_name)                                         \

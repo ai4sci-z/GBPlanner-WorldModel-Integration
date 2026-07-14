@@ -1,0 +1,222 @@
+# M4 smoke config: rmf_obelix gbplanner + voxblox sim params converted to
+# ROS2 parameter-file layout (nested maps -> dotted names via rclcpp).
+gbplanner_node:
+  ros__parameters:
+      # Configurations for the exploration pipeline.
+      # For more details, please check comments in the params.h file and the wiki.
+      #-------------------------------------------------------------------------------
+      # ROBOT CONFIGURATION
+      #-------------------------------------------------------------------------------
+    RobotParams:
+      type:               kAerialRobot
+      size:               [0.2, 0.2, 0.2] # Actual size of the robot in meters [x, y, z]
+      size_extension_min: [0.1, 0.1, 0.1] # minimum extension outside of robot size allowed to operate
+      size_extension:     [0.2, 0.2, 0.2] # maximum extension outside of the robot size
+      center_offset:      [0.0, 0.0, 0.0]
+      relax_ratio:        0.5 # Used to define an intermediate size between size_extension_min and size_extension for planning
+      bound_mode:         kExtendedBound
+      safety_extension:   [3.0, 4.0, 3.0] # Safety extension outside the bounding box of a path segment used to improve it by pushing it away from obstacles
+    #-------------------------------------------------------------------------------
+    # SENSOR CONFIGURATION
+    #  sensor_list: Define a set of sensors relevant to the exploration task.
+    #  rotations: ZYX order;
+    #             all follows ROS convention (X-forward, Y-left, Z-Up).
+    #-------------------------------------------------------------------------------
+    SensorParams:
+      sensor_list:      ["OS064"]
+      OS064:
+        type:           kLidar
+        max_range:      20.0
+        center_offset:  [0.0, 0.0, 0.0]
+        rotations:      [0.0, 0.0, 0.0]
+        fov:            [6.283185, 1.570796]
+        resolution:     [0.122173, 0.122173]
+        frontier_percentage_threshold: 0.04
+    #-------------------------------------------------------------------------------
+    # SAMPLING SPACE CONFIGURATION
+    #   Global: Strictly defined bounds for the whole environment.
+    #   Local: Define a local space wrt current robot state for planning.
+    #-------------------------------------------------------------------------------
+    BoundedSpaceParams:
+      Global:
+        type:           kCuboid
+        min_val:        [-3000.0, -3000.0, -300.0]
+        max_val:        [3000.0, 3000.0, 300.0]
+      Local:
+        type:           kCuboid
+        min_val:        [-15.0, -15.0, -3.0]
+        max_val:        [15.0, 15.0, 3.0]
+        min_extension:  [-20.0, -20.0, -20.0]
+        max_extension:  [20.0, 20.0, 20.0]
+      LocalSearch:
+        type:           kCuboid
+        min_val:        [-50.0, -50.0, -1.0]
+        max_val:        [50.0, 50.0, 1.0]
+      # Adaptive OBB:
+      LocalAdaptiveExp:
+        type:           kCuboid
+        min_val:        [-10.0, -10.0, -0.75]
+        max_val:        [10.0, 10.0, 0.75]
+    NoGainZones:
+      g1:  # Back
+        type:           kCuboid
+        min_val:        [-50.0, -10.0, -10.0]
+        max_val:        [2.0, 10.0, 10.0]
+    #-------------------------------------------------------------------------------
+    # SAMPLING POLICY CONFIGURATION
+    #   Sample space limited to 4 states: X, Y, Z, and Heading
+    #-------------------------------------------------------------------------------
+    RandomSamplerParams:
+      SamplerForExploration:
+        X:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Y:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Z:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Heading:
+          pdf_type:       kUniform
+          sample_mode:    kManual
+          min_val:        -3.141593
+          max_val:        3.141593
+      SamplerForSearching:
+        X:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Y:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Z:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Heading:
+          pdf_type:       kUniform
+          sample_mode:    kManual
+          min_val:        -3.141593
+          max_val:        3.141593
+      SamplerForAdaptiveExp:
+        X:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Y:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Z:
+          pdf_type:       kUniform
+          sample_mode:    kLocal
+        Heading:
+          pdf_type:       kUniform
+          sample_mode:    kManual
+          min_val:        -3.141593
+          max_val:        3.141593
+
+    #-------------------------------------------------------------------------------
+    # EXPLORATION CONFIGURATION
+    # exp_sensor_list: sensors used to compute exploration gain.
+    #-------------------------------------------------------------------------------
+    PlanningParams:
+      type:             kBasicExploration #kAdaptiveExploration, kBasicExploration
+      rr_mode:          kGraph
+      exp_sensor_list:  ["OS064"]
+      # no_gain_zones_list: ["g1"]
+      v_max:            1.0 # max velocity m/s
+      v_homing_max:     0.9 # max velocity m/s
+      yaw_rate_max:     0.15 # max angular velocity rad/s
+      yaw_tangent_correction: true # If true - all headings will be along the path segment
+      edge_length_min:  0.2
+      edge_length_max:  2.0
+      edge_overshoot:   0.0 # m - Account for possible tracking error by collision checking on an extended edge
+      num_vertices_max: 700 # graph building stops if these many vertices are added 
+      num_edges_max:    9000 # graph building stops if these many edges are added
+      num_loops_cutoff: 2000 # Maximum iterations in which no vertices or edges are added to the graph
+      num_loops_max:    4000 # Maximum iterations possible for graph building
+      nearest_range:    2.0 # The max range within which a new vertex can be connected to an existing vertex
+      nearest_range_min: 0.5 # >= edge_length_min
+      nearest_range_max: 2.0 # <= edge_length_max
+      use_current_state: true # If true, it will use the current state to plan from instead of the state provided by the PCI in the service call
+      use_ray_model_for_volumetric_gain: true # if false, will check voxel by voxel in the sensor frustum 
+      exp_gain_voxel_size: 0.8 # used if use_ray_model_for_volumetric_gain is false
+      # Gains:
+      path_length_penalty: 0.04
+      path_direction_penalty: 0.1
+      occupied_voxel_gain: 0.0
+      free_voxel_gain:  0.0 # prefer directions towards more free voxels in case of the dead-end
+      unknown_voxel_gain: 60.0
+
+      traverse_length_max: 8.0 # Maximum length of the best path will be truncated to for actual traversal
+      traverse_time_max: 500.0
+      path_safety_enhance_enable: true
+      augment_free_voxels_time: 3
+      free_frustum_before_planning: false
+      freespace_cloud_enable: false
+      leafs_only_for_volumetric_gain: true # Whether to calculate gain of the entire path or only the leaf nodes
+      cluster_vertices_for_gain: true
+      clustering_radius: 0.5
+      path_interpolation_distance: 0.5
+  
+      time_budget_limit: 480 # seconds
+      auto_homing_enable: true
+      go_home_if_fully_explored: true
+
+      nonuniform_ray_cast: true
+      ray_cast_step_size_multiplier: 1.0
+
+      geofence_checking_enable: true
+
+    AdaptiveObbParams:
+      type: kPca
+      local_pointcloud_range: 50.0
+      bounding_box_size_max: 35
+    world_frame: world
+    use_tf_transforms: True
+    use_freespace_pointcloud: True
+    tsdf_voxels_per_side: 16
+    tsdf_voxel_size: 0.20
+    max_ray_length_m: 50.0
+    truncation_distance: 0.6 #1.0
+    voxel_carving_enabled: True
+    use_sparsity_compensation_factor: True
+    sparsity_compensation_factor: 100.0 #10.0
+    color_mode: "colors"
+    verbose: False
+    update_mesh_every_n_sec: 1.0
+    mesh_min_weight: 1e-4
+    slice_level: 1.0
+    method: "simple"  # smoke: full carving; fast integrator + static scan starves free space
+    integration_order_mode: "sorted"
+    max_consecutive_ray_collisions: 0
+    publish_slices: False
+    publish_pointclouds: True
+    allow_clear: True
+    pointcloud_queue_size: 1000
+    min_time_between_msgs_sec: 0.0
+    #max_block_distance_from_body: FLT_MAX
+    publish_tsdf_info: False
+    publish_slices: False
+    publish_traversable: True ###False
+    traversability_radius: 0.4 #0.4 ###1.5
+    enable_icp: False
+    icp_refine_roll_pitch: False
+    accumulate_icp_corrections: True
+    timestamp_tolerance_sec: 0.001 #0.001
+    publish_tsdf_map: True ###False
+    publish_esdf_map: True ###False
+
+    # ESDF #
+    esdf_max_distance_m: 2.0
+    clear_sphere_for_planning: False
+    clear_sphere_radius: 0.8
+
+    # OVERLAP BETWEEN VERSIONS #
+    use_const_weight: False
+    use_weight_dropoff: True
+    use_symmetric_weight_drop_off: False
+
+    max_weight: 200.0 #20-200
+    clearing_ray_weight_factor: 0.01 #ANYmal: 0.01 #Flyab: 0.05 #0.05-1.0
+    weight_ray_by_range: False
+    min_ray_length_m: 0.5 #1.0
+    occupancy_min_distance_voxel_size_factor: 1.0

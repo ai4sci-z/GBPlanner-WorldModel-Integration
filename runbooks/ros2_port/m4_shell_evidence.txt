@@ -1,0 +1,34 @@
+=== M4 · ROS2 节点壳 + 最小 PCI 替身 SMOKE PASS (2026-07-14, 原生 Linux) ===
+
+产物: ros2_port/src/gbplanner_node/
+  gbplanner_node   —— 最小壳:参数桥(156 项 ROS2 参数→pshim 注册表)、
+                      MapManagerVoxblox(rclcpp::Node* 直传,内嵌 TsdfServer)、
+                      Rrg + RrgIO 接线(free_cloud/pci_reset 发布、land_srv 客户端、
+                      tf2 Buffer 查询)、odometry 订阅、gbplanner/homing 服务、
+                      4 个核心 tick 定时器、15s 一次性地图探针
+  pci_trigger_node —— 定时调 gbplanner 服务,回包转 MultiDOFJointTrajectory
+                      发 /gbp/trajectory(+ nav_msgs/Path /gbp/path 供 RViz)
+                      —— 正是桥接期适配器零改动消费的入口
+  config/sim_gbplanner.yaml —— rmf_obelix 配置的 ROS2 化(嵌套→dotted;
+                      rad() roslaunch 表达式预求值 10 处;裸整数补 .0 过 rclcpp 强类型)
+  test/m4_smoke.sh + m4_feeder.py —— 合成房间(地板+三墙,一面开放=frontier)
+                      + odom/TF 喂入,验收 /gbp/trajectory 非空
+
+冒烟结果(纯 jazzy 容器,无任何 ROS1):
+  RRG 完整执行:局部图 171 叶顶点 / 64 frontier / 聚类 7 簇 / 全局图 10 顶点
+  pci_trigger 收到 12 waypoint 路径并发布 → SMOKE_RC=0 ✓
+
+排障链(全部实测定案):
+  ① rclcpp 参数强类型:yaml 整数字面量 vs double 声明 → 补 .0
+  ② rad(2*pi) 等 roslaunch 表达式 rclcpp 不认 → 转换器预求值
+  ③ "no feasible path"(72 万采样全灭)三段定位:
+     MAPPROBE(点查询全对) → BOXPROBE(盒查询大量 UNKNOWN=瑞士奶酪)
+     → 数体素(14,855≈纯截断带,自由空间零雕刻)
+     → 根因 = method:"fast" 积分器射线去重 + 静止重复扫描 → 自由空间饿死;
+     切 method:"simple"(M2 零差道)后规划立即成功。
+     ⚠️ M5 注意:真实运动传感流下 fast 或可用,但先用 simple 直到对比过。
+
+诚实边界:
+  * 合成房间冒烟 ≠ world-model 场景联跑(M5);
+  * 12 waypoint 的行为质量未与 ROS1 oracle 对拍(M5 的公平对比);
+  * homing 服务实现了但冒烟未覆盖;landing/pci_reset 链路未触发。
