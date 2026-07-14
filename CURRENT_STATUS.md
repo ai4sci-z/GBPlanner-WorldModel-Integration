@@ -11,7 +11,7 @@
 > 详情与证据索引:`接力棒_当前值班.md` 顶部 + `runbooks/world-model-jazzy/gate4_native_pass_evidence.txt`。
 > **🏁 M2 已收口(07-14):五切片全过**——切片5 = ESDF oracle 对拍 PASS(RMS 2.5e-05,零失配)+
 > world-model 场景建图落盘(3.0MB 双层,18,202 体素)+ RViz2 可视化;路上根治移植真 bug
-> (canTransform 阻塞等待饿死服务,修复后对拍复验 PASS)。**M3 ✅ 收口(07-14):核心 12,143 行剥离为 ament 库,零 ros/ros.h,单测 4/4**(feat `e61052d`)。**当前 = M4 ROS2 节点壳**。
+> (canTransform 阻塞等待饿死服务,修复后对拍复验 PASS)。**M3 ✅ 收口(07-14):核心 12,143 行剥离为 ament 库,零 ros/ros.h,单测 4/4**(feat `e61052d`)。**M4 ✅ 收口(07-14):壳+PCI 替身冒烟过,RRG 纯 ROS2 出 12wp 轨迹**(feat `be7d6e0`)。**当前 = M5 直连联跑**。
 
 > **🔄 2026-07-07 晚·导师最高指示:放弃桥接方案,GBPlanner 迁移 ROS2 原生**(ROS1+ROS2 双栈过于笨重)。
 > 权威记录与迁移蓝图:[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md)。
