@@ -2,6 +2,13 @@
 
 > 路线切换后新增(2026-07-08)。**桥接历史资产不动**,ROS 2 port 全部落在本目录隔离。
 > 主线任务书:[../docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](../docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
+>
+> **当前状态(2026-07-15,事实源=main 分支 CURRENT_STATUS.md)**:
+> M1 msgs ✅ / M2 voxblox ✅(五切片全过)/ M3 core 剥离 ✅(12k 行,单测 4/4;
+> "3D 行为等价"未证,Review 002 判 NOT PROVEN)/ M4a 合成冒烟 ✅(M4b 真场景 open-loop 未测)/
+> **M5 ⏸ BLOCKED_BY_PLATFORM_STABILITY**(GATE-4b 60s 悬停硬门重开;恢复前必须清
+> Review 001 P0-1 单线程 executor、P0-4 readiness gate、P1-1~P1-8 等债务,见 main)。
+> 下文 M1/M2 段落为历史施工记录,保留不动。
 
 ## 目录
 
@@ -44,6 +51,8 @@ ros2_port/
 
 ## 构建(必须在 ROS 2 Jazzy 环境)
 
+> ⚠️ 历史记录(WSL 期)。2026-07-13 已迁移到原生 Ubuntu 24.04;容器构建方式仍有效。
+
 本机 WSL 原生是 Ubuntu 22.04(Jammy),**无原生 Jazzy**;项目 Jazzy 只在 docker 镜像里。故 colcon build 在 jazzy 容器内进行,挂载本目录:
 
 ```bash
@@ -56,7 +65,7 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
 
 验收(M1):`colcon build` 通过 + `ros2 interface show planner_msgs/srv/PlannerSrv` 可打印 + 无 ROS1/catkin/actionlib 依赖。构建证据见 [../runbooks/ros2_port/](../runbooks/ros2_port/)(若已生成)。
 
-## M2:voxblox ROS 2 底座(进行中)
+## M2:voxblox ROS 2 底座(✅ 已收口 2026-07-14)
 
 **vendored 来源**:[snt-arg/voxblox_ros2_minimal](https://github.com/snt-arg/voxblox_ros2_minimal) @ **d08e9d4**(2025-12-01,upstream HEAD),剥离 .git 整树收入 `src/voxblox_ros2_minimal/`(2.8MB,9 包:voxblox core / voxblox_ros / voxblox_msgs / voxblox_rviz_plugin / voxblox_skeleton + vendored eigen_checks / minkindr / minkindr_conversions / xmlrpcpp)。选型依据 [../docs/ros2迁移_voxblox选型_2026-07-07.md](../docs/ros2迁移_voxblox选型_2026-07-07.md);后续对底座的全部修改都在本仓以独立 commit 留痕(=我们的维护 fork)。
 
@@ -68,12 +77,18 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
 | 2 | 维护补丁:删 voxblox_ros 幽灵依赖 voxblox_rviz_plugin;采纳 Gabriele b5c3911(rclcpp 先 init+auto-declare,修 gflags 吃 --ros-args,冒烟已实锤该 bug)并补齐其漏掉的 esdf/intensity server node | ✅ 最小集 7 包成立(rviz_plugin 不再被拖入);9/9 全量 rc=0;**参数管道 E2E 实证:`ros2 param get /voxblox world_frame`→`map`**,弃用警告消失(证据 [../runbooks/ros2_port/m2_build2_evidence.txt](../runbooks/ros2_port/m2_build2_evidence.txt)) |
 | 3 | **行为等价补丁**:ntnu dev/noetic 的 tsdf_integrator 定制移植(3 新权重字段+删 sparsity+fast 提前终止)+ ros_params 对齐 + test_sdf_integrators 单测 | ✅ 补丁=`git diff 8d1b843 dev-noetic`(原件 [../runbooks/ros2_port/ntnu_tsdf_integrator.patch](../runbooks/ros2_port/ntnu_tsdf_integrator.patch),19/20 hunk 干净套上+1 个 header hunk 手补虚函数声明);ros_params 三参数换血(clearing_ray_weight_factor/weight_ray_by_range/use_symmetric_weight_dropoff 进,sparsity 两参数出);**gtest 10/10 PASSED**+sparsity 符号零残留(证据 [../runbooks/ros2_port/m2_build3_evidence.txt](../runbooks/ros2_port/m2_build3_evidence.txt)) |
 | 4 | oracle 对拍:同点云 ROS1(ntnu dev/noetic)vs ROS2,save_map 层文件按体素查询比对 | ✅ **TSDF 双积分器全 PASS**(harness=[oracle_cmp/](oracle_cmp/),输入逐字节一致 SHA 互证):**simple=46/46 块、35,323/35,323 观测体素零差、距离场 RMS 1e-4**;fast(GBPlanner 实际用)=mismatch 2/34,506(0.0058%,竞态噪声)。路上抓到并修掉真移植 bug:min_time 节流 1s 无操作(from_seconds 静态工厂误用)+ 实测纠正订阅名为私有名 `/voxblox_node/pointcloud`。证据 [../runbooks/ros2_port/m2_oracle_cmp_evidence.txt](../runbooks/ros2_port/m2_oracle_cmp_evidence.txt) |
-| 5 | M2 收尾:ESDF 对拍 + world-model 场景建图(订 /wm/cloud3d 或 lidar3d)+ RViz2 可见 | ⬜ 下一棒 |
+| 5 | M2 收尾:ESDF 对拍 + world-model 场景建图(订 /wm/cloud3d 或 lidar3d)+ RViz2 可见 | ✅ ESDF oracle 对拍 PASS(RMS 2.5e-05)+ 场景建图 3.0MB/18,202 体素 + RViz2 截图(feat `404ac67`/`8fba00a`) |
 
 **构建配方**(禁 rosdep——package.xml 有 ROS1 时代 key):deps 镜像 [../runbooks/ros2_port/m2_deps.Dockerfile](../runbooks/ros2_port/m2_deps.Dockerfile)(镜像名 `voxblox_ros2_deps:jazzy`,apt 清单源自 Gabriele Jazzy CI),构建脚本 [../runbooks/ros2_port/m2_build.sh](../runbooks/ros2_port/m2_build.sh)。
 
 **已知陷阱**(详见侦察报告):GBPlanner yaml 的 `sparsity_compensation_factor=100` 在 ethz 血统底座上会激活 ×100 权重发散(ntnu 下是死参数)——切片 3 前禁止直接套 GBPlanner 配置;xmlrpcpp 是 ROS1 参数残留死路(仅 `use_tf_transforms=false` 分支),GBPlanner 用 True 不受影响,暂留后除。
 
-## 后续
+## M3-M5(状态见顶部横幅与 main CURRENT_STATUS)
 
-M3 算法核心 ROS-free 剥离(注意:GBPlanner 是**进程内实例化 TsdfServer**,构造签名 ROS1 `(nh,nh_private)`→ROS2 `(rclcpp::Node*)` 需适配)→ M4 planner 节点壳 → M5 world-model 直连联跑。见任务书。
+- **M3 ✅(feat `e61052d`)**:核心 12,143 行剥离为 ament 库(`src/gbplanner_core/`),零 `ros/ros.h`,单测 4/4。
+  口径纪律(Review 001 P1-6):只能说 **ROS1-free / node-wrapper-free**,不能说 "ROS-free"
+  (接口仍依赖 ROS2 消息/tf2/voxblox_ros);"3D 算法行为等价"未证,需 ROS1 oracle 3D fixture 对拍。
+- **M4a ✅(feat `be7d6e0`)**:节点壳 `src/gbplanner_node/` + 最小 PCI 触发,合成场景 RRG 出 12wp 轨迹。
+  PCI 替身只是 smoke 工具(Review 002 §13.1),恢复 M5 前须另做 planning coordinator。
+- **M5 ⏸ BLOCKED**:数据链已证通(真 odom/点云进、轨迹/intent 出,run 20260714T095739),
+  飞行闭环 FAIL;当前 adapter 丢弃 z,只能算 XY 诊断切片,最终口径必须含 z 闭环(多层 Demo 硬要求)。
