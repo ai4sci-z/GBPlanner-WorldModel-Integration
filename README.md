@@ -12,7 +12,7 @@
 
 > 🔄 **2026-07-07 晚·导师最高指示**:放弃 ROS1↔ROS2 桥接,把 GBPlanner **迁移到 ROS2 原生**(ROS1+ROS2 双栈过重)。
 > 桥接线**冻结为 oracle 回归基准 + 科研叙事素材**(下方 §二 桥接期结论全部仍成立,不再演进);
-> world-model 侧资产(EKF/探针修复、ROS2 适配器 `trajectory_to_intent`、lidar3d、评测口径)**全部直接复用**。
+> world-model 侧资产(EKF/探针修复、ROS2 适配器 `trajectory_to_intent`、lidar3d、评测口径)**规划为复用**(桥接期产物;在 ROS2 直连主线上逐项验证后方可称"已复用")。
 > 权威蓝图:[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md) + [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
 
 目标架构(从"双栈过桥"改为"ROS2 直连"):
@@ -33,9 +33,9 @@ world-model FCU 控制链 / Gazebo
 |---|---|---|
 | **M0** | 侦察 + 路线冻结 + 入口文档收口 | ✅(07-08) |
 | **M1** | `planner_msgs` ROS2 最小消息包(colcon build 通过) | ✅(07-08,代码在 feat 分支) |
-| M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF)| ✅(07-14 五切片收口) |
-| M3 | 算法核心 ROS1-free 剥离(rrg/planner_common;"3D 行为等价"未证) | ✅ 编译+单测(07-14) |
-| M4 | ROS2 planner 节点壳(M4a 合成冒烟;M4b 真场景 open-loop 未测) | ✅ M4a(07-14) |
+| M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF)| 🟡 切片对拍通过(fast 失配未归因、3D Demo 查询未测) |
+| M3 | 算法核心 ROS1-free 剥离(rrg/planner_common) | 🟡 编译+浅单测通过(07-14);行为等价未证明 |
+| M4 | ROS2 planner 节点壳 | 🟡 M4a 合成冒烟通过(07-14);M4b 真场景长时未验证 |
 | M5 | world-model 直连联跑 + oracle 回归 + 同口径公平对比 | ⏸ **BLOCKED_BY_PLATFORM_STABILITY**(GATE-4b 悬停硬门重开) |
 
 > 最大技术风险 = **voxblox 地图后端**(gain/碰撞语义变则 GBPlanner 行为变):第一版沿用 voxblox core(snt-arg minimal 底座 + Jazzy 适配),**不用 nvblox**,用 ROS1 原版做逐体素对拍。
