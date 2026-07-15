@@ -2,13 +2,9 @@
 # M5: world-model direct-integration run.
 #   sg docker -c 'bash runbooks/ros2_port/m5_direct_run.sh'
 # Starts the ROS2 GBPlanner stack container, then a world-model live run of
-# the EXPLORATION task with strategy switched to "external" (the runtime
-# template supports it; "exploration-external" is not a registered task id and
-# registering one would touch six task-id switches, so the tracked YAML is
-# temporarily modified — but transactionally, per Review_001 P0-3: exclusive
-# lock, byte-exact backup, hash precondition, and restore-from-backup (never a
-# reverse sed). Proper fix (runtime strategy override in world-model) is on
-# the remediation list.
+# the EXPLORATION task with strategy switched to "external" via the harness's
+# --exploration-strategy run override (world-model 9852e46+; Review_001 P0-3
+# closed: tracked YAML is never modified by this script anymore).
 # The adapter owns /navlab/fcu/setpoint/intent + /navlab/exploration/status.
 # Acceptance: exploration_probe consumes the adapter's status (strategy label
 # "gbplanner"), run reaches TASK_STATUS_* verdict with real waypoints.
@@ -21,26 +17,18 @@ RUN_ID="m5_$(date +%Y%m%dT%H%M%S)_$$"
 LOCK="$OUT/m5_direct_run.lock"
 mkdir -p "$OUT"
 
-# Exclusive lock: refuse concurrent runs (they would fight over the YAML).
+# Exclusive lock: refuse concurrent runs (SITL/DDS cannot be shared).
 exec 9>"$LOCK"
 flock -n 9 || { echo "another m5_direct_run holds $LOCK, refusing"; exit 7; }
 
-# Precondition: tracked YAML must be byte-identical to git HEAD (no user edits
-# to silently clobber), and in baseline strategy.
+# Sanity: baseline YAML must be untouched — this script never modifies it;
+# the strategy switch happens at run time via --exploration-strategy.
 if ! git -C "$WM" diff --quiet -- orchestration/sim/configs/tasks/exploration.yaml; then
-  echo "exploration.yaml has local modifications, refusing to touch it"; exit 8
+  echo "exploration.yaml has local modifications; baseline comparability broken, refusing"; exit 8
 fi
-grep -q 'strategy: frontier_lite' "$YAML" || { echo "YAML not in baseline strategy, refusing"; exit 8; }
-
-# Byte-exact backup; restore by copy, never by reverse sed.
-BAK="$OUT/exploration.yaml.bak.$RUN_ID"
-cp -p "$YAML" "$BAK"
+trap 'docker rm -f gbp_stack >/dev/null 2>&1' EXIT
+echo "RUN_ID=$RUN_ID (strategy override: external, tracked YAML untouched)"
 sha256sum "$YAML" > "$OUT/exploration.yaml.sha.$RUN_ID"
-restore_yaml() { cp -p "$BAK" "$YAML"; }
-trap 'restore_yaml; docker rm -f gbp_stack >/dev/null 2>&1' EXIT
-sed -i 's/strategy: frontier_lite/strategy: external/' "$YAML"
-echo "RUN_ID=$RUN_ID"; grep -n 'strategy:' "$YAML"
-cp "$YAML" "$OUT/exploration.yaml.effective.$RUN_ID"
 
 docker rm -f gbp_stack >/dev/null 2>&1
 docker run -d --name gbp_stack --network=host \
@@ -58,8 +46,8 @@ export PATH=/usr/local/go/bin:$PATH
 export NAVLAB_SIM_DISTRO=jazzy
 export GOFLAGS=-mod=mod
 cd "$WM/orchestration/sim" || exit 9
-timeout 600 go run ./cmd/navlab-sim run exploration --live-preflight \
-  > "$OUT/m5_run.log" 2>&1
+timeout 600 go run ./cmd/navlab-sim run exploration --exploration-strategy external \
+  --live-preflight > "$OUT/m5_run.log" 2>&1
 RC=$?
 echo "RUN_RC=$RC"
 tail -8 "$OUT/m5_run.log"
