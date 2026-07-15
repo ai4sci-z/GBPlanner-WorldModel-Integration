@@ -30,8 +30,17 @@
 > 版本基线:`runbooks/world-model-jazzy/pins_2026-07-14.yaml`。
 > **问题状态词纪律(强制)**:OBSERVED / HYPOTHESIS / CONFIRMED_BUG / ROOT_CAUSE / FIXED / REGRESSED,
 > 禁用"换脸/收敛/洗清全部/主案定案"。**下一步主战场 = L0-L2 平台二分**(不含 GBPlanner 的 60s hover 硬门,5/5 过才关门)。
-> Review 001 的 P0-1~P0-4、P1-1~P1-8(executor 单线程/永久 enable/sed 改基线/无 readiness/轨迹无防御与 identity 等)
-> 是 M5 恢复前的**未清零阻塞清单**,不是已读建议。
+>
+> **📒 Review 001 台账(07-15 清算,已核实非自称)**:
+> ✅ 已关:P0-2 enable 租约(feat `595451d`,8/8 复验)/ P0-3 sed 改基线(wm `57924c0` 运行时覆盖
+> + feat `17db3ba`)/ P0-5 双事实源(feat 入口改存根,feat `32e6c35`)/ P0-6 gitlink(main `219ca53`)/
+> P0-7 adapter 冻结清单(ADAPTER_FREEZE.md,两副本未分叉)/ P1-5 sparsity 遗留参数 / P2-1 README 重复状态表 /
+> P2-4 部分(sources/MANIFEST.yaml)。
+> ⛔ 未关(M5 恢复前必清):**P0-1 单线程 executor(gbplanner_node.cpp:291 仍 rclcpp::spin)/
+> P0-4 readiness gate(gbp_stack.sh:30 仍 sleep 3)**/ P1-1 轨迹防御 / P1-2 goal identity /
+> P1-3 freshness / P1-4 混流 / P1-6 行为等价口径 / P1-7 资源边界 / P1-8 验收返回码 / P2-2 绝对路径 / P2-3 CI。
+> GATE-4b 诊断臂已实装可跑(wm `ff919fb`+`13a3979`+`9852e46`:L1 gps-ekf-services /
+> L1.5 truth-external-nav / L2-fix imu-flu-correction;诊断跑永远带 purpose 烙印,不可能冒充验收绿)。
 
 > **🖥️ 2026-07-13:WSL → 原生 Ubuntu 24.04 迁移完成,八道验收门全过(GATE-0~7 ✅)**,
 > 终门 GATE-4 = live run **TASK_STATUS_OK 全绿**(run `20260713T100104`)。

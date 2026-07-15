@@ -24,12 +24,19 @@ flock -n 9 || { echo "another bisect batch is running"; exit 90; }
   echo "wm_dirty: $(git -C "$WM" status --porcelain | wc -l) files"
 } | tee "$OUT"
 
+# Lesson from L1 bring-up (2026-07-15): under the full service stack the
+# effective RTF collapses to ~0.08-0.17, and the GPS EKF needs ~13+ sim s
+# before arming even succeeds (prearm 'Accels inconsistent' + GPS config).
+# The 90s default duration kills the run pre-arm; give each run a wide
+# wall-clock budget. Verdict authority is the BIN, not the task exit code.
+DURATION_SEC=${DURATION_SEC:-900}
+
 run_arm() {
   local profile="$1" n="$2"
   for i in $(seq 1 "$n"); do
     echo "=== $profile run $i/$n start $(date -u +%FT%TZ) ===" | tee -a "$OUT"
     ( cd "$WM/orchestration/sim" && \
-      go run ./cmd/navlab-sim run hover --simulation-profile "$profile" ) \
+      go run ./cmd/navlab-sim run hover --simulation-profile "$profile" --duration-sec "$DURATION_SEC" ) \
       >>"$OUT" 2>&1
     echo "=== $profile run $i rc=$? end $(date -u +%FT%TZ) ===" | tee -a "$OUT"
     # give SITL/gazebo teardown a moment before the next run
