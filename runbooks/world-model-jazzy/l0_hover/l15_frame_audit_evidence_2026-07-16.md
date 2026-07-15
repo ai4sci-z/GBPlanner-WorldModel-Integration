@@ -107,9 +107,26 @@ L2 run `20260715T200619` 测量(数据源 = summary `hover_xy_alignment` pairwis
 - **嫌疑机制(与 `imu_frame_corrector.py` 文档自洽)**:官方 iris 模型 IMU
   `roll-180` 倒装,ros_gz 桥不修数据、TF 声称 identity → Cartographer 吃倒置 IMU
   (静止 z 加速度 −9.8)→ 重力对齐反 → 平面位置照常、朝向 180° 反。
-- **反事实批**:`l2fix_batch.sh`(imu-flu-correction ×3,单变量叠在 B21 上)
-  2026-07-15T20:23:08Z 发车,log = `artifacts/sim/l2fix_batch_20260715T202308Z.log`。
-  预测:修正后 VISP.Y 初值 ≈ +90°,3/3 稳。结果另记。
+- **反事实批判决:飞行样本 3/3 全稳全绿,预测精确命中(B22 CONFIRMED)**。
+  profile 差异面已核实 = 主线(`slam-direct-no-odom-prior`,Mainline:true)+ 仅加
+  `IMUSourceCorrection`,**是真单变量**。
+  log = `l2fix_batch_20260715T202308Z.log` + 补跑 `l2fix_batch_20260715T203427Z.log`:
+
+  | run(imu-flu-correction) | armed | roll/pitch 峰(°) | VISP.Y 初值 | summary |
+  |---|---|---|---|---|
+  | 20260715T202308 | 14.8s | 0.6 / 0.4 | **+90.0**(=SIM) | **TASK_STATUS_OK, blockers=[]** |
+  | 20260715T202630 | (无飞行) | — | — | Arm: Accels inconsistent ×4 → mission abort(启动瞬态 flake,非稳定性样本,如实记录) |
+  | 20260715T203023 | 14.6s | 0.4 / 0.2 | **+90.0**(=SIM) | **TASK_STATUS_OK, blockers=[]** |
+  | 20260715T203427(补) | 14.6s | 0.4 / 0.1 | — | **TASK_STATUS_OK, blockers=[]** |
+
+  **这是整个 GATE-4b 战役以来 hover 任务的首批完整全绿 run**;yaw 180° 反转随修正消失,
+  §6 的 candidate 反平行审计告警也随之消失(同根因的另一表象)。
+- **修复转正 = wm `eab0cc6`(B22)**:`SlamHover.IMUSourceCorrection` 默认
+  `roll180_flu` + hover 族 slam 计划一律带 corrector 服务(官方冻结模型不动,
+  imu-flu-correction profile 降为主线别名)。go test 全绿 + gofmt 干净 +
+  python 套件不变(409 过/5 环境债)。companion retag `jazzy-eab0cc6f0d54`。
+- **转正后默认主线验证批**(`run hover` 无 profile ×3)2026-07-15T20:44:27Z 发车,
+  log = `l2_batch_20260715T204427Z.log`,结果另记。
 - 另записано:candidate 流(`/external_nav/odom_candidate`,selector 输出)与
   一切都反平行且幅值只有 0.24m,主线没人消费它——审计 blocker
   `external_nav_odom_candidate__*` 是接线审计告警,与稳定性问题分案处理。

@@ -71,7 +71,7 @@
 4. 顺手修 clean 分支测试断言遗留：`slam_test.go`（旧 `/imu`→`/navlab/slam/imu`+自吞回声守卫）、`runtime_artifacts_test.go`（RNGFND 旧参数名→4.5 新名+裸旧名守卫）。
 **验证（实测,run `20260706T130626`）**：`TASK_STATUS_OK`、blockers 空、4 探针全 ok（frame_contract 8/8 话题）、accepted_goals=3/3、path 1.06m、SIM+0.720m、电机 1950;`go build/vet/test ./...` 全绿;clean_repro.sh 首次 rc=0。
 
-## B17–B21 · 原生迁移与 GATE-4b 排障期新增上游真 bug（2026-07-13 → 07-16,commit 均在 fix/world-model-e2e-takeoff）
+## B17–B22 · 原生迁移与 GATE-4b 排障期新增上游真 bug（2026-07-13 → 07-16,commit 均在 fix/world-model-e2e-takeoff）
 
 | # | 提交 | 症状（失败现场） | 根因 | 最小改动 | 状态 |
 |---|---|---|---|---|---|
@@ -80,6 +80,7 @@
 | B19 | `3da9c8a` | EKF 速度估计 1Hz ±0.5m/s 打摆(WSL 稳/原生炸) | external_nav 三处墙钟毒:time_usec 用 monotonic(与 lockstep sim 钟按 RTF 漂移)/ 限幅 dt 按墙钟(有效限幅随 RTF 缩放)/ stale odom 以新鲜戳重发(幻影零速) | 全部改用 odom header stamp + stale 不重发 | ✅ pytest 42/42;非翻机充分根因 |
 | B20 | `99fe8de` | `/external_nav/odom` 只有 1.3Hz(SLAM 明明 202Hz) | 桥的 odom 输出挂在 500ms 墙钟 status 定时器上 | 逐新鲜样本事件驱动发布(保量测 stamp) | ✅ VISP 2→20Hz;非翻机充分根因 |
 | B21 | `908a95a` | **GATE-4b 悬停翻机主案**:external-nav 喂入下起飞后姿态确定性发散,armed 14-30s AngErr CrashCheck(L1.5 真值喂入 3/3 翻、L2 SLAM 喂入 5/5 翻;GPS 臂 L0/L1 全稳) | `ros_enu_position_to_mavlink_local_frd()` 返回 `(y,-x,-z)`:对任何右手源帧都把东轴镜像成**左手系喂入**(det=−1),而 yaw 路径是真旋转 → 与 IMU 惯性基准不可调和,EK3 创新反馈正反馈发散。BIN 实测:VISP.PN=+truth_N、VISP.PE=−truth_E,LS 拟合 det=−0.92/−0.95/−0.93(3/3);代码注释宣称的 "map x=west,y=north" 帧约定为左手系,物理不可能,同测量证伪 | `(y, x, -z)`(标准 ENU→NED,一个符号) | 🔵 L1.5 修复后 3/3 稳(roll≤0.5°,首见完整起降闭环,喂入 det=+1.0);L2 主线 ×3 验证中 |
+| B22 | `eab0cc6` | B21 修复后 L2(SLAM 喂入)仍 3/3 翻:喂入 yaw ≡ 真值 −180°(VISP.Y −91.4° vs SIM +90.0°,动态跟踪)而位置与真值方向余弦 +1.0000 | 官方 iris 模型 IMU 在 imu_link 内 roll-180 倒装,ros_gz 桥不修数据、TF 声称 identity → Cartographer 吃倒置 IMU(静止 z 加速度 −9.8),朝向估计反 180° 而平面位置照常 → 又一个位置/yaw 非刚体不一致(B21 同类) | 主线默认启用 imu_frame_corrector(roll180_flu,数据侧修正,冻结模型不动) | ✅ 反事实:修正臂飞行样本 3/3 全稳 + **TASK_STATUS_OK blockers=[] ×3(战役首批全绿)**;yaw 反转消失 |
 
 证据链:`runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md`(测量方法+判决表)、
 `l1_bringup_evidence_2026-07-15.md`(L0-L2 二分矩阵)。
