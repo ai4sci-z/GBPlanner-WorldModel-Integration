@@ -23,16 +23,16 @@ trajectory_to_intent 适配器(桥接期资产,直接复用)
 world-model FCU 控制链 / Gazebo
 ```
 
-**迁移里程碑**(拆解与验收见任务书):
+**迁移里程碑**(拆解与验收见任务书;**状态列只是快照,以 [CURRENT_STATUS.md](CURRENT_STATUS.md) 为准**,本表不再单独维护进度):
 
-| 里程碑 | 内容 | 状态 |
+| 里程碑 | 内容 | 状态(2026-07-15 快照) |
 |---|---|---|
-| **M0** | 侦察 + 路线冻结 + 入口文档收口 | ✅(07-08 收口) |
-| **M1** | `planner_msgs` ROS2 最小消息包(colcon build 通过) | ✅(07-08,分支 `feat/gbplanner-ros2-port`,证据 runbooks/ros2_port/) |
-| M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF/gain) | ⬜ **当前** |
-| M3 | 算法核心 ROS-free 剥离(rrg/planner_common) | ⬜ |
-| M4 | ROS2 planner 节点壳(订 odom/cloud → 出 /gbp/trajectory,RViz2 可见) | ⬜ |
-| M5 | world-model 直连联跑 + oracle 回归 + 同口径公平对比 | ⬜ |
+| **M0** | 侦察 + 路线冻结 + 入口文档收口 | ✅(07-08) |
+| **M1** | `planner_msgs` ROS2 最小消息包(colcon build 通过) | ✅(07-08,代码在 feat 分支) |
+| M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF)| ✅(07-14 五切片收口) |
+| M3 | 算法核心 ROS1-free 剥离(rrg/planner_common;"3D 行为等价"未证) | ✅ 编译+单测(07-14) |
+| M4 | ROS2 planner 节点壳(M4a 合成冒烟;M4b 真场景 open-loop 未测) | ✅ M4a(07-14) |
+| M5 | world-model 直连联跑 + oracle 回归 + 同口径公平对比 | ⏸ **BLOCKED_BY_PLATFORM_STABILITY**(GATE-4b 悬停硬门重开) |
 
 > 最大技术风险 = **voxblox 地图后端**(gain/碰撞语义变则 GBPlanner 行为变):第一版沿用 voxblox core(snt-arg minimal 底座 + Jazzy 适配),**不用 nvblox**,用 ROS1 原版做逐体素对拍。
 

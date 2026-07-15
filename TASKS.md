@@ -22,7 +22,7 @@
 
 ## 二、命名约定(特异性 + 可读性)
 - **预研 A / 预研 B** = 复现任务(A=复现 world-model,B=复现 GBPlanner)。均已完成。
-- **集成方案** = **「B2.5 自写薄桥」(现行,实测选型)**;历史名称曾为「桥接方案(ros1_bridge)」——官方 ros1_bridge 与 zenoh 均已实验判死(stage2a-2d);「重写方案(gbplanner_core)」为备选/理解材料。
+- **集成方案** = ~~「B2.5 自写薄桥」~~ **已冻结为 oracle(07-07 路线切换)**;现行 = **ROS2 原生迁移 M0-M5**(见 §三)。历史名称曾为「桥接方案(ros1_bridge)」——官方 ros1_bridge 与 zenoh 均已实验判死(stage2a-2d);「重写方案(gbplanner_core)」为历史 2D 原型材料。
 
 ## 三、当前主线任务表:GBPlanner **ROS2 原生迁移**(2026-07-08 · 路线切换后)
 
