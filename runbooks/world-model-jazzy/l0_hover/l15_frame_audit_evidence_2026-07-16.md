@@ -88,7 +88,7 @@ wm `57924c0`,L1.5 正式批三跑(`l1_bringup_evidence_2026-07-15.md` §4.4 同�
   | 20260715T200937 | 14.9s | 78.4 / 83.6 | AngErr=52>30 @27.8 |
   | 20260715T201311 | 14.4s | 59.0 / 88.8 | (侧翻上锁,无 crash msg) |
 
-  ⇒ **B21 状态:L1.5 臂 FIXED;L2 臂非充分——SLAM 喂入链还有第二层根因。**
+  ⇒ **B21 状态:修复在 L1.5 真值臂已验证(反事实 3/3);对 L2 非充分——SLAM 喂入链还有第二层缺陷(见 §6)。**
 
 ## 6. 第二层根因(L2 残余):喂入 yaw ≡ 真值 − 180°,位置却与真值同向
 
@@ -107,7 +107,7 @@ L2 run `20260715T200619` 测量(数据源 = summary `hover_xy_alignment` pairwis
 - **嫌疑机制(与 `imu_frame_corrector.py` 文档自洽)**:官方 iris 模型 IMU
   `roll-180` 倒装,ros_gz 桥不修数据、TF 声称 identity → Cartographer 吃倒置 IMU
   (静止 z 加速度 −9.8)→ 重力对齐反 → 平面位置照常、朝向 180° 反。
-- **反事实批判决:飞行样本 3/3 全稳全绿,预测精确命中(B22 CONFIRMED)**。
+- **反事实批判决:飞行样本 3/3 全稳全绿,预测精确命中(B22 = 候选根因,反事实强支持;R003 口径,默认路径 10/10 前不写 CONFIRMED)**。
   profile 差异面已核实 = 主线(`slam-direct-no-odom-prior`,Mainline:true)+ 仅加
   `IMUSourceCorrection`,**是真单变量**。
   log = `l2fix_batch_20260715T202308Z.log` + 补跑 `l2fix_batch_20260715T203427Z.log`:
@@ -128,8 +128,9 @@ L2 run `20260715T200619` 测量(数据源 = summary `hover_xy_alignment` pairwis
   `roll180_flu` + hover 族 slam 计划一律带 corrector 服务(官方冻结模型不动,
   imu-flu-correction profile 降为主线别名)。go test 全绿 + gofmt 干净 +
   python 套件不变(409 过/5 环境债)。companion retag `jazzy-eab0cc6f0d54`。
-- **转正后默认主线验证批**(`run hover` 无 profile ×3)2026-07-15T20:44:27Z 发车,
-  log = `l2_batch_20260715T204427Z.log`,结果另记。
+- **转正后默认主线验证批**(`run hover` 无 profile ×3)log = `l2_batch_20260715T204427Z.log`:
+  批 3 攻 2 过(run3 无 BIN 起栈死);连同后续单发补跑,当日默认主线总分母 **6 攻 / 3 起飞 / 3 全过**,
+  逐 run 明细与失败签名见 §4b。**未达 10/10 验收门,不构成稳定结论。**
 - 另записано:candidate 流(`/external_nav/odom_candidate`,selector 输出)与
   一切都反平行且幅值只有 0.24m,主线没人消费它——审计 blocker
   `external_nav_odom_candidate__*` 是接线审计告警,与稳定性问题分案处理。
@@ -143,7 +144,7 @@ L2 run `20260715T200619` 测量(数据源 = summary `hover_xy_alignment` pairwis
 | run | 结局 | 失败签名(观测,非根因) |
 |---|---|---|
 | 20260715T204428 | ✅ full-pass(TASK_STATUS_OK, blockers=[]) | — |
-| 20260715T2047xx(批 run2) | ✅ full-pass | — |
+| 20260715T204749(批 run2) | ✅ full-pass | — |
 | 20260715T205113 | ❌ 未起飞(mission abort) | SITL 无 BIN(起栈即死);hover_mission_abort |
 | 20260715T210149 | ❌ 未起飞(mission abort) | sitl 目录有 eeprom/tlog 无 logs/BIN |
 | 20260715T210849 | ❌ 未起飞(exit 20 / batch rc=1) | BIN:`Arm: Accels inconsistent`×6;summary:hover_mission_abort + rosbag_profile_failed;R003-E23 另记 waiting_for_fcu_external_nav |
