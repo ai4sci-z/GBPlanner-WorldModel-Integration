@@ -7,9 +7,9 @@
 > **用途**：①你（用户）随时查我到底找出并修了哪些真 bug；②提 PR 时的逐条依据。
 > **原则**：只小修不大修、不动大框架；每条都有失败现场证据 + 源码根因 + 最小改动 + 提交号。
 > **诚实标注**：✅已实测确认修好 / 🔵已提交但端到端尚未全绿（在验证链上推进了一个门）/ ⚠️需处理后再进 PR。
-> 分支 `feat/gbplanner-gain-exploration-strategy`（基于上游 `09a5aa4`）+ clean 分支 `fix/world-model-e2e-takeoff`（干净复现验证；提交链 `09a5aa4` → `79643b9` 真bug+死锁 → `77d951a` 撤hack → `dada2db` 探针修复），最后更新 **2026-07-06 晚（🏁 端到端全绿）**。
+> 分支 `feat/gbplanner-gain-exploration-strategy`（基于上游 `09a5aa4`）+ clean 分支 `fix/world-model-e2e-takeoff`（干净复现验证；提交链 `09a5aa4` → `79643b9` 真bug+死锁 → `77d951a` 撤hack → `dada2db` 探针修复）。⚠️ 下节"2026-07-06 端到端全绿"为**历史快照**(当时真实;GATE-4b 后续证据已重开平台门,当前不得引用它宣称全绿)。
 
-## 一句话现状（2026-07-06 晚 · 🏁 端到端全绿）
+## 一句话现状（2026-07-06 晚 · 端到端全绿）【SUPERSEDED 历史快照,当前状态见 CURRENT_STATUS】
 🏁 **world-model exploration 首次端到端全绿（无 hack，实测）**。run `20260706T130626`：`status=TASK_STATUS_OK`、`ok=True`、**blockers 空**、**4 探针全 ok**（frame_contract 8/8 话题含 /tf_static、/ap/v1/pose/filtered）、`accepted_goals=3/3`、`path_length=1.06m`、`takeoff.ok=True`、landing ok=True；BIN 物理铁证：**SIM 地面真值 +0.720m、电机 PWM 峰值 1950**。clean_repro.sh 首次 rc=0。
 - 提交链（clean 分支 `fix/world-model-e2e-takeoff`）：`09a5aa4`(上游) → `79643b9`(5类真bug+B15死锁) → `77d951a`(撤3参数hack) → `dada2db`(B16 探针修复+测试断言遗留)。净 diff 286 行、零 hack：`integration/world-model-PR/CLEAN_REPRO_takeoff_fixes.diff`。
 - **关键两刀**：B15 死锁修复（起飞完成前不转发探索 intent，相序互斥正解）+ B16 探针修复（见下）。
@@ -89,7 +89,7 @@
 证据链:`runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md`(测量方法+判决表)、
 `l1_bringup_evidence_2026-07-15.md`(L0-L2 二分矩阵)。
 
-## 下一步（2026-07-07 更新;桥接进度详见 CURRENT_STATUS.md）
+## 下一步【SUPERSEDED · 桥接线已冻结,仅追溯;当前下一步见 CURRENT_STATUS §五】（原文 2026-07-07）
 1. ~~frontier_lite 基线定档~~ ✅ 已完成(6 run 达标率 40%,docs/基线定档)。
 2. ~~桥接接真 GBPlanner~~ **数据链已全线贯通**(B2.5 自写薄桥,Stage2~4:transport/消费闭环/3D/FCU 消费直证);**当前=Stage5**(策略替换/gate 对齐/同口径对比)。
 3. **三个一键 GUI 演示 + 源码级讲解**：①原始 GBPlanner(预研B) ②world-model 原版 frontier_lite(现已全绿) ③gbplanner 接入后。
