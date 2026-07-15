@@ -14,8 +14,10 @@
 **① 仓库/文档治理 → ② 长时间闭环稳定 → ③ ROS1/ROS2 前端对齐 → ④ 3D 无损验证 → ⑤ WorldModel 插件化接入**。
 多层楼梯探索只做架构预留清单,禁止功能代码。
 
-阶段状态:**第一阶段(现场冻结)有条件通过**(负责人 2026-07-16;不得写成全部验收通过)。
-**当前 = 第二阶段(治理)施工中**;完成后停点等 Codex 复审,不得自动进入第三阶段。
+阶段状态:第一阶段有条件通过;**第二阶段首轮交付被 Codex 判"暂不放行"(2026-07-16)**,
+三项阻塞 = 清单闭包不全(990≠实际 997)/文档正文旧主张残留/台账编号契约自相矛盾。
+**当前 = 第二阶段补正施工中**;范围只限管理主仓,禁改 wm/gbp-feat、禁仿真、禁第三阶段
+(第三阶段预备件 wait_batch 已冻结在 `49b111d`,fixture-4 失败在案)。补正完成即停点再审。
 
 ## 二、平台事实(GATE-4b 悬停战役,证据链见 runbooks)
 
@@ -41,7 +43,7 @@ waiting_for_fcu_external_nav、BIN 见 Accels inconsistent;211927 成功:OK、18
 | 仓 | 分支@HEAD | 角色 | 关键状态 |
 |---|---|---|---|
 | `/home/ai4s/projects/world-model` | `fix/world-model-e2e-takeoff@288b486`(=backup;领先上游 origin 19,红线不推) | 仿真与 B17–B22 实现事实源 | `334c47d` 单包阈值(已被取代);**`288b486` 纪元契约 = 候选实现·Codex 独立复验失败**(navlab/.venv 2 failed/18 passed,节点级测试 mavlink=None,见台账 OPEN-2);**`77f0b67` GPU vendor 配置 = 候选实现·待完整复验** |
-| `/home/ai4s/projects/gbp-feat` | `feat/gbplanner-ros2-port@17db3ba`(=origin 同名) | ROS2 迁移施工事实源 | M1–M4 = **窄验收收口**(编译/单测/切片对拍各有证据;**行为等价未证——M3 明确遗留、M4b 真场景长时未测、M2-Demo-3D 未测**,"无损"须待路线③④);M5 = BLOCKED;R003 未逐行审查,manifest 全部 UNVERIFIED |
+| `/home/ai4s/projects/gbp-feat` | `feat/gbplanner-ros2-port@17db3ba`(=origin 同名) | ROS2 迁移施工事实源 | M0–M5 统一证据分级(Codex 裁定口径):**M0**=窄验收证据(入口/探针,当时 live 全绿);**M1**=最小消息集构建通过(≠全接口迁移);**M2**=部分切片对拍通过(fast 积分器 2/34,506 失配未归因、3D Demo 查询未测);**M3**=编译+浅单测通过(**行为等价未证明**);**M4**=合成冒烟通过(**真场景长时 open-loop 未验证**);**M5**=仍被平台稳定门阻塞。R003 未逐行审查,manifest 全部 UNVERIFIED |
 | 本仓 main | `governance/` 提交后最新 | 治理/证据/状态入口 | `sources/` 592 文件=冻结第三方快照,禁入构建(已实测零引用) |
 
 companion 镜像 tag 陷阱仍有效:wm HEAD 变更后须 retag `jazzy-<HEAD12>`(当前已 retag 至 `eab0cc6f0d54`;
@@ -61,7 +63,8 @@ companion 镜像 tag 陷阱仍有效:wm HEAD 变更后须 retag `jazzy-<HEAD12>`
 
 ## 五、下一步(严格按序)
 
-1. **本阶段余项**:逐文档纠错(接力棒/文档索引/HANDOVER/Ubuntu审计/TASKS/README/Demo设计/runbook 指针/简洁汇报)→ 阶段报告 → **停,等 Codex 复审**
+1. **第二阶段补正**(Codex 三阻塞):清单闭包(missing/extra/duplicate=0+生成器自校验)、
+   文档正文旧主张清算(简洁汇报已重写、Demo/TASKS/README 已分级)、台账编号契约(已修)→ 停点再审
 2. 第三阶段:监视生命周期(helper+四类 fixture)
 3. 第四阶段:时钟纪元修复(测试与 pymavlink 解耦+补反例;边界清晰提交)
 4. 第五阶段:GPU 支持矩阵/IMU covariance(C'=RCRᵀ)+types.go 反注释/truth audit 混合匹配 fail-closed
