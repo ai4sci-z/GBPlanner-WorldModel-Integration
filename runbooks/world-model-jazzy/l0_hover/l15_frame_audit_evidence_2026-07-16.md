@@ -121,6 +121,9 @@ L2 run `20260715T200619` 测量(数据源 = summary `hover_xy_alignment` pairwis
 
   **这是整个 GATE-4b 战役以来 hover 任务的首批完整全绿 run**;yaw 180° 反转随修正消失,
   §6 的 candidate 反平行审计告警也随之消失(同根因的另一表象)。
+  ⚠️ **R003 纠偏**:本节口径为 `diagnostic counterfactual pass`(诊断反事实通过),
+  全分母见 §4b(诊断臂 attempts=4);默认主线状态见 §4b 与 R003-G01/G02/G10,
+  在 10/10 连续 full-pass 前不得升级为"稳定/FIXED/关门"。
 - **修复转正 = wm `eab0cc6`(B22)**:`SlamHover.IMUSourceCorrection` 默认
   `roll180_flu` + hover 族 slam 计划一律带 corrector 服务(官方冻结模型不动,
   imu-flu-correction profile 降为主线别名)。go test 全绿 + gofmt 干净 +
@@ -130,6 +133,34 @@ L2 run `20260715T200619` 测量(数据源 = summary `hover_xy_alignment` pairwis
 - 另записано:candidate 流(`/external_nav/odom_candidate`,selector 输出)与
   一切都反平行且幅值只有 0.24m,主线没人消费它——审计 blocker
   `external_nav_odom_candidate__*` 是接线审计告警,与稳定性问题分案处理。
+
+## 4b. 全分母登记(R003-A13/F04/F11 整改,2026-07-16)
+
+> 本节取代上文任何"3/3"单分母口径。三分母 = **attempts(全部发起)/ airborne(实际起飞)/ full-pass(完整 gate 绿)**,失败尝试一律入分母、独立归类、原始产物保留。
+
+**默认主线(B22 后,wm `eab0cc6`,无 profile)——attempts 6 / airborne 3 / full-pass 3**:
+
+| run | 结局 | 失败签名(观测,非根因) |
+|---|---|---|
+| 20260715T204428 | ✅ full-pass(TASK_STATUS_OK, blockers=[]) | — |
+| 20260715T2047xx(批 run2) | ✅ full-pass | — |
+| 20260715T205113 | ❌ 未起飞(mission abort) | SITL 无 BIN(起栈即死);hover_mission_abort |
+| 20260715T210149 | ❌ 未起飞(mission abort) | sitl 目录有 eeprom/tlog 无 logs/BIN |
+| 20260715T210849 | ❌ 未起飞(exit 20 / batch rc=1) | BIN:`Arm: Accels inconsistent`×6;summary:hover_mission_abort + rosbag_profile_failed;R003-E23 另记 waiting_for_fcu_external_nav |
+| 20260715T211927 | ✅ full-pass(单发,宿主静默跑) | — |
+
+**诊断臂 imu-flu-correction(wm `eab0cc6`)——attempts 4 / airborne 3 / full-pass 3**:
+20260715T202308 ✅ / 202630 ❌ 未起飞(BIN `Arm: Accels inconsistent`;R003-F04 evidence 记 `hover_mission_abort:waiting_for_fcu_external_nav`,两观测并存登记)/ 203023 ✅ / 203427 ✅。
+
+**L1.5 真值臂(wm `908a95a`)——attempts 3 / airborne 3 / 稳定 3**(rc=1 为诊断烙印设计使然,非失败)。
+
+**OPEN 问题(不编 B23,遵守 R003 FORBIDDEN;入问题台账)**:同 commit 同配置下未起飞与全绿相邻出现
+(F11 = CRITICAL)。候选假设矩阵(未验证,单变量复现前不定案):
+① 宿主并行负载(验尸容器/pytest 与批重叠的时间线相关性,211927 静默跑成功但 n=1 不足证);
+② SITL 多 IMU 加计一致性初始化瞬态(lockstep 抖动敏感);
+③ mission FSM external-nav readiness 竞态(waiting_for_fcu_external_nav);
+④ runner/批生命周期缺陷(R003-A01 定位对象:runner probes 完即 SIGKILL、无 BIN run 的起栈失败)。
+**依 F11:此问题关闭并 10/10 连续 full-pass 前,不得宣称"默认主线稳定"。**
 
 ## 5. 诚实边界
 
