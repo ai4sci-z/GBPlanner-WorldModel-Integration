@@ -23,8 +23,11 @@
 >
 > **已确认缺陷(各自独立 commit,均非翻机充分根因,修后仍翻机)**:B18 origin 半空注入(wm `f51976c`)/
 > B19 external_nav 墙钟三毒(wm `3da9c8a`)/ B20 桥 2Hz 定时器限流(wm `99fe8de`)+ ArduPilot 可 pin SHA(wm `13b11e0`)。
-> **悬停翻机主案状态 = HYPOTHESIS**(高嫌疑:ArduPilotPlugin/物理层时序;"物理层外力矩定案"表述过强已撤回;
-> 反事实 3-5 次重复通过前禁止写 ROOT_CAUSE)。版本基线:`runbooks/world-model-jazzy/pins_2026-07-14.yaml`。
+> **悬停翻机主案(07-15 更新)= 链级根因 CONFIRMED**:反事实矩阵完成——同 pin 下
+> L0(GPS 定位、零 SLAM 服务)**6/6 稳**(0.5/1.2m 配对)vs L2(全栈 external-nav)**5/5 翻**;
+> "Gazebo 物理层外力矩"假设 **REFUTED**。链内根因仍 OPEN(L1 拆服务在场 / L1.5 拆真值喂入),
+> 证据:`runbooks/world-model-jazzy/l0_hover/l0_batch_evidence_2026-07-14.md`。
+> 版本基线:`runbooks/world-model-jazzy/pins_2026-07-14.yaml`。
 > **问题状态词纪律(强制)**:OBSERVED / HYPOTHESIS / CONFIRMED_BUG / ROOT_CAUSE / FIXED / REGRESSED,
 > 禁用"换脸/收敛/洗清全部/主案定案"。**下一步主战场 = L0-L2 平台二分**(不含 GBPlanner 的 60s hover 硬门,5/5 过才关门)。
 > Review 001 的 P0-1~P0-4、P1-1~P1-8(executor 单线程/永久 enable/sed 改基线/无 readiness/轨迹无防御与 identity 等)
