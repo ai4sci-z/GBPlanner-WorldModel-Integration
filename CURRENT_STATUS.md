@@ -3,7 +3,27 @@
 > world-model 修复历史 = 本地 `/home/ai4s/projects/world-model` + 私有镜像 `github.com/ai4sci-z/world-model`(勿向上游 SZ-surveying push)。
 > 维护规则:每完成/失败一个阶段就更新本文;README 只引用本文,不另行维护状态。
 
-# CURRENT_STATUS(最后更新:2026-07-14 晚,🔴 GATE-4 拆分重开 + M5 BLOCKED)
+# CURRENT_STATUS(最后更新:2026-07-16 凌晨,🎯 GATE-4b 二分矩阵封口:根因域 CONFIRMED=external-nav 喂入机制)
+
+> **🎯 2026-07-16 凌晨·GATE-4b 链内根因二分收口(证据:`runbooks/world-model-jazzy/l0_hover/l1_bringup_evidence_2026-07-15.md` §4)**
+>
+> | 臂 | 配置 | 判决(BIN 全窗口重放,`l1_bin_full_window.py`) |
+> |---|---|---|
+> | L0 | GPS,零 SLAM 服务 | 6/6 稳 |
+> | L1 | 全服务 + GPS EKF | **5/5 稳**(armed 45.6~269.0s,roll≤0.4°) |
+> | L1.5 | 全服务 + **真值**喂 external-nav | **3/3 翻**(armed 21.9~29.9s,AngErr CrashCheck) |
+> | L2 | 全服务 + SLAM 喂 external-nav | 5/5 翻 |
+>
+> **CONFIRMED(每臂反事实≥3)**:翻机严格跟随 external-nav→EK3 喂入路径;
+> 服务负载/DDS 假设击毙(L1 稳)、SLAM 内容质量排除(真值照样翻)。
+> **根因域 = mavlink_external_nav 喂入器(帧约定/时间戳/时序)∣ EK3 融合参数(EK3_SRC/delay/噪声)。**
+> `imu-flu-correction` 臂被降级(L1.5 不经 SLAM 也翻,SLAM 输入侧修正非充分解)。
+> **下一步主战场 = 在 L1.5(最小翻机臂,真值可控)上打 EK3_SRC/delay/帧向单变量,每假设反事实 3-5 次。**
+> 平台新血债(GATE-4b 本体 blocker,记台账):**runner 不等 mission**——probes 完成即收尾
+> SIGKILL 全服务,mission 空中被杀,`--duration-sec` 只是 deadline 上限(evidence §4.3);
+> GATE-4b"60s 悬停+降落+summary 5/5"必须先修此项才可能 PASS。
+> 批次沿革坑:07-15 晚批进程随终端死于 L1-run3 中途(孤儿容器飞了 30min 反送 269s 加长观测);
+> 补跑脚本 `l15_batch.sh` 一律 setsid 脱离会话。
 
 > **🔴 2026-07-14 晚·两份外部 Review(ClaudeCode_Reviews/Review_001、Review_002)裁定,当前工程判定如下:**
 >

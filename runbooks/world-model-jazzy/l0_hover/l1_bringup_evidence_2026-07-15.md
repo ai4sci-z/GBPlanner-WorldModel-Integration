@@ -87,3 +87,35 @@
   (或 landing/status 出现)再收尾。
 - 孤儿 run3 顺带观测:mission 在 armed 269 仿真 s 时仍未进入降落(容器活、无人杀)——
   RTF 崩塌下 mission 自身的相位推进也可能有墙钟/仿真钟混用问题,待 GATE-4b 修 runner 时一并核。
+
+### 4.4 L1.5 臂正式批判决(`l15_batch.sh`,2026-07-15T19:16-19:28Z,wm `57924c0`,3/3 翻)
+
+| run(artifacts/sim/hover/) | armed 连续(仿真 s) | roll/pitch 峰(°) | crash |
+|---|---|---|---|
+| 20260715T191629 | **29.9**(43.0s CrashCheck 上锁) | **179.5** / 82.9 | `AngErr=149>30` |
+| 20260715T192023 | **29.7**(42.7s CrashCheck 上锁) | **180.0** / 63.0 | `AngErr=152>30` |
+| 20260715T192423 | **21.9**(35.4s CrashCheck 上锁) | 38.9 / **83.0** | `AngErr=50>30` |
+
+- 三跑均正常解锁(~13s)+ 起飞完成(EV28),起飞后 ~15-20 仿真 s 内姿态发散到 CrashCheck
+  强制上锁;run1/run2 逐秒级复刻(armed 29.9 vs 29.7,crash 43.0 vs 42.7)——**确定性失稳,非随机**。
+- 任务退出码均 rc=1 status=blocked(诊断跑设计内表象,判决只认 BIN)。
+
+### 4.5 二分矩阵终局(GATE-4b 链内根因,CONFIRMED)
+
+| 臂 | 配置 | 结果 |
+|---|---|---|
+| L0 | GPS 定位,零 SLAM 服务 | 6/6 稳 |
+| L1 | 全服务在场 + 官方 GPS EKF | **5/5 稳**(正式批 3 + bring-up 2) |
+| L1.5 | 全服务在场 + **origin 归一化 Gazebo 真值**喂 external-nav | **3/3 翻** |
+| L2 | 全服务在场 + SLAM 喂 external-nav | 5/5 翻 |
+
+**CONFIRMED(每臂反事实 ≥3 次)**:翻机严格跟随"external-nav 进 EK3 的喂入路径"这个
+单一开关走。已排除:①服务在场负载/DDS(L1 稳);②SLAM 估计内容质量(L1.5 用完美真值照样翻,
+且翻法与 L2 同族:起飞后姿态发散 → AngErr CrashCheck)。
+**根因域收窄为:external-nav 喂入机制本身——嫌疑集中在 mavlink_external_nav 喂入器
+(odom→VISION_POSITION_ESTIMATE 的帧约定 FLU/FRD、ENU/NED 转换与时间戳/时序)与
+EK3 融合侧(EK3_SRC 组合、EK3 delay、噪声参数)。**
+注意:`imu-flu-correction` 臂(修 SLAM 的 IMU 输入帧向)被本判决**降级**——L1.5 不经 SLAM
+照样翻,SLAM 输入侧修正不可能是充分解;它只在"帧向错误同时存在于喂入器"的复合假设下仍有价值。
+下一步(按既定矩阵):在 L1.5(最小翻机臂,真值可控)上做 EK3_SRC/delay/帧向单变量。
+每假设仍须反事实 3-5 次才准写 ROOT_CAUSE。
