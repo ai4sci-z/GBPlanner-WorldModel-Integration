@@ -22,9 +22,15 @@ Run inside official-baseline container (pymavlink available):
     python3 /tools/l15_frame_audit.py /logs/00000001.BIN
 """
 import math
+import os
 import sys
 
 from pymavlink import mavutil
+
+# Optional window overrides: MAX_RADIUS_M (default 1.5) truncates once truth
+# XY departs this far from start; T_MAX_S hard-truncates on BIN time.
+MAX_RADIUS_M = float(os.environ.get("MAX_RADIUS_M", "1.5"))
+T_MAX_S = float(os.environ.get("T_MAX_S", "1e9"))
 
 DEG = 180.0 / math.pi
 
@@ -132,7 +138,7 @@ def main():
     n0, e0 = all_pairs[0][0], all_pairs[0][1]
     pairs = []
     for p in all_pairs:
-        if math.hypot(p[0] - n0, p[1] - e0) > 1.5:
+        if math.hypot(p[0] - n0, p[1] - e0) > MAX_RADIUS_M or p[4] > T_MAX_S:
             break
         pairs.append(p)
     print(f"pre-crash window: {len(pairs)}/{len(all_pairs)} samples "

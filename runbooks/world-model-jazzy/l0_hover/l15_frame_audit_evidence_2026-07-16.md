@@ -79,9 +79,40 @@ wm `57924c0`,L1.5 正式批三跑(`l1_bringup_evidence_2026-07-15.md` §4.4 同�
   **这是 external-nav 喂入系(L1.5/L2)首次出现完整"起飞→悬停→降落"闭环。**
   三跑 rc=1 均为诊断臂设计上的 purpose 烙印 blockers
   (`external_nav_uses_diagnostic_truth_input` 等),非故障。
-- **L2×3 主线批**(mainline hover,SLAM 喂入,`l2_batch.sh`)于
-  2026-07-15T20:06:18Z 发车,log = `artifacts/sim/l2_batch_20260715T200618Z.log`,
-  结果另记;L2 3/3 稳则 B21 标 **FIXED**。
+- **L2×3 主线批判决:3/3 仍翻**(`l2_batch.sh`,
+  log = `artifacts/sim/l2_batch_20260715T200618Z.log`):
+
+  | run(B21 修复后主线) | armed | roll/pitch 峰(°) | crash |
+  |---|---|---|---|
+  | 20260715T200619 | 14.6s | 61.4 / 70.8 | AngErr=56>30 @27.6 |
+  | 20260715T200937 | 14.9s | 78.4 / 83.6 | AngErr=52>30 @27.8 |
+  | 20260715T201311 | 14.4s | 59.0 / 88.8 | (侧翻上锁,无 crash msg) |
+
+  ⇒ **B21 状态:L1.5 臂 FIXED;L2 臂非充分——SLAM 喂入链还有第二层根因。**
+
+## 6. 第二层根因(L2 残余):喂入 yaw ≡ 真值 − 180°,位置却与真值同向
+
+L2 run `20260715T200619` 测量(数据源 = summary `hover_xy_alignment` pairwise
++ BIN VISP/SIM 对比):
+
+- **位置方向**:`gazebo_model_odometry ↔ /external_nav/odom` 方向余弦 **+1.0000**
+  (喂入位置与真值完全同向);`/external_nav/odom ↔ /slam/odom_corrected` 也 +1.0000。
+  EKF 跟随喂入(fcu ↔ feed 余弦 +0.998)。
+- **yaw**:VISP.Y 初值 **−91.4°** vs SIM.Yaw 初值 **+90.0°**(spawn 朝东,与 §3
+  真值帧=标准 ENU 互证);发散段 SIM 161.9° ↔ VISP −24°≈161.9−180(差=SLAM 滞后)。
+  **喂入 yaw = 真值 yaw − 180°,恒差且动态跟踪。**
+- 机制:位置对 + yaw 反 180° = 非刚体不一致(B21 同类):EKF 初始 yaw 对齐到反向,
+  控制器世界系修正方向全反 → 正反馈跑飞(真值实测漂移 3.56m)→ AngErr 翻机。
+  (刚体旋转偏移不可能致翻——L0/L1.5 已证;必须是位置与 yaw 帧不一致。)
+- **嫌疑机制(与 `imu_frame_corrector.py` 文档自洽)**:官方 iris 模型 IMU
+  `roll-180` 倒装,ros_gz 桥不修数据、TF 声称 identity → Cartographer 吃倒置 IMU
+  (静止 z 加速度 −9.8)→ 重力对齐反 → 平面位置照常、朝向 180° 反。
+- **反事实批**:`l2fix_batch.sh`(imu-flu-correction ×3,单变量叠在 B21 上)
+  2026-07-15T20:23:08Z 发车,log = `artifacts/sim/l2fix_batch_20260715T202308Z.log`。
+  预测:修正后 VISP.Y 初值 ≈ +90°,3/3 稳。结果另记。
+- 另записано:candidate 流(`/external_nav/odom_candidate`,selector 输出)与
+  一切都反平行且幅值只有 0.24m,主线没人消费它——审计 blocker
+  `external_nav_odom_candidate__*` 是接线审计告警,与稳定性问题分案处理。
 
 ## 5. 诚实边界
 
