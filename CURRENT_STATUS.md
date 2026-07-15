@@ -41,7 +41,7 @@ waiting_for_fcu_external_nav、BIN 见 Accels inconsistent;211927 成功:OK、18
 | 仓 | 分支@HEAD | 角色 | 关键状态 |
 |---|---|---|---|
 | `/home/ai4s/projects/world-model` | `fix/world-model-e2e-takeoff@288b486`(=backup;领先上游 origin 19,红线不推) | 仿真与 B17–B22 实现事实源 | `334c47d` 单包阈值(已被取代);**`288b486` 纪元契约 = 候选实现·Codex 独立复验失败**(navlab/.venv 2 failed/18 passed,节点级测试 mavlink=None,见台账 OPEN-2);**`77f0b67` GPU vendor 配置 = 候选实现·待完整复验** |
-| `/home/ai4s/projects/gbp-feat` | `feat/gbplanner-ros2-port@17db3ba`(=origin 同名) | ROS2 迁移施工事实源 | M1–M4 已收口(历史证据见 runbooks/ros2_port);M5 = BLOCKED_BY_PLATFORM_STABILITY;R003 未逐行审查,manifest 状态=UNVERIFIED |
+| `/home/ai4s/projects/gbp-feat` | `feat/gbplanner-ros2-port@17db3ba`(=origin 同名) | ROS2 迁移施工事实源 | M1–M4 = **窄验收收口**(编译/单测/切片对拍各有证据;**行为等价未证——M3 明确遗留、M4b 真场景长时未测、M2-Demo-3D 未测**,"无损"须待路线③④);M5 = BLOCKED;R003 未逐行审查,manifest 全部 UNVERIFIED |
 | 本仓 main | `governance/` 提交后最新 | 治理/证据/状态入口 | `sources/` 592 文件=冻结第三方快照,禁入构建(已实测零引用) |
 
 companion 镜像 tag 陷阱仍有效:wm HEAD 变更后须 retag `jazzy-<HEAD12>`(当前已 retag 至 `eab0cc6f0d54`;
