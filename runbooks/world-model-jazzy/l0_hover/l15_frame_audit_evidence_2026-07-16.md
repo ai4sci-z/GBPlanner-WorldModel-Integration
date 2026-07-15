@@ -64,10 +64,24 @@ wm `57924c0`,L1.5 正式批三跑(`l1_bringup_evidence_2026-07-15.md` §4.4 同�
   环境性,与本修复无关;07-15 记录的 "414 passed" 环境待考)。
 - companion 已 retag `jazzy-908a95a30561`(external_nav.py 由 official-baseline
   容器挂载 /workspace 直跑,改 host 文件即生效;retag 仅满足 tag_policy)。
-- **验证批**:`l15_batch.sh`(truth-external-nav ×3,DURATION_SEC=1500,与 07-15
-  翻机批同条件)于 2026-07-15T19:55:19Z(UTC)发车,
-  log = `artifacts/sim/l15_batch_20260715T195519Z.log`。判决以 BIN 为准
-  (`l1_bin_full_window.py` + 本审计工具复核 det≈+1)。结果另记。
+- **验证批判决:L1.5×3 修复后全稳(3/3,与翻机批同条件反事实闭环)**。
+  `l15_batch.sh`(truth-external-nav ×3,DURATION_SEC=1500),
+  log = `artifacts/sim/l15_batch_20260715T195519Z.log`:
+
+  | run(修复后) | armed | roll/pitch 峰(°) | 结局 | 喂入帧审计 |
+  |---|---|---|---|---|
+  | 20260715T195519 | 14.7s | 0.5 / 0.0 | EV17 正常降落,零 crash | det=+0.999,identity RMS 0.0001m |
+  | 20260715T195844 | 14.8s | 0.5 / 0.0 | EV17 正常降落,零 crash | det=+1.000 |
+  | 20260715T200206 | 15.4s | 0.5 / 0.1 | EV17+EV18 正常降落,零 crash | det=+1.000 |
+
+  对照修复前同臂 3/3:armed 21.9–29.9s 全 AngErr 129–152° CrashCheck 翻机。
+  修复前确定性失稳 ↔ 修复后逐秒级复刻的确定性稳定,真值 XY 漂移 ≤4cm。
+  **这是 external-nav 喂入系(L1.5/L2)首次出现完整"起飞→悬停→降落"闭环。**
+  三跑 rc=1 均为诊断臂设计上的 purpose 烙印 blockers
+  (`external_nav_uses_diagnostic_truth_input` 等),非故障。
+- **L2×3 主线批**(mainline hover,SLAM 喂入,`l2_batch.sh`)于
+  2026-07-15T20:06:18Z 发车,log = `artifacts/sim/l2_batch_20260715T200618Z.log`,
+  结果另记;L2 3/3 稳则 B21 标 **FIXED**。
 
 ## 5. 诚实边界
 
