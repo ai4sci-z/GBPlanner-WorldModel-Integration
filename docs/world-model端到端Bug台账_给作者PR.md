@@ -1,4 +1,6 @@
-> **[REFERENCE]** B1~B16 修复链事实源(PR 素材)。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
+> **[CURRENT · 唯一问题台账]** 覆盖 **B1–B22 + OPEN 编号**(上游真 bug 修复链 + 未定案问题)。
+> 最后更新 **2026-07-16(R003 治理)**。全局状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准;本文只承载问题条目。
+> 编号纪律:B 号=根因已验证并有修复 commit;OPEN 号=未定案,禁止预编 B 号(R003)。
 
 # world-model 端到端 Bug 台账（给作者的 PR 清单）
 
