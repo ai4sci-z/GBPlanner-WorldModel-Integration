@@ -71,6 +71,19 @@
 4. 顺手修 clean 分支测试断言遗留：`slam_test.go`（旧 `/imu`→`/navlab/slam/imu`+自吞回声守卫）、`runtime_artifacts_test.go`（RNGFND 旧参数名→4.5 新名+裸旧名守卫）。
 **验证（实测,run `20260706T130626`）**：`TASK_STATUS_OK`、blockers 空、4 探针全 ok（frame_contract 8/8 话题）、accepted_goals=3/3、path 1.06m、SIM+0.720m、电机 1950;`go build/vet/test ./...` 全绿;clean_repro.sh 首次 rc=0。
 
+## B17–B21 · 原生迁移与 GATE-4b 排障期新增上游真 bug（2026-07-13 → 07-16,commit 均在 fix/world-model-e2e-takeoff）
+
+| # | 提交 | 症状（失败现场） | 根因 | 最小改动 | 状态 |
+|---|---|---|---|---|---|
+| B17 | `8df2690` | mode/arm/takeoff 全被 SITL 无视,零心跳起飞(WSL 从未暴露) | companion GCS 心跳(sysid191)早于飞控 296ms 到达,pymavlink 对 GCS 心跳不设 target → `target_system=0` 广播全失效(B15 同族竞态) | bootstrap 等 `target_system!=0`(真飞控心跳) | ✅ GATE-4 全绿 |
+| B18 | `f51976c` | EKF origin 在 t=25 半空注入 → 位置基准重置,估计跑飞 -215m | `ahrs-set-origin.lua` 受 `ahrs:initialised()` 时延固定 t=25 注入,晚于 bootstrap t=4.5 武装 | bootstrap 武装前主动 `SET_GPS_GLOBAL_ORIGIN` + 回读确认(lua 见已设即 no-op) | ✅ EV25 先于 arm,XKF1 零跑飞 |
+| B19 | `3da9c8a` | EKF 速度估计 1Hz ±0.5m/s 打摆(WSL 稳/原生炸) | external_nav 三处墙钟毒:time_usec 用 monotonic(与 lockstep sim 钟按 RTF 漂移)/ 限幅 dt 按墙钟(有效限幅随 RTF 缩放)/ stale odom 以新鲜戳重发(幻影零速) | 全部改用 odom header stamp + stale 不重发 | ✅ pytest 42/42;非翻机充分根因 |
+| B20 | `99fe8de` | `/external_nav/odom` 只有 1.3Hz(SLAM 明明 202Hz) | 桥的 odom 输出挂在 500ms 墙钟 status 定时器上 | 逐新鲜样本事件驱动发布(保量测 stamp) | ✅ VISP 2→20Hz;非翻机充分根因 |
+| B21 | `908a95a` | **GATE-4b 悬停翻机主案**:external-nav 喂入下起飞后姿态确定性发散,armed 14-30s AngErr CrashCheck(L1.5 真值喂入 3/3 翻、L2 SLAM 喂入 5/5 翻;GPS 臂 L0/L1 全稳) | `ros_enu_position_to_mavlink_local_frd()` 返回 `(y,-x,-z)`:对任何右手源帧都把东轴镜像成**左手系喂入**(det=−1),而 yaw 路径是真旋转 → 与 IMU 惯性基准不可调和,EK3 创新反馈正反馈发散。BIN 实测:VISP.PN=+truth_N、VISP.PE=−truth_E,LS 拟合 det=−0.92/−0.95/−0.93(3/3);代码注释宣称的 "map x=west,y=north" 帧约定为左手系,物理不可能,同测量证伪 | `(y, x, -z)`(标准 ENU→NED,一个符号) | 🔵 L1.5 修复后 3/3 稳(roll≤0.5°,首见完整起降闭环,喂入 det=+1.0);L2 主线 ×3 验证中 |
+
+证据链:`runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md`(测量方法+判决表)、
+`l1_bringup_evidence_2026-07-15.md`(L0-L2 二分矩阵)。
+
 ## 下一步（2026-07-07 更新;桥接进度详见 CURRENT_STATUS.md）
 1. ~~frontier_lite 基线定档~~ ✅ 已完成(6 run 达标率 40%,docs/基线定档)。
 2. ~~桥接接真 GBPlanner~~ **数据链已全线贯通**(B2.5 自写薄桥,Stage2~4:transport/消费闭环/3D/FCU 消费直证);**当前=Stage5**(策略替换/gate 对齐/同口径对比)。
