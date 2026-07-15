@@ -1,5 +1,8 @@
 # L0 悬停硬门 · 配对批证据(2026-07-14)
 
+> **[后续状态指针 · 2026-07-16]** 原始实验记录只读。链级结论(external-nav 喂 EKF 链)后续精化为
+> B21+B22 双帧缺陷,见 `l15_frame_audit_evidence_2026-07-16.md` 与 CURRENT_STATUS.md。
+
 > 版本基线:pins_2026-07-14.yaml(world-model `13b11e0`,ArduPilot `e0fa4a47`,
 > official-baseline `e13af8bbf517`,模型 overlay sha256 `11715865…e4e8` = 翻机 run 同款冻结)
 > harness:`l0_hover_gate.sh`(main `4dfb9e7`);判决 = 落地后全窗口 BIN,业务结果=退出码。

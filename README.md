@@ -1,5 +1,9 @@
 > **[CURRENT] 入口页。状态细节以 [CURRENT_STATUS.md](CURRENT_STATUS.md) 为唯一事实源,本页不另行维护一套状态。**
 
+> **[R003 治理标记 · 2026-07-16]** 本页只作项目入口;一切状态以 [CURRENT_STATUS.md](CURRENT_STATUS.md)
+> 为准(唯一入口),问题以 [台账](docs/world-model端到端Bug台账_给作者PR.md) 为准。本页下文中任何
+> "已完成/全绿/资产全部直接复用"等表述若与 CURRENT_STATUS 冲突,一律以 CURRENT_STATUS 为准。
+
 # GBPlanner → World-Model 集成
 
 把 **GBPlanner**(DARPA 地下赛冠军队 CERBERUS 的 3D 自主探索规划器,ROS1)接入 **world-model**(ROS2 jazzy 无人机仿真平台),替换其占位探索策略 `frontier_lite`,并用同口径数据证明升级价值。

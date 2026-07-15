@@ -1,5 +1,9 @@
 # L1/L1.5 诊断臂 bring-up 证据(2026-07-15)
 
+> **[后续状态指针 · 2026-07-16]** 本文是 07-15 原始实验记录(只读,数值不改)。其"下一步/补跑中/根因域"
+> 表述已被后续证据推进:根因定位 = B21(东轴镜像,已验证)+ B22(IMU 倒装,候选),修复与全分母统计见
+> `l15_frame_audit_evidence_2026-07-16.md` §4b;当前状态见仓库根 CURRENT_STATUS.md。
+
 > 版本:wm `9852e46`(两次 bring-up 跑)/ 正式批 = wm `57924c0`;
 > companion 按各 HEAD retag(依赖未变,retag 合法);判决权威 = BIN 全窗口重放,
 > 任务退出码/gate blockers 只是表象(诊断跑 gate 必然报 truth/SLAM blockers,属设计)。
