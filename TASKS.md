@@ -47,7 +47,7 @@
 | **P-0** | **🔴 平台稳定基线(GATE-4b 重开,当前主战场)** | 🔵 **进行中** | 不含 GBPlanner 的 60s hover 硬门:L0(禁 SLAM/external nav,验刚体/插件/lockstep)→ L1(+SLAM 只观察)→ L2(+external nav 回灌)。验收=60s 连续 armed/GUIDED、5/5 无翻覆、姿态/角速度/电机包络有界、RTF 两档、probe 覆盖全窗口落地后判决。0.5m/1.2m 配对各≥3 次;根因须反事实 3-5 次才可写 ROOT_CAUSE。版本基线 pins_2026-07-14.yaml |
 | **D-0** | 多层 3D Demo 支线(会议需求 07-09) | ⬜ 设计文档先行 | Demo 0 离线 3D 决策/Demo 1 ROS1 oracle 多层场景可预研;**Demo 2/3 必须等 GATE-4b + M2-Demo-3D + M3-3D oracle + M4b + M5-4/5 硬门**。产出 docs/多层3D探索Demo设计.md(算法层已支持/系统层待实现/分阶段验收) |
 
-**当前施工点 = P-0 平台二分(GATE-4b)**。M5 的"数据链已通"不作为接近成功的证据;任何 live 结论在 GATE-4b 通过前不作数。
+**当前施工点 = R003 整改(第二阶段治理,见顶部标记与 CURRENT_STATUS)**;P-0 平台二分已执行至 B21/B22(见台账)。M5 的"数据链已通"不作为接近成功的证据;任何 live 结论在稳定门(10/10+长稳)通过前不作数。
 ⚠️ 工程事实保留:`navlab-sim --artifact-root` 只能指 workspace 内路径(指 /tmp 必致 4 探针全挂假象)。
 
 **第一轮纪律**(勿一次碰 messages+voxblox+rrg+params+TF+RViz2):M1 只做消息层地基;每个 M 阶段单独 commit + 留 evidence;行为等价靠 ROS1 oracle 对照;不因"能编译"就宣称迁移成功。

@@ -222,4 +222,4 @@ side_quests:
 | 桥接期全部结论(oracle) | CURRENT_STATUS §二 + runbooks/world-model-jazzy/stage*_evidence.txt |
 | 迁移检查单(本文件的姊妹篇) | docs/原生Linux迁移检查单_2026-07-08.md |
 | jazzy 镜像重建施工指引 | docs/jazzy全栈重建_施工指引.md |
-| Bug 台账(B1-B16+EKF,PR 素材) | docs/world-model端到端Bug台账_给作者PR.md |
+| Bug 台账(B1–B22 + OPEN,唯一问题台账) | docs/world-model端到端Bug台账_给作者PR.md |
