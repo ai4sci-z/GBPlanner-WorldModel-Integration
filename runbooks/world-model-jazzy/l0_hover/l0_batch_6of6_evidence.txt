@@ -1,0 +1,33 @@
+=== L0 悬停硬门 · 配对批 6/6 PASS(2026-07-14 深夜,原生 Linux)===
+
+口径:同容器/同launch/同冻结模型(sha256=11715865...e4e8),唯一变量=官方GPS+罗盘EKF(无external-nav parm)+零SLAM/companion服务
+判决:全窗口仿真时间,落地后从BIN判(60s连续armed/roll-pitch<20°/悬停带±0.3m≥95%/无crash-check/XY span<1m)
+版本:pins_2026-07-14.yaml(world-model 13b11e0 / ArduPilot e0fa4a47 / official-baseline e13af8bbf517)
+
+=== RUN alt=0.5 13:38:58 ===
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 88.47, "armed_long_enough": true, "peak_roll_deg": 0.3, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 83.1, "hover_long_enough": true, "xy_span_m": 0.08, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T133858Z-alt0.5: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T133858Z-alt0.5)
+=== RUN alt=0.5 13:45:08 ===
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 88.47, "armed_long_enough": true, "peak_roll_deg": 0.4, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 83.1, "hover_long_enough": true, "xy_span_m": 0.061, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T134508Z-alt0.5: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T134508Z-alt0.5)
+=== RUN alt=0.5 13:51:14 ===
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 88.47, "armed_long_enough": true, "peak_roll_deg": 0.3, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 83.1, "hover_long_enough": true, "xy_span_m": 0.1, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T135114Z-alt0.5: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T135114Z-alt0.5)
+=== RUN alt=1.2 13:57:21 ===
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 89.88, "armed_long_enough": true, "peak_roll_deg": 0.4, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 81.9, "hover_long_enough": true, "xy_span_m": 0.082, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T135721Z-alt1.2: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T135721Z-alt1.2)
+=== RUN alt=1.2 14:03:27 ===
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 89.88, "armed_long_enough": true, "peak_roll_deg": 0.3, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 81.9, "hover_long_enough": true, "xy_span_m": 0.11, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T140327Z-alt1.2: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T140327Z-alt1.2)
+=== RUN alt=1.2 14:09:33 ===
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 89.88, "armed_long_enough": true, "peak_roll_deg": 0.4, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 81.9, "hover_long_enough": true, "xy_span_m": 0.056, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T140933Z-alt1.2: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T140933Z-alt1.2)
+
+=== 对照:L2(SLAM喂EKF)翻机 run 同尺判决 ===
+hover 20260714T092022: armed 14.0s, roll峰值 142.4°, XY估计span 1345.9m, crash-check触发
+hover 20260714T093122: armed 18.4s, roll峰值 138.5°, XY估计span 1275.4m, crash-check触发
+
+结论(状态=CONFIRMED分层事实,非最终ROOT_CAUSE):
+  Gazebo物理/ArduPilotPlugin/lockstep/刚体/电机在0.5m与1.2m均稳(6/6,roll≤0.4°,XY≤11cm)——洗清;
+  失稳必要条件在external-nav/SLAM喂EKF链(或其时序)。下一层:L1(全服务+GPS EKF)与真值喂external-nav对照。
+  注意:L2的XY span 1300m是EKF估计跑飞的痕迹(BIN XKF1),与L0的厘米级形成直接对比。

@@ -1,0 +1,31 @@
+L0 paired batch 2026年 07月 14日 星期二 13:38:58 UTC
+=== RUN alt=0.5 13:38:58 ===
+[l0] stopping SITL so the BIN flushes ...
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 88.47, "armed_long_enough": true, "peak_roll_deg": 0.3, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 83.1, "hover_long_enough": true, "xy_span_m": 0.08, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T133858Z-alt0.5: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T133858Z-alt0.5)
+rc=0
+=== RUN alt=0.5 13:45:08 ===
+[l0] stopping SITL so the BIN flushes ...
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 88.47, "armed_long_enough": true, "peak_roll_deg": 0.4, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 83.1, "hover_long_enough": true, "xy_span_m": 0.061, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T134508Z-alt0.5: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T134508Z-alt0.5)
+rc=0
+=== RUN alt=0.5 13:51:14 ===
+[l0] stopping SITL so the BIN flushes ...
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 88.47, "armed_long_enough": true, "peak_roll_deg": 0.3, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 83.1, "hover_long_enough": true, "xy_span_m": 0.1, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T135114Z-alt0.5: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T135114Z-alt0.5)
+rc=0
+=== RUN alt=1.2 13:57:21 ===
+[l0] stopping SITL so the BIN flushes ...
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 89.88, "armed_long_enough": true, "peak_roll_deg": 0.4, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 81.9, "hover_long_enough": true, "xy_span_m": 0.082, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T135721Z-alt1.2: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T135721Z-alt1.2)
+rc=0
+=== RUN alt=1.2 14:03:27 ===
+[l0] stopping SITL so the BIN flushes ...
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 89.88, "armed_long_enough": true, "peak_roll_deg": 0.3, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 81.9, "hover_long_enough": true, "xy_span_m": 0.11, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T140327Z-alt1.2: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T140327Z-alt1.2)
+rc=0
+=== RUN alt=1.2 14:09:33 ===
+[l0] stopping SITL so the BIN flushes ...
+VERDICT: PASS {"armed_seen": true, "armed_duration_sec": 89.88, "armed_long_enough": true, "peak_roll_deg": 0.4, "peak_pitch_deg": 0.0, "attitude_bounded": true, "hover_in_band_sec": 81.9, "hover_long_enough": true, "xy_span_m": 0.056, "xy_bounded": true, "no_crash_check": true, "n_disarms": 1}
+[l0] run 20260714T140933Z-alt1.2: mission_rc=0 verdict_rc=0 (artifacts: /home/ai4s/projects/world-model/artifacts/sim/l0_hover/20260714T140933Z-alt1.2)
+rc=0
