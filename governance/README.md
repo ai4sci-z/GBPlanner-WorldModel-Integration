@@ -1,7 +1,7 @@
 # 治理清单与闭包协议(R003-S2-FIX · 2026-07-16)
 
 > 本目录 = 三工作目录全量 tracked-path 五态清单、闭包协议、claim manifest 与治理决议。
-> 生成器:`generate_manifest.py`(27 项正反例测试 `test_generate_manifest.sh`)。
+> 生成器:`generate_manifest.py`(正反例测试 `test_generate_manifest.sh`,数量与分项以套件输出为准)。
 
 ## 1. 闭包协议与两个机器门(阶段 B 修订)
 

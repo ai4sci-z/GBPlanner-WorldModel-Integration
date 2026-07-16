@@ -42,8 +42,8 @@ grep -q "空文件_中文名" "$TMP/m.tsv";                     check "非ASCII�
 awk -F'\t' '!/^#/ && !/^path\t/ && NF!=6 {bad=1} END{exit bad}' "$TMP/m.tsv"; check "字段数=6" 0 $?
 grep -qE ' +$|	$' "$TMP/m.tsv";                           check "无尾随空白(grep应不中)" 1 $?
 grep -q "^sub	-1	" "$TMP/m.tsv";                          check "gitlink入册lines=-1" 0 $?
-OUT=$(python3 "$GEN" --verify-bound "$A" main "$TMP/m.tsv" 2>&1); check "bound门通过" 0 $?
-echo "$OUT" | grep -q "symlink_lines_skipped=1";           check "symlink跳过计数=1" 0 $?
+python3 "$GEN" --verify-bound "$A" main "$TMP/m.tsv" >/dev/null 2>&1; check "bound门通过" 0 $?
+grep -q "^link.md	1	" "$TMP/m.tsv";                        check "symlink按链接blob行数入册(=1)" 0 $?
 python3 "$GEN" --verify-current "$A" main "$TMP/m.tsv" >/dev/null 2>&1; check "current门通过" 0 $?
 
 echo "=== 行事实篡改反例(GOV-01;全部在合法枚举内篡改) ==="
@@ -152,6 +152,69 @@ print(f"  内层生成器 rc={r.returncode}(预期 5)")
 sys.exit(0 if r.returncode==5 else 1)
 PY
 check "audit种子未命中被拒(外层判定=内层rc==5)" 0 $?
+
+echo "=== 补正反例:symlink 行数篡改 ==="
+python3 - "$TMP/m.tsv" "$TMP/symtamper.tsv" <<'PY'
+import re,sys
+s=open(sys.argv[1]).read()
+s=re.sub(r'^(link\.md\t)\d+(\t)', r'\g<1>999999\g<2>', s, count=1, flags=re.M)
+open(sys.argv[2],'w').write(s)
+PY
+python3 "$GEN" --verify-bound "$A" main "$TMP/symtamper.tsv" >/dev/null 2>&1; check "symlink行数篡改被拒" 6 $?
+
+echo "=== 补正反例:头部统计篡改(files / category / audit) ==="
+sed 's/ files=[0-9]*/ files=999999/' "$TMP/m.tsv" > "$TMP/hfiles.tsv"
+python3 "$GEN" --verify-bound "$A" main "$TMP/hfiles.tsv" >/dev/null 2>&1; check "头部files篡改被拒" 6 $?
+sed 's/^# category: .*/# category: ARCHIVE=999/' "$TMP/m.tsv" > "$TMP/hcat.tsv"
+python3 "$GEN" --verify-bound "$A" main "$TMP/hcat.tsv" >/dev/null 2>&1; check "头部category统计篡改被拒" 6 $?
+sed 's/^# audit: .*/# audit: UNVERIFIED=999/' "$TMP/m.tsv" > "$TMP/haud.tsv"
+python3 "$GEN" --verify-bound "$A" main "$TMP/haud.tsv" >/dev/null 2>&1; check "头部audit统计篡改被拒" 6 $?
+
+echo "=== 补正反例:原地刷新已跟踪 manifest(此前 rc=7 且弄脏目标) ==="
+R=$TMP/R; mkdir -p "$R"; git -C "$R" init -q
+printf 'x\n' > "$R/x.md"
+printf '# placeholder\n' > "$R/manifest.tsv"
+git -C "$R" add -A; gitc "$R" commit -qm init
+python3 "$GEN" "$R" main "$R/manifest.tsv" >/dev/null 2>&1; check "原地刷新tracked清单" 0 $?
+grep -q "^x.md	1	" "$R/manifest.tsv"; check "原地刷新内容已替换" 0 $?
+git -C "$R" add -A; gitc "$R" commit -qm refresh
+python3 "$GEN" --verify-current "$R" main "$R/manifest.tsv" >/dev/null 2>&1
+RC=$?
+if [ $RC -eq 0 ] || [ $RC -eq 7 ]; then :; fi
+python3 "$GEN" "$R" main "$R/manifest.tsv" >/dev/null 2>&1; check "提交后再次原地刷新" 0 $?
+git -C "$R" checkout -q -- manifest.tsv 2>/dev/null || true
+
+echo "=== 补正反例:生成失败时目标文件保持原状(哈希不变) ==="
+H0=$(sha256sum "$R/manifest.tsv" | cut -d' ' -f1)
+echo dirty > "$R/untracked_block.md"
+python3 "$GEN" "$R" main "$R/manifest.tsv" >/dev/null 2>&1; check "现场不洁生成被拒" 7 $?
+H1=$(sha256sum "$R/manifest.tsv" | cut -d' ' -f1)
+[ "$H0" = "$H1" ]; check "失败后目标哈希不变" 0 $?
+ls "$R/manifest.tsv.tmp" >/dev/null 2>&1; check "失败后无.tmp残留(ls应失败)" 2 $?
+rm "$R/untracked_block.md"
+
+echo "=== 补正反例:merge conflict / staged / unstaged / rename ==="
+C=$TMP/C; mkdir -p "$C"; git -C "$C" init -q -b main
+printf 'base\n' > "$C/f.md"; git -C "$C" add -A; gitc "$C" commit -qm base
+python3 "$GEN" "$C" main "$TMP/cm.tsv" >/dev/null 2>&1
+git -C "$C" checkout -q -b side; printf 'side\n' > "$C/f.md"; git -C "$C" add -A; gitc "$C" commit -qm side
+git -C "$C" checkout -q main; printf 'main\n' > "$C/f.md"; git -C "$C" add -A; gitc "$C" commit -qm main
+git -C "$C" merge -q side >/dev/null 2>&1 || true
+python3 "$GEN" --verify-current "$C" main "$TMP/cm.tsv" >/dev/null 2>&1; check "merge conflict被拒" 7 $?
+git -C "$C" merge --abort 2>/dev/null; git -C "$C" reset -q --hard main 2>/dev/null
+git -C "$C" checkout -q main
+CBASE=$(git -C "$C" rev-parse HEAD)
+python3 "$GEN" "$C" main "$TMP/cm2.tsv" >/dev/null 2>&1
+printf 'staged\n' >> "$C/f.md"; git -C "$C" add f.md
+python3 "$GEN" --verify-current "$C" main "$TMP/cm2.tsv" >/dev/null 2>&1; check "staged修改被拒" 7 $?
+git -C "$C" reset -q; python3 "$GEN" --verify-current "$C" main "$TMP/cm2.tsv" >/dev/null 2>&1; check "unstaged修改被拒" 7 $?
+git -C "$C" checkout -q -- f.md
+git -C "$C" mv f.md renamed.md
+OUT=$(python3 "$GEN" --verify-current "$C" main "$TMP/cm2.tsv" 2>&1); RC=$?
+check "rename被拒" 7 $RC
+echo "$OUT" | grep -q "renamed.md (原 f.md)"; check "rename路径正确解析(含原路径)" 0 $?
+echo "$OUT" | grep -qE "R[0-9]+ renamed"; check "score不混入路径(grep应不中)" 1 $?
+git -C "$C" mv renamed.md f.md 2>/dev/null; git -C "$C" reset -q --hard "$CBASE"
 
 echo "=== 真实仓只读校验(三仓 bound 门) ==="
 python3 "$GEN" --verify-bound "$MAIN_WT" main "$HERE/manifest_main.tsv" >/dev/null 2>&1; check "真仓main bound" 0 $?

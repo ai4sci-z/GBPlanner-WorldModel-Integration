@@ -1,42 +1,44 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""三工作目录全量 tracked-path 五态清单生成器(R003 治理真实性补正版·阶段 B)。
+"""三工作目录全量 tracked-path 五态清单生成器(提交一补正版)。
 
 用法:
   生成:         python3 generate_manifest.py <worktree> <main|feat|wm> <out.tsv>
   绑定门校验:   python3 generate_manifest.py --verify-bound   <worktree> <main|feat|wm> <manifest.tsv>
   工作树门校验: python3 generate_manifest.py --verify-current <worktree> <main|feat|wm> <manifest.tsv>
 
-两个独立机器门(GOV-03,不再用一个 rc 混写两个结论):
+两个独立机器门(GOV-03):
 
 bound_commit_closure(--verify-bound),对清单头部绑定 commit 校验:
   ①路径集合 == 该 commit 的 git tree(missing/extra/duplicate=0)
   ②每数据行 review_commit == 绑定 commit 前 12 位
-  ③lines == 该 commit 中对应 blob 的行数(gitlink 行要求 -1;symlink 行跳过行数比对并计数报告)
-  ④category == 分类器对该路径的重算结果(classifier 漂移/篡改检测)
-  ⑤audit_status == 登记来源的重算结果(wm=R003 种子表;第三方=third_party_audit;其余=UNVERIFIED)
-  ⑥字段数/枚举/重复路径/尾随空白合法
+  ③lines == 该 commit 中对应对象的行数(普通 blob=内容行数;symlink=链接自身 blob 行数,
+    与生成端同一语义,不跳过;gitlink 要求 -1)
+  ④category == 分类器重算(classifier 漂移/篡改检测)
+  ⑤audit_status == audit_source 注册表重算(wm=R003 种子表;第三方规则;默认 UNVERIFIED)
+  ⑥头部统计(files / category 计数 / audit 计数)与数据行重算一致
+  ⑦字段数/枚举/重复路径/尾随空白合法
 
 current_worktree_closure(--verify-current),对当前工作树校验:
   当前 HEAD tracked 集合相对清单的 added/removed、untracked、tracked-but-missing、
-  冲突、脏改动逐类列出;任一非零 → 非零退出(GOV-02)。
+  冲突、脏改动(含正确解析的 rename/copy)逐类列出;任一非零 → 非零退出(GOV-02)。
 
-退出码类别(GOV-05,每反例断言精确码):
-  0=门通过  2=用法错误
-  4=绑定门路径集合违规
-  5=格式/引用违规(字段数/枚举/尾随空白/缺绑定头/lines 非整数/绑定 commit 不可解析/路径含 tab)
-  6=绑定门行事实违规(lines/category/audit 来源/行 review_commit)
+生成流程(原地刷新安全):内存计算 → 写前现场检查(工作树须洁净,唯一豁免=受控输出目标
+自身及其 .tmp)→ 写临时文件 → 对临时文件过 bound 门 → 原子替换目标。
+任一步失败:删除临时文件,**目标文件保持原状**(失败关闭,零半成品)。
+
+退出码类别:0=门通过  2=用法错误  4=绑定门路径集合违规
+  5=格式/引用违规(字段/枚举/尾随空白/缺头/lines 非整数/绑定 commit 不可解析/路径含 tab)
+  6=绑定门内容事实违规(lines/category/audit 来源/行 review_commit/头部统计)
   7=工作树门违规(added/removed/untracked/missing/conflict/modified)
 
-verifier 能证明什么 / 不能证明什么(GOV-04 诚实契约):
-  能证明:清单与绑定 commit 的路径集合一致、逐行 lines 与 blob 一致、category 与分类器一致、
-  audit_status 与**登记来源**(R003 种子表/第三方规则/默认 UNVERIFIED)一致、工作树无漂移。
-  不能证明:audit_status 所代表的**审查结论本身**是否正确——那是人工审查的产物;
-  verifier 只验证"值未被篡改且可追溯到登记来源",不验证审查质量。
-
-生成即自检:生成后立即跑两门,任一不过则以对应退出码失败(生成要求 HEAD==绑定点且工作树干净)。
-确定性:同一 HEAD 重复生成逐字节一致。tracked 路径含 tab/换行 = 失败关闭(5)。
+verifier 能证明 / 不能证明(GOV-04 诚实契约):
+  能证明:清单与绑定 commit 的路径集合、逐行行数、分类器输出、头部统计一致;
+  audit_status 与 audit_source 注册表(来源存在且格式完整)一致;当前工作树无漂移。
+  不能证明:audit_status 所代表的审查结论本身是否正确——机器只验证"未被篡改且可追溯
+  到登记来源",不验证审查质量。
 """
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -75,13 +77,12 @@ R003_CODE_STATUS = {
 }
 
 
-def third_party_audit(repo_key: str, p: str) -> str:
-    # 2026-07-16 轮判定:没有任何组件同时具备五要素(upstream+钉版+license+build role+恢复法),
-    # 故 LOCKED=0,全部 UNVERIFIED。升级条件与缺口清单见 governance/README.md §2。
+def third_party_audit(repo_key, p):
+    # 2026-07-16 轮判定:没有组件同时具备五要素 → LOCKED=0,全部 UNVERIFIED(见 README §2)。
     return "THIRD_PARTY_UNVERIFIED"
 
 
-def classify_main(p: str):
+def classify_main(p):
     if p in ("sources/MANIFEST.yaml", "sources/README.md") or p.startswith("sources/mentor"):
         return "ACTIVE_REFERENCE", "sources 组件锁定记录/内部文档(第一方治理资产)"
     if p.startswith("sources/"):
@@ -109,7 +110,7 @@ def classify_main(p: str):
     return "ACTIVE_REFERENCE", "-"
 
 
-def classify_feat(p: str):
+def classify_feat(p):
     if p.startswith("sources/"):
         return "THIRD_PARTY", "DUPLICATE 旧态:feat 无 MANIFEST.yaml 且仍含 main 已移除的损坏 gitlink;组件记录缺失;禁入构建;去重处置候选"
     if p.startswith("ros2_port/src/voxblox") or "/voxblox/" in p:
@@ -121,7 +122,7 @@ def classify_feat(p: str):
     return "ACTIVE_REFERENCE", "main 分支文件的 feat 分支副本;权威=main@HEAD"
 
 
-def classify_wm(p: str):
+def classify_wm(p):
     if p.startswith("third_party/") or p == ".gitmodules":
         return "THIRD_PARTY", "冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED"
     if p.startswith(("navlab/", "orchestration/", "docker/")):
@@ -138,12 +139,12 @@ VALID_AUDITS = {"VERIFIED_PASS", "VERIFIED_FAIL", "PARTIAL", "UNVERIFIED",
                 "THIRD_PARTY_LOCKED", "THIRD_PARTY_UNVERIFIED"}
 
 
-def die(code: int, msg: str):
+def die(code, msg):
     print(f"generate_manifest: {msg}", file=sys.stderr)
     sys.exit(code)
 
 
-def ls_files(worktree: str):
+def ls_files(worktree):
     out = subprocess.run(
         ["git", "-C", worktree, "ls-files", "-z"], capture_output=True, text=True, check=True
     ).stdout
@@ -154,14 +155,14 @@ def ls_files(worktree: str):
     return files
 
 
-def head_of(worktree: str) -> str:
+def head_of(worktree):
     return subprocess.run(
         ["git", "-C", worktree, "rev-parse", "HEAD"], capture_output=True, text=True, check=True
     ).stdout.strip()
 
 
-def expected_audit(repo_key: str, path: str, category: str) -> str:
-    """audit_status 的登记来源重算(诚实边界:验证来源一致性,不验证审查结论本身)。"""
+def expected_audit(repo_key, path, category):
+    """audit_source 注册表重算(诚实边界:验证来源一致性,不验证审查结论本身)。"""
     if category == "THIRD_PARTY":
         return third_party_audit(repo_key, path)
     if repo_key == "wm" and path in R003_CODE_STATUS:
@@ -169,15 +170,31 @@ def expected_audit(repo_key: str, path: str, category: str) -> str:
     return "UNVERIFIED"
 
 
-def read_manifest(path: str):
-    """返回 (bound_commit, rows);rows=[(path,lines,category,audit,row_commit)]。格式违规 die(5)。"""
+def read_manifest(path):
+    """返回 (bound_commit, rows, header);header={'files','category','audit'}。格式违规 die(5)。"""
     bound = None
+    header = {"files": None, "category": None, "audit": None}
     rows = []
     with open(path) as f:
         for lineno, line in enumerate(f, 1):
             if line.startswith("#"):
                 if " HEAD=" in line:
                     bound = line.split(" HEAD=")[1].split()[0].strip()
+                if " files=" in line:
+                    try:
+                        header["files"] = int(line.split(" files=")[1].split()[0])
+                    except ValueError:
+                        die(5, f"{path}:{lineno} files 统计非整数")
+                for key in ("category", "audit"):
+                    tag = f"# {key}: "
+                    if line.startswith(tag):
+                        try:
+                            header[key] = {
+                                kv.split("=")[0]: int(kv.split("=")[1])
+                                for kv in line[len(tag):].strip().split(", ") if "=" in kv
+                            }
+                        except ValueError:
+                            die(5, f"{path}:{lineno} {key} 统计格式错误")
                 continue
             if line.startswith("path\t"):
                 continue
@@ -200,10 +217,10 @@ def read_manifest(path: str):
             rows.append((parts[0], n, parts[2], parts[3], parts[4]))
     if not bound:
         die(5, f"{path} 头部缺少 HEAD= 绑定 commit")
-    return bound, rows
+    return bound, rows, header
 
 
-def ls_tree_entries(worktree: str, commit: str):
+def ls_tree_entries(worktree, commit):
     """{path: (mode, object_sha)};commit 不可解析 die(5)。"""
     r = subprocess.run(
         ["git", "-C", worktree, "ls-tree", "-r", "-z", commit],
@@ -221,8 +238,8 @@ def ls_tree_entries(worktree: str, commit: str):
     return entries
 
 
-def blob_lines(worktree: str, shas):
-    """批量取 blob 行数;行数语义与生成端 open() 逐行迭代一致。"""
+def blob_lines(worktree, shas):
+    """批量取 blob 行数;行数语义与生成端一致(末行无换行也计 1 行)。"""
     out = {}
     uniq = list(dict.fromkeys(shas))
     if not uniq:
@@ -251,8 +268,8 @@ def blob_lines(worktree: str, shas):
     return out
 
 
-def verify_bound(worktree: str, repo_key: str, manifest: str) -> int:
-    bound, rows = read_manifest(manifest)
+def verify_bound(worktree, repo_key, manifest):
+    bound, rows, header = read_manifest(manifest)
     entries = ls_tree_entries(worktree, bound)
     listed = [r[0] for r in rows]
     dup = sorted({p for p in listed if listed.count(p) > 1}) if len(listed) != len(set(listed)) else []
@@ -267,11 +284,14 @@ def verify_bound(worktree: str, repo_key: str, manifest: str) -> int:
         return 4
     classify = CLASSIFIERS[repo_key]
     facts_bad = []
-    symlink_skipped = 0
-    blob_of = {p: entries[p][1] for (p, _n, _c, _a, _rc) in rows
-               if entries[p][0] not in ("120000", "160000")}
+    # symlink 与普通文件同语义:lines = 该路径对象 blob 的行数(symlink blob=链接目标字符串)
+    blob_of = {p: entries[p][1] for (p, _n, _c, _a, _rc) in rows if entries[p][0] != "160000"}
     lines_map = blob_lines(worktree, list(blob_of.values()))
+    cat_counts = {}
+    aud_counts = {}
     for p, n, cat, aud, rowc in rows:
+        cat_counts[cat] = cat_counts.get(cat, 0) + 1
+        aud_counts[aud] = aud_counts.get(aud, 0) + 1
         if rowc != bound[:12]:
             facts_bad.append(f"row_commit {p}: {rowc} != {bound[:12]}")
         exp_cat, _note = classify(p)
@@ -281,46 +301,78 @@ def verify_bound(worktree: str, repo_key: str, manifest: str) -> int:
         if aud != exp_aud:
             facts_bad.append(f"audit_source {p}: {aud} != 登记来源 {exp_aud}")
         mode = entries[p][0]
-        if mode == "120000":
-            symlink_skipped += 1
-        elif mode == "160000":
+        if mode == "160000":
             if n != -1:
                 facts_bad.append(f"lines {p}: gitlink 应为 -1,实为 {n}")
         else:
             want = lines_map.get(blob_of.get(p))
             if want is None or n != want:
                 facts_bad.append(f"lines {p}: {n} != blob {want}")
-    print(f"bound_gate_facts: row_fact_violations={len(facts_bad)} symlink_lines_skipped={symlink_skipped}")
+    # 头部统计是清单公开事实:必须与数据行重算一致(防篡改)
+    if header.get("files") != len(rows):
+        facts_bad.append(f"header files={header.get('files')} != 数据行 {len(rows)}")
+    if header.get("category") != cat_counts:
+        facts_bad.append(f"header category 统计与数据行不一致")
+    if header.get("audit") != aud_counts:
+        facts_bad.append(f"header audit 统计与数据行不一致")
+    print(f"bound_gate_facts: row_fact_violations={len(facts_bad)}")
     for msg in facts_bad[:10]:
         print(f"  FACT: {msg}")
     return 6 if facts_bad else 0
 
 
-def verify_current(worktree: str, manifest: str) -> int:
-    _bound, rows = read_manifest(manifest)
-    listed = {r[0] for r in rows}
-    cur_head = head_of(worktree)
-    tracked = set(ls_files(worktree))
-    added = sorted(tracked - listed)
-    removed = sorted(listed - tracked)
+def worktree_status(worktree, exclude=frozenset()):
+    """porcelain-v2 -z 解析;type-2(rename/copy)正确消费第二个 NUL 段,score 不混入路径。"""
     st = subprocess.run(["git", "-C", worktree, "status", "--porcelain=v2", "-z"],
                         capture_output=True, text=True, check=True).stdout
+    toks = st.split("\0")
     untracked, missing_wt, conflict, modified = [], [], [], []
-    for rec in st.split("\0"):
+    i = 0
+    while i < len(toks):
+        rec = toks[i]
+        i += 1
         if not rec:
             continue
         if rec.startswith("? "):
-            untracked.append(rec[2:])
+            p = rec[2:]
+            if p not in exclude:
+                untracked.append(p)
         elif rec.startswith("u "):
-            conflict.append(rec.rsplit("\t", 1)[-1] if "\t" in rec else rec)
-        elif rec.startswith(("1 ", "2 ")):
+            p = rec.split(" ", 10)[10]
+            if p not in exclude:
+                conflict.append(p)
+        elif rec.startswith("1 "):
             fields = rec.split(" ", 8)
-            xy = fields[1]
-            pathname = fields[8]
-            if "D" in xy:
-                missing_wt.append(pathname)
-            else:
-                modified.append(pathname)
+            xy, p = fields[1], fields[8]
+            if p in exclude:
+                continue
+            (missing_wt if "D" in xy else modified).append(p)
+        elif rec.startswith("2 "):
+            # 2 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <X><score> <path> NUL <origPath> NUL
+            fields = rec.split(" ", 9)
+            xy, p = fields[1], fields[9]
+            orig = toks[i] if i < len(toks) else ""
+            i += 1
+            if p in exclude and orig in exclude:
+                continue
+            (missing_wt if "D" in xy else modified).append(f"{p} (原 {orig})")
+    return untracked, missing_wt, conflict, modified
+
+
+def verify_current(worktree, manifest):
+    _bound, rows, _header = read_manifest(manifest)
+    listed = {r[0] for r in rows}
+    cur_head = head_of(worktree)
+    untracked, missing_wt, conflict, modified = worktree_status(worktree)
+    if conflict:
+        # merge 冲突态下 ls-files 会按 stage 重复输出未合并路径,集合比较无意义:直接判 7
+        print(f"current_gate: current_head={cur_head[:12]} conflict={len(conflict)}(冲突态,集合比较跳过)")
+        for p2 in conflict[:10]:
+            print(f"  CONFLICT: {p2}")
+        return 7
+    tracked = set(ls_files(worktree))
+    added = sorted(tracked - listed)
+    removed = sorted(listed - tracked)
     print(f"current_gate: current_head={cur_head[:12]} tracked={len(tracked)} manifest_rows={len(listed)} "
           f"added={len(added)} removed={len(removed)} untracked={len(untracked)} "
           f"missing_in_worktree={len(missing_wt)} conflict={len(conflict)} modified={len(modified)}")
@@ -332,7 +384,7 @@ def verify_current(worktree: str, manifest: str) -> int:
     return 7 if bad else 0
 
 
-def generate(worktree: str, repo_key: str, out_path: str) -> int:
+def generate(worktree, repo_key, out_path):
     classify = CLASSIFIERS[repo_key]
     head = head_of(worktree)
     files = ls_files(worktree)
@@ -343,6 +395,22 @@ def generate(worktree: str, repo_key: str, out_path: str) -> int:
         missed = [p for p in R003_CODE_STATUS if p not in set(files)]
         if missed:
             die(5, f"R003 种子路径未命中 {len(missed)} 条(种子表与仓库不符): {missed}")
+    # 写前现场检查:工作树须洁净;唯一豁免 = 受控输出目标自身及其 .tmp(支持原地刷新)
+    out_abs = os.path.abspath(out_path)
+    wt_abs = os.path.abspath(worktree)
+    exclude = set()
+    if out_abs.startswith(wt_abs + os.sep):
+        rel = os.path.relpath(out_abs, wt_abs)
+        exclude = {rel, rel + ".tmp"}
+    untracked_l, missing_l, conflict_l, modified_l = worktree_status(worktree, exclude=frozenset(exclude))
+    if untracked_l or missing_l or conflict_l or modified_l:
+        print(f"pre_write_check: untracked={len(untracked_l)} missing={len(missing_l)} "
+              f"conflict={len(conflict_l)} modified={len(modified_l)}")
+        for tag, items in (("UNTRACKED", untracked_l), ("MISSING_WT", missing_l),
+                           ("CONFLICT", conflict_l), ("MODIFIED", modified_l)):
+            for q in items[:10]:
+                print(f"  {tag}: {q}")
+        die(7, f"生成前现场不洁(受控输出目标已豁免),目标文件未被改动: {out_path}")
     rows = []
     counts = {}
     audit_counts = {}
@@ -353,7 +421,12 @@ def generate(worktree: str, repo_key: str, out_path: str) -> int:
             die(5, f"note 含制表符/换行: {p}")
         full = Path(worktree) / p
         try:
-            lines = sum(1 for _ in open(full, "rb"))
+            if full.is_symlink():
+                # 与验证端同一语义:计链接自身 blob(=目标路径字符串)的行数,不跟随
+                content = os.readlink(full).encode()
+                lines = content.count(b"\n") + (1 if content and not content.endswith(b"\n") else 0)
+            else:
+                lines = sum(1 for _ in open(full, "rb"))
         except OSError:
             lines = -1  # gitlink / 不可读
             note = note + ";gitlink/不可读" if note != "-" else "gitlink/不可读"
@@ -364,27 +437,30 @@ def generate(worktree: str, repo_key: str, out_path: str) -> int:
         if row != row.rstrip():
             die(5, f"行尾随空白: {p}")
         rows.append(row)
-    with open(out_path, "w") as f:
-        f.write("# R003 动作八 五态清单(阶段 B 两门版;--verify-bound / --verify-current)\n")
-        f.write(f"# worktree={worktree} HEAD={head} files={len(files)}\n")
-        f.write("# category: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())) + "\n")
-        f.write("# audit: " + ", ".join(f"{k}={v}" for k, v in sorted(audit_counts.items())) + "\n")
-        f.write("path\tlines\tcategory\taudit_status\treview_commit\tnote\n")
-        f.write("\n".join(rows) + "\n")
-    # 生成即自检:先 current 门(工作树必须洁净,归因清晰),再 bound 门
-    rc = verify_current(worktree, out_path)
-    if rc != 0:
-        die(rc, f"生成后 current 门失败(工作树不洁): {out_path}")
-    rc = verify_bound(worktree, repo_key, out_path)
-    if rc != 0:
-        die(rc, f"生成后 bound 门失败: {out_path}")
-    print(f"{repo_key}: {len(files)} files -> {out_path} (两门自检通过)")
+    # 写临时文件 → bound 门 → 原子替换;失败零残留,目标原状
+    tmp_path = out_abs + ".tmp"
+    try:
+        with open(tmp_path, "w") as f:
+            f.write("# R003 动作八 五态清单(提交一补正版;--verify-bound / --verify-current)\n")
+            f.write(f"# worktree={worktree} HEAD={head} files={len(files)}\n")
+            f.write("# category: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())) + "\n")
+            f.write("# audit: " + ", ".join(f"{k}={v}" for k, v in sorted(audit_counts.items())) + "\n")
+            f.write("path\tlines\tcategory\taudit_status\treview_commit\tnote\n")
+            f.write("\n".join(rows) + "\n")
+        rc = verify_bound(worktree, repo_key, tmp_path)
+        if rc != 0:
+            die(rc, f"生成物未过 bound 门,临时文件已丢弃,目标未被改动: {out_path}")
+        os.replace(tmp_path, out_path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+    print(f"{repo_key}: {len(files)} files -> {out_path} (bound 门自检通过;原子替换完成)")
     print("  category: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())))
     print("  audit:    " + ", ".join(f"{k}={v}" for k, v in sorted(audit_counts.items())))
     return 0
 
 
-def main() -> int:
+def main():
     args = sys.argv[1:]
     if args and args[0] in ("--verify-bound", "--verify-current"):
         if len(args) != 4:
