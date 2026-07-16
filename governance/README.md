@@ -3,7 +3,26 @@
 > 本目录 = 三工作目录全量 tracked-path 五态清单、闭包协议、claim manifest 与治理决议。
 > 生成器:`generate_manifest.py`(27 项正反例测试 `test_generate_manifest.sh`)。
 
-## 1. 闭包协议(解决"清单提交即过期")
+## 1. 闭包协议与两个机器门(阶段 B 修订)
+
+**两个独立机器门(GOV-03)**,由 `generate_manifest.py` 分立实现:
+
+- `--verify-bound`(bound_commit_closure):对清单头部绑定 commit 校验——路径集合==该 commit
+  的 git tree;逐行 review_commit==绑定 commit;逐行 lines==对应 blob 行数(gitlink=-1,
+  symlink 跳过并计数);category==分类器重算;audit_status==登记来源重算;格式/枚举合法。
+  退出码:0 过 / 4 集合违规 / 5 格式引用违规 / 6 行事实违规。
+- `--verify-current`(current_worktree_closure):当前 HEAD tracked 集合相对清单的
+  added/removed、untracked、tracked-but-missing、冲突、脏改动逐类列出,任一非零 → rc=7。
+
+**audit_source 注册表**(audit_status 的机器可追溯来源,生成与校验共用同一注册表):
+①`R003_CODE_STATUS` 种子表(30 条,来源=R003 CODE_REVIEW_MANIFEST 原判);②第三方规则
+`third_party_audit`(本轮恒 UNVERIFIED,依据 §2 缺口清单);③其余第一方=默认 UNVERIFIED。
+**verifier 能证明**:清单与绑定 commit 的路径集合/逐行行数/分类器输出一致,audit_status
+与上述注册来源一致(来源存在且格式完整),当前工作树无漂移。
+**verifier 不能证明**:audit_status 所代表的审查结论本身是否正确——那是人工审查产物,
+机器只验证"未被篡改且可追溯到登记来源",不验证审查质量(GOV-04 诚实契约)。
+
+## 1b. 闭包协议(解决"清单提交即过期")
 
 采用**两提交零路径增量**方案:
 
