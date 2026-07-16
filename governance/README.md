@@ -79,3 +79,29 @@ Cmd = 对 run `20260715T185957`(L1 孤儿批)执行 `slam_hover_probe.py`。
 `49b111d` 的 `runbooks/.../wait_batch.sh` + `test_wait_batch.sh` = **WP303 的冻结未验收草稿,
 fixture(timeout)存在失败**;不计入 R003-S2-FIX 成果;WP303 正式开始时从方案停点重审,
 负责人可要求保留/重做/废弃。
+
+## 7. P0 余项方案停点(R003-S2-FIX-CLOSEOUT;**只方案,不执行**,执行动作全部待负责人批准)
+
+1. **分支职责方案**:main = 治理/证据/状态唯一入口(维持现状);`feat/gbplanner-ros2-port` =
+   ROS2 迁移唯一施工分支(worktree gbp-feat);archive 职责由 main 内 `docs/archive/` + `archive/`
+   目录承担,**不新设 archive 分支**;dev 分支暂不设(单执行者+停点审查流下分支矩阵成本>收益,
+   若并行开发出现再议——列为负责人决策项)。wm:`fix/world-model-e2e-takeoff` = 唯一施工分支,
+   `backup` = 授权镜像,`origin` = 上游只读(远端更名 upstream/authorized 提案见补充令 §十三,待批)。
+   无损实施:历史锚点一律 annotated tag(先批后打),不重写历史、不删分支。
+2. **Ubuntu 基准 tag 候选**:名称 `baseline/ubuntu-native-20260713`;锚点 = wm `8df2690`
+   (GATE-4 双死锁修复,当时 live 窄验收绿)+ 主仓 gate4_native_pass_evidence 时点 commit +
+   `pins_2026-07-14.yaml`(9 镜像 ID/ArduPilot SHA);场景 = stage6/gate4 live 口径;
+   **验收等级 = 历史窄验收(短窗),非稳定性宣称**(该绿后被 GATE-4b 重开)。待批动作:两仓打 tag。
+3. **ROS1 oracle tag 候选**:名称 `oracle/ros1-gbplanner-7301b535`;锚点 = gbplanner-ref 镜像
+   (10.7GB,`gbplanner_ros@7301b535`)+ 适配器冻结清单 `integration/ros1_bridge/ADAPTER_FREEZE.md`
+   + 桥接期 stage1–5 证据;输入 = stage 证据 rosbag 与参数集;已知限制 = ROS1 noetic 容器、
+   2D SLAM 语境、公平对比为窗口口径。待批动作:主仓打 tag + 镜像 digest 落 pins。
+4. **机器可读依赖清单**:唯一位置候选 `governance/dependencies.yaml`
+   (**新增路径将改变闭包 delta——创建必须与 manifest 再生成同批**);schema:
+   `{component, kind: os|ros|docker-image|pip|go|submodule|vendor|snapshot, name, version_or_sha,
+   digest, source_url, license, build_role, pinned_by, notes}`;初始条目来源 =
+   pins_2026-07-14.yaml + wm .gitmodules + sources/MANIFEST.yaml + ros2_port vendor 记录。
+5. **历史退出容器规则(交 WP303 方案纳入)**:批结束登记退出容器(ID/关联 run/退出码),
+   证据确认后按保留期清理;现存 `zealous_curran` 保留至本次收口后由负责人裁决。
+6. **本轮明确未执行**:打任何 tag / 建 dev 分支 / 远端更名 / 创建 dependencies.yaml /
+   feat sources 去重 / 容器清理。

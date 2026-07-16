@@ -32,7 +32,7 @@ world-model FCU 控制链 / Gazebo
 | 里程碑 | 内容 | 状态(2026-07-15 快照) |
 |---|---|---|
 | **M0** | 侦察 + 路线冻结 + 入口文档收口 | ✅(07-08) |
-| **M1** | `planner_msgs` ROS2 最小消息包(colcon build 通过) | ✅(07-08,代码在 feat 分支) |
+| **M1** | `planner_msgs` ROS2 最小消息包 | ✅ 窄验收:最小 8 接口构建与注册(07-08);≠13msg+24srv 全量迁移 |
 | M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF)| 🟡 切片对拍通过(fast 失配未归因、3D Demo 查询未测) |
 | M3 | 算法核心 ROS1-free 剥离(rrg/planner_common) | 🟡 编译+浅单测通过(07-14);行为等价未证明 |
 | M4 | ROS2 planner 节点壳 | 🟡 M4a 合成冒烟通过(07-14);M4b 真场景长时未验证 |
@@ -77,7 +77,7 @@ world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
 
 | 阶段 | 状态 |
 |---|---|
-| jazzy 9/9 镜像 + exploration 全绿 + 基线定档 | ✅ |
+| jazzy 9/9 镜像 + exploration 历史窄验收绿(07-06)+ 基线定档 | ✅(历史证据) |
 | Stage1 GBPlanner ROS1 单侧复验 | ✅ |
 | Stage2/2.5/2.6 薄桥 transport + 稳定性 + 消费闭环 | ✅ |
 | Stage3/3.5 dry-run + 3D 数据链贯通 | ✅ |
@@ -113,7 +113,7 @@ world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
 
 > 桥接技术主文档 [docs/桥接查证与执行计划_2026-07-06.md](docs/桥接查证与执行计划_2026-07-06.md) 已降级为 **REFERENCE / HISTORICAL**(oracle 与历史证据,不再作为施工入口)。
 
-复现命令:`bash runbooks/world-model-jazzy/clean_repro.sh`(world-model 全绿)· `runbooks/world-model-jazzy/stage5c_run.sh <n>`(融合联跑一键)· `runbooks/gbplanner_ref/run_light.sh`(GBPlanner 单侧)· 证据全在 `runbooks/world-model-jazzy/*_evidence.txt`。
+复现命令:`bash runbooks/world-model-jazzy/clean_repro.sh`(**历史基线复现**:重现 07-06 桥接期窄验收绿,非当前平台稳定结论)· `runbooks/world-model-jazzy/stage5c_run.sh <n>`(融合联跑一键)· `runbooks/gbplanner_ref/run_light.sh`(GBPlanner 单侧)· 证据全在 `runbooks/world-model-jazzy/*_evidence.txt`。
 
 ## 六、历史阶段(已完成,仅背景资料,入口见 [docs/archive/](docs/archive/))
 

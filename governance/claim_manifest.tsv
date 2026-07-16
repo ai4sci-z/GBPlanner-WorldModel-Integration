@@ -3,7 +3,7 @@
 # disposition: KEEP / KEEP_MARKED / REWRITTEN / POINTERED / ARCHIVED / FIX_IN_C3
 document	line_or_section	claim_summary	claim_type	evidence_source	evidence_commit	verification_status	disposition	replacement_or_pointer
 CURRENT_STATUS.md	头部	本文=唯一当前状态入口;旧版已归档	治理契约	负责人裁定+docs/archive 存档	8105b0a	CURRENT	KEEP	-
-CURRENT_STATUS.md	§一	当前=R003 第二阶段补正;S2-FIX 有条件放行;WP303+ 阻塞	阶段状态	Codex 判决+补充令+负责人放行令	e811d54	CURRENT	FIX_IN_C3	补记 S2-FIX 放行与四文件读取
+CURRENT_STATUS.md	§一	当前=R003-S2-FIX 放行执行(含四文件读取记录);WP303+ 阻塞	阶段状态	负责人放行令	04ee7a2	CURRENT	REWRITTEN	previous=FIX_IN_C3;04ee7a2 已补记
 CURRENT_STATUS.md	§一	固定路线 P0-P5 不跳步;多层只做预留	路线	R003 三份文件	e811d54	CURRENT	KEEP	-
 CURRENT_STATUS.md	§二	B21 缺陷+根因已验证(det=-1×3,L1.5 反事实 3/3)	根因状态	l15_frame_audit_evidence §3-4	908a95a	CURRENT	KEEP	台账四维表
 CURRENT_STATUS.md	§二	B22=候选/强支持;默认主线验收未闭合	根因状态	诊断臂 4/3/3+默认 6/3/3	eab0cc6	CURRENT	KEEP	台账四维表
@@ -12,9 +12,9 @@ CURRENT_STATUS.md	§二	10/10 未开跑;长稳门未定义;OPEN-1 未定位	验�
 CURRENT_STATUS.md	§三	wm@288b486=候选·复验失败;77f0b67=候选·待复验;334c47d 被取代	实现状态	Codex 复验 2f/18p	0aa9d55	CURRENT	KEEP	台账 OPEN-2
 CURRENT_STATUS.md	§三	M0-M5 统一证据分级(窄验收≠无损)	里程碑分级	Codex 裁定口径	e811d54	CURRENT	KEEP	-
 CURRENT_STATUS.md	§三	companion 需按 wm HEAD retag;288b486 未 retag	运行前置	tag_policy=distro-git-commit	e811d54	CURRENT	KEEP	-
-CURRENT_STATUS.md	§四:56	五态清单 3032 path 已入库	计数	实际 tracked 已 1000+/1433/609	e811d54	STALE	FIX_IN_C3	改为闭包协议指针,数值随 manifest 头部
-CURRENT_STATUS.md	§四	门二:helper+四类测试未实现	阶段状态	49b111d 冻结草稿存在(fixture 失败)	49b111d	STALE	FIX_IN_C3	改为"存在冻结未验收草稿"
-CURRENT_STATUS.md	§五	下一步序列(补正→WP303 方案停点→…)	指令	补充令 §十	e811d54	CURRENT	FIX_IN_C3	对齐 S2-FIX 收口停点
+CURRENT_STATUS.md	§四:56	门一=闭包协议指针,数值随 manifest 头部,不复制易过期计数	计数	governance/README §1	04ee7a2	CURRENT	REWRITTEN	previous=STALE(旧 3032 计数);04ee7a2 已改写
+CURRENT_STATUS.md	§四	门二:存在冻结未验收草稿 49b111d(fixture-timeout 失败),WP303 方案停点重审	阶段状态	49b111d+负责人裁定	04ee7a2	CURRENT	REWRITTEN	previous=STALE(旧"未实现"措辞);04ee7a2 已改写
+CURRENT_STATUS.md	§五	下一步=S2-FIX 收口序(C1-C4+校验+推送+§十六报告+停点)	指令	补充令 §九/§十六	04ee7a2	CURRENT	REWRITTEN	previous=FIX_IN_C3;04ee7a2 已对齐
 README.md	头部横幅	状态以 CURRENT_STATUS 为准	治理契约	-	04fc451	CURRENT	KEEP	-
 README.md	L15	wm 侧资产"规划为复用"(非已复用)	能力边界	本轮改写	feaace0	CURRENT	KEEP	-
 README.md	里程碑表	M2/M3/M4 分级措辞(切片对拍/浅单测/冒烟+未验证项)	里程碑分级	feaace0 改写	feaace0	CURRENT	KEEP	-
@@ -32,7 +32,7 @@ HANDOVER_LINUX.md	附表	台账范围 B1–B22+OPEN	指针	本轮修正	08c752d	
 文档索引.md	当前入口表	唯一入口/台账/治理清单/Review_003 列示	治理契约	本轮改写	65ccdd4	CURRENT	KEEP	-
 文档索引.md	台账行	B1–B22 已入账;旧编号映射作废	编号	台账	65ccdd4	CURRENT	KEEP	-
 文档索引.md	sources 行	冻结第三方快照,禁入构建(治理实测)	构建边界	governance README §3	65ccdd4	CURRENT	KEEP	注:静态/构建/镜像零命中;运行时拼接=盲区
-接力棒_当前值班.md	当前块	值班=R003 第二阶段;硬约束(冻结/分母/停点)	阶段状态	本轮重写	189b4ef	CURRENT	FIX_IN_C3	更新为 S2-FIX 放行态+wait_batch 冻结禁令
+接力棒_当前值班.md	当前块	值班=R003-S2-FIX 放行执行;硬约束含 wait_batch 禁改禁测	阶段状态	负责人放行令	a52b030	CURRENT	REWRITTEN	previous=FIX_IN_C3;04ee7a2+a52b030 已更新
 接力棒_当前值班.md	历史指针	301 行历史已归档	治理契约	docs/archive 存档	189b4ef	CURRENT	KEEP	-
 项目简洁汇报.md	全文	2026-07-16 重写版:任务/阶段/分级成果/坎/下一步	汇报	CURRENT_STATUS 对齐	f598dd6	CURRENT	KEEP	旧版已 ARCHIVED
 台账	头部	编号不携带状态;四维字段为准;B1–B20 标记=历史口径	编号契约	本轮修订	48f0c69	CURRENT	KEEP	-
@@ -65,3 +65,7 @@ governance/README.md	§6	49b111d=冻结未验收草稿,fixture 失败	冻结件	
 docs/archive/CURRENT_STATUS_历史快照	头部	SUPERSEDED 声明+原文未改	归档契约	-	8105b0a	CURRENT	KEEP	-
 docs/archive/接力棒_历史轮次	头部	ARCHIVE 声明+原文未改	归档契约	-	189b4ef	CURRENT	KEEP	-
 docs/archive/项目简洁汇报_历史	头部	ARCHIVE 声明+当时口径说明	归档契约	-	f598dd6	CURRENT	KEEP	-
+TASKS.md	M1 行	M1=窄验收通过(最小 8 接口构建与注册;≠13msg+24srv 全量)	里程碑分级	m1_build_evidence	CLOSEOUT	CURRENT	REWRITTEN	previous=状态列孤立"完成/验收全达成"
+TASKS.md	预研A/任务12 行	07-06 端到端全绿=历史窄验收,行内直标非当前稳定结论	历史	run 20260706T130626	CLOSEOUT	HISTORICAL	KEEP_MARKED	行内身份标注,不再依赖顶部免责
+README.md	M1 行+复现命令+能力表	clean_repro=历史基线复现;jazzy 全绿=历史证据	历史	同上	CLOSEOUT	HISTORICAL	KEEP_MARKED	行内身份标注
+governance/README.md	§7	P0 余项方案停点(分支职责/Ubuntu 基准 tag 候选/ROS1 oracle tag 候选/依赖清单位置+schema);执行动作全部待负责人批准	治理方案	本次 CLOSEOUT	CLOSEOUT	CURRENT	KEEP	方案≠执行;未打 tag 未建文件
