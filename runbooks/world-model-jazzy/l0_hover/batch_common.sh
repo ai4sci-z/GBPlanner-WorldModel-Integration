@@ -15,6 +15,21 @@ set -uo pipefail
 BC_LOCK_PATH="${BC_LOCK_PATH:-/tmp/navlab_sitl_host.lock}"
 BC_ARTIFACT_BASE="${BC_ARTIFACT_BASE:-${WM:-/home/ai4s/projects/world-model}/artifacts/sim}"
 
+bc_write_atomic() {
+  # 原子写:同目录临时文件 + fsync + rename + fsync 目录;失败不留伪终态
+  local dst="$1" content="$2" dir tmp
+  dir="$(dirname "$dst")"
+  tmp="$(mktemp "$dir/.bc.XXXXXX")" || return 1
+  printf '%s' "$content" > "$tmp" || { rm -f "$tmp"; return 1; }
+  python3 - "$tmp" "$dst" "$dir" <<'PY'
+import os,sys
+tmp,dst,d=sys.argv[1],sys.argv[2],sys.argv[3]
+fd=os.open(tmp,os.O_RDONLY); os.fsync(fd); os.close(fd)
+os.replace(tmp,dst)
+dfd=os.open(d,os.O_RDONLY); os.fsync(dfd); os.close(dfd)
+PY
+}
+
 bc_init() {
   local tag="$1"
   BC_TAG="$tag"
@@ -23,12 +38,6 @@ bc_init() {
   mkdir -p "$BC_ROOT/runs"
   BC_LOG="$BC_ROOT/batch.log"
   BC_RCS=()
-  # 主机 SITL 互斥锁(纯互斥;fd 9)
-  exec 9>"$BC_LOCK_PATH"
-  if ! flock -n 9; then
-    echo "batch_common: another real SITL batch holds the host lock ($BC_LOCK_PATH)" >&2
-    return 90
-  fi
   {
     echo "batch start: $(date -u +%FT%TZ)  tag=$tag  root=$BC_ROOT"
     [ -n "${WM:-}" ] && echo "wm_head: $(git -C "$WM" rev-parse HEAD 2>/dev/null || echo n/a)"
@@ -46,8 +55,8 @@ bc_run() {
   rc=$?
   end="$(date -u +%FT%TZ)"
   echo "=== $BC_TAG run $i rc=$rc end $end ===" | tee -a "$BC_LOG"
-  printf '{"run_index":%d,"start":"%s","end":"%s","rc":%d}\n' "$i" "$start" "$end" "$rc" \
-    > "$BC_ROOT/runs/run_$i.json"
+  bc_write_atomic "$BC_ROOT/runs/run_$i.json" \
+    "$(printf '{"run_index":%d,"start":"%s","end":"%s","rc":%d}' "$i" "$start" "$end" "$rc")"
   BC_RCS+=("$rc")
   return "$rc"
 }
@@ -60,8 +69,8 @@ bc_finalize() {
     [ $first -eq 1 ] || map+=","
     map+="\"$idx\":$rc"; first=0; idx=$((idx+1))
   done
-  printf '{"schema_version":1,"final":"done","run_rc_map":{%s}}\n' "$map" \
-    > "$BC_ROOT/batch_final.json"
+  bc_write_atomic "$BC_ROOT/batch_final.json" \
+    "$(printf '{"schema_version":1,"final":"done","run_rc_map":{%s}}' "$map")"
   echo "batch done: $(date -u +%FT%TZ)  agg_rc=$agg  root=$BC_ROOT" | tee -a "$BC_LOG"
   return "$agg"
 }

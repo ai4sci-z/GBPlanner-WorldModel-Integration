@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # WP303 批脚本结构测试(干跑,NAVLAB_SIM_CMD 桩替代真实 SITL;绝不启动 go run/Gazebo/ArduPilot)。
-# 验证:结构化 run 记录、聚合 rc、任一 run 失败→批非零、主机锁互斥、日志可读、无残留。
+# 验证:批脚本(producer-only)结构化 run 记录/聚合 rc/日志可读/无残留;正式入口 run_batch 主机锁互斥。
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 TMP="$(mktemp -d)"
@@ -33,12 +33,14 @@ BC_ROOT="$R2" RUNS=3 TMP="$TMP" NAVLAB_SIM_CMD="bash $TMP/stub2.sh" bash "$HERE/
 ck "2 批聚合rc(有失败→10)" 10 $?
 ck "2 run_2 rc=1" 1 "$(jget "$R2/runs/run_2.json" rc)"
 
-echo "=== 3 主机锁互斥:持锁时第二批被拒(rc=90) ==="
-R3="$TMP/r3"
+echo "=== 3 正式入口 run_batch 主机锁互斥:持锁时被拒(rc=90) ==="
+R3="$TMP/r3"; mkdir -p "$R3"
 ( exec 9>"$BC_LOCK_PATH"; flock -n 9; sleep 3 ) &
 HOLDER=$!; sleep 0.3
-BC_ROOT="$R3" RUNS=1 NAVLAB_SIM_CMD='exit 0' bash "$HERE/l2_batch.sh" >/dev/null 2>&1
-ck "3 持锁时第二批rc" 90 $?
+BC_ARTIFACT_BASE="$R3" BC_LOCK_PATH="$BC_LOCK_PATH" WM="" INTER_RUN_SLEEP=0 \
+  WP303_DURATION=0.3 WP303_STARTUP=1 WP303_TEARDOWN=0.1 WP303_GAP=0.05 WP303_FINAL=0.5 \
+  NAVLAB_SIM_CMD='exit 0' bash "$HERE/run_batch.sh" l2 1 >/dev/null 2>&1
+ck "3 run_batch 持锁时rc(主机互斥)" 90 $?
 kill "$HOLDER" 2>/dev/null; wait "$HOLDER" 2>/dev/null
 
 echo "=== 4 l2fix 同契约:干跑成功 + batch_lifecycle 可判定 ==="

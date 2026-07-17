@@ -70,6 +70,7 @@ RC_CLEANUP_RESIDUAL = 60
 RC_USAGE = 2
 RC_SECURITY = 5
 RC_INTERNAL = 70
+RC_READONLY_DEFER = 75   # 第二 monitor 让位(观察,非批次成功;调用者不得计入 gate)
 
 POLL_SEC = float(os.environ.get("WP303_POLL_SEC", "0.1"))
 TERM_GRACE_SEC = float(os.environ.get("WP303_TERM_GRACE_SEC", "0.5"))
@@ -217,6 +218,11 @@ def load_record(record, artifact_root):
         die(RC_SECURITY, f"record 不可读/损坏 JSON: {record}")
     if rec.get("schema_version") != SCHEMA_VERSION:
         die(RC_SECURITY, f"未知 schema_version={rec.get('schema_version')}(期望 {SCHEMA_VERSION})")
+    required_keys = ("pid", "pgid", "sid", "pid_starttime", "boot_id", "expected_runs",
+                     "deadline_monotonic", "artifact_root")
+    missing = [k for k in required_keys if k not in rec]
+    if missing:
+        die(RC_SECURITY, f"record 缺必需字段: {missing}")
     return rec
 
 
@@ -251,7 +257,9 @@ def observe(rec, artifact_root, t0, cancel_path):
         "producer_exit_observed": final is not None,
         "final": final,
         "run_rc_map": run_rc_map,
-        "deadline_expired": now >= batch_deadline(rec),
+        # deadline 跨 monitor 重启不变:用 record 里存的绝对 monotonic 值 + boot_id 守卫
+        # (CLOCK_MONOTONIC 同 boot 内全系统一致;boot 不符则 record 陈旧,identity 亦判死)
+        "deadline_expired": (boot_id() == rec["boot_id"]) and (time.monotonic() >= rec["deadline_monotonic"]),
         "cancel_requested": os.path.exists(cancel_path),
     }
 
@@ -334,14 +342,17 @@ def write_partial_index(artifact_root, rec, snap, outcome):
 
 
 def final_rc(outcome, ev, cleanup):
-    base = {"SUCCEEDED": RC_SUCCESS, "FAILED": RC_FAILED, "CRASHED": RC_CRASHED,
+    """固定优先级(cleanup 未完成 > evidence 缺失 > producer outcome):
+      cleanup ∈ {RESIDUAL, REFUSED, NOT_ATTEMPTED}(需要清理但未完成)→ 60;
+      evidence == INCOMPLETE(无论 outcome)→ 50;
+      否则按 producer outcome → 0/10/20/30/40。
+    cleanup != CLEAN 时绝不返回 0;evidence 缺失不因 FAILED/CRASHED 被隐藏。"""
+    if cleanup in ("RESIDUAL", "REFUSED", "NOT_ATTEMPTED"):
+        return RC_CLEANUP_RESIDUAL
+    if ev == "INCOMPLETE":
+        return RC_EVIDENCE_INCOMPLETE
+    return {"SUCCEEDED": RC_SUCCESS, "FAILED": RC_FAILED, "CRASHED": RC_CRASHED,
             "TIMED_OUT": RC_TIMED_OUT, "CANCELLED": RC_CANCELLED}[outcome]
-    codes = [base]
-    if ev == "INCOMPLETE" and outcome == "SUCCEEDED":
-        codes.append(RC_EVIDENCE_INCOMPLETE)
-    if cleanup == "RESIDUAL":
-        codes.append(RC_CLEANUP_RESIDUAL)
-    return max(codes)
 
 
 # ---------- monitor 主循环 ----------
@@ -443,6 +454,8 @@ def cmd_launch(args):
         "required_artifacts": args.required or [],
         "created_at_monotonic": time.monotonic(),
     }
+    # 绝对 monotonic deadline 存盘:monitor 重启从 record 恢复,不重置预算(boot_id 守卫)
+    rec["deadline_monotonic"] = time.monotonic() + batch_deadline(rec)
     # record 落盘(0600)必须在 monitor 接管前完整
     old = os.umask(0o077)
     try:
@@ -468,11 +481,12 @@ def cmd_monitor(args):
     try:
         fcntl.flock(lfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
-        # 第二 monitor:主 monitor 在场,立即让位(只读声明),不重复监视/不发信号
+        # 第二 monitor:主 monitor 在场,立即让位(只读声明);不写 monitor_status、不清理、
+        # 不改主 monitor;返回专用退出码(非 0,调用者不得当批次成功计入 gate)
         print(json.dumps({"readonly": True, "batch_id": rec.get("batch_id"),
-                          "note": "another monitor holds the lock; deferring"},
+                          "note": "another monitor holds the lock; deferring", "rc": RC_READONLY_DEFER},
                          ensure_ascii=False, sort_keys=True))
-        return RC_SUCCESS
+        return RC_READONLY_DEFER
     return run_monitor(rec, record, artifact_root, cancel_path, readonly=False)
 
 

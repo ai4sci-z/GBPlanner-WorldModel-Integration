@@ -124,10 +124,11 @@ import json
 json.dump({'schema_version':1,'batch_id':'b11','script':'x','pid':$SPID,'pgid':$SPG,'sid':$SPG,
 'pid_starttime':str(int('$ST')+999),'boot_id':'$BID','artifact_root':'$R','log':'$R/l',
 'expected_runs':1,'deadline_params':{'startup_budget':0.3,'duration':0.1,'per_run_teardown':0.05,
-'inter_run_gap':0.02,'finalization_budget':0.2},'required_artifacts':[],'created_at_monotonic':0},
+'inter_run_gap':0.02,'finalization_budget':0.2},'required_artifacts':[],'created_at_monotonic':0,'deadline_monotonic':1e18},
 open('$R/task_record.json','w'))
 import os; os.chmod('$R/task_record.json',0o600)"
-timeout 5 python3 "$BL" monitor --artifact-root "$R" >/dev/null 2>&1; ck "11 rc(身份死+无终态→CRASHED)" 20 $?
+timeout 5 python3 "$BL" monitor --artifact-root "$R" >/dev/null 2>&1; ck "11 rc(CRASHED+NOT_ATTEMPTED→cleanup优先60)" 60 $?
+ck "11 cleanup" NOT_ATTEMPTED "$(jget "$R/monitor_status.json" cleanup_status)"
 ck "11 无辜进程存活未被杀" yes "$(kill -0 $SPID 2>/dev/null && echo yes || echo no)"
 kill -9 $SPID 2>/dev/null; wait $SPID 2>/dev/null
 
@@ -140,8 +141,10 @@ chmod +x "$R/prod.sh"
 python3 "$BL" launch --artifact-root "$R" --batch-id b12 --startup-budget 1 --duration 5 \
   --per-run-teardown 0.1 --inter-run-gap 0.05 --finalization-budget 0.5 --expected-runs 1 -- bash "$R/prod.sh" >/dev/null 2>&1 &
 LPID=$!; sleep 0.6
-OUT=$(timeout 3 python3 "$BL" monitor --artifact-root "$R" 2>&1)
-echo "$OUT" | grep -q '"readonly": true' && { echo "PASS: 12 第二monitor只读"; PASS=$((PASS+1)); } || { echo "FAIL: 12 第二monitor未只读: $OUT"; FAIL=$((FAIL+1)); }
+[ -f "$R/monitor_status.json" ]; BEFORE=$?   # 主monitor尚未写终态(producer在跑)
+timeout 3 python3 "$BL" monitor --artifact-root "$R" >/dev/null 2>&1; ck "12 第二monitor退出码(专用让位75)" 75 $?
+[ -f "$R/monitor_status.json" ]; AFTER=$?
+ck "12 第二monitor未写monitor_status" "$BEFORE" "$AFTER"
 touch "$R/CANCEL"; wait $LPID 2>/dev/null
 
 echo "=== 13 两批并行互不误杀 ==="; RA=$(mkroot f13a); RB=$(mkroot f13b)
@@ -173,8 +176,17 @@ ck "14 rc" 40 $?
 ck "14 outcome" CANCELLED "$(jget "$R/monitor_status.json" producer_outcome)"
 PG=$(jget "$R/task_record.json" pgid); sleep 0.4; ck "14 cancel后组已清" 0 "$(grp_alive "$PG")"
 
-echo "=== 15 deadline边界自然退出(自然终态胜) ==="; R=$(mkroot f15); gen_prod "$R" 1 0 1
-launch "$R" --expected-runs 1 >/dev/null 2>&1; ck "15 rc(自然完成)" 0 $?
+echo "=== 15 deadline边界:producer 恰在 deadline 前完成→自然终态胜 ==="; R=$(mkroot f15)
+cat > "$R/prod.sh" <<PEOF
+#!/usr/bin/env bash
+sleep 0.45
+printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"
+printf '{"schema_version":1,"final":"done"}\n' > "$R/batch_final.json"
+PEOF
+chmod +x "$R/prod.sh"
+python3 "$BL" launch --artifact-root "$R" --batch-id b15 --startup-budget 0.3 --duration 0.1 \
+  --per-run-teardown 0.05 --inter-run-gap 0.05 --finalization-budget 0.1 --expected-runs 1 -- bash "$R/prod.sh" >/dev/null 2>&1
+ck "15 rc(边界内自然完成胜deadline)" 0 $?
 ck "15 outcome" SUCCEEDED "$(jget "$R/monitor_status.json" producer_outcome)"
 
 echo "=== 16 record是symlink拒绝 ==="; R=$(mkroot f16); echo VICTIM > "$TMP/victim16"
@@ -216,6 +228,38 @@ chmod +x "$R/prod.sh"
 launch "$R" --expected-runs 1 >/dev/null 2>&1; RC=$?
 ck "20 非内部错误(rc≠70)" yes "$([ $RC -ne 70 ] && echo yes || echo no)"
 ck "20 rc(损坏final不算完成+身份死→CRASHED)" 20 $RC
+
+echo "=== 21 deadline 跨 monitor 重启不重置预算 ==="; R=$(mkroot f21)
+cat > "$R/prod.sh" <<PEOF
+#!/usr/bin/env bash
+printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"; sleep 30
+PEOF
+chmod +x "$R/prod.sh"
+python3 "$BL" launch --artifact-root "$R" --batch-id b21 --startup-budget 0.3 --duration 0.1 \
+  --per-run-teardown 0.05 --inter-run-gap 0.05 --finalization-budget 0.15 --expected-runs 1 -- bash "$R/prod.sh" >/dev/null 2>&1 &
+LPID=$!; sleep 0.35; kill -9 $LPID 2>/dev/null; wait $LPID 2>/dev/null
+PG=$(jget "$R/task_record.json" pgid); sleep 0.5
+T0=$(date +%s%N)
+timeout 5 python3 "$BL" monitor --artifact-root "$R" >/dev/null 2>&1; ck "21 重接管rc(不重置→TIMED_OUT)" 30 $?
+T1=$(date +%s%N); ELAPMS=$(( (T1-T0)/1000000 ))
+ck "21 重接管一个poll内判(<400ms)" yes "$([ $ELAPMS -lt 400 ] && echo yes || echo no)"
+ck "21 outcome" TIMED_OUT "$(jget "$R/monitor_status.json" producer_outcome)"
+kill -- -"$PG" 2>/dev/null; sleep 0.2
+
+echo "=== 22 表驱动退出码(final_rc 优先级) ==="
+python3 "$HERE/test_final_rc.py" >/dev/null 2>&1; ck "22 final_rc 表驱动(13组)" 0 $?
+
+echo "=== 23 正式入口 run_batch.sh 端到端 dry-run(桩替代SITL) ==="; R23="$TMP/f23"; mkdir -p "$R23"
+BC_ARTIFACT_BASE="$R23" BC_LOCK_PATH="$TMP/host23.lock" WM="" INTER_RUN_SLEEP=0 \
+  WP303_DURATION=0.3 WP303_STARTUP=1 WP303_TEARDOWN=0.1 WP303_GAP=0.05 WP303_FINAL=0.5 \
+  NAVLAB_SIM_CMD='exit 0' bash "$HERE/run_batch.sh" l15 2 >/dev/null 2>&1
+ck "23 正式入口rc(monitor传播)" 0 $?
+ROOT23=$(ls -d "$R23"/batch_l15_* 2>/dev/null | head -1)
+ck "23 task_record自动生成" yes "$([ -f "$ROOT23/task_record.json" ] && echo yes || echo no)"
+ck "23 monitor_status自动生成" yes "$([ -f "$ROOT23/monitor_status.json" ] && echo yes || echo no)"
+ck "23 pid=pgid=sid" yes "$(python3 -c "import json;d=json.load(open('$ROOT23/task_record.json'));print('yes' if d['pid']==d['pgid']==d['sid'] else 'no')" 2>/dev/null)"
+ck "23 outcome" SUCCEEDED "$(jget "$ROOT23/monitor_status.json" producer_outcome)"
+ck "23 run/final自动生成" yes "$([ -f "$ROOT23/runs/run_1.json" ] && [ -f "$ROOT23/batch_final.json" ] && echo yes || echo no)"
 
 echo "================================"
 echo "结果: PASS=$PASS FAIL=$FAIL"
