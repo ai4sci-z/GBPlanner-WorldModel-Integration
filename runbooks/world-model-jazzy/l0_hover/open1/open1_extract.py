@@ -71,11 +71,25 @@ def _sha256_file(p):
         return None
 
 
+# A1 统一输入质量状态(全集):
+#   PRESENT_VALID    文件存在、可读、格式符合契约(A1-10)
+#   MISSING          路径不存在(A1-11)
+#   EMPTY            文件存在但为空且空不合法(A1-12)
+#   MALFORMED        文件存在但语法/协议损坏(A1-13)
+#   READ_ERROR       文件存在但读取失败(A1-14)
+#   UNSUPPORTED      格式有效但当前实现不支持(A1-15)
+#   PRESENT_NO_MATCH 容器/目录存在但没有目标文件(A1-16)
+# 铁律:不得只因路径存在就标 PRESENT_VALID(A1-17);MALFORMED≠MISSING(A1-18);
+#       READ_ERROR≠UNKNOWN(A1-19);证据损坏≠业务失败(A1-20)。
+
+
 def _read_json_q(p):
-    """返回 (value, quality)。区分缺失/损坏/读错,不压成单一 None(C2)。"""
+    """返回 (value, quality)。区分缺失/空/损坏/读错,不压成单一 None。"""
     if not os.path.exists(p):
         return None, "MISSING"
     try:
+        if os.path.getsize(p) == 0:
+            return None, "EMPTY"
         with open(p, encoding="utf-8", errors="replace") as f:
             return json.load(f), "PRESENT_VALID"
     except ValueError:
@@ -86,6 +100,80 @@ def _read_json_q(p):
 
 def _read_json(p):
     return _read_json_q(p)[0]
+
+
+def tlog_quality(path, st):
+    """A4:tlog 质量判定,与"目标文本是否出现"完全分离(A4-10)。
+    MISSING(A4-01)/EMPTY(A4-02)/MALFORMED(A4-03 随机垃圾:无任何可解析 record,
+    重同步字节占绝对多数)/UNSUPPORTED(A4-04 结构可解析但零个已知 CRC 帧)/
+    PRESENT_VALID(A4-06 至少一个 CRC-valid 支持帧)。CRC 错误在协议计数中如实记录(A4-05);
+    随机垃圾绝不标 PRESENT_VALID(A4-11),也不静默输出"正常零消息"(A4-12)。"""
+    if not os.path.exists(path):
+        return "MISSING"                # A4-01
+    try:
+        if os.path.getsize(path) == 0:
+            return "EMPTY"              # A4-02(存在但空:先于 st 判定)
+    except OSError:
+        return "READ_ERROR"
+    if st is None:
+        return "READ_ERROR"             # 存在非空却无解析结果 → 读取层失败
+    ps = st["protocol_stats"]
+    if ps["valid_crc_frames"] >= 1:
+        return "PRESENT_VALID"          # A4-06:≥1 已知帧 CRC 通过
+    consumed = ps["candidate_records"] + ps["unsupported_message_frames"] + ps["unsupported_incompat_flags"]
+    noise = ps["resync_bytes"] + ps["truncated_tail"] + ps["truncated_candidates"]
+    if consumed == 0 or (noise > 0 and consumed == 0):
+        return "MALFORMED"              # A4-03:纯噪声,无一个结构可解析 record
+    if ps["unsupported_message_frames"] >= 1 and ps["crc_failed_frames"] == 0 and noise <= consumed:
+        return "UNSUPPORTED"            # A4-04:只有未知 msgid 的结构合法帧
+    if ps["crc_failed_frames"] >= 1 and ps["valid_crc_frames"] == 0:
+        return "MALFORMED"              # 已知帧全部 CRC 失败
+    return "MALFORMED" if noise > consumed else "UNSUPPORTED"
+
+
+# A2 证据门契约:必需/可选输入集合(当前 hover 任务离线证据契约)。
+# 必需 = 判定业务结果与配置身份不可缺的最小集;可选 = 缺失可由失败模式解释(入 optional_gaps),
+# 但**损坏永远是损坏**(任何输入 MALFORMED/READ_ERROR → failed_inputs,门 CORRUPT)。
+REQUIRED_INPUTS = ("run_config.toml", "manifest.json", "summary.json",
+                   "mission_summary.json", "mav.tlog")
+OPTIONAL_INPUTS = ("startup_readiness_probe.json", "imu_probe.txt",
+                   "sitl/logs(dir)", "BIN(set)")
+_CORRUPT_STATES = ("MALFORMED", "READ_ERROR", "UNSUPPORTED")
+
+
+def build_evidence_gate(quality):
+    """A2:由逐输入质量构建 evidence_errors + evidence_gate。
+    status ∈ {COMPLETE, INCOMPLETE, CORRUPT}(A2-16):
+      任一输入(必需或可选)损坏/读错/不支持 → CORRUPT(A2-18;损坏永远是证据问题);
+      必需输入 MISSING/EMPTY → INCOMPLETE(A2-17);全部满足契约 → COMPLETE(A2-19)。
+    可选输入缺失 → optional_gaps,不误报为业务失败(A2-10)。"""
+    failed, gaps, reasons, errors = [], [], [], []
+    for name in REQUIRED_INPUTS + OPTIONAL_INPUTS:
+        q = quality[name]
+        if q in _CORRUPT_STATES:
+            failed.append(name)
+            errors.append(f"{name}:{q}")
+            reasons.append(f"{name} 证据损坏({q})")
+        elif name in REQUIRED_INPUTS and q in ("MISSING", "EMPTY"):
+            failed.append(name)
+            errors.append(f"{name}:{q}")
+            reasons.append(f"{name} 必需证据缺失({q})")
+        elif name in OPTIONAL_INPUTS and q in ("MISSING", "EMPTY", "PRESENT_NO_MATCH"):
+            gaps.append(f"{name}:{q}")
+    if any(quality[n] in _CORRUPT_STATES for n in failed):
+        status = "CORRUPT"
+    elif failed:
+        status = "INCOMPLETE"
+    else:
+        status = "COMPLETE"
+    gate = {
+        "required_inputs": list(REQUIRED_INPUTS),   # A2-11
+        "failed_inputs": failed,                    # A2-12
+        "optional_gaps": gaps,                      # A2-13
+        "reasons": reasons,                         # A2-14
+        "status": status,                           # A2-15
+    }
+    return errors, gate
 
 
 def _prune(d, prefix=""):
@@ -151,12 +239,14 @@ def extract(run_dir):
     if os.path.exists(cfg_path):
         with open(cfg_path, encoding="utf-8", errors="replace") as f:
             cfg_text = f.read()
-    # run_config 质量:MISSING/MALFORMED/PRESENT_VALID(C2)
+    # A1-01 run_config 质量
     cfg = {}
     if not os.path.exists(cfg_path):
         cfg_quality = "MISSING"
     elif tomllib is None:
-        cfg_quality = "UNSUPPORTED"
+        cfg_quality = "UNSUPPORTED"                       # A1-15
+    elif os.path.getsize(cfg_path) == 0:
+        cfg_quality = "EMPTY"                             # A1-12
     else:
         try:
             cfg = tomllib.loads(cfg_text)
@@ -164,26 +254,36 @@ def extract(run_dir):
         except (tomllib.TOMLDecodeError, ValueError):
             cfg_quality = "MALFORMED"
 
-    manifest, q_manifest = _read_json_q(os.path.join(run_dir, "manifest.json"))
-    summary, q_summary = _read_json_q(os.path.join(run_dir, "summary.json"))
-    mission, q_mission = _read_json_q(os.path.join(run_dir, "mission_summary.json"))
-    readiness, q_readiness = _read_json_q(os.path.join(run_dir, "audits", "startup_readiness_probe.json"))
-    imu_probe, q_imu = _read_json_q(os.path.join(run_dir, "probes", "imu_probe.txt"))
+    manifest, q_manifest = _read_json_q(os.path.join(run_dir, "manifest.json"))          # A1-02
+    summary, q_summary = _read_json_q(os.path.join(run_dir, "summary.json"))             # A1-03
+    mission, q_mission = _read_json_q(os.path.join(run_dir, "mission_summary.json"))     # A1-04
+    readiness, q_readiness = _read_json_q(os.path.join(run_dir, "audits", "startup_readiness_probe.json"))  # A1-06
+    imu_probe, q_imu = _read_json_q(os.path.join(run_dir, "probes", "imu_probe.txt"))    # A1-07
 
+    # A1-08 sitl/logs 目录质量 + A1-09 BIN 文件集合质量(目录在≠有 BIN,A1-16/17)
     logs_dir = os.path.join(run_dir, "sitl", "logs")
     if not os.path.isdir(logs_dir):
-        bin_present, q_bindir = False, "MISSING"
+        bin_present, q_logsdir, q_binset = False, "MISSING", "MISSING"
     else:
-        bin_present = any(n.endswith(".BIN") for n in os.listdir(logs_dir))
-        q_bindir = "PRESENT_VALID"
+        try:
+            names = os.listdir(logs_dir)
+            q_logsdir = "PRESENT_VALID"
+            bin_present = any(n.endswith(".BIN") for n in names)
+            q_binset = "PRESENT_VALID" if bin_present else "PRESENT_NO_MATCH"
+        except OSError:
+            bin_present, q_logsdir, q_binset = False, "READ_ERROR", "READ_ERROR"  # A1-14/A2-08
 
+    # A1-05/A4 tlog 质量:存在≠有效,须经协议解析判定(A4-11 垃圾不得 PRESENT_VALID)
     tlog = os.path.join(run_dir, "sitl", "mav.tlog")
     if not os.path.exists(tlog):
         tlog_bytes, st, q_tlog = 0, None, "MISSING"
     else:
-        tlog_bytes = os.path.getsize(tlog)
-        st = open1_tlog.summarize(tlog)  # protocol_stats 承载 tlog 协议质量(crc_failed 等)
-        q_tlog = "PRESENT_VALID"
+        try:
+            tlog_bytes = os.path.getsize(tlog)
+            st = open1_tlog.summarize(tlog) if tlog_bytes else None
+            q_tlog = tlog_quality(tlog, st)
+        except OSError:
+            tlog_bytes, st, q_tlog = 0, None, "READ_ERROR"
 
     status = summary.get("status") if isinstance(summary, dict) else None
     blockers = []
@@ -197,10 +297,26 @@ def extract(run_dir):
                 if code == "hover_mission_abort" and ":" in b.get("message", ""):
                     abort_reason = b["message"].split(":", 1)[1]
 
-    # 证据错误(损坏≠缺失≠正常业务失败):有文件但 MALFORMED 时显式登记
-    evidence_errors = [name for name, q in (
-        ("run_config.toml", cfg_quality), ("summary.json", q_summary),
-        ("mission_summary.json", q_mission)) if q == "MALFORMED"]
+    # A1 完整逐输入质量矩阵
+    quality = {
+        "run_config.toml": cfg_quality,
+        "manifest.json": q_manifest,
+        "summary.json": q_summary,
+        "mission_summary.json": q_mission,
+        "mav.tlog": q_tlog,
+        "startup_readiness_probe.json": q_readiness,
+        "imu_probe.txt": q_imu,
+        "sitl/logs(dir)": q_logsdir,
+        "BIN(set)": q_binset,
+    }
+    # A2:evidence_errors 覆盖全部输入的损坏/读错/不支持 + 必需缺失;可选缺失入 optional_gaps
+    evidence_errors, evidence_gate = build_evidence_gate(quality)
+
+    # A3:业务结果与证据验收彻底拆分
+    reported_task_status = status                                   # A3-01 只记录 summary 原始状态
+    reported_task_ok = (status == "TASK_STATUS_OK")                 # A3-02 summary 是否声称 OK
+    evidence_complete = (evidence_gate["status"] == "COMPLETE")     # A3-03 证据门
+    acceptance_eligible = reported_task_ok and evidence_complete    # A3-04..07 同时满足才可验收
 
     return {
         "run_id": run_id,
@@ -211,17 +327,9 @@ def extract(run_dir):
             "mission_summary.json": _sha256_file(os.path.join(run_dir, "mission_summary.json")),
             "mav.tlog": _sha256_file(tlog),
         },
-        "evidence_quality": {   # C2:每输入区分 PRESENT_VALID/MISSING/MALFORMED/READ_ERROR/UNSUPPORTED
-            "run_config.toml": cfg_quality,
-            "manifest.json": q_manifest,
-            "summary.json": q_summary,
-            "mission_summary.json": q_mission,
-            "mav.tlog": q_tlog,
-            "startup_readiness_probe.json": q_readiness,
-            "imu_probe.txt": q_imu,
-            "sitl/logs(BIN dir)": q_bindir,
-        },
-        "evidence_errors": evidence_errors,   # 非空 = 有损坏证据,不得当普通业务失败静默
+        "evidence_quality": quality,          # A1 九输入独立质量
+        "evidence_errors": evidence_errors,   # A2 非空 = 有损坏/必缺证据,绝不静默
+        "evidence_gate": evidence_gate,       # A2-11..16 required/failed/optional/reasons/status
         "freeze_ref": {
             "simulation_profile": _dig(cfg, "inputs", "simulation_profile"),
             "control_mode": _dig(cfg, "inputs", "control_mode"),
@@ -232,8 +340,14 @@ def extract(run_dir):
         "outcome": {
             "bin_present": bin_present,
             "tlog_bytes": tlog_bytes,
-            "status": status,
-            "full_pass": status == "TASK_STATUS_OK",
+            "reported_task_status": reported_task_status,   # A3-01
+            "reported_task_ok": reported_task_ok,           # A3-02
+            "evidence_complete": evidence_complete,         # A3-03
+            "acceptance_eligible": acceptance_eligible,     # A3-04(新验收唯一依据,A3-16)
+            "status": status,  # 兼容别名 = reported_task_status
+            # A3-14/15 兼容字段:full_pass **只表示历史 summary 主张**(=reported_task_ok),
+            # 不代表证据完整,**不得作为 R003 gate**;R003 验收一律用 acceptance_eligible。
+            "full_pass": reported_task_ok,
             "airborne": airborne_verdict(mission),   # C1:结构化 controller 侧,非 FCU 真值
             "mission_blockers": blockers,
             "abort_reason": abort_reason,

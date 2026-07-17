@@ -43,9 +43,13 @@
 
 **已实现(`open1_extract.py` 输出)**:`freeze_ref{simulation_profile, control_mode, canonical_config_hash, created_at}`、
 `input_hashes{run_config/summary/mission_summary/tlog sha256}`、
-`outcome{bin_present, tlog_bytes, status, full_pass, airborne(正证据/UNKNOWN), mission_blockers, abort_reason}`、
-`fcu_statustext{总数, window, accels_inconsistent_count, markers_seen, protocol_stats(CRC 计数)}`、
-`arm_status=UNKNOWN`、`ros2_sampled{仅采样点}`。
+**`evidence_quality`(九输入独立质量:PRESENT_VALID/MISSING/EMPTY/MALFORMED/READ_ERROR/UNSUPPORTED/PRESENT_NO_MATCH;
+tlog 质量经协议解析判定,垃圾文件≠PRESENT_VALID)**、
+**`evidence_errors` + `evidence_gate{required_inputs, failed_inputs, optional_gaps, reasons, status∈COMPLETE/INCOMPLETE/CORRUPT}`**、
+`outcome{bin_present, tlog_bytes, reported_task_status, reported_task_ok, evidence_complete,
+**acceptance_eligible(=业务主张∧证据门,R003 验收唯一依据)**, airborne(controller 侧结构化), mission_blockers, abort_reason}`、
+`fcu_statustext{…}`、`arm_status=UNKNOWN`、`ros2_sampled{仅采样点}`。
+⚠️ **兼容字段 `full_pass` 只表示历史 summary 主张(=reported_task_ok),不代表证据完整,不得作为 R003 gate**。
 
 **尚未实现(需 world-model 运行时埋点,登记为 `evidence_gaps`,E1 前须申请扩权,不静默改)**:
 宿主负载时序;SITL stdout/stderr + 退出码/生命周期(no-BIN 死因关键);heartbeat/dataflash 时刻;
