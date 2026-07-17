@@ -2,16 +2,16 @@
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
 # generated_at_head=7b4584c active_first_party_md=34 note=CURRENT 文档逐章节登记(evidence/last_verified 绑 P0 收口基线 7b4584c)
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
-CURRENT_STATUS.md	§一 阶段与唯一施工点	CURRENT	当前状态唯一权威	固定路线+当前施工点=WP303	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-CURRENT_STATUS.md	§三 已证事实与问题保守状态	CURRENT	当前状态唯一权威	B21已验证/B22候选/OPEN-1/OPEN-2 保守口径	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-CURRENT_STATUS.md	§二 三仓基线	CURRENT	当前状态唯一权威	三仓 HEAD/角色/本轮可改否	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-CURRENT_STATUS.md	§五 唯一下一动作	CURRENT	当前状态唯一权威	WP303 实现;Docker 归属 UNVERIFIED	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-CURRENT_STATUS.md	§四 R003 九门	CURRENT	当前状态唯一权威	G1-G9 当前门状态	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
+CURRENT_STATUS.md	§一 阶段与唯一施工点	CURRENT	当前状态唯一权威	固定路线+当前施工点=WP303	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+CURRENT_STATUS.md	§三 已证事实与问题保守状态	CURRENT	当前状态唯一权威	B21已验证/B22候选/OPEN-1/OPEN-2 保守口径	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+CURRENT_STATUS.md	§二 三仓基线	CURRENT	当前状态唯一权威	三仓 HEAD/角色/本轮可改否	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+CURRENT_STATUS.md	§五 唯一下一动作	CURRENT	当前状态唯一权威	WP303 实现;Docker 归属 UNVERIFIED	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+CURRENT_STATUS.md	§四 R003 九门	CURRENT	当前状态唯一权威	G1-G9 当前门状态	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
 HANDOVER_LINUX.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
-README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	7b4584c	CURRENT_ENTRY	KEEP	-	7b4584c
-TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
+README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	2c646f2	CURRENT_ENTRY	KEEP	-	2c646f2
+TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
 docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/GBPlanner原始论文与代码对应关系.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/Review_022_ROS2迁移路线切换后的无损接管审查_2026-07-08.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
@@ -19,9 +19,9 @@ docs/jazzy全栈重建_施工指引.md	整档	UNVERIFIED	派生/参考;状态权
 docs/ros2迁移_voxblox选型_2026-07-07.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_包清单与体量_2026-07-07.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_直连架构契约_2026-07-07.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
-docs/world-model端到端Bug台账_给作者PR.md	B17-B22 历史修复链	CURRENT	问题事实唯一权威	编号不携带状态,四维为准	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-docs/world-model端到端Bug台账_给作者PR.md	OPEN 节	CURRENT	问题事实唯一权威	OPEN-1 间歇 bring-up / OPEN-2 纪元复验失败	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-docs/world-model端到端Bug台账_给作者PR.md	四维状态表(B21/B22)	CURRENT	问题事实唯一权威	defect/root_cause/impl/acceptance	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
+docs/world-model端到端Bug台账_给作者PR.md	B17-B22 历史修复链	CURRENT	问题事实唯一权威	编号不携带状态,四维为准	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+docs/world-model端到端Bug台账_给作者PR.md	OPEN 节	CURRENT	问题事实唯一权威	OPEN-1 间歇 bring-up / OPEN-2 纪元复验失败	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+docs/world-model端到端Bug台账_给作者PR.md	四维状态表(B21/B22)	CURRENT	问题事实唯一权威	defect/root_cause/impl/acceptance	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
 docs/worldmodel理解_0_总览_给ROS2迁移.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/worldmodel理解_1_编排与任务生命周期.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/worldmodel理解_2_ROS图与数据流.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
@@ -31,9 +31,9 @@ docs/原生Linux迁移检查单_2026-07-08.md	整档	REFERENCE	派生/参考;状
 docs/多层3D探索Demo设计_2026-07-14.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/术语表_科研小白版.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/路线切换_ROS2迁移_2026-07-07.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
-governance/README.md	§1 两门协议	CURRENT	治理协议权威	bound/current 门语义与能证/不能证	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-governance/README.md	§2 第三方 LOCKED=0	CURRENT	治理协议权威	逐组件缺口	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-governance/README.md	§3 构建引用扫描	CURRENT	治理协议权威	静态/构建/镜像零命中+运行时盲区	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
+governance/README.md	§1 两门协议	CURRENT	治理协议权威	bound/current 门语义与能证/不能证	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+governance/README.md	§2 第三方 LOCKED=0	CURRENT	治理协议权威	逐组件缺口	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+governance/README.md	§3 构建引用扫描	CURRENT	治理协议权威	静态/构建/镜像零命中+运行时盲区	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
 governance/WP303_monitor生命周期方案_2026-07-16.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 runbooks/diagnostics/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 runbooks/gbplanner_ref/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
@@ -42,7 +42,7 @@ runbooks/world-model-jazzy/l0_hover/l0_batch_evidence_2026-07-14.md	整档	EVIDE
 runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/l0_hover/l1_bringup_evidence_2026-07-15.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
-双Agent交替协作协议.md	整档	CURRENT	协作规则权威	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	7b4584c	CURRENT_ENTRY	KEEP	-	7b4584c
-接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	P0收口逐章节核对	7b4584c	CURRENT_CONSISTENT	KEEP	-	7b4584c
-文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	7b4584c	CURRENT_ENTRY	KEEP	-	7b4584c
+双Agent交替协作协议.md	整档	CURRENT	协作规则权威	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	2c646f2	CURRENT_ENTRY	KEEP	-	2c646f2
+接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	2c646f2	CURRENT_ENTRY	KEEP	-	2c646f2
 项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
