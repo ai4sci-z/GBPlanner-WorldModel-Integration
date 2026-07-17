@@ -103,6 +103,83 @@ try:
 finally:
     os.unlink(bad)
 
+print("======== B-07 冻结门/provenance 反例(显式 commit 覆盖中和派生噪声) ========")
+import re as _re
+import subprocess as _sp
+HEAD = _sp.run(["git","rev-parse","HEAD"],cwd=os.path.dirname(os.path.abspath(__file__)),
+               capture_output=True,text=True).stdout.strip()
+REAL = open(A.DEFAULT_TSV,encoding="utf-8").read()
+
+def with_meta(text):
+    return text.replace("# schema="+A.SCHEMA_VERSION,
+        "# schema="+A.SCHEMA_VERSION+"\n# tool_commit="+HEAD+"\n# data_commit="+HEAD)
+
+def gate_rc(text, name, expect_nonzero=True, expect_substr=None):
+    global FAIL
+    with tempfile.NamedTemporaryFile("w",suffix=".tsv",delete=False,encoding="utf-8") as f:
+        f.write(text); path=f.name
+    try:
+        r=_sp.run(["python3","open1_annotate.py","verify","--tsv",path],
+                  cwd=os.path.dirname(os.path.abspath(__file__)),capture_output=True,text=True)
+        ok = (r.returncode!=0) if expect_nonzero else (r.returncode==0)
+        if ok and expect_substr and expect_substr not in r.stdout: ok=False
+        tail=r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
+        print(("PASS" if ok else "FAIL")+f": {name} rc={r.returncode} :: {tail}")
+        if not ok: FAIL+=1
+    finally: os.unlink(path)
+
+def _set(line, idx, val):
+    parts=line.split("\t"); parts[idx]=val; return parts
+
+def mut_rows(text, fn):
+    out=[]
+    for ln in text.split("\n"):
+        out.append(fn(ln) if ln.startswith("2026") else ln)
+    return "\n".join(out)
+
+# 基准:真 TSV + 显式覆盖 → 门必须绿
+gate_rc(with_meta(REAL), "B-07 基准(真TSV+覆盖)rc=0", expect_nonzero=False, expect_substr="PASS=5 FAIL=0 SKIP=0")
+# 全 SKIP / 部分 SKIP
+gate_rc(with_meta(REAL.replace("/world-model/artifacts","/nonexistent/artifacts")),
+        "B-07 全SKIP→非零", expect_substr="SKIP=5")
+one=REAL.replace("hover/20260715T204428","NOPE/20260715T204428",1)
+gate_rc(with_meta(one), "B-07 部分SKIP(1)→非零", expect_substr="SKIP=1")
+# 行数不足/多出
+lines=with_meta(REAL).rstrip("\n").split("\n")
+gate_rc("\n".join(lines[:-1])+"\n", "B-07 行数4→非零", expect_substr="行集")
+extra=list(lines); dup=[l for l in lines if l.startswith("2026")][0].split("\t")
+dup[0]="20260715T999999.000000000Z"; dup[1]="/tmp/none999"; extra.append("\t".join(dup))
+gate_rc("\n".join(extra)+"\n", "B-07 行数6→非零")
+# claimed SHA:短/非hex/deadbeef40/存在但错(288b486 全长,可解析但 registry 未记载)
+gate_rc(with_meta(mut_rows(REAL, lambda l: "\t".join(_set(l,2,"eab0cc6")))), "B-07 短SHA→非零", expect_substr="40位")
+gate_rc(with_meta(mut_rows(REAL, lambda l: "\t".join(_set(l,2,"z"*40)))), "B-07 非hex SHA→非零")
+gate_rc(with_meta(mut_rows(REAL, lambda l: "\t".join(_set(l,2,"deadbeef"*5)))), "B-07 deadbeef40→非零", expect_substr="无法在 wm 仓解析")
+SHA288=_sp.run(["git","-C","/home/ai4s/projects/world-model","rev-parse","288b486"],capture_output=True,text=True).stdout.strip()
+gate_rc(with_meta(mut_rows(REAL, lambda l: "\t".join(_set(l,2,SHA288)))), "B-07 存在但错误commit→非零(registry未记载)", expect_substr="节内未记载该 commit")
+# registry:文件不存在 / section 不存在 / 伪前缀内容
+gate_rc(with_meta(mut_rows(REAL, lambda l: "\t".join(_set(l,3,"EXTERNAL_REGISTRY:governance/不存在.md#集合 A")))),
+        "B-07 registry文件不存在→非零", expect_substr="registry 文件不存在")
+gate_rc(with_meta(mut_rows(REAL, lambda l: "\t".join(_set(l,3,l.split("\t")[3].replace("#\u0023\u0023 1. \u6837\u672c\u5206\u5c42","#\u4e0d\u5b58\u5728\u7684\u8282") if False else l.split("\t")[3].replace("## 1. 样本分层","不存在的节"))))),
+        "B-07 section不存在→非零", expect_substr="无该 section")
+gate_rc(with_meta(mut_rows(REAL, lambda l: "\t".join(_set(l,3,"EXTERNAL_REGISTRY:FAKE-NOT-CHECKED")))),
+        "B-07 伪registry串→非零")
+# artifact path 不一致(run_dir 基名≠run_id)
+def swap_dir(l):
+    parts=l.split("\t")
+    if parts[0].startswith("20260715T204428"):
+        parts[1]="/home/ai4s/projects/world-model/artifacts/sim/hover/20260715T211927.641462689Z"
+    return "\t".join(parts)
+bad=mut_rows(REAL, swap_dir)
+# 该变体产生重复 run_dir → schema 层拒;为测 path 绑定,同时改 211927 行 dir
+def swap_both(l):
+    parts=l.split("\t")
+    if parts[0].startswith("20260715T204428"):
+        parts[1]="/home/ai4s/projects/world-model/artifacts/sim/hover/20260715T211927.641462689Z"
+    elif parts[0].startswith("20260715T211927"):
+        parts[1]="/home/ai4s/projects/world-model/artifacts/sim/hover/20260715T204428.255001623Z"
+    return "\t".join(parts)
+gate_rc(with_meta(mut_rows(REAL, swap_both)), "B-07 artifact path交换→非零")
+
 print("================================")
 print(f"结果: FAIL={FAIL}")
 sys.exit(1 if FAIL else 0)

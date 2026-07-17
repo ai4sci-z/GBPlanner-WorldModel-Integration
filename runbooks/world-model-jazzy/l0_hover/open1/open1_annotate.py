@@ -47,6 +47,15 @@ COLUMNS = [
 RUN_ID_RE = re.compile(r"^\d{8}T\d{6}\.\d{9}Z$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 HERE = os.path.dirname(os.path.abspath(__file__))
+# B-02 冻结 registry:验收门要求恰为这五个 run,RAN=5/PASS=5/FAIL=0/SKIP=0,否则非零(失败关闭)
+FROZEN_RUN_IDS = frozenset({
+    "20260715T204428.255001623Z", "20260715T211927.641462689Z", "20260715T210849.272170331Z",
+    "20260715T205113.276955543Z", "20260715T210149.482334513Z",
+})
+# B-05 外部 registry(相对管理主仓根):含五 run_id 短式、profile、claimed commit 前缀
+REGISTRY_REL = "governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md"
+REGISTRY_SECTION = "## 1. 样本分层"   # 节锚;绑定检查限定在该节到下一 "## " 之间的区域
+WM_REPO = "/home/ai4s/projects/world-model"   # 只读解析 claimed commit
 DEFAULT_TSV = os.path.join(HERE, "open1_replay_annotations.tsv")
 
 
@@ -144,10 +153,8 @@ def derive_row(run_dir):
     return {
         "run_id": os.path.basename(d),
         "run_dir": d,
-        "artifact_claimed_run_commit": "eab0cc6",
-        "artifact_commit_source": ("EXTERNAL_REGISTRY:runbooks/world-model-jazzy/l0_hover/"
-                                   "l15_frame_audit_evidence_2026-07-16.md#§4b-默认主线全分母表"
-                                   "(产物内无直接 commit 记录,B4-06)"),
+        "artifact_claimed_run_commit": _resolve_claimed_commit(),
+        "artifact_commit_source": f"EXTERNAL_REGISTRY:{REGISTRY_REL}#{REGISTRY_SECTION}",
         "profile": prof,
         "control_mode": mode,
         "config_sha256": sha256_full(cfg),
@@ -165,6 +172,63 @@ def derive_row(run_dir):
         "annotation_method": "独立最小MAVLink-v2解码(位反射CRC-16/MCRF4XX,非open1_tlog)+直接读原始JSON/TOML+sha256全量",
         "annotation_source": "open1_annotate.py(独立工具,不import open1_tlog/open1_extract)",
     }
+
+
+def _resolve_claimed_commit():
+    """由外部 registry 记载的前缀(eab0cc6)经 wm 仓只读解析为完整 40 位 SHA。
+    独立于被测 extractor(B5);解析失败返回 UNVERIFIED(B4-09)。"""
+    r = _git(["rev-parse", "eab0cc6"], WM_REPO)
+    sha = r.stdout.strip()
+    return sha if r.returncode == 0 and re.fullmatch(r"[0-9a-f]{40}", sha) else "UNVERIFIED"
+
+
+def check_provenance_row(r, repo):
+    """B-05 真绑定。返回缺陷列表(空=通过)。不做字符串前缀糊弄:
+    ① claimed commit = 40 位 hex 且能在 wm 仓解析为 commit;
+    ② source 必须解析到实际存在的 registry 文件 + 明确 section;
+    ③ registry 中必须存在该 run_id(短式)、claimed commit 前缀、该行 profile;
+    ④ 结构一致:run_dir 基名 == run_id(artifact path 绑定)。"""
+    bad = []
+    sha = r["artifact_claimed_run_commit"]
+    if sha == "UNVERIFIED":
+        pass  # B4-09 显式未验证,允许但不算绑定通过 → 视作缺陷以失败关闭
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        bad.append(f"claimed_commit 非40位hex: {sha}")
+    else:
+        g = _git(["cat-file", "-t", sha], WM_REPO)
+        if g.returncode != 0 or g.stdout.strip() != "commit":
+            bad.append(f"claimed_commit 无法在 wm 仓解析: {sha[:12]}…")
+    src = r["artifact_commit_source"]
+    if not src.startswith("EXTERNAL_REGISTRY:"):
+        bad.append("source 非 EXTERNAL_REGISTRY")
+        return bad
+    body = src[len("EXTERNAL_REGISTRY:"):]
+    if "#" not in body:
+        bad.append("source 缺 section 锚")
+        return bad
+    rel, section = body.split("#", 1)
+    reg_path = os.path.join(repo, rel) if repo else rel
+    if not os.path.isfile(reg_path):
+        bad.append(f"registry 文件不存在: {rel}")
+        return bad
+    text = open(reg_path, encoding="utf-8", errors="replace").read()
+    if section not in text:
+        bad.append(f"registry 无该 section: {section}")
+        return bad
+    # 区域绑定:仅在锚定节内查(防止前缀在文档他处出现造成假绑定)
+    i = text.index(section)
+    j = text.find("\n## ", i + len(section))
+    region = text[i:j] if j != -1 else text[i:]
+    short = r["run_id"][:15]
+    if short not in region:
+        bad.append(f"registry 节内无该 run_id: {short}")
+    if re.fullmatch(r"[0-9a-f]{40}", sha) and sha[:7] not in region:
+        bad.append(f"registry 节内未记载该 commit 前缀: {sha[:7]}")
+    if r["profile"] and r["profile"] not in region:
+        bad.append(f"registry 节内未记载该 profile: {r['profile']}")
+    if os.path.basename(r["run_dir"].rstrip("/")) != r["run_id"]:
+        bad.append("run_dir 基名 != run_id(artifact path 不一致)")
+    return bad
 
 
 # ---------- schema 校验(B3,失败关闭) ----------
@@ -266,27 +330,37 @@ def commit_exists(sha):
 
 
 # ---------- verify / generate ----------
-def cmd_verify(tsv):
+def cmd_verify(tsv, gate=True):
+    """gate=True(默认 verify)= **冻结验收门,失败关闭**(B-02/B-03):
+      行集必须恰为 FROZEN_RUN_IDS 五个 run;RAN=5、PASS=5、FAIL=0、SKIP=0;
+      任一不满足 → 非零(INCOMPLETE/FAIL),SKIP 绝不计入 PASS,FAIL=0 也不足以 rc=0。
+    gate=False(replay 子命令)= 观察性回放,非验收门:如实报 PASS/FAIL/SKIP,rc 仅随 FAIL。"""
+    mode = "GATE" if gate else "REPLAY(非验收门)"
     try:
         meta, rows = parse_tsv(tsv)
     except ValueError as e:
         print(f"SCHEMA-FAIL: {e}")
-        print("结果: PASS=0 FAIL=1 SKIP=0")
+        print(f"[{mode}] 结果: PASS=0 FAIL=1 SKIP=0 status=FAIL")
         return 1
+    repo = repo_root()
     npass = nfail = nskip = 0
-    # B4:tool/data commit 派生 + 显式覆盖校验
     tool_sha = meta.get("tool_commit") or file_commit(os.path.abspath(__file__))
     data_sha = meta.get("data_commit") or file_commit(tsv)
     for label, sha in (("annotation_tool_commit", tool_sha), ("annotation_data_commit", data_sha)):
         if sha is None or not commit_exists(sha):
-            print(f"FAIL: {label} 不存在于 git(B3-12/13): {sha}")
+            print(f"FAIL: {label} 不存在于 git/内容未提交(B3-12/13): {sha}")
             nfail += 1
         else:
             print(f"PROVENANCE: {label}={sha}")
+    # B-02 冻结行集:恰为五个冻结 run(gate 模式)
+    row_ids = {r["run_id"] for r in rows}
+    if gate and row_ids != FROZEN_RUN_IDS:
+        print(f"FAIL: 行集≠冻结五 run(expected 5,got {len(rows)};缺={sorted(FROZEN_RUN_IDS-row_ids)} 多={sorted(row_ids-FROZEN_RUN_IDS)})")
+        nfail += 1
     for r in rows:
         d = r["run_dir"]
         if not os.path.isdir(d):
-            print(f"SKIP: {r['run_id']}(产物不在盘,B5-08;SKIP≠PASS)")
+            print(f"SKIP: {r['run_id']}(产物不在盘;SKIP≠PASS)")
             nskip += 1
             continue
         try:
@@ -300,17 +374,19 @@ def cmd_verify(tsv):
                              "profile", "control_mode", "bin_exists", "summary_status",
                              "controller_airborne_seen", "target_count")
                  if cur[c] != r[c]]
-        # 产物 commit 声称:必须有外部来源,否则须为 UNVERIFIED(B4-09)
-        if not (r["artifact_commit_source"].startswith("EXTERNAL_REGISTRY:")
-                or r["artifact_claimed_run_commit"] == "UNVERIFIED"):
-            diffs.append("artifact_commit_source(缺独立来源且未标 UNVERIFIED)")
+        diffs += check_provenance_row(r, repo)          # B-05 真绑定
         if diffs:
-            print(f"FAIL: {r['run_id']} 不匹配列={diffs}(输入不匹配=FAIL,不自动更新,B1-17/B2-09)")
+            print(f"FAIL: {r['run_id']} 不匹配/绑定失败={diffs}(不自动更新 expected,B1-17)")
             nfail += 1
         else:
-            print(f"PASS: {r['run_id']} 全列匹配(hash 全 64 位比较,显示缩写 tlog={r['tlog_sha256'][:12]}…)")
+            print(f"PASS: {r['run_id']} 全列匹配+provenance 绑定通过(tlog={r['tlog_sha256'][:12]}…)")
             npass += 1
-    print(f"结果: PASS={npass} FAIL={nfail} SKIP={nskip}")
+    if gate:
+        ok = (nfail == 0 and nskip == 0 and npass == len(FROZEN_RUN_IDS) and row_ids == FROZEN_RUN_IDS)
+        status = "COMPLETE" if ok else ("INCOMPLETE" if (nskip or row_ids != FROZEN_RUN_IDS) and nfail == 0 else "FAIL")
+        print(f"[GATE] 结果: RAN={npass+nfail} PASS={npass} FAIL={nfail} SKIP={nskip} status={status}")
+        return 0 if ok else 1
+    print(f"[REPLAY(非验收门)] 结果: PASS={npass} FAIL={nfail} SKIP={nskip}")
     return 1 if nfail else 0
 
 
@@ -353,11 +429,13 @@ def cmd_generate(run_dirs, out_path, replace):
 
 
 def main(argv):
-    if not argv or argv[0] == "verify":
+    if not argv or argv[0] in ("verify", "replay"):
+        gate = (not argv) or argv[0] == "verify"
+        rest = argv[1:] if argv else []
         tsv = DEFAULT_TSV
-        if len(argv) >= 3 and argv[1] == "--tsv":
-            tsv = argv[2]
-        return cmd_verify(tsv)
+        if len(rest) >= 2 and rest[0] == "--tsv":
+            tsv = rest[1]
+        return cmd_verify(tsv, gate=gate)
     if argv[0] == "generate":
         dirs = []
         out = DEFAULT_TSV
@@ -380,7 +458,7 @@ def main(argv):
             print("generate 需要至少一个 --run-dir(B1-09 显式参数)")
             return 2
         return cmd_generate(dirs, out, replace)
-    print("用法: open1_annotate.py [verify [--tsv PATH] | generate --run-dir D [...] [--out PATH] [--replace]]")
+    print("用法: open1_annotate.py [verify(冻结验收门)|replay(观察) [--tsv PATH] | generate --run-dir D [...] [--out PATH] [--replace]]")
     return 2
 
 

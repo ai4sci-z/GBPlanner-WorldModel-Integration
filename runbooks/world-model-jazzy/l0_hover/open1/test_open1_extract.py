@@ -122,7 +122,7 @@ try:
     d = os.path.join(tmp, "20260715T000000.000000000Z")
     os.makedirs(os.path.join(d, "sitl", "logs"))
     open(os.path.join(d, "run_config.toml"), "w").write(base)
-    json.dump({"status": "TASK_STATUS_BLOCKED", "blockers": []}, open(os.path.join(d, "summary.json"), "w"))
+    json.dump({"status": "TASK_STATUS_BLOCKED", "ok": False, "blockers": []}, open(os.path.join(d, "summary.json"), "w"))
     # 无 mission_summary、无 BIN、空 tlog
     open(os.path.join(d, "sitl", "mav.tlog"), "wb").write(b"")
     ex = E.extract(d)
@@ -163,8 +163,9 @@ def make_valid_run(root, name, *, tlog_bytes=None, with_bin=True, mut=None):
     os.makedirs(os.path.join(d, "audits"), exist_ok=True)
     os.makedirs(os.path.join(d, "probes"), exist_ok=True)
     open(os.path.join(d, "run_config.toml"), "w").write(base)
-    json.dump({"created_at": "2026-07-15T20:00:00Z"}, open(os.path.join(d, "manifest.json"), "w"))
-    json.dump({"status": "TASK_STATUS_OK", "blockers": []}, open(os.path.join(d, "summary.json"), "w"))
+    json.dump({"run_id": name, "created_at": "2026-07-15T20:00:00Z", "artifacts": []},
+              open(os.path.join(d, "manifest.json"), "w"))
+    json.dump({"status": "TASK_STATUS_OK", "ok": True, "blockers": []}, open(os.path.join(d, "summary.json"), "w"))
     json.dump({"airborne_seen": True}, open(os.path.join(d, "mission_summary.json"), "w"))
     json.dump({"ok": True}, open(os.path.join(d, "audits", "startup_readiness_probe.json"), "w"))
     json.dump({"ok": True}, open(os.path.join(d, "probes", "imu_probe.txt"), "w"))
@@ -248,6 +249,58 @@ try:
     ck("A5-12 airborne=True 保留 + A5-14 gate 拒绝验收",
        (x["outcome"]["airborne"]["mission_controller_airborne_seen"], x["outcome"]["acceptance_eligible"]), (True, False))
     ck("A5-15 损坏输入逐项入 failed_inputs", x["evidence_gate"]["failed_inputs"], ["manifest.json"])
+
+    # ======== A-06 合法 JSON/TOML 错 schema 反例(先红=旧实现无 schema 校验,A-01 已实证) ========
+    def wr(name, fname, content):
+        return make_valid_run(tmp, name, mut=lambda d: open(os.path.join(d, fname), "w").write(content))
+
+    # A-01 Codex 复合反例:三份合法 JSON 错结构
+    def codex_schema(d):
+        open(os.path.join(d, "manifest.json"), "w").write("[]")
+        open(os.path.join(d, "summary.json"), "w").write('{"status":"TASK_STATUS_OK"}')
+        open(os.path.join(d, "mission_summary.json"), "w").write("[]")
+    xs = E.extract(make_valid_run(tmp, "s0", mut=codex_schema))
+    ck("A-01 三文件错schema→gate非COMPLETE", xs["evidence_gate"]["status"], "CORRUPT")
+    ck("A-01 acceptance=False", xs["outcome"]["acceptance_eligible"], False)
+    ck("A-01 三项逐个入 failed_inputs",
+       xs["evidence_gate"]["failed_inputs"], ["manifest.json", "summary.json", "mission_summary.json"])
+
+    # 顶层类型错误族:[]/null/字符串/数字
+    for i, top in enumerate(('[]', 'null', '"str"', '123')):
+        x = E.extract(wr(f"s1{i}", "manifest.json", top))
+        ck(f"A-06 manifest 顶层{top}→UNSUPPORTED_SCHEMA", x["evidence_quality"]["manifest.json"], "UNSUPPORTED_SCHEMA")
+    # 缺关键字段 / 关键字段类型错
+    x = E.extract(wr("s2", "manifest.json", '{"run_id":"r","created_at":"t"}'))
+    ck("A-06 manifest 缺 artifacts→US", x["evidence_quality"]["manifest.json"], "UNSUPPORTED_SCHEMA")
+    x = E.extract(wr("s3", "manifest.json", '{"run_id":"r","created_at":"t","artifacts":{}}'))
+    ck("A-06 manifest artifacts 类型错→US", x["evidence_quality"]["manifest.json"], "UNSUPPORTED_SCHEMA")
+    # 未知 summary status
+    x = E.extract(wr("s4", "summary.json", '{"status":"TASK_STATUS_WEIRD","ok":true,"blockers":[]}'))
+    ck("A-06 未知 status→US", x["evidence_quality"]["summary.json"], "UNSUPPORTED_SCHEMA")
+    # airborne_seen 非布尔族
+    for i, v in enumerate(('"yes"', '1', '{}')):
+        x = E.extract(wr(f"s5{i}", "mission_summary.json", '{"airborne_seen": %s}' % v))
+        ck(f"A-06 airborne_seen={v}→US", x["evidence_quality"]["mission_summary.json"], "UNSUPPORTED_SCHEMA")
+    ck("A-06 airborne 缺失仍 UNKNOWN(合法)",
+       E.extract(wr("s6", "mission_summary.json", '{}'))["outcome"]["airborne"]["mission_controller_airborne_seen"], None)
+    # optional 存在但 schema 错 → 入 failed_inputs(A-05),不伪装无观察
+    x = E.extract(wr("s7", "audits/startup_readiness_probe.json", '{"ok":"yes"}'))
+    ck("A-06 readiness 合法JSON错schema→failed_inputs",
+       ("startup_readiness_probe.json" in x["evidence_gate"]["failed_inputs"], x["evidence_gate"]["status"]), (True, "CORRUPT"))
+    x = E.extract(wr("s8", "probes/imu_probe.txt", '[]'))
+    ck("A-06 imu probe []→failed_inputs", "imu_probe.txt" in x["evidence_gate"]["failed_inputs"], True)
+    # required TOML 结构违约(合法 TOML 缺 inputs.control_mode)
+    x = E.extract(wr("s9", "run_config.toml", "[inputs]\nsimulation_profile='p'\n[run]\nrun_id='r'\n"))
+    ck("A-06 run_config 缺 control_mode→US+CORRUPT",
+       (x["evidence_quality"]["run_config.toml"], x["evidence_gate"]["status"]), ("UNSUPPORTED_SCHEMA", "CORRUPT"))
+    # 多输入同时错误 → failed_inputs 不丢项
+    def multi(d):
+        open(os.path.join(d, "manifest.json"), "w").write("[]")
+        open(os.path.join(d, "probes", "imu_probe.txt"), "w").write("[]")
+        os.unlink(os.path.join(d, "sitl", "mav.tlog"))
+    x = E.extract(make_valid_run(tmp, "s10", mut=multi))
+    ck("A-06 多输入错→failed 不丢项",
+       set(x["evidence_gate"]["failed_inputs"]) >= {"manifest.json", "imu_probe.txt", "mav.tlog"}, True)
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 

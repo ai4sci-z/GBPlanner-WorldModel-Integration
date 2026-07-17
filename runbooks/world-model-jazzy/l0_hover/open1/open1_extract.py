@@ -83,19 +83,61 @@ def _sha256_file(p):
 #       READ_ERROR≠UNKNOWN(A1-19);证据损坏≠业务失败(A1-20)。
 
 
-def _read_json_q(p):
-    """返回 (value, quality)。区分缺失/空/损坏/读错,不压成单一 None。"""
+# A-02/A-03 schema 契约:语法合法≠契约合格。语法错=MALFORMED;
+# 语法合法但结构/字段/类型违约 = **UNSUPPORTED_SCHEMA**(全局唯一选择,corrupt 类,入 failed_inputs)。
+KNOWN_SUMMARY_STATUSES = ("TASK_STATUS_OK", "TASK_STATUS_ERROR", "TASK_STATUS_BLOCKED")
+
+
+def _schema_manifest(v):
+    """manifest.json:对象;身份/产物字段存在且类型正确。"""
+    return (isinstance(v, dict)
+            and isinstance(v.get("run_id"), str)
+            and isinstance(v.get("created_at"), str)
+            and isinstance(v.get("artifacts"), list))
+
+
+def _schema_summary(v):
+    """summary.json:对象;status 属已知集合;ok 布尔;blockers 列表。"""
+    return (isinstance(v, dict)
+            and v.get("status") in KNOWN_SUMMARY_STATUSES
+            and isinstance(v.get("ok"), bool)
+            and isinstance(v.get("blockers"), list))
+
+
+def _schema_mission(v):
+    """mission_summary.json:对象;airborne_seen 若存在必须为布尔(缺失→UNKNOWN 由上层映射)。"""
+    if not isinstance(v, dict):
+        return False
+    if "airborne_seen" in v and not isinstance(v["airborne_seen"], bool):
+        return False
+    return True
+
+
+def _schema_probe(v):
+    """readiness/imu probe:对象;ok 若存在必须为布尔。"""
+    if not isinstance(v, dict):
+        return False
+    if "ok" in v and not isinstance(v["ok"], bool):
+        return False
+    return True
+
+
+def _read_json_q(p, schema=None):
+    """返回 (value, quality)。缺失/空/语法损坏/读错/schema 违约分立,不压成单一 None。"""
     if not os.path.exists(p):
         return None, "MISSING"
     try:
         if os.path.getsize(p) == 0:
             return None, "EMPTY"
         with open(p, encoding="utf-8", errors="replace") as f:
-            return json.load(f), "PRESENT_VALID"
+            v = json.load(f)
     except ValueError:
         return None, "MALFORMED"
     except OSError:
         return None, "READ_ERROR"
+    if schema is not None and not schema(v):
+        return None, "UNSUPPORTED_SCHEMA"     # A-03:语法合法但违约 → 不得 PRESENT_VALID
+    return v, "PRESENT_VALID"
 
 
 def _read_json(p):
@@ -138,7 +180,7 @@ REQUIRED_INPUTS = ("run_config.toml", "manifest.json", "summary.json",
                    "mission_summary.json", "mav.tlog")
 OPTIONAL_INPUTS = ("startup_readiness_probe.json", "imu_probe.txt",
                    "sitl/logs(dir)", "BIN(set)")
-_CORRUPT_STATES = ("MALFORMED", "READ_ERROR", "UNSUPPORTED")
+_CORRUPT_STATES = ("MALFORMED", "READ_ERROR", "UNSUPPORTED", "UNSUPPORTED_SCHEMA")
 
 
 def build_evidence_gate(quality):
@@ -250,15 +292,21 @@ def extract(run_dir):
     else:
         try:
             cfg = tomllib.loads(cfg_text)
-            cfg_quality = "PRESENT_VALID"
+            inp = cfg.get("inputs")
+            if (isinstance(cfg, dict) and isinstance(inp, dict)
+                    and isinstance(inp.get("simulation_profile"), str)
+                    and isinstance(inp.get("control_mode"), str)):
+                cfg_quality = "PRESENT_VALID"
+            else:
+                cfg, cfg_quality = {}, "UNSUPPORTED_SCHEMA"   # A-02:结构/类型违约
         except (tomllib.TOMLDecodeError, ValueError):
             cfg_quality = "MALFORMED"
 
-    manifest, q_manifest = _read_json_q(os.path.join(run_dir, "manifest.json"))          # A1-02
-    summary, q_summary = _read_json_q(os.path.join(run_dir, "summary.json"))             # A1-03
-    mission, q_mission = _read_json_q(os.path.join(run_dir, "mission_summary.json"))     # A1-04
-    readiness, q_readiness = _read_json_q(os.path.join(run_dir, "audits", "startup_readiness_probe.json"))  # A1-06
-    imu_probe, q_imu = _read_json_q(os.path.join(run_dir, "probes", "imu_probe.txt"))    # A1-07
+    manifest, q_manifest = _read_json_q(os.path.join(run_dir, "manifest.json"), _schema_manifest)   # A1-02
+    summary, q_summary = _read_json_q(os.path.join(run_dir, "summary.json"), _schema_summary)       # A1-03
+    mission, q_mission = _read_json_q(os.path.join(run_dir, "mission_summary.json"), _schema_mission)  # A1-04
+    readiness, q_readiness = _read_json_q(os.path.join(run_dir, "audits", "startup_readiness_probe.json"), _schema_probe)  # A1-06
+    imu_probe, q_imu = _read_json_q(os.path.join(run_dir, "probes", "imu_probe.txt"), _schema_probe)    # A1-07
 
     # A1-08 sitl/logs 目录质量 + A1-09 BIN 文件集合质量(目录在≠有 BIN,A1-16/17)
     logs_dir = os.path.join(run_dir, "sitl", "logs")
