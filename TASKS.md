@@ -1,106 +1,27 @@
-# 任务台账(进程调度式 · 防丢 + 自纠错 + 留痕)
+# TASKS(未完成工作包队列;状态以 CURRENT_STATUS 为准)
 
-> **[R003 治理标记 · 2026-07-16]** 当前阶段 = **R003 审查整改**(第二阶段治理施工中;固定路线与验收门见
-> [CURRENT_STATUS.md](CURRENT_STATUS.md)——唯一状态入口,本表状态与其冲突时以彼为准)。
-> 下表 P-0 段的"L0→L1→L2 二分/根因反事实"已执行完毕:B21 已验证、B22 候选(诊断反事实 4 攻 3 过),
-> **默认主线分母 = 6 攻 3 过(R003 锚定两跑 = 2 攻 1 过),10/10 短窗门与长稳门未开,OPEN-1 间歇性 bring-up 未定位**。
-> M5/Demo 2/3 在稳定门通过前禁止推进(R003 禁止事项 15)。
-> "后台进程…完成通知"机制按 R003 发现四整改:监视必须有界退出并传播退出码(第三阶段实现)。
+> 本文只维护**未完成**任务:优先级、依赖、验收门、解锁条件。
+> 已完成历史见 git 历史,不在此堆日志。当前分母/状态不在此复制,见 CURRENT_STATUS。
 
-> 项目"调度状态盘",仿操作系统进程表(PCB)。git 提交后永不丢。被打断后我读本表自动接续,无需提醒。
+## 当前队列(严格按序,不并行扩张)
 
-## 一、机制
+| WP | 任务 | 依赖 | 验收门 | 状态 |
+|---|---|---|---|---|
+| **WP303** | monitor 生命周期实现:launcher + task record + 三轴状态(producer_outcome/evidence_status/cleanup_status)+ ≥20 fixture;只跑 fixture 不跑真实仿真 | P0 收口 | test_wait_batch 全绿;前后 PID/PGID 无残留;有界退出+真实退出码 | **当前施工点** |
+| WP304 | OPEN-1 因果时间线:对失败/成功 run 逐层建时间线,竞争假设矩阵,单变量可证伪实验(方案停点先行) | WP303 | 时间线+假设矩阵成文,负责人放行方可跑实验 | ⛔ 阻塞 |
+| WP305 | 时钟纪元契约修复(OPEN-2):测试与 pymavlink 环境解耦,补节点重启/来源生命周期反例 | WP303 | 反例矩阵全绿,独立复验通过 | ⛔ 阻塞 |
+| WP306 | 三独立单元:GPU 支持矩阵 / IMU covariance(C'=RCRᵀ)+types.go 反注释 / truth audit 混合匹配 fail-closed | WP303 | 各单元反例测试通过 | ⛔ 阻塞 |
+| WP307 | 默认路径连续 10/10:固定 commit/镜像/场景,全 attempts 入分母 | WP304–306 | 10/10 发起/起飞/full-pass,产物完整无残留 | ⛔ 阻塞 |
+| WP308 | 长稳门 + R003 收口:固定时长/漂移/断链/崩溃阈值 | WP307 | 负责人批准的长稳指标全满足 | ⛔ 阻塞 |
 
-### 1.1 调度 / 防丢(仿 OS 进程表)
-- 本文件 = 进程表;状态:⬜就绪 / 🔵运行中 / ⏸阻塞 / ✅完成。
-- **检查点**:每完成一最小步 → 写盘 + git 提交。
-- **抢占**:你插入紧急任务 = 高优先级抢占;我先把当前状态写表,处理你的事,再回表续跑。
-- **后台进程**:长任务(镜像构建、子模块拉取)放后台,完成通知,不阻塞前台。
+## 下游阻塞任务(P0/P1 未关闭前禁止进入)
 
-### 1.2 自纠错(防止"自己出错还发现不了")
-- **文档(md)**:每次更新后自检 →① 不含 base64 大块;② 引用图片都存在;③ 桌面 md 用**绝对路径**引图、README 用相对路径;④ 大小正常。
-  - ⚠️ 教训1:Typora 不渲染 base64 内嵌图 → 桌面 md 严禁 base64,绝对路径引 PNG。
-  - ⚠️ 教训2:WSL 无中文字体时 rsvg-convert 转出的 PNG 中文变豆腐块 → 必须先装 `fonts-noto-cjk`/`fonts-wqy-zenhei` 再转。
-- **代码**:每写一段必在 WSL **编译 + 跑测试**,全绿才算完成才提交。
-- **留痕(你的要求)**:每做完一件事都留证据 —— 仿真**截图**、生成的**图/表**统一存 `images/`,并在文档里写清"做了什么、结果如何"。
+- **P2 ROS1/ROS2 前端对齐**:冻结 ROS1 oracle,像素/体素/参数/消息/时序逐项 diff。⛔
+- **P3 3D 无损验证**:路径 z / 体积增益 / 立体避障 / 空间探索,与 oracle 同表比较。⛔
+- **P4 WorldModel 插件化接入**:GBPlanner 与 frontier_lite 等并列注册、配置选择、运行切换、独立验收。⛔
+- **架构预留**:GPS-denied 多层楼梯探索只输出接口/数据结构/模块边界清单,禁止功能代码。
 
-### 1.3 四处同步(每步收尾)
-① 更新桌面 md(文字+图)②跑自检 ③git 提交推送 → 权威源 / 桌面传送门[自动] / 桌面 md / GitHub 四处一致。
+## 相邻技术债(并入对应 WP,不单列)
 
-## 二、命名约定(特异性 + 可读性)
-- **预研 A / 预研 B** = 复现任务(A=复现 world-model,B=复现 GBPlanner)。均已完成。
-- **集成方案** = ~~「B2.5 自写薄桥」~~ **已冻结为 oracle(07-07 路线切换)**;现行 = **ROS2 原生迁移 M0-M5**(见 §三)。历史名称曾为「桥接方案(ros1_bridge)」——官方 ros1_bridge 与 zenoh 均已实验判死(stage2a-2d);「重写方案(gbplanner_core)」为历史 2D 原型材料。
-
-## 三、当前主线任务表:GBPlanner **ROS2 原生迁移**(2026-07-08 · 路线切换后)
-
-> 🔄 **导师最高指示(07-07 晚)**:放弃桥接,GBPlanner 迁移 ROS2 原生。桥接线冻结为 oracle + 阶段性证据(下方"桥接期任务表"全部 ✅ 结论仍成立,不再演进)。
-> 权威任务书:[docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
-
-| ID | 里程碑 | 状态 | 验收 / 备注 |
-|---|---|---|---|
-| **M0** | 侦察 + 路线冻结 + 入口文档收口 | ✅ **窄验收通过(07-08:入口文档+探针修复,live 复跑当时全绿)** | 侦察三件套 ✅ + 理解报告 0-3 ✅ + 任务书入库 ✅ + 入口文档全切 ROS2 口径 ✅ + **stage6 探针修复链全收口 ✅**(修⑥ ff24087 frame_contract 采样消费链路 pose + 修⑦ 050ee94 rosbag required 集合同口径;**live 复跑 20260708T101402=TASK_STATUS_OK 完整全绿** blockers=[];证据 runbooks/world-model-jazzy/stage6_live_evidence.txt) |
-| **M1** | `planner_msgs` ROS2 最小消息包 | ✅ **窄验收通过(07-08,e343421):最小 8 接口构建与注册;不代表 13 msg + 24 srv 全量迁移** | `ros2_port/src/planner_msgs` 最小集 8 接口(srv:PlannerSrv/SetPlanningMode/Homing + msg:PlanningMode/BoundMode/TriggerMode/ExecutionPathMode/PlannerStatus);**M1 窄验收判据全达成**:jazzy 容器 colcon build rc=0(4.51s)+ `ros2 interface show` 8/8 + 无 ROS1/catkin/actionlib 依赖。证据 runbooks/ros2_port/m1_build_evidence.txt;迁移差异(PascalCase/UPPER_SNAKE 常量/Header)诚实标注 ros2_port/README.md |
-| **M2** | voxblox ROS2 后端落地 | 🟡 **切片对拍通过(07-14);fast 失配未归因、M2-Demo-3D 未测** | 切片1-3(vendor/维护补丁/行为等价 gtest 10/10)+ 切片4 TSDF oracle 对拍 PASS(35,323/35,323 零差)+ 切片5 ESDF 对拍 PASS(RMS 2.5e-05)+ world-model 场景建图落盘 + RViz2(feat `8fba00a`/`404ac67`)。⚠️ **M2-Demo-3D 未测**:多楼层 z 分层/楼板 free-occupied/上下 clearance 查询(多层 Demo 硬前置,Review 002 §5.2) |
-| **M3** | 算法核心 ROS-free 剥离 | 🟡 **编译+浅单测通过(07-14,feat `e61052d`);行为等价未证明** | 12,143 行 → ament STATIC 库,零 ros/ros.h,test_core_callable 4/4。⚠️ **准确表述="ROS1-free"**(接口仍依赖 ROS2 msg/tf2);**3D 行为等价 NOT PROVEN**(4 个浅测试,无真实 buildGraph/evaluateGraph、无 3D gain/z path oracle 对拍——Review 002 §5.3) |
-| **M4** | ROS2 planner 节点壳 | 🟡 **M4a 合成冒烟通过(07-14,feat `be7d6e0`);M4b 真场景长时未验证** | RRG 完整跑通(171 叶顶点/64 frontier),12wp 轨迹,rc=0。⚠️ **M4b 真场景长时 open-loop 未测**;PCI 替身只是 smoke 工具,不得直接升级为飞行协调器(须另做 planning_coordinator) |
-| **M5** | world-model 直连联跑 + oracle 回归 | ⏸ **BLOCKED_BY_GATE-4b(07-14,bring-up 已保全 feat `76bde0b`)** | 数据链 PARTIAL PASS(run 20260714T095739:真 odom/点云→RRG→轨迹→intent),飞行闭环 FAIL(accepted=0),z NOT IMPLEMENTED(adapter 丢 z)。**重切片**:M5-0 GATE-4b → M5-1 open-loop → M5-2 XY 单目标 → M5-3 XY 多目标 → M5-4 z 升降 → M5-5 XYZ+oracle → M5-6 ≥3 run 收口。恢复前须清 Review 001 P0-1~P0-4/P1-1~P1-8 |
-| **P-0** | **🔴 平台稳定基线(GATE-4b 重开,当前主战场)** | 🔵 **进行中** | 不含 GBPlanner 的 60s hover 硬门:L0(禁 SLAM/external nav,验刚体/插件/lockstep)→ L1(+SLAM 只观察)→ L2(+external nav 回灌)。验收=60s 连续 armed/GUIDED、5/5 无翻覆、姿态/角速度/电机包络有界、RTF 两档、probe 覆盖全窗口落地后判决。0.5m/1.2m 配对各≥3 次;根因须反事实 3-5 次才可写 ROOT_CAUSE。版本基线 pins_2026-07-14.yaml |
-| **D-0** | 多层 3D Demo 支线(会议需求 07-09) | ⬜ 设计文档先行 | Demo 0 离线 3D 决策/Demo 1 ROS1 oracle 多层场景可预研;**Demo 2/3 必须等 GATE-4b + M2-Demo-3D + M3-3D oracle + M4b + M5-4/5 硬门**。产出 docs/多层3D探索Demo设计.md(算法层已支持/系统层待实现/分阶段验收) |
-
-**当前施工点 = R003 整改(第二阶段治理,见顶部标记与 CURRENT_STATUS)**;P-0 平台二分已执行至 B21/B22(见台账)。M5 的"数据链已通"不作为接近成功的证据;任何 live 结论在稳定门(10/10+长稳)通过前不作数。
-⚠️ 工程事实保留:`navlab-sim --artifact-root` 只能指 workspace 内路径(指 /tmp 必致 4 探针全挂假象)。
-
-**第一轮纪律**(勿一次碰 messages+voxblox+rrg+params+TF+RViz2):M1 只做消息层地基;每个 M 阶段单独 commit + 留 evidence;行为等价靠 ROS1 oracle 对照;不因"能编译"就宣称迁移成功。
-
----
-
-## 三·附、桥接期任务表(**已冻结**,历史证据 / oracle,不再演进)
-
-> 以下为桥接式融合(B2.5 薄桥)阶段的任务台账,全部 ✅ 结论仍成立,冻结为迁移 oracle。不再追 final 批跑 / thinbridge 稳定性 / 桥接 PR。
-
-| ID | 任务 | 状态 | 备注 |
-|---|---|---|---|
-| 1 | 预研B·复现 GBPlanner 官方 ROS1 仿真 | ✅ **完成:自主探索全闭环(2026-07-02 实测)** | 排 6 坑后:起飞→voxblox 3D建图→RRG规划→**无人机自主巡飞覆盖迷宫**(轨迹实测 (5.7,-1.3)→(4.4,6.4),RViz 可视化在桌面)。复现:`run_light.sh` + `takeoff_and_explore.sh`;全记录 docs/预研B_仿真实跑排错记录.md |
-| 2 | 调研·确认 ros1_bridge 官方接入做法 | ✅ 完成 | 你已选「桥接方案」 |
-| 3 | 预研A·完整复现并**实际运行** world-model | 🏁 **历史窄验收:端到端全绿(07-06 晚;该绿为当时短窗口径,平台门后被 GATE-4b 重开,非当前稳定结论)** | run `20260706T130626`:TASK_STATUS_OK、blockers 空、4 探针全 ok、accepted_goals=3/3、path 1.06m、takeoff.ok=True、物理起飞 SIM+0.72m/电机1950,**无 hack**,clean_repro 首次 rc=0。关键=B15 死锁修复+B16 探针双根因(tf_static latched QoS+pose_filtered DDS慢发现28.97s实测)。clean分支 fix/world-model-e2e-takeoff(79643b9→77d951a→dada2db) |
-| 4 | 集成落地·`gbplanner_gain` 2D 原型 | ✅ 代码完成(**历史 2D 原型,非当前主线;PR 延后**) | ROS2-native 决策层原型:读图选向替代 frontier_lite 脚本。分支 `feat/gbplanner-gain-exploration-strategy`。**当前主线=B2.5 薄桥接真 GBPlanner(#9)**;本原型作为诚实标注的 PR-B 素材 |
-| 4.5 | **真 bug 发现**:exploration 生成脚本无法编译 | ✅ 已修并入PR | `%%` 经 text/template 原样落盘 → SyntaxError;`py_compile` 实测复现,改单 `%` 后通过。疑似 exploration 运行时起不来根因之一 |
-| 5 | 论证·跑 frontier_lite + 小 demo 证明其不足 | ✅ **量化证据到手(07-06 晚)** | 代码层铁证(时间驱动 goal_index=ready_elapsed/8.67s,不订阅地图)+ **基线实测**(6 run:达标率 40%、path 0.43~3.80m 方差大,根因=启动耗时蚕食 26s 窗口,docs/基线定档);GBPlanner 侧实测(291.3m/132,091点)早已入库 |
-| 6 | 对比·GBPlanner vs frontier_lite 量化对照 | ✅ **公平对比定档(07-07 下午)** | **修复后同口径:GBPlanner 达标 3/6=50% vs frontier_lite 0/6=0%,显著占优**(基线 accepted 恒=2 零方差=窗口结构性失败;修复前的 2/6 全绿实为 EKF 跑飞馈赠);且我方 accepted=真实运动到达,口径更严。GBPlanner 全绿 1/6(runA),v5(PD)后全绿率待 v2 批跑。stage5c_summary_evidence + baseline_postfix_evidence |
-| 7 | 文档·预研A/B 独立报告 | ⬜ 降级(文档完善类,非主线) | 预研A/B 均已完成,报告素材齐(Bug台账/基线/预研B成果);等主线跑通后统一出报告 |
-| 8 | 提交 PR + Issue 给 world-model 作者 | ⏸ **延后(你 2026-07-06 晚指示)** | 源码改动**先保存**(clean 分支 4 commit+净diff 286行零hack✅,全绿✅);**等最终集成任务(真 GBPlanner 桥接)跑通后再准备完整 PR 物料一并定稿**。硬约束不变=作者 jazzy 环境能跑 |
-| 9 | **⭐ B2.5 自写薄桥接真版 GBPlanner(~~当前主线~~ → 已冻结为 oracle)** | ⛔ **冻结(路线切换 07-07 晚)**;桥接期成果全部坐实:**Stage2~5 主链全实证:4c✅ 5a✅(3次重现)5b✅ 5c 首批✅;runA=首个完整全绿;公平对比 50% vs 0% 定档**。不再演进(不追 final 批跑/GUI/桥接 PR)——迁移主线见 §三 M0-M5 | 4c 去混流可归因(签名窗口 path 0.99m);5a gate 机制(run8 accepted=4 全运动到达);**5b 3D 对照成立**(FOV ±30°→±5°:输入 zspan 19× 压缩→TSDF 点数减半→trajectory z 收缩一个量级);**5c 六样本**:gate 达标 50% vs 基线 40%、全绿 1/6(runA=TASK_STATUS_OK)、失败分类 A类探索质量/B类探针波动;失真补证表=cmd_vel↔intent 0~14°(FCU 转发忠实)。上游 EKF 真 bug 根治(clean 99bcfa1,stage5a_diagnosis 必读);**ROS2 复核:无官方 ROS2 版 GBPlanner(16 分支全 ROS1/0 tag),短期维持薄桥**。入口 docs/桥接查证与执行计划 |
-| 10 | 修运行时头号根因 tomllib | ✅ 完成(0b85cea) | `try: tomllib / except: tomli` 兜底;jazzy 实测零影响(原生 tomllib,兜底分支不执行) |
-| 11 | **⭐ jazzy 全栈重建(用户硬指令)** | ✅ **镜像阶段 9/9 收官(07-05 晚)** | 4 缺镜像全建成+开箱验真(坑全解:BuildKit 假成功/Livox cstdint/ydlidar declare_parameter;official-baseline **原版零补丁一次过**,micro_ros_agent 58.4s=humble 最狠坑 jazzy 天然没有)。施工指引 docs/jazzy全栈重建_施工指引.md;脚本 runbooks/world-model-jazzy/ |
-| 12 | **⭐ jazzy 跑通 exploration** | 🏁 **历史窄验收:端到端全绿(07-06 晚;同上,非当前稳定结论)** | clean_repro.sh 首次 rc=0(run `20260706T130626`)。修复链:5类真bug(%%/空launch/IMU回声/RNGFND参数名)+ **B15 死锁** + **B16 探针双根因**(/tf_static latched→publisher QoS 内省;/ap/v1/pose/filtered→DDS 慢发现 28.97s 受控实验锤死→预算45s/容器90s)+ 测试断言遗留清理,go test 全绿。✅hack已撤(77d951a),净diff 286行(dada2db)。接管文档 RESUME_新窗口接管_2026-07-06.md + Bug台账 |
-| 13 | **frontier_lite 基线定档** | ✅ **两批完成:修复前(07-06)+修复后复档(07-07)** | 修复前:全绿 2/6、达标 40%、path 0.43~3.80(**已判定被 EKF 跑飞污染**);**修复后(公平口径):全绿 0/6、达标 0/6、accepted 恒=2 零方差、path 0.15~2.63**——"启动耗时蚕食 26s 窗口"从源码判断升级为实测确定性结论(时间片只装得下 2 个 goal)。baseline_postfix_evidence.txt |
-
-## 四、决策 & 路线(2026-07-08 · 路线切换后)
-
-**当前路线 = GBPlanner ROS2 原生迁移**(导师最高指示 07-07 晚:ROS1+ROS2 双栈过重,放弃桥接)。桥接线冻结为 oracle + 阶段性证据。
-
-**桥接期路线复盘(已冻结,仅追溯)**:曾采用「**B2.5 自写薄桥**」(历史名 ros1_bridge 方案;官方桥/zenoh 实验判死后确立)= GBPlanner-in-world-model 桥接式融合。实测进度全部坐实:① gbplanner-ref 单侧 ✅ ② 薄桥数据链+3D 雷达 ✅(stage2~3.5)③ Stage4 FCU 闭环+去混流归因 ✅ ④ Stage5a gate 机制 ✅(3 次重现)⑤ Stage5b 3D 行为对照 ✅ ⑥ Stage5c 首批+**公平对比定档 ✅(50% vs 0%)**⑦ v2 批证伪 kp0.45 ⑧ 成功率战役 ✅(探针预算 C/B 类根因全修+适配器 v6b;final2 再次全绿)⑨ GUI 三演示 ✅ 交付。**这些结论作为迁移 oracle 保留,不再追后续桥接收尾**;`gbplanner_core` 重写路线的理解材料在 ROS2 迁移 M3 复用。
-
-## 五、论证与对比要求(你新增)
-- **必须实据**:world-model 要在本机完整跑通;frontier_lite 的不足要用**实跑 demo + 量化数据**证明,不空口。
-- **必须对比**:GBPlanner 与 frontier_lite 同场景对照,量化指标突出 GBPlanner 优势。
-- **必须留痕**:截图、图、表全部存档并写进文档。
-
-## 六、自检记录
-- 2026-06-29 桌面 md base64 乱码 → 改绝对路径,自检通过。
-- 2026-06-29 PNG 中文豆腐块 → 装 Noto CJK 字体重转,已修复。
-- 2026-06-29 P1 代码 cmake+ctest 1/1 通过。
-- 2026-06-29 预研B docker build BUILD_OK,镜像 gbplanner-ref(10.7GB)。
-- 2026-06-29 ⚠️ 预研A 构建"假成功":报 BUILD_OK 但 `docker images` 只 5/9 → 自检抓出。诊断非 OOM,是 jazzy(24.04)编译不兼容(uint8_t/cstdint、declare_parameter)→ 切 humble 重建中。详见 [docs/预研A_构建排错记录.md]。
-  - **铁律**:命令退出码=0 ≠ 成功,必须自检真实产物(镜像数/文件/测试)。
-- 2026-06-30 集成代码接进 world-model 真结构:`go build/vet/test ./internal/tasks/helpers/` 全过;两种策略渲染脚本 `python3 -m py_compile` 均通过(实测,非退出码)。
-- 2026-06-30 ⚠️ 真 bug 实证:渲染后 `exploration_workflow_runtime.py` `py_compile` **FAIL**(line147 `%%`)→ sed 改单 `%` 后 **OK**。已作为 PR 第1个 commit。
-- 2026-06-30 🔴 **运行时头号根因实锤**(读 `artifacts_sample/exploration_summary.json` L404):SLAM 后端崩于 `ModuleNotFoundError: No module named 'tomllib'`(humble=Py3.10 无此库,栈为 jazzy/Py3.11+ 写)→ 无 `/slam/odom`/`/tf`/`/scan` → 全链 waiting_for_pose、探针 rc=20。**订正**:`%%` 不是"头号"根因(在它下游),之前 PR/Issue 措辞夸大了 `%%` 的权重,待改。修法:SLAM CLI `import tomllib` 加 `tomli` 兜底。
-- 2026-06-30 阶段4桥接·真版GBPlanner I/O契约**从gbplanner-ref源码逐条证实**;产出 ros1_bridge 映射 + ROS2 出口适配器(trajectory_to_intent.py,py_compile过)。去风险:仅标准消息跨桥,自定义planner_msgs留ROS1内。见 `integration/ros1_bridge/`。
-- 2026-07-02 预研B GUI 实跑排 6 坑(A~F),链路实测通到 **voxblox TSDF 3D 建图 4.5Hz**(点云 27876 点/odometry 252Hz,RViz 弹窗);发现上游 xacro 真 bug(OS0-128 传非法 gpu/organize_cloud 参数)。剩"起飞→探索"一步。证据:docs/预研B_仿真实跑排错记录.md;一键复现:runbooks/gbplanner_ref/run_light.sh。
-  - ⚠️ **环境铁律(新)**:WSL 下跑容器必须挂常驻 keepalive 进程——发行版空闲十几秒自动关机→docker 被优雅停止→容器全死 255(journalctl 实锤)。
-- 2026-07-02 预研B **自主探索全闭环**(起飞→建图→RRG→巡飞→480s 预算自动返航→地图落盘 4MB)+ 全程量化(291.3m/132,091 体素点/70 采样点曲线入库 images/)。
-- 2026-07-03 预研A 运行时剥洋葱:坑④~⑨ 逐个实锤修复(venv悬空/setup.bash缺失/rclpy版本/ydlidar必需+declare_parameter/QoS/**总根因 sdformat_urdf-gpu_lidar-RSP**)。方法论沉淀:"手动常驻容器从容取证"+"逐段模拟启动命令冒烟"+"活体探针"。当前卡:编排下 baseline DDS 隔离嫌疑。
-- 2026-07-05 ⚠️ 又抓一类假成功:`go run navlab-sim build` 编排 builder 无 BuildKit,遇 `RUN --mount` 失败**却报 OK/rc=0**(docker images 无镜像)→ 绕过,直用 `DOCKER_BUILDKIT=1 docker build`(runbooks/world-model-jazzy/build_jazzy.sh,内置真产物核验)。
-- 2026-07-05 jazzy 镜像 7 个开箱验真(verify_jazzy_images.sh 逐个进容器查 /opt/ros):全真。副产物发现:**companion 的 humble tag 内部实为 jazzy/Py3.12**(同 ID 双标签)——解释了它从不报 tomllib。
-- 2026-07-05 gazebo-sensor jazzy 原样构建**实测失败**(ydlidar declare_parameter,rclcpp jazzy 头文件四候选全不匹配)→ 26 处 sed v2 一次过;开箱 venv python(系统 Py3.12)直接能跑 → **d8ff119 悬空软链坑 jazzy 不存在**双向实锤。
+- exploration/navigation 的 cartographer 仍读原始 `/imu`(B22 只转正 hover 族)→ M5/P4 前必补。
+- world-model runner 探针完成即 SIGKILL mission(GATE-4b 本体 blocker)→ 属 world-model 改动,WP304 定位后另行方案。

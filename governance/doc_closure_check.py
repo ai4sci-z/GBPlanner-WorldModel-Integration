@@ -57,5 +57,27 @@ print(f"duplicate_dynamic_authority={len(dup_auth)}")
 for d in dup_auth[:20]: print("  DUPAUTH:",d)
 print(f"lifecycle_missing={len(lifecycle_missing)}")
 for l in lifecycle_missing[:20]: print("  NOLC:",l)
-bad=len(broken)+len(unregistered)+len(claim_missing)+len(dup_auth)+len(lifecycle_missing)
+# --- A5 语义硬门:只防本次已知回归(过期 current 串),非自然语言审查 ---
+def readf(p):
+    try: return open(p,encoding="utf-8",errors="replace").read()
+    except OSError: return ""
+sem=[]
+cs=readf("CURRENT_STATUS.md")
+for badstr in ("S2-FIX 施工中","C1 生成器","连续授权施工中"):
+    if badstr in cs: sem.append(f"CURRENT_STATUS 含过期串: {badstr}")
+if "WP303" not in cs or "实现" not in cs:
+    sem.append("CURRENT_STATUS 唯一下一动作未含 'WP303 实现'")
+tk=readf("TASKS.md")
+if "第二阶段治理施工中" in tk: sem.append("TASKS 含过期串: 第二阶段治理施工中")
+bt=readf("接力棒_当前值班.md")
+if "只做 R003-S2-FIX" in bt: sem.append("接力棒 含过期串: 只做 R003-S2-FIX")
+# CURRENT 文档不得在 claim manifest 中以 '整档 ... CURRENT_CONSISTENT' 占位(要求逐主张)
+cm_txt=readf("governance/claim_manifest.tsv")
+for line in cm_txt.splitlines():
+    if line.startswith("CURRENT_STATUS.md\t整档") and "CURRENT_CONSISTENT" in line:
+        sem.append("claim: CURRENT_STATUS 仍为 '整档...CURRENT_CONSISTENT' 占位")
+print(f"semantic_violations={len(sem)}")
+for x in sem[:20]: print("  SEM:",x)
+
+bad=len(broken)+len(unregistered)+len(claim_missing)+len(dup_auth)+len(lifecycle_missing)+len(sem)
 sys.exit(1 if bad else 0)
