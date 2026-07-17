@@ -43,7 +43,7 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 | G1 | manifest bound 闭包 | ✅ 三仓 rc=0 |
 | G2 | manifest current 闭包 | ✅ 三仓 rc=0 |
 | G3 | generate_manifest 测试 | ✅ 57/57;工具安全模型不再扩展,仅三固定输出 |
-| G4 | 文档闭包(链接/登记/路径/生命周期/语义) | 🟡 P0 收口中 |
+| G4 | 文档闭包(链接/登记/路径/生命周期/语义) | 🟡 **PARTIAL**:14 份活跃文档逐行事实审计完成(8 REFERENCE_VERIFIED / 5 REFERENCE_PARTIAL / 1 ARCHIVE,逐份读取范围+重放核验+未核实范围见 [governance/P0_doc_audit_逐份审计_2026-07-18.md](governance/P0_doc_audit_逐份审计_2026-07-18.md));5 份 PARTIAL 的未核实范围(外部仓现状/镜像复测/次级行号重放)关闭前 G4 不改通过;doc_closure rc=0 只证机械门,不替代人工逐主张审计 |
 | G5 | WP303 monitor 生命周期实现 | 🟡 **PARTIAL(实现停点,未发布)**:已编码+正式入口 e2e dry-run 通过(test_wait_batch **75/75**〔1-23 生命周期 + 24-33 串批/身份/路径边界反例〕+ test_batch_common 12/12 + test_final_rc 13/13);batch_id 端到端绑定(纳秒+UUID 强唯一,producer 经 WP303_BATCH_ID 盖章,monitor 只认本批 run/final);正式入口拒绝旧现场(不删旧证据);required 路径边界拒绝绝对/../symlink 越界;deadline 跨重启不重置;三轴退出码。**未做真实仿真验收** |
 | G6 | WP304 OPEN-1 因果时间线 | 🟡 **E0 收口停点**(离线提取器+协议解码器+schema 草案,未启动仿真、未实现运行时埋点):CRC 校验协议解析证伪"accel=失败判别器"(成功与 BIN-失败 accel 均=20、no-BIN=0);airborne 取 mission_summary 正证据;**arm 时序/no-BIN 死因/是否同源 = UNKNOWN**。见 [governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md) §9 + [runbooks/…/open1/](runbooks/world-model-jazzy/l0_hover/open1/);申请下一动作=进入 E1 最小旁路观测补丁方案停点 |
 | G7 | WP307 默认路径 10/10 | ⛔ 阻塞 |

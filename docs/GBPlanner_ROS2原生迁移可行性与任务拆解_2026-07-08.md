@@ -107,7 +107,7 @@ Gazebo Sim / world-model ROS2
     |
     | /wm/cloud3d or /lidar3d/points
     | /slam/odom
-    | TF: map -> odom -> base_link -> lidar3d_frame
+    | TF: map -> base_link -> lidar3d_frame〔⚠️撰写时误写含 odom 中间层;理解(二)实证 cartographer 直发 map->base_link,无 map->odom〕
     v
 GBPlanner ROS2 原生节点
     |
@@ -426,7 +426,7 @@ RViz2 能看到 trajectory 或 marker
 ```text
 /slam/odom
 /wm/cloud3d 或 /lidar3d/points
-TF: map -> odom -> base_link -> lidar3d_frame
+TF: map -> base_link -> lidar3d_frame〔⚠️同上,原文误含 odom 层〕
 ```
 
 输出：
