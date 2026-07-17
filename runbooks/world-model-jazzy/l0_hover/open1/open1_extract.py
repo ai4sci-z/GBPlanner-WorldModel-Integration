@@ -25,10 +25,33 @@ try:
 except ImportError:  # pragma: no cover
     tomllib = None
 
-# 配置身份**排除**的易变字段(点分路径,明确列举);未列举的未知字段一律**纳入**身份(保守)。
-# 真实 run_config.toml 用 TOML 表:语义在 [inputs]/[run]/[startup_readiness_policy];
-# 易变仅 run.run_id、run.artifact_dir、整个 [outputs] 表(全是嵌 run_id 的路径)。
-CONFIG_EXCLUDE_PATHS = frozenset({"outputs", "run.run_id", "run.artifact_dir"})
+# 配置身份**排除**的易变字段 = 精确叶子路径白名单(不排整表、不用前缀/模糊名/全局替换)。
+# 只排"已证纯易变"字段;未知字段(含 [outputs] 内新字段)、嵌套未知、列表顺序一律**默认进入** hash。
+# 每个排除路径的理由/示例/失效检测见 CONFIG_EXCLUDE_REGISTRY。
+CONFIG_EXCLUDE_PATHS = frozenset({
+    "run.run_id",
+    "run.artifact_dir",
+    "outputs.manifest",
+    "outputs.rosbag",
+    "outputs.summary_json",
+    "outputs.summary_md",
+    "outputs.task_plan",
+})
+# 排除登记:路径 → (为何不改变实验语义, 历史样本示例, 若含义变化如何使测试失败)
+CONFIG_EXCLUDE_REGISTRY = {
+    "run.run_id": ("每次运行的时戳型唯一 id,不改变被测配置",
+                   "20260715T204428.255001623Z",
+                   "test_canon_runid_only_change_same_hash 会因它进入身份而变红"),
+    "run.artifact_dir": ("产物落盘目录,仅嵌 run_id 路径,不改变被测配置",
+                         "../../artifacts/sim/hover/20260715T204428.255001623Z",
+                         "同上,路径变化本应折叠,进入身份即变红"),
+    "outputs.manifest": ("产物 manifest 路径,仅嵌 run_id", ".../<run_id>/manifest.json",
+                         "test_canon_approved_artifact_path_same_hash 变红"),
+    "outputs.rosbag": ("产物 rosbag 路径,仅嵌 run_id", ".../<run_id>/rosbag/rosbag_0.mcap", "同上"),
+    "outputs.summary_json": ("产物 summary 路径,仅嵌 run_id", ".../<run_id>/summary.json", "同上"),
+    "outputs.summary_md": ("产物 summary.md 路径,仅嵌 run_id", ".../<run_id>/summary.md", "同上"),
+    "outputs.task_plan": ("产物 task_plan 路径,仅嵌 run_id", ".../<run_id>/task_plan.json", "同上"),
+}
 
 RUNTIME_ONLY_GAPS = [
     "host{loadavg/cpu/freq/mem/io} 时序:需 world-model 运行时埋点",
@@ -48,12 +71,21 @@ def _sha256_file(p):
         return None
 
 
-def _read_json(p):
+def _read_json_q(p):
+    """返回 (value, quality)。区分缺失/损坏/读错,不压成单一 None(C2)。"""
+    if not os.path.exists(p):
+        return None, "MISSING"
     try:
         with open(p, encoding="utf-8", errors="replace") as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return None
+            return json.load(f), "PRESENT_VALID"
+    except ValueError:
+        return None, "MALFORMED"
+    except OSError:
+        return None, "READ_ERROR"
+
+
+def _read_json(p):
+    return _read_json_q(p)[0]
 
 
 def _prune(d, prefix=""):
@@ -91,16 +123,25 @@ def _dig(cfg, *keys):
     return cur
 
 
-def airborne_verdict(mission_summary):
-    """point4:仅正证据。airborne_seen True→True、False→False、缺失/无文件→None(UNKNOWN)。"""
-    if not isinstance(mission_summary, dict):
-        return None
-    v = mission_summary.get("airborne_seen")
-    if v is True:
-        return True
-    if v is False:
-        return False
-    return None  # 字段缺失/旧版 summary → UNKNOWN
+def airborne_verdict(mission_summary, other_airborne_claim=None):
+    """C1:mission_summary.airborne_seen 是 **mission controller 侧**汇总,非 FCU 内部真值。
+    返回结构化对象:
+      mission_controller_airborne_seen ∈ {True, False, None(UNKNOWN)}
+      True  = controller 记录到 airborne;
+      False = controller **未记录**到 airborne(**≠证明 FCU 从未离地**);
+      None  = 字段缺失/无 mission_summary → UNKNOWN。
+    other_airborne_claim 为其它来源的 airborne 主张(如有);与 controller=False 冲突时 conflict=True。"""
+    seen = None
+    if isinstance(mission_summary, dict):
+        v = mission_summary.get("airborne_seen")
+        seen = v if isinstance(v, bool) else None
+    conflict = (seen is False and other_airborne_claim is True)
+    return {
+        "mission_controller_airborne_seen": seen,
+        "source": "mission_summary.json (mission controller 侧观测)",
+        "epistemic_scope": "controller 观测,非 FCU 地面真值;False≠证明 FCU 从未离地",
+        "conflict": conflict,
+    }
 
 
 def extract(run_dir):
@@ -110,24 +151,39 @@ def extract(run_dir):
     if os.path.exists(cfg_path):
         with open(cfg_path, encoding="utf-8", errors="replace") as f:
             cfg_text = f.read()
+    # run_config 质量:MISSING/MALFORMED/PRESENT_VALID(C2)
     cfg = {}
-    if cfg_text and tomllib is not None:
+    if not os.path.exists(cfg_path):
+        cfg_quality = "MISSING"
+    elif tomllib is None:
+        cfg_quality = "UNSUPPORTED"
+    else:
         try:
             cfg = tomllib.loads(cfg_text)
+            cfg_quality = "PRESENT_VALID"
         except (tomllib.TOMLDecodeError, ValueError):
-            cfg = {}
+            cfg_quality = "MALFORMED"
 
-    manifest = _read_json(os.path.join(run_dir, "manifest.json"))
-    summary = _read_json(os.path.join(run_dir, "summary.json"))
-    mission = _read_json(os.path.join(run_dir, "mission_summary.json"))
+    manifest, q_manifest = _read_json_q(os.path.join(run_dir, "manifest.json"))
+    summary, q_summary = _read_json_q(os.path.join(run_dir, "summary.json"))
+    mission, q_mission = _read_json_q(os.path.join(run_dir, "mission_summary.json"))
+    readiness, q_readiness = _read_json_q(os.path.join(run_dir, "audits", "startup_readiness_probe.json"))
+    imu_probe, q_imu = _read_json_q(os.path.join(run_dir, "probes", "imu_probe.txt"))
 
     logs_dir = os.path.join(run_dir, "sitl", "logs")
-    bin_present = (os.path.isdir(logs_dir)
-                   and any(n.endswith(".BIN") for n in os.listdir(logs_dir))) if os.path.isdir(logs_dir) else False
+    if not os.path.isdir(logs_dir):
+        bin_present, q_bindir = False, "MISSING"
+    else:
+        bin_present = any(n.endswith(".BIN") for n in os.listdir(logs_dir))
+        q_bindir = "PRESENT_VALID"
 
     tlog = os.path.join(run_dir, "sitl", "mav.tlog")
-    tlog_bytes = os.path.getsize(tlog) if os.path.exists(tlog) else 0
-    st = open1_tlog.summarize(tlog) if os.path.exists(tlog) else None
+    if not os.path.exists(tlog):
+        tlog_bytes, st, q_tlog = 0, None, "MISSING"
+    else:
+        tlog_bytes = os.path.getsize(tlog)
+        st = open1_tlog.summarize(tlog)  # protocol_stats 承载 tlog 协议质量(crc_failed 等)
+        q_tlog = "PRESENT_VALID"
 
     status = summary.get("status") if isinstance(summary, dict) else None
     blockers = []
@@ -141,8 +197,10 @@ def extract(run_dir):
                 if code == "hover_mission_abort" and ":" in b.get("message", ""):
                     abort_reason = b["message"].split(":", 1)[1]
 
-    readiness = _read_json(os.path.join(run_dir, "audits", "startup_readiness_probe.json"))
-    imu_probe = _read_json(os.path.join(run_dir, "probes", "imu_probe.txt"))
+    # 证据错误(损坏≠缺失≠正常业务失败):有文件但 MALFORMED 时显式登记
+    evidence_errors = [name for name, q in (
+        ("run_config.toml", cfg_quality), ("summary.json", q_summary),
+        ("mission_summary.json", q_mission)) if q == "MALFORMED"]
 
     return {
         "run_id": run_id,
@@ -153,6 +211,17 @@ def extract(run_dir):
             "mission_summary.json": _sha256_file(os.path.join(run_dir, "mission_summary.json")),
             "mav.tlog": _sha256_file(tlog),
         },
+        "evidence_quality": {   # C2:每输入区分 PRESENT_VALID/MISSING/MALFORMED/READ_ERROR/UNSUPPORTED
+            "run_config.toml": cfg_quality,
+            "manifest.json": q_manifest,
+            "summary.json": q_summary,
+            "mission_summary.json": q_mission,
+            "mav.tlog": q_tlog,
+            "startup_readiness_probe.json": q_readiness,
+            "imu_probe.txt": q_imu,
+            "sitl/logs(BIN dir)": q_bindir,
+        },
+        "evidence_errors": evidence_errors,   # 非空 = 有损坏证据,不得当普通业务失败静默
         "freeze_ref": {
             "simulation_profile": _dig(cfg, "inputs", "simulation_profile"),
             "control_mode": _dig(cfg, "inputs", "control_mode"),
@@ -165,11 +234,11 @@ def extract(run_dir):
             "tlog_bytes": tlog_bytes,
             "status": status,
             "full_pass": status == "TASK_STATUS_OK",
-            "airborne": airborne_verdict(mission),      # True/False/None(UNKNOWN),仅正证据
+            "airborne": airborne_verdict(mission),   # C1:结构化 controller 侧,非 FCU 真值
             "mission_blockers": blockers,
             "abort_reason": abort_reason,
         },
-        "fcu_statustext": st,  # 含 protocol_stats(CRC 校验)、markers_seen、accels 计数
+        "fcu_statustext": st,  # None(tlog MISSING) 或 含 protocol_stats(CRC 校验)/markers/accels
         "arm_status": "UNKNOWN",  # 产物无带时间戳 arm 时序 → 不下任何 arm 结论
         "ros2_sampled": {
             "note": "仅采样时点,非整个 pre-arm 窗口连续证据",
