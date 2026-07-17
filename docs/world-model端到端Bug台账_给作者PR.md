@@ -101,7 +101,7 @@
 
 | # | 编号纪律 | 问题(观测) | 根因域/判定 | 处置 | 状态 |
 |---|---|---|---|---|---|
-| OPEN-1 | (未定案,勿编 B 号) | **间歇性 bring-up 失败**:同 wm 提交(`eab0cc6`,**注:默认主线 profile=slam-direct-no-odom-prior 与诊断臂 imu-flu-correction 非同配置,分层统计**)。默认主线 attempts6/airborne3/full-pass3;诊断臂旁证 4/3/3。失败分两类:**BIN-present**(CRC 校验后 `Arm: Accels inconsistent` 计数在成功与 BIN-失败**均=20**,系**观察特征、非失败机制、非判别器**;arm 请求/拒绝时序 UNKNOWN)/ **no-BIN**(SITL 无 BIN,该文本计数=0,根因 UNKNOWN,≠accel;两类是否同源 UNKNOWN)| 竞争假设 H1-H5 + 证据分级 F1-F5 见 [governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](../governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md) | 未修——WP304 分阶段:E0 离线提取器+协议解码器+观测 schema 草案(**运行时埋点未实现**)→E1 最小旁路观测补丁方案→E2 交错负载对照;禁直接 A/B×10;10/10 验收(R003-F11/G10) | 🔴 OPEN,封 GATE-4b 稳定性宣称 |
+| OPEN-1 | (未定案,勿编 B 号) | 间歇性 bring-up 失败(wm `eab0cc6`,默认主线 6/3/3,诊断臂旁证 4/3/3,两 profile 分层统计)。两类失败:BIN-present(prearm 循环未过;`Arm: Accels inconsistent` 文本在成功与失败 run 计数均=20,**非判别器**)/ no-BIN(SITL 无 BIN,死因 UNKNOWN;SITL 控制台未落盘是主观测缺口) | 竞争假设 H1-H5 与实验设计见 [WP304 方案](../governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md) | 未修——按 WP304 分阶段(E1 观测→pilot→E2 对照),10/10 验收 | 🔴 OPEN,封 GATE-4b 稳定性宣称 |
 | OPEN-2 | (登记,勿编 B 号) | **候选实现独立复验失败(Codex,2026-07-16)**:`wm 288b486`(时钟纪元契约)在 `navlab/.venv/bin/pytest -q navlab/tests/companion/test_external_nav_sender.py` 下 **2 failed / 18 passed**——`test_send_tick_drops_old_packets_and_recovers_after_confirmed_reset` 与 `test_send_tick_zero_stamp_stream_counts_and_recovers` 均因发送路径访问 `mavlink.MAV_FRAME_LOCAL_FRD` 时 `mavlink=None`(宿主 venv 无 pymavlink,fallback 导入置 None;容器内 20/20 过=环境依赖测试,不合格) | 节点级测试未与 pymavlink 环境解耦 | 待边界清晰修复提交(第四/五阶段);**`288b486` 状态=候选实现·独立复验失败;`77f0b67` 状态=候选实现·GPU 阶段待完整复验;两者均不得写成已通过** | 🔴 OPEN |
 
 证据链:`runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md`(测量方法+判决表)、

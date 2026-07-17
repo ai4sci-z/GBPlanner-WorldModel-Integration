@@ -4,7 +4,7 @@
 > ① **环境重建参考(仍有效)**:依赖安装、镜像构建、验收门脚本、§5 PORTABLE 铁律、检查单。
 > ② **执行状态快照(全部过期,SUPERSEDED)**:§0 内嵌的 M2 切片/M3-M5 TODO/GATE-4 全绿口径
 >   停留在 2026-07-08→07-13,已被 B21/B22、GATE-4b 重开与 R003 取代。
-> **接管入口不再是本文**:先读 `~/桌面/ClaudeCode_Reviews/Review_003_纯中文等价执行版_2026-07-16.md`,
+> **接管入口不再是本文**:先读 `~/桌面/ClaudeCode_Reviews/`(R003 系列,以其 README 指示的现行主令为准),
 > 再读 [CURRENT_STATUS.md](CURRENT_STATUS.md)(唯一状态入口)。迁移已完成,本文仅供重建环境时参考。
 > 生成:2026-07-08 深夜(WSL 侧);状态标记:2026-07-16。
 
@@ -220,6 +220,6 @@ side_quests:
 | 三路侦察报告 | ros2_port/docs/m2_scout_{1,2,3}*.md |
 | stage6 收官(live 全绿+翻案) | runbooks/world-model-jazzy/stage6_live_evidence.txt |
 | 桥接期全部结论(oracle) | CURRENT_STATUS §二 + runbooks/world-model-jazzy/stage*_evidence.txt |
-| 迁移检查单(本文件的姊妹篇) | docs/原生Linux迁移检查单_2026-07-08.md |
+| 迁移检查单(本文件的姊妹篇) | docs/archive/原生Linux迁移检查单_2026-07-08.md |
 | jazzy 镜像重建施工指引 | docs/archive/jazzy全栈重建_施工指引.md |
 | Bug 台账(B1–B22 + OPEN,唯一问题台账) | docs/world-model端到端Bug台账_给作者PR.md |
