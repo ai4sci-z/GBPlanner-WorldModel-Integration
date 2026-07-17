@@ -1,7 +1,4 @@
-> **[历史调研快照 · 已逐行审计(R003-E0-CORRECT-2 补正,2026-07-18)]** voxblox 选型调研(2026-07-07 时点)。
-> 审计改动:①"CURRENT"降为历史快照(网络数据均为检索当日);②§6 回填执行结果(vendored voxblox
-> 基底 pin d08e9d4,M2 对拍窄验收 PASS,fast-integrator/3D 分层语义未关闭)。选型结论与理由为当时判断,保留。
-> 外部仓库现状未复查(逐行审计不含重新联网检索)。当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
+> **[ARCHIVE]** 历史文档(归档于 2026-07-18),不构成当前指令;当前状态见仓库根 CURRENT_STATUS.md。
 
 # ROS2 迁移:voxblox 选型调研(2026-07-07)
 

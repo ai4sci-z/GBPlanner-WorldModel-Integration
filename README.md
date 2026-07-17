@@ -1,8 +1,4 @@
-> **[CURRENT] 入口页。状态细节以 [CURRENT_STATUS.md](CURRENT_STATUS.md) 为唯一事实源,本页不另行维护一套状态。**
-
-> **[R003 治理标记 · 2026-07-16]** 本页只作项目入口;一切状态以 [CURRENT_STATUS.md](CURRENT_STATUS.md)
-> 为准(唯一入口),问题以 [台账](docs/world-model端到端Bug台账_给作者PR.md) 为准。本页下文中任何
-> "已完成/全绿/资产全部直接复用"等表述若与 CURRENT_STATUS 冲突,一律以 CURRENT_STATUS 为准。
+> 项目入口页。状态唯一事实源 = [CURRENT_STATUS.md](CURRENT_STATUS.md),问题台账 = [Bug 台账](docs/world-model端到端Bug台账_给作者PR.md);本页不维护状态。
 
 # GBPlanner → World-Model 集成
 
@@ -13,7 +9,7 @@
 > 🔄 **2026-07-07 晚·导师最高指示**:放弃 ROS1↔ROS2 桥接,把 GBPlanner **迁移到 ROS2 原生**(ROS1+ROS2 双栈过重)。
 > 桥接线**冻结为 oracle 回归基准 + 科研叙事素材**(下方 §二 桥接期结论全部仍成立,不再演进);
 > world-model 侧资产(EKF/探针修复、ROS2 适配器 `trajectory_to_intent`、lidar3d、评测口径)**规划为复用**(桥接期产物;在 ROS2 直连主线上逐项验证后方可称"已复用")。
-> 历史设计蓝图(**已逐行审计的历史设计·REFERENCE,撰写当时语境,非当前权威**):[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md) + [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。当前状态权威 = [CURRENT_STATUS.md](CURRENT_STATUS.md)。
+> 设计背景(已归档):[路线切换决策](docs/archive/路线切换_ROS2迁移_2026-07-07.md) · [迁移可行性与任务拆解](docs/archive/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
 
 目标架构(从"双栈过桥"改为"ROS2 直连"):
 
@@ -30,8 +26,7 @@ world-model FCU 控制链 / Gazebo
 **迁移里程碑 M0–M5**:当前状态、证据等级、阻塞项**一律以 [CURRENT_STATUS.md](CURRENT_STATUS.md) 为准**,
 未完成队列见 [TASKS.md](TASKS.md),问题事实见 [Bug 台账](docs/world-model端到端Bug台账_给作者PR.md),
 **当前验收门 = R003 系列审查/补充令**(`~/桌面/ClaudeCode_Reviews/`,接管第一读物)。
-本页不复制里程碑进度(避免双事实源)。历史任务拆解仅作设计参考:
-[可行性与任务拆解](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)(已逐行审计,**不承担当前验收门**)。
+本页不复制里程碑进度(避免双事实源)。
 
 ## 三、桥接阶段表(已冻结,历史证据 / oracle)
 
@@ -68,7 +63,6 @@ world-model FCU 控制链 / Gazebo
 | [CURRENT_STATUS.md](CURRENT_STATUS.md) | **唯一事实源**:阶段/证据/卡点/纪律 |
 | [TASKS.md](TASKS.md) | 任务表(ROS2 迁移 M0-M5) |
 | [接力棒_当前值班.md](接力棒_当前值班.md) | 值班交接 |
-| [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md) | 迁移任务拆解 M0-M5(**历史设计·已逐行审计 REFERENCE**;非验收权威,权威=CURRENT_STATUS+R003) |
 | [文档索引.md](文档索引.md) | 全部文档带状态标签的索引 |
 
 > 桥接技术主文档 [docs/archive/桥接查证与执行计划_2026-07-06.md](docs/archive/桥接查证与执行计划_2026-07-06.md) 已降级为 **REFERENCE / HISTORICAL**(oracle 与历史证据,不再作为施工入口)。

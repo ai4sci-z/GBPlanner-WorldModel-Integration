@@ -1,14 +1,3 @@
-> **[技术参考 · 已逐行审计+基准重放核验(R003-E0-CORRECT-2,2026-07-18)]** Go 编排层精读。
-> 审计改动:①"CURRENT"降为技术参考;②行号基准补现环境注记;③external_nav 行降为时点;④失效路径改归档位。
-> **核心主张经 `git show` 对基准 commit 重放核验**:
-> ✓ 成立(@e7ca9fc):exploration duration=150s、gate 默认(26s/0.10/3/0.35)、rosbag grace=5.0、
->   退出码 OK=0/ERROR=1/BLOCKED=20、exploration_probe 脚本 90("was 35")/容器 150、
->   run_id 格式 `20060102T150405.000000000Z`、服务顺序(router→baseline→overlay→helpers→external_nav→height)。
-> ✗ **基准失配(重要)**:§3.3 的 frame_contract 脚本 90("was 45")/容器 150 与"L288-293 被遮蔽死分支"
->   在 **e7ca9fc 不成立**(当时=45/90、无死分支);它们在 **30e0f6d 及现 HEAD(288b486)成立**。
->   即本文部分内容实际对应 30e0f6d+ 的树,**自称的统一基准 e7ca9fc 不准确**——引用 §3.3 时以 30e0f6d+ 为准。
-> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
-
 # worldmodel 理解(一):Go 编排层与任务生命周期
 
 > 状态:技术参考(精读于 2026-07-07;不承载当前状态)
@@ -148,6 +137,9 @@ t3  run.completed / run.blocked
 - **脚本级**:`PROBE_TIMEOUT_SEC = SPEC.ProbeTimeoutSec`(tmpl:10),即 per-topic 观测预算;String 批采样整体等待 `STRING_READY_TIMEOUT_SEC = max(batch, PROBE_TIMEOUT_SEC)`(tmpl:13)。
 
 ### 3.3 exploration 的 4 个探针(全部 required)
+
+> 注:本节 frame_contract 的 90s/150s 预算与"L288-293 被遮蔽死分支"属 **30e0f6d 及之后**的代码
+> (e7ca9fc 时点为 45s/90s、无死分支);引用本节以 30e0f6d+/现 HEAD 为准,其余章节仍以 e7ca9fc 为基准。
 
 `probeRequiredForRuntime`:除 `slam_hover_probe` 外全为 required(runtime_specs.go:266-268)。
 

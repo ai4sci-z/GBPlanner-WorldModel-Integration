@@ -1,6 +1,6 @@
 # R003 第一方活跃文档统一注册表 + 逐主张清单(11 字段;真实路径;全 34 覆盖)
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
-# generated_at_head=120c1ba active_first_party_md=36 note=CURRENT 文档逐章节登记;WP304 E0-CORRECT-2 重绑于 120c1ba(非最终发布 HEAD,精确 review commit 见 manifest 头 HEAD=)
+# generated_at_head=120c1ba active_first_party_md=33 note=CURRENT 文档逐章节登记;WP304 E0-CORRECT-2 重绑于 120c1ba(非最终发布 HEAD,精确 review commit 见 manifest 头 HEAD=)
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
 CURRENT_STATUS.md	§一 阶段与唯一施工点	CURRENT	当前状态唯一权威	固定路线+当前施工点=WP304 E0-CORRECT-2(WP303 已收口)	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
 CURRENT_STATUS.md	§三 已证事实与问题保守状态	CURRENT	当前状态唯一权威	B21已验证/B22候选/OPEN-1/OPEN-2 保守口径	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
@@ -12,10 +12,7 @@ README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指�
 TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
 TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
 TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	历史设计任务书;§7补真实进度,§8/10/11标已执行,§12提示词SUPERSEDED	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/GBPlanner原始论文与代码对应关系.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	论文↔代码对应;桥接=正解结论SUPERSEDED,integration路径改归档位;论文摘录未逐页复核	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
-docs/jazzy全栈重建_施工指引.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	历史施工记录(9/9镜像);替换措辞作废+WSL命令标历史环境+失效引用改归档位	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
-docs/ros2迁移_voxblox选型_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	历史调研快照;CURRENT降级+§6回填执行结果(vendored pin d08e9d4/M2窄验收);外部仓现状未复检	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_PARTIAL	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_包清单与体量_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结镜像实测盘点;CURRENT降级+scratchpad脚本留存标注;未重跑镜像复核	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_PARTIAL	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_直连架构契约_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	直连契约(M4/M5设计输入);ACTIVE降级+2路径改归档位+TF假设按理解(二)校正	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/world-model端到端Bug台账_给作者PR.md	B17-B22 历史修复链	CURRENT	问题事实唯一权威	编号不携带状态,四维为准	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
@@ -29,7 +26,6 @@ docs/上游改动审计_原生Ubuntu必要性_2026-07-14.md	整档	REFERENCE	派
 docs/原生Linux迁移检查单_2026-07-08.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 docs/多层3D探索Demo设计_2026-07-14.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	远期架构预留(BLOCKED);定位句按R003章程校准+M5-0状态更新;功能代码继续禁止	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/术语表_科研小白版.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	科普术语表;4处过期主张修正(PR路径/分支提交数/Stage状态/fork计划)	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
-docs/路线切换_ROS2迁移_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	历史决策记录;[CURRENT]自称降级+里程碑真实状态+Review_017死引用标注	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 governance/README.md	§1 两门协议	CURRENT	治理协议权威	bound/current 门语义与能证/不能证	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
 governance/README.md	§2 第三方 LOCKED=0	CURRENT	治理协议权威	逐组件缺口	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
 governance/README.md	§3 构建引用扫描	CURRENT	治理协议权威	静态/构建/镜像零命中+运行时盲区	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
@@ -46,5 +42,6 @@ runbooks/world-model-jazzy/l0_hover/l1_bringup_evidence_2026-07-15.md	整档	EVI
 runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 双Agent交替协作协议.md	整档	CURRENT	协作规则权威	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	2c646f2	CURRENT_ENTRY	KEEP	-	2c646f2
 接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
+工作铁律.md	整档	CURRENT	执行纪律权威(非状态源)	实证/颗粒度/文档/收口/红线五章铁律	R003 系列+负责人反复强调条款的仓内固化	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	2c646f2	CURRENT_ENTRY	KEEP	-	2c646f2
 项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7

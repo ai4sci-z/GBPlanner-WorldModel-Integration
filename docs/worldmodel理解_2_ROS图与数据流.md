@@ -1,13 +1,3 @@
-> **[技术参考 · 已逐行审计(R003-E0-CORRECT-2 补正,2026-07-18)]** 运行时 ROS2 图与数据流精读(上游快照时点)。
-> 审计改动:①源码基准补现环境注记(现 HEAD=288b486,B17-B22/epoch 涉改文件须重定位复核);
-> ②"替换 frontier_lite/替换点/替换位置"统一改为"strategy=external 按 run 接管,frontier_lite 并列保留";
-> ③尾注失效引用改指归档位。§5 坑位驻点多已被后续 B21/B22 修复演进(5.1 修复已入 clean 分支主线),按时点记录保留。
-> **核心主张已对基准快照(sources/world-model-源码)重放核验,6/6 成立**:cartographer lua 五参
-> (map/imu_link/base_link/provide_odom=false/use_odometry=false)、parm 五参(VISO 1/POSXY 6/POSZ 2/
-> VELXY 0/YAW 1)、external_nav 换系 `(y,−x,−z)`+`π/2−yaw`(=B21 后定位的东轴镜像,快照即缺陷原样,交叉印证)、
-> navlab_models lidar_3d→lidar_2d、bridge cloud_in←/lidar/points、slam.go IMU 回声(/imu→/imu)。
-> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
-
 # worldmodel 理解(二):运行时 ROS2 图与数据流
 
 > [REFERENCE] 2026-07-07 精读产物。读者定位:**要把 GBPlanner 移植成 ROS2 原生节点并接进 world-model 的人**。

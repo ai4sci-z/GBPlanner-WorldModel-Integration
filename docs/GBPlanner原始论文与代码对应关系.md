@@ -1,11 +1,3 @@
-> **[技术参考 · 已逐行审计(R003-E0-CORRECT-2 补正,2026-07-18)]** 论文↔代码对应表为技术参考。
-> 审计改动:①"真正的集成=桥接方案"结论标 SUPERSEDED(被 07-07 路线切换推翻,现=ROS2 原生迁移);
-> ②`integration/…` 两处路径改指真实位置 `archive/integration_桥接线冻结/`;③源码路径/PDF/归档链接机械核验通过。
-> 论文内容摘录(公式/Fig 编号)未逐页复核原 PDF,保持撰写时表述。
-> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
-
-> **[REFERENCE]** 论文↔代码对应(含 gbplanner_gain 失真标注)。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
-
 # GBPlanner 原始论文 ↔ 代码 对应关系(读原始论文后校准)
 
 > ⚠️ **重要校准(2026-07-04)**:此前文档多引用 **arXiv:2201.07067**——那**不是** GBPlanner 原始论文,是它的一个**应用/扩展**(mentor 发的落地工作)。
@@ -57,7 +49,7 @@ GBPlanner 的贡献是一个 **bifurcated(二分)local + global 规划架构**(�
 | 传感器 | 3D 雷达(OS0-64,360°×90°) | 依赖 SLAM 的 2D `/map` | ⚠️ 2D |
 
 **结论(要求13 的正解)**:`gbplanner_gain` 只是"把 world-model 的脚本决策换成读图选向"的**决策层第一步原型**,借用了体积增益的**思想**,但**不是** GBPlanner 算法本身。
-〔**SUPERSEDED(2026-07-07 路线切换)**:下句为撰写当时(桥接期)结论——"真正忠于原始论文的集成 = 桥接方案(ros1_bridge):让原版 ROS1 GBPlanner 原样运行,只在 ROS2 侧做数据搬运(见 [桥接接口规格.md](archive/桥接接口规格.md)(历史归档)、`archive/integration_桥接线冻结/ros1_bridge/`)"。**该结论已被推翻**:桥接线已冻结为 oracle 回归基准,当前路线 = **ROS2 原生迁移**(gbp-feat `feat/gbplanner-ros2-port`),"不失真"由 M2/M3 的 oracle 数值对拍与 P3 三维无损验收承担,见 [路线切换_ROS2迁移_2026-07-07.md](路线切换_ROS2迁移_2026-07-07.md) 与 CURRENT_STATUS。〕
+〔**SUPERSEDED(2026-07-07 路线切换)**:下句为撰写当时(桥接期)结论——"真正忠于原始论文的集成 = 桥接方案(ros1_bridge):让原版 ROS1 GBPlanner 原样运行,只在 ROS2 侧做数据搬运(见 [桥接接口规格.md](archive/桥接接口规格.md)(历史归档)、`archive/integration_桥接线冻结/ros1_bridge/`)"。**该结论已被推翻**:桥接线已冻结为 oracle 回归基准,当前路线 = **ROS2 原生迁移**(gbp-feat `feat/gbplanner-ros2-port`),"不失真"由 M2/M3 的 oracle 数值对拍与 P3 三维无损验收承担,见 [路线切换_ROS2迁移_2026-07-07.md](archive/路线切换_ROS2迁移_2026-07-07.md) 与 CURRENT_STATUS。〕
 
 ## 四、mentor 论文(arXiv:2201.07067)的定位
 是 GBPlanner 的**应用/扩展**(落地工作),不是原始算法。它是很好的落地参考(告诉我们"怎么用/怎么部署"),但**算法原理必须以 JFR 2020 为准**。后续文档统一:**原理引 JFR 2020;落地/应用引 2201.07067**。

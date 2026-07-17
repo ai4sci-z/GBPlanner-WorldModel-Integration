@@ -1,11 +1,3 @@
-> **[技术参考 · 已逐行审计(R003-E0-CORRECT-2 补正,2026-07-18)]** 策略插拔契约与接入蓝图(P4 设计输入)。
-> 审计改动:①"CURRENT"降为技术参考;②源码基准补现环境注记(现 HEAD=288b486,涉改文件须重定位复核);
-> ③4 处 `integration/ros1_bridge/` 改指归档位;runbook 补丁/harness 脚本引用机械核验在盘。
-> "插拔=strategy 字段+external 让位"契约即项目"并列可切换"目标的机制载体。
-> **核心主张已对基准快照重放核验,3/3 成立**:exploration.yaml `strategy: frontier_lite`+四阈值(26/0.10/3/0.35)、
-> helpers 默认(L1115-1121 逐值吻合,快照 ProbeTimeoutSec=35 与本文一致)、fcu tmpl `MAV_FRAME_LOCAL_NED`
-> **逐行号精确命中 L424**。当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
-
 # worldmodel 理解(三):探索策略接口与 ROS2-GBPlanner 的精确接入点
 
 > 状态:技术参考(精读于 2026-07-07;不承载当前状态)

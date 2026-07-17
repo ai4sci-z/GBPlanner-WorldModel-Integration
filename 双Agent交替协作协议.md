@@ -37,7 +37,7 @@
 | `Codex_GBPlanner_工作区/`(桌面) | **Codex** | 只读 |
 | **PR 文案**:`integration/world-model-PR/PR_BODY.md`、`ISSUE_BODY.md`、`PR物料清单.md` | **Codex**(打磨文案)——但**执行棒改完代码后要通知**,Codex 据实更新 | 执行棒只提事实 |
 | `docs/对比实验与缺陷论证设计.md`、`docs/GBPlanner原始论文与代码对应关系.md`、汇报材料 | **Codex** | 只读 |
-| `README.md`、`RESUME_恢复文档.md`、`TASKS.md`、`docs/jazzy全栈重建_施工指引.md`、`docs/运行时排错记录_humble.md` | **仅当值执行棒**(避免两边同改主文档) | 只读 |
+| `README.md`、`RESUME_恢复文档.md`、`TASKS.md`、`docs/archive/jazzy全栈重建_施工指引.md`、`docs/运行时排错记录_humble.md` | **仅当值执行棒**(避免两边同改主文档) | 只读 |
 | `sources/`、源码 | 双方只读 | — |
 
 ## 3. 接力棒文件(锁 + 路由)——**每次动手前先读,收工时更新**

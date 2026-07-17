@@ -1,11 +1,4 @@
-> **[历史施工记录 · 已逐行审计+提交号核验(R003-E0-CORRECT-2,2026-07-18)]** 镜像阶段(9/9)历史记录。
-> **提交号核验发现**:文中 wm 提交 `68c19bf`/`12ab9f0` 为 WSL 时代 SHA,Linux 迁移变基后不在现历史;
-> 修复本体均在,现 SHA = `a05e20b`(fast-lio cstdint)/`43da557`(gazebo-sensor QoS),正文已标注映射。
-> 审计改动:①"真替换 frontier_lite"目标句标作废并给当前并列口径;②WSL/Windows 命令段标历史环境
-> (现=原生 Ubuntu,路径勿照抄);③两个失效引用改指真实归档位置。镜像构建数据与坑修记录为当时实测,原样保留。
-> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
-
-> **[HISTORICAL]** 镜像阶段已完成(9/9)。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
+> **[ARCHIVE]** 历史文档(归档于 2026-07-18),不构成当前指令;当前状态见仓库根 CURRENT_STATUS.md。
 
 # jazzy 全栈重建 施工指引(新窗口接管此任务,2026-07-05)
 

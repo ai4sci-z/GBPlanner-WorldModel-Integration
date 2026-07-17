@@ -21,7 +21,7 @@ STEP 0: 探测环境,填出下表(本文件所有 ${VAR} 按此代换)
   迁移策略(用户 07-09 拍板): 一切经 GitHub,单次 clone 拿全;镜像全部重新编译,
   不用移动硬盘、不挂载 Windows 盘。
 STEP 1: 通读入口四件套(顺序): CURRENT_STATUS.md → TASKS.md → 接力棒_当前值班.md
-        → docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md(任务书)
+        → docs/archive/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md(任务书)
 STEP 2: 若做 ROS2 迁移主线,再读: ros2_port/README.md(feat 分支)
         + ros2_port/docs/m2_scout_{1,2,3}(侦察报告)
 STEP 3: 按 §4 重建环境,每步过验收门才继续
@@ -99,7 +99,7 @@ GATE-0 宿主: docker engine + go ≥1.24(装 /usr/local/go,勿用发行版旧�
 GATE-1 拉底图: docker pull ros:jazzy-ros-base
 GATE-2 navlab 镜像重建(用户拍板:全部重新编译,不用硬盘介质):
         bash ${REPO}/runbooks/world-model-jazzy/build_jazzy.sh(先通读改 WSL 路径;
-        坑全记录在 docs/jazzy全栈重建_施工指引.md,预计 1.5-3h 挂机)
+        坑全记录在 docs/archive/jazzy全栈重建_施工指引.md,预计 1.5-3h 挂机)
         验收: docker images | grep navlab → jazzy 系齐:official-baseline/fast-lio/
         gazebo-headless/slam-cartographer/gazebo-sensor/companion/mavlink-router/
         ardupilot-sitl/ros-base(humble 系不用建)
@@ -221,5 +221,5 @@ side_quests:
 | stage6 收官(live 全绿+翻案) | runbooks/world-model-jazzy/stage6_live_evidence.txt |
 | 桥接期全部结论(oracle) | CURRENT_STATUS §二 + runbooks/world-model-jazzy/stage*_evidence.txt |
 | 迁移检查单(本文件的姊妹篇) | docs/原生Linux迁移检查单_2026-07-08.md |
-| jazzy 镜像重建施工指引 | docs/jazzy全栈重建_施工指引.md |
+| jazzy 镜像重建施工指引 | docs/archive/jazzy全栈重建_施工指引.md |
 | Bug 台账(B1–B22 + OPEN,唯一问题台账) | docs/world-model端到端Bug台账_给作者PR.md |
