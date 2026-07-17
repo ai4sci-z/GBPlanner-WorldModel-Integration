@@ -1,131 +1,154 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""WP304 E0:open1_extract 提取器测试。
+"""WP304 E0 · G2 提取语义门 + G3 历史回放门。
 
-核心断言用**内存合成 run 目录**(环境无关,不依赖 world-model 产物)。
-另含可选"真实产物回放":若 world-model 历史产物在盘,则复跑并断言 E0 已确定的
-纠偏事实(accel 计数在成败间相同、no-BIN accel=0 且已 boot);产物不在则跳过(不失败)。
+G2(环境无关合成):airborne 仅正证据、缺证据 UNKNOWN;canonical TOML 等价/不等价;
+  不从 STATUSTEXT 缺失反推 arm。
+G3(真实回放):五个指定 run 实际执行,断言引用**实际提取值**(无恒真),
+  每结果绑 run_id/目录/输入 hash;产物不在盘则整段 SKIP/UNVERIFIED(不冒充全绿)。
+单元与回放**分开报告**。
 """
+import glob
 import json
 import os
-import shutil
 import sys
-import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import open1_extract as E  # noqa: E402
-import open1_tlog as T  # noqa: E402
 
-FAIL = 0
+G2_FAIL = 0
+G3_FAIL = 0
+G3_RAN = 0
 
 
 def ck(name, got, want):
-    global FAIL
+    global G2_FAIL
     if got == want:
         print(f"PASS: {name} [{got!r}]")
     else:
         print(f"FAIL: {name} 期望[{want!r}] 实得[{got!r}]")
-        FAIL += 1
+        G2_FAIL += 1
 
 
-def make_run(root, run_id, profile, tlog_records, bin_present, blockers):
-    d = os.path.join(root, run_id)
-    os.makedirs(os.path.join(d, "sitl", "logs"), exist_ok=True)
-    os.makedirs(os.path.join(d, "audits"), exist_ok=True)
-    os.makedirs(os.path.join(d, "probes"), exist_ok=True)
-    cfg = (f"artifact_dir = '../../artifacts/sim/hover/{run_id}'\n"
-           f"control_mode = 'hover_{profile}'\n"
-           f"simulation_profile = '{profile}'\n"
-           f"run_id = '{run_id}'\n")
-    open(os.path.join(d, "run_config.toml"), "w").write(cfg)
-    json.dump({"created_at": "2026-07-15T20:00:00Z", "run_id": run_id},
-              open(os.path.join(d, "manifest.json"), "w"))
-    status = "TASK_STATUS_OK" if not blockers else "TASK_STATUS_BLOCKED"
-    json.dump({"status": status, "blockers": blockers},
-              open(os.path.join(d, "summary.json"), "w"))
-    json.dump({"ok": True}, open(os.path.join(d, "audits", "startup_readiness_probe.json"), "w"))
-    json.dump({"ok": True}, open(os.path.join(d, "probes", "imu_probe.txt"), "w"))
-    tlog = b"".join(T._build_v2_statustext_record(ts, sev, txt) for ts, sev, txt in tlog_records)
-    open(os.path.join(d, "sitl", "mav.tlog"), "wb").write(tlog)
-    if bin_present:
-        open(os.path.join(d, "sitl", "logs", "00000001.BIN"), "wb").write(b"\x00")
-    return d
+def ckr(name, cond):
+    global G3_FAIL
+    if cond:
+        print(f"PASS(replay): {name}")
+    else:
+        print(f"FAIL(replay): {name}")
+        G3_FAIL += 1
 
 
-# ---------- 环境无关合成断言 ----------
+print("======== G2 提取语义门(环境无关) ========")
+
+# --- airborne 仅正证据 ---
+ck("airborne True(正证据)", E.airborne_verdict({"airborne_seen": True}), True)
+ck("airborne False(明确未起飞/pre-arm 失败)", E.airborne_verdict({"airborne_seen": False}), False)
+ck("airborne 缺字段→UNKNOWN", E.airborne_verdict({"other": 1}), None)
+ck("airborne 无 mission_summary→UNKNOWN", E.airborne_verdict(None), None)
+ck("airborne 旧版summary(无字段)→UNKNOWN", E.airborne_verdict({"status": "ok"}), None)
+# 不得从"无 airborne_seen_missing blocker"反推起飞:airborne_verdict 根本不看 blocker
+ck("airborne 不看blocker(空dict)→UNKNOWN", E.airborne_verdict({}), None)
+
+# --- canonical_config_hash 等价/不等价(真实嵌套表结构:[inputs]/[run]/[outputs]) ---
+base = ("[inputs]\n"
+        "simulation_profile = 'slam-direct-no-odom-prior'\n"
+        "control_mode = 'hover_slam-direct-no-odom-prior'\n"
+        "[run]\n"
+        "run_id = 'R1'\n"
+        "artifact_dir = '/a/R1'\n"
+        "duration_sec = 1500\n"
+        "note = 'keep'\n"
+        "[outputs]\n"
+        "manifest = '/a/R1/manifest.json'\n")
+# 表序 + 键序 + 空白 + 单双引号变化 → 同 hash
+equiv = ("[run]\n"
+         'duration_sec=1500\n'
+         "run_id = 'R1'\n"
+         'note   =   "keep"\n'
+         "artifact_dir = '/a/R1'\n"
+         "[outputs]\n"
+         'manifest = "/a/R1/manifest.json"\n'
+         "[inputs]\n"
+         'control_mode = "hover_slam-direct-no-odom-prior"\n'
+         "simulation_profile = 'slam-direct-no-odom-prior'\n")
+ck("canon 表序/键序/空白/引号 等价", E.canonical_config_hash(base), E.canonical_config_hash(equiv))
+# run.run_id + run.artifact_dir + [outputs] 变化(易变字段)→ 同 hash
+diff_runid = base.replace("R1", "R2")
+ck("canon 仅run_id/路径变→同hash", E.canonical_config_hash(base), E.canonical_config_hash(diff_runid))
+# 语义变化(inputs.simulation_profile)→ 不同 hash
+diff_sem = base.replace("slam-direct-no-odom-prior", "imu-flu-correction")
+ck("canon 语义变→不同hash", E.canonical_config_hash(base) != E.canonical_config_hash(diff_sem), True)
+# run_id 出现在语义值(run.note)中不被"全局替换":改 run_id 不应改 note
+a = base.replace("note = 'keep'", "note = 'tag-R1'")
+b = a.replace("run_id = 'R1'", "run_id = 'R2'").replace("artifact_dir = '/a/R1'", "artifact_dir = '/a/R2'")
+ck("canon run_id子串在语义值中不被误替换(a==b)", E.canonical_config_hash(a), E.canonical_config_hash(b))
+c = base.replace("note = 'keep'", "note = 'tag-R2'")
+ck("canon 语义note不同→不同hash", E.canonical_config_hash(a) != E.canonical_config_hash(c), True)
+# 解析失败 → None(fail-closed)
+ck("canon 非法TOML→None", E.canonical_config_hash("this is = = not toml ]["), None)
+
+# --- 不从 STATUSTEXT 缺失反推 arm ---
+import tempfile
+import shutil
 tmp = tempfile.mkdtemp()
 try:
-    # A 成功类:有 BIN,accel 出现但已消解,full-pass
-    succ = make_run(tmp, "20260715T111111.000000000Z", "slam-direct-no-odom-prior",
-                    [(1_000_000, 6, "ArduPilot Ready"),
-                     (2_000_000, 4, "Arm: Accels inconsistent"),
-                     (3_000_000, 4, "Arm: Accels inconsistent")],
-                    bin_present=True, blockers=[])
-    da = E.extract(succ)
-    ck("A profile", da["freeze_ref"]["simulation_profile"], "slam-direct-no-odom-prior")
-    ck("A bin_present", da["outcome"]["bin_present"], True)
-    ck("A full_pass", da["outcome"]["full_pass"], True)
-    ck("A accel计数", da["fcu_statustext"]["accels_inconsistent_count"], 2)
-    ck("A boot ready", da["fcu_statustext"]["boot_markers"]["ardupilot_ready"], True)
-
-    # B no-BIN 类:无 BIN,accel=0,但已 boot ready;abort=waiting_for_stable_external_nav_and_imu
-    nob = make_run(tmp, "20260715T222222.000000000Z", "slam-direct-no-odom-prior",
-                   [(1_000_000, 6, "ArduPilot Ready"),
-                    (2_000_000, 6, "EKF3 IMU0 origin set")],
-                   bin_present=False,
-                   blockers=[{"code": "hover_mission_abort",
-                              "message": "hover_mission_abort:waiting_for_stable_external_nav_and_imu"},
-                             {"code": "hover_mission_armed_seen_missing", "message": "x"}])
-    db = E.extract(nob)
-    ck("B bin_present", db["outcome"]["bin_present"], False)
-    ck("B full_pass", db["outcome"]["full_pass"], False)
-    ck("B accel=0(no-BIN 非 accel 失败)", db["fcu_statustext"]["accels_inconsistent_count"], 0)
-    ck("B 已 boot ready", db["fcu_statustext"]["boot_markers"]["ardupilot_ready"], True)
-    ck("B abort_reason", db["outcome"]["abort_reason"], "waiting_for_stable_external_nav_and_imu")
-
-    # C canonical hash:同 profile 折叠、异 profile 区分
-    succ2 = make_run(tmp, "20260715T333333.000000000Z", "slam-direct-no-odom-prior",
-                     [(1_000_000, 6, "ArduPilot Ready")], bin_present=True, blockers=[])
-    diag = make_run(tmp, "20260715T444444.000000000Z", "imu-flu-correction",
-                    [(1_000_000, 6, "ArduPilot Ready")], bin_present=True, blockers=[])
-    h_succ = E.extract(succ)["freeze_ref"]["canonical_config_hash"]
-    h_succ2 = E.extract(succ2)["freeze_ref"]["canonical_config_hash"]
-    h_diag = E.extract(diag)["freeze_ref"]["canonical_config_hash"]
-    ck("C 同profile折叠", h_succ, h_succ2)
-    ck("C 异profile区分", h_succ != h_diag, True)
-
-    # D 运行时缺口如实登记(非空)
-    ck("D evidence_gaps 非空", len(da["evidence_gaps"]) >= 5, True)
+    d = os.path.join(tmp, "20260715T000000.000000000Z")
+    os.makedirs(os.path.join(d, "sitl", "logs"))
+    open(os.path.join(d, "run_config.toml"), "w").write(base)
+    json.dump({"status": "TASK_STATUS_BLOCKED", "blockers": []}, open(os.path.join(d, "summary.json"), "w"))
+    # 无 mission_summary、无 BIN、空 tlog
+    open(os.path.join(d, "sitl", "mav.tlog"), "wb").write(b"")
+    ex = E.extract(d)
+    ck("arm 恒为 UNKNOWN(不反推)", ex["arm_status"], "UNKNOWN")
+    ck("无mission_summary→airborne UNKNOWN", ex["outcome"]["airborne"], None)
+    ck("空tlog→accel 0 且不误报", ex["fcu_statustext"]["accels_inconsistent_count"], 0)
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 
-# ---------- 可选:真实历史产物回放(在盘则断言,不在则跳过) ----------
+print("======== G3 历史回放门(五个指定 run;不在盘则 SKIP/UNVERIFIED) ========")
 H = "/home/ai4s/projects/world-model/artifacts/sim/hover"
-import glob  # noqa: E402
-REAL = {
-    "204428": ("slam-direct-no-odom-prior", True, 20, True),   # ✅ pass, BIN, accel=20
-    "211927": ("slam-direct-no-odom-prior", True, 20, True),   # ✅ pass, BIN, accel=20
-    "210849": ("slam-direct-no-odom-prior", True, 20, False),  # ❌ fail, BIN, accel=20(同成功→非判别器)
-    "205113": ("slam-direct-no-odom-prior", False, 0, False),  # ❌ fail, no-BIN, accel=0, boot ready
-    "210149": ("slam-direct-no-odom-prior", False, 0, False),
+# 期望值 = 现场观测事实(profile, bin, accel(CRC后), airborne, full_pass)
+EXPECT = {
+    "204428": dict(profile="slam-direct-no-odom-prior", bin=True, accel=20, airborne=True, full_pass=True),
+    "211927": dict(profile="slam-direct-no-odom-prior", bin=True, accel=20, airborne=True, full_pass=True),
+    "210849": dict(profile="slam-direct-no-odom-prior", bin=True, accel=20, airborne=False, full_pass=False),
+    "205113": dict(profile="slam-direct-no-odom-prior", bin=False, accel=0, airborne=False, full_pass=False),
+    "210149": dict(profile="slam-direct-no-odom-prior", bin=False, accel=0, airborne=False, full_pass=False),
 }
-present = os.path.isdir(H) and all(glob.glob(f"{H}/20260715T{ts}*") for ts in REAL)
-if not present:
-    print("SKIP: world-model 历史产物不在盘,跳过真实回放(环境无关核心断言已过)")
+dirs = {ts: (glob.glob(f"{H}/20260715T{ts}*") or [None])[0] for ts in EXPECT}
+if not all(dirs.values()):
+    print("SKIP/UNVERIFIED: 部分历史 run 不在盘,G3 未执行(G2 已独立通过)")
 else:
-    main_hashes = set()
-    for ts, (prof, binp, accel, fullpass) in REAL.items():
-        d = E.extract(glob.glob(f"{H}/20260715T{ts}*")[0])
-        ck(f"real {ts} profile", d["freeze_ref"]["simulation_profile"], prof)
-        ck(f"real {ts} bin_present", d["outcome"]["bin_present"], binp)
-        ck(f"real {ts} accel计数", d["fcu_statustext"]["accels_inconsistent_count"], accel)
-        ck(f"real {ts} full_pass", d["outcome"]["full_pass"], fullpass)
-        ck(f"real {ts} boot ready(均已启动)", d["fcu_statustext"]["boot_markers"]["ardupilot_ready"], True)
-        main_hashes.add(d["freeze_ref"]["canonical_config_hash"])
-    ck("real 默认主线 canonical hash 折叠为1", len(main_hashes), 1)
-    # 关键纠偏:accel 计数在成功(204428/211927)与 BIN 失败(210849)间相同 → 非判别器
-    ck("real accel 非判别器(pass==BIN-fail)", 20 == 20, True)
+    extracted = {}
+    for ts, exp in EXPECT.items():
+        d = E.extract(dirs[ts])
+        extracted[ts] = d
+        G3_RAN += 1
+        ih = d["input_hashes"]["mav.tlog"]
+        print(f"  --- run {d['run_id']} dir={d['run_dir']} tlog_sha={ih[:12] if ih else None} ---")
+        ckr(f"{ts} profile={exp['profile']}", d["freeze_ref"]["simulation_profile"] == exp["profile"])
+        ckr(f"{ts} bin_present={exp['bin']}", d["outcome"]["bin_present"] == exp["bin"])
+        ckr(f"{ts} accel(CRC后)={exp['accel']}", d["fcu_statustext"]["accels_inconsistent_count"] == exp["accel"])
+        ckr(f"{ts} airborne(正证据)={exp['airborne']}", d["outcome"]["airborne"] == exp["airborne"])
+        ckr(f"{ts} full_pass={exp['full_pass']}", d["outcome"]["full_pass"] == exp["full_pass"])
+        ckr(f"{ts} arm_status=UNKNOWN", d["arm_status"] == "UNKNOWN")
+        ckr(f"{ts} bad_crc=0", d["fcu_statustext"]["protocol_stats"]["statustext_bad_crc"] == 0)
+        ckr(f"{ts} 每结果绑 run_id/dir/hash", bool(d["run_id"] and d["run_dir"] and ih))
+    # 关系断言引用**实际提取值**(非恒真):accel 计数在成功与 BIN-present 失败间相同 → 非判别器
+    a204 = extracted["204428"]["fcu_statustext"]["accels_inconsistent_count"]
+    a211 = extracted["211927"]["fcu_statustext"]["accels_inconsistent_count"]
+    a210 = extracted["210849"]["fcu_statustext"]["accels_inconsistent_count"]
+    n205 = extracted["205113"]["fcu_statustext"]["accels_inconsistent_count"]
+    n210 = extracted["210149"]["fcu_statustext"]["accels_inconsistent_count"]
+    ckr("accel 计数:两成功==BIN失败(引用实际值,非判别器)", a204 == a211 == a210)
+    ckr("accel 计数:两 no-BIN 均为 0(引用实际值)", n205 == n210 == 0)
+    ckr("no-BIN accel 严格小于 有BIN(引用实际值)", n205 < a210)
+    # canonical hash:五个默认主线 run 折叠为 1(引用实际提取值)
+    hashes = {extracted[ts]["freeze_ref"]["canonical_config_hash"] for ts in EXPECT}
+    ckr("五默认主线 canonical hash 折叠为1", len(hashes) == 1)
 
 print("================================")
-print(f"结果: FAIL={FAIL}")
-sys.exit(1 if FAIL else 0)
+print(f"G2 单元: FAIL={G2_FAIL}")
+print(f"G3 回放: RAN={G3_RAN} FAIL={G3_FAIL}" + ("" if G3_RAN else " (SKIP/UNVERIFIED)"))
+sys.exit(1 if (G2_FAIL or G3_FAIL) else 0)

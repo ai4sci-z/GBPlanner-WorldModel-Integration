@@ -1,71 +1,67 @@
-# WP304 E0 · OPEN-1 埋点实现与只读提取(不启动仿真)
+# WP304 E0 · OPEN-1 离线证据提取器、协议解码器与观测 schema 草案(不启动仿真)
 
-> 本目录 = WP304 **E0 阶段**交付:埋点 schema + 解析器 + 对既有 tlog/BIN/JSON 的**只读**提取器
-> + 环境无关 fixture 测试。**未启动任何仿真/容器/负载工具**。方案总纲见
+> 本目录 = WP304 **E0 收口**交付:**离线证据提取器 + MAVLink 协议解码器(校验 CRC)+ 观测 schema 草案**
+> + 环境无关 fixture。**运行时埋点尚未实现**(§4 缺口),**不得称"运行时埋点已完成"**。
+> 未启动任何仿真/容器/负载工具。方案总纲见
 > [../../../../governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](../../../../governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md)。
 > 状态权威 = [../../../../CURRENT_STATUS.md](../../../../CURRENT_STATUS.md)。
 
 ## 1. 纯观测证明(埋点不改被测系统)
 
-本目录三个 py 全部**只读**:
+`open1_tlog.py` / `open1_extract.py` 全**只读**:`open(path,"rb").read()` + `os.listdir/getsize`,
+不写任何 run 产物、不发信号、不起进程、不碰控制/调度/ArduPilot 参数/仿真时序。
+测试核心断言用**内存合成**数据;真实回放仅**读** world-model 历史产物(在盘则断言,不在则 SKIP/UNVERIFIED)。
 
-- `open1_tlog.py`:`open(path,"rb").read()` 解析字节,不写盘、不发信号、不起进程。
-- `open1_extract.py`:对 run 目录只 `os.listdir/os.path.getsize/open(...,read)`,**不写任何 run 产物**,
-  不碰控制/调度/ArduPilot 参数/仿真时序。
-- 测试:核心断言用**内存合成**数据;真实回放仅**读** world-model 历史产物(在盘则断言,不在则跳过)。
+## 2. 自包含 MAVLink 协议解码器(校验 CRC)
 
-→ 满足 E0 契约"证明埋点不改控制/调度/ArduPilot 参数/仿真时序"。**运行时**才能取的字段(§4)
-一律不在此实现,登记为缺口,E1 前须单独申请扩权(改 world-model)。
+不用 pymavlink(OPEN-2 栽在该环境债)。手写最小 v1/v2 帧解析:
+- **X25 CRC 校验**(STATUSTEXT crc_extra=83);真实 tlog 全量 STATUSTEXT `bad_crc=0` 自证(见 G1 回放段)。
+- 帧长/签名帧(incompat&0x01,+13B)/结构检查;CRC 或结构失败 → 结构化 invalid 计数,不静默吞。
+- STATUSTEXT 文本只取固定字段 `payload[1:51]`;v2 扩展 `id!=0`(分块长消息)→ **fail-closed 标 unsupported_chunk,不拼入文本**(不做重组)。
+- 诚实边界:只对已知 crc_extra 的 msgid(此处 STATUSTEXT=253)做 CRC 校验;其它 msgid 按 len 前进并标 `frames_unchecked`(不冒充已校验)。
 
-## 2. 自包含 tlog STATUSTEXT 解码器(为何不用 pymavlink)
+## 3. E0 提取结果(CRC 校验协议解析;已作 fixture 断言固化)
 
-OPEN-2 候选实现栽在 pymavlink 环境依赖(节点级测试 mavlink=None 炸)。E0 手写最小
-MAVLink v1/v2 帧解析(stdlib only),确定性、可复现,替代上一轮 `strings` 启发式。
-限制(诚实边界):不校验 CRC(失配 i+=1 重同步)、不解析 STATUSTEXT 分块扩展。
+默认主线五 run,`Arm: Accels inconsistent`(CRC 校验后)与结局:
 
-## 3. E0 确定性结论(替换上一版启发式;已作 fixture 断言固化)
-
-`open1_tlog` 精确解码 STATUSTEXT(msgid 253),默认主线:
-
-| run | 结局 | BIN | `Arm: Accels inconsistent` | STATUSTEXT 总数 | boot ready |
+| run | 结局 | BIN | accel(CRC 校验) | STATUSTEXT 总数 | airborne(正证据) |
 |---|---|---|---|---|---|
-| 204428 | ✅ full-pass | Y | **20** | 170 | True |
-| 211927 | ✅ full-pass | Y | **20** | 170 | True |
-| 210849 | ❌ 未起飞 | Y | **20** | 134 | True |
-| 205113 | ❌ 未起飞 | **n** | **0** | 108 | True |
-| 210149 | ❌ 未起飞 | **n** | **0** | 108 | True |
+| 204428 | ✅ full-pass | Y | 20 | 170 | True |
+| 211927 | ✅ full-pass | Y | 20 | 170 | True |
+| 210849 | ❌ 未起飞 | Y | 20 | 134 | False |
+| 205113 | ❌ 未起飞 | n | 0 | 108 | False |
+| 210149 | ❌ 未起飞 | n | 0 | 108 | False |
 
-- **`Accels inconsistent` 计数在成功与 BIN-失败间恒等于 20 → 定量证伪"accel=失因"**(不是判别器,是启动瞬态)。
-- **no-BIN 两次:accel=0,但 `ArduPilot Ready`/`EKF3 origin set` 均在** → 已完成 boot,却**从未进入 arm 循环**
-  (成功/BIN-失败都有 ~20 次 arm 尝试触发 accel 提示;no-BIN 一次都没有)。no-BIN 根因仍 **UNKNOWN**,
-  但已收窄为"**boot 完成后、arm 循环前失速**",与 BIN-失败(accel 循环未消解)是**不同签名**。
-- `canonical_config_hash`:默认主线 6 run 折叠为 1、诊断臂 4 run 折叠为 1、两组不同 → 配置身份埋点成立。
+允许保留的最强事实(逐条绑证据):
+- accel 文本计数在成功与 BIN-present 失败间**均为 20**、两次 no-BIN 为 **0** → 该文本**不是成败判别器**。
+- `airborne` 取自 `mission_summary.airborne_seen` **正证据**(True/False;缺失→UNKNOWN)。
+- `ArduPilot Ready`/`EKF origin set` 只记 **marker 文本出现**,**不升级为"完整 boot 已完成"**。
+- **UNKNOWN(不下结论)**:arm 请求/ack/拒绝时序、no-BIN 直接死因、两类是否同源 → `arm_status=UNKNOWN`。
+- `canonical_config_hash`(解析 TOML→去易变字段→稳定序列化):五默认主线 run 折叠为 1(fixture 断言)。
 
-## 4. per_attempt schema:已实现(事后可提取)vs 需运行时埋点(缺口)
+## 4. per_attempt schema:已实现(离线可提取)vs 尚未实现(需运行时埋点)
 
-**已实现(本目录 `open1_extract.py` 输出)**:
-`freeze_ref{simulation_profile, control_mode, canonical_config_hash, created_at}`、
-`outcome{bin_present, tlog_bytes, status, full_pass, airborne, mission_blockers, abort_reason}`、
-`fcu_statustext{total, window_sec, accels_inconsistent_count, boot_markers, distinct_texts}`、
-`ros2_sampled{startup_readiness_ok, imu_probe_ok}(仅采样点)`。
+**已实现(`open1_extract.py` 输出)**:`freeze_ref{simulation_profile, control_mode, canonical_config_hash, created_at}`、
+`input_hashes{run_config/summary/mission_summary/tlog sha256}`、
+`outcome{bin_present, tlog_bytes, status, full_pass, airborne(正证据/UNKNOWN), mission_blockers, abort_reason}`、
+`fcu_statustext{总数, window, accels_inconsistent_count, markers_seen, protocol_stats(CRC 计数)}`、
+`arm_status=UNKNOWN`、`ros2_sampled{仅采样点}`。
 
-**需 world-model 运行时埋点(E0 只登记为 `evidence_gaps`,E1 前须申请扩权,不得静默改)**:
-- `host{loadavg/cpu/freq/mem/io}` 时序(H1 负载相关性的唯一证据来源);
-- SITL 控制台/进程退出码(**no-BIN 死因关键**);
-- `fcu.ekf_status_report[]` / `ins_accel_residual[]` 时序(accel "消解 vs 未消解"分界);
-- `fcu.arm_request[]` / `arm_reject_reason[]` 时刻(H3 时序竞态);
-- `freeze_ref.companion_digest`(历史未捕获)。
+**尚未实现(需 world-model 运行时埋点,登记为 `evidence_gaps`,E1 前须申请扩权,不静默改)**:
+宿主负载时序;SITL stdout/stderr + 退出码/生命周期(no-BIN 死因关键);heartbeat/dataflash 时刻;
+连续 external-nav/readiness 序列;arm request/ack/reject 时序 + EKF/INS 连续残差;companion digest。
 
 ## 5. 运行
 
 ```
-python3 test_open1_tlog.py       # 解码器环境无关单测(合成帧)
-python3 test_open1_extract.py    # 提取器合成断言 + 可选真实回放
+python3 test_open1_tlog.py       # G1 协议门:合成帧(真实 CRC)+ 真实 tlog CRC 自证
+python3 test_open1_extract.py    # G2 提取语义门(合成)+ G3 历史回放(5 run,绑 run_id/路径/hash)
 python3 open1_extract.py <run_dir>   # 只读打印单 run 提取 JSON
 ```
 
 ## 6. 下一步(申请)
 
-E0 已交付(埋点 schema + 解析器 + fixture)。**唯一申请动作 = 放行 E1 静默 pilot(≤3)**,
-且 E1 需先决定运行时缺口(§4)如何捕获:若必须改 world-model,**先申请扩大范围**。
-未经放行不跑 E1/E2、不启动仿真、不改 world-model。
+E0 已收口(离线提取器 + 协议解码器 + schema 草案)。**唯一申请动作 =
+进入 R003-WP304-E1 最小旁路观测补丁方案停点**(只写方案,不编码、不跑仿真;
+须先裁决 `eab0cc6` 独立 worktree 复现 ∣ 或 `288b486` 立新基线不合并历史统计)。
+未放行不跑 E1/E2、不启动仿真、不改 world-model。

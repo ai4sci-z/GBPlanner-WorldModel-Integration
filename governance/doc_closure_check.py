@@ -76,6 +76,16 @@ cm_txt=readf("governance/claim_manifest.tsv")
 for line in cm_txt.splitlines():
     if line.startswith("CURRENT_STATUS.md\t整档") and "CURRENT_CONSISTENT" in line:
         sem.append("claim: CURRENT_STATUS 仍为 '整档...CURRENT_CONSISTENT' 占位")
+# A6 最小语义反例:同一文档不得既"申请放行/进入 阶段X"又"宣布 X 已完成/收口/执行完毕"(顶部申请/底部完成冲突)
+_apply=re.compile(r"申请[^\n]{0,10}(放行|进入)[^\n]{0,6}(E0|E1|E2)")
+_done=re.compile(r"(E0|E1|E2)[^\n]{0,6}(已完成|已收口|收口停点|执行完毕|已交付并|已放行并执行)")
+for f in active_md:
+    t=readf(f)
+    applied={m.group(2) for m in _apply.finditer(t)}
+    done={m.group(1) for m in _done.finditer(t)}
+    conflict=sorted(applied & done)
+    if conflict:
+        sem.append(f"{f}: 同文档既申请放行/进入又宣布完成 阶段 {conflict}")
 print(f"semantic_violations={len(sem)}")
 for x in sem[:20]: print("  SEM:",x)
 

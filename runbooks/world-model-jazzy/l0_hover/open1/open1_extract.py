@@ -1,38 +1,49 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""WP304 E0 埋点:单 run 只读提取器。
+"""WP304 E0:单 run 只读离线提取器(不启动仿真、不改任何产物)。
 
-从一个已存在的 hover run 产物目录抽取 per_attempt schema 的**事后可提取子集**,
-不启动仿真、不改任何产物、纯读。需运行时埋点才能拿的字段(宿主负载、SITL 控制台、
-EKF/INS 残差时序、arm 请求/拒绝时刻、companion digest)一律进 evidence_gaps,
-标注"需 world-model 运行时埋点(E1 前须申请扩权)"。
-
-canonical_config_hash:把 run_config.toml 中的 run_id 令牌(及其嵌入路径)红act 为
-<RUN_ID> 后 sha256 —— 同 profile 同配置的 run 应折叠到同一 hash(易变字段=仅路径时戳)。
+从既有 hover run 产物抽取**事后可提取子集**。诚实边界:
+  - airborne:仅由 mission_summary.airborne_seen **正证据**判定(True→起飞正证据、
+    False→明确未起飞、缺失/无字段/无文件→UNKNOWN);不从 blocker 缺失反推。
+  - arm 请求/ack/拒绝**时序**:产物无带时间戳序列 → 一律 UNKNOWN,不下任何结论
+    (不写"零 arm/从未进入 arm 循环/异源")。
+  - STATUSTEXT:经 CRC 校验(open1_tlog);marker 只记"文本出现",不升级为"完整 boot 完成"。
+  - canonical_config_hash:解析 TOML → 排除明确的易变字段 → 稳定序列化 → sha256。
+运行时才能取的字段(宿主负载、SITL stdout/退出码、连续 readiness、EKF 残差、arm 时序、
+companion digest)一律进 evidence_gaps,E1 前须申请扩权,不静默改 world-model。
 """
 import hashlib
 import json
 import os
-import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import open1_tlog  # noqa: E402
 
-# 运行时埋点才能获取、事后产物拿不到的 schema 字段(E0 只登记为缺口)
+try:
+    import tomllib  # py3.11+
+except ImportError:  # pragma: no cover
+    tomllib = None
+
+# 配置身份**排除**的易变字段(点分路径,明确列举);未列举的未知字段一律**纳入**身份(保守)。
+# 真实 run_config.toml 用 TOML 表:语义在 [inputs]/[run]/[startup_readiness_policy];
+# 易变仅 run.run_id、run.artifact_dir、整个 [outputs] 表(全是嵌 run_id 的路径)。
+CONFIG_EXCLUDE_PATHS = frozenset({"outputs", "run.run_id", "run.artifact_dir"})
+
 RUNTIME_ONLY_GAPS = [
     "host{loadavg/cpu/freq/mem/io} 时序:需 world-model 运行时埋点",
-    "SITL 控制台/进程退出码:需 world-model 直存(no-BIN 死因关键)",
-    "fcu.ekf_status_report[]/ins_accel_residual[] 时序:需运行时订阅",
-    "fcu.arm_request[]/arm_reject_reason[] 时刻:需运行时捕获",
+    "SITL stdout/stderr + 进程退出码/生命周期:需 world-model 直存(no-BIN 死因关键)",
+    "heartbeat/dataflash 打开时刻:需运行时捕获",
+    "连续 external-nav/readiness 序列:需运行时订阅(现仅采样点)",
+    "fcu.arm_request/ack/reject 时序 + EKF/INS 连续残差:需运行时捕获",
     "freeze_ref.companion_digest:历史未捕获",
 ]
 
 
-def _read_text(p):
+def _sha256_file(p):
     try:
-        with open(p, encoding="utf-8", errors="replace") as f:
-            return f.read()
+        with open(p, "rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()
     except OSError:
         return None
 
@@ -45,73 +56,107 @@ def _read_json(p):
         return None
 
 
-def _toml_scalar(text, key):
-    """极简:取 `key = '...'` 或 `key = "..."` 的标量值(run_config 是平铺 kv)。"""
-    if not text:
-        return None
-    m = re.search(rf"(?m)^\s*{re.escape(key)}\s*=\s*['\"]([^'\"]*)['\"]", text)
-    return m.group(1) if m else None
+def _prune(d, prefix=""):
+    """递归删除点分路径在 CONFIG_EXCLUDE_PATHS 内的键(排除易变字段)。"""
+    out = {}
+    for k, v in d.items():
+        path = f"{prefix}{k}"
+        if path in CONFIG_EXCLUDE_PATHS:
+            continue
+        out[k] = _prune(v, path + ".") if isinstance(v, dict) else v
+    return out
 
 
-def canonical_config_hash(run_config_text, run_id):
-    """红act run_id 令牌后 sha256;同配置折叠。run_id 未知则整体 hash(降级)。"""
-    if not run_config_text:
+def canonical_config_hash(run_config_text):
+    """解析 TOML → 递归去易变字段 → sort_keys 稳定序列化 → sha256。解析失败返回 None(fail-closed)。
+    键顺序/空白/单双引号不影响结果(先解析后规范化);语义变化改变结果;
+    run_id 只按点分路径排除,不做全局字符串替换(语义值里的 run_id 子串保留)。"""
+    if not run_config_text or tomllib is None:
         return None
-    redacted = run_config_text.replace(run_id, "<RUN_ID>") if run_id else run_config_text
-    return hashlib.sha256(redacted.encode("utf-8")).hexdigest()
+    try:
+        cfg = tomllib.loads(run_config_text)
+    except (tomllib.TOMLDecodeError, ValueError):
+        return None
+    ser = json.dumps(_prune(cfg), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(ser.encode("utf-8")).hexdigest()
+
+
+def _dig(cfg, *keys):
+    """按嵌套键路径取标量;任一层缺失/非 dict → None。"""
+    cur = cfg
+    for k in keys:
+        if not isinstance(cur, dict) or k not in cur:
+            return None
+        cur = cur[k]
+    return cur
+
+
+def airborne_verdict(mission_summary):
+    """point4:仅正证据。airborne_seen True→True、False→False、缺失/无文件→None(UNKNOWN)。"""
+    if not isinstance(mission_summary, dict):
+        return None
+    v = mission_summary.get("airborne_seen")
+    if v is True:
+        return True
+    if v is False:
+        return False
+    return None  # 字段缺失/旧版 summary → UNKNOWN
 
 
 def extract(run_dir):
     run_id = os.path.basename(run_dir.rstrip("/"))
-    cfg_text = _read_text(os.path.join(run_dir, "run_config.toml"))
+    cfg_path = os.path.join(run_dir, "run_config.toml")
+    cfg_text = None
+    if os.path.exists(cfg_path):
+        with open(cfg_path, encoding="utf-8", errors="replace") as f:
+            cfg_text = f.read()
+    cfg = {}
+    if cfg_text and tomllib is not None:
+        try:
+            cfg = tomllib.loads(cfg_text)
+        except (tomllib.TOMLDecodeError, ValueError):
+            cfg = {}
+
     manifest = _read_json(os.path.join(run_dir, "manifest.json"))
     summary = _read_json(os.path.join(run_dir, "summary.json"))
+    mission = _read_json(os.path.join(run_dir, "mission_summary.json"))
 
-    # BIN 是否存在
     logs_dir = os.path.join(run_dir, "sitl", "logs")
-    bin_present = os.path.isdir(logs_dir) and any(
-        n.endswith(".BIN") for n in os.listdir(logs_dir)
-    ) if os.path.isdir(logs_dir) else False
+    bin_present = (os.path.isdir(logs_dir)
+                   and any(n.endswith(".BIN") for n in os.listdir(logs_dir))) if os.path.isdir(logs_dir) else False
 
-    # tlog 字节 + STATUSTEXT 确定性汇总
     tlog = os.path.join(run_dir, "sitl", "mav.tlog")
     tlog_bytes = os.path.getsize(tlog) if os.path.exists(tlog) else 0
-    st = open1_tlog.summarize(tlog) if os.path.exists(tlog) else {
-        "statustext_total": 0, "window_sec": 0.0, "accels_inconsistent_count": 0,
-        "boot_markers": {"ardupilot_ready": False, "ekf_origin_set": False, "baro_calibrated": False},
-        "distinct_texts": 0,
-    }
+    st = open1_tlog.summarize(tlog) if os.path.exists(tlog) else None
 
-    # mission blockers + abort 原因(去重取 code / abort message 尾段)
+    status = summary.get("status") if isinstance(summary, dict) else None
     blockers = []
     abort_reason = None
-    status = None
     if isinstance(summary, dict):
-        status = summary.get("status")
-        for b in (summary.get("blockers") or summary.get("gate_blockers") or []):
+        for b in (summary.get("blockers") or []):
             if isinstance(b, dict):
                 code = b.get("code")
                 if code and code not in blockers:
                     blockers.append(code)
-                msg = b.get("message", "")
-                if code == "hover_mission_abort" and ":" in msg:
-                    abort_reason = msg.split(":", 1)[1]
+                if code == "hover_mission_abort" and ":" in b.get("message", ""):
+                    abort_reason = b["message"].split(":", 1)[1]
 
-    full_pass = status == "TASK_STATUS_OK"
-    airborne = not any("airborne_seen_missing" in b for b in blockers) if blockers else full_pass
-
-    # ROS2 侧采样点健康(仅采样点,非连续窗口)
     readiness = _read_json(os.path.join(run_dir, "audits", "startup_readiness_probe.json"))
-    ext_nav_sampled_ok = bool(readiness.get("ok")) if isinstance(readiness, dict) else None
     imu_probe = _read_json(os.path.join(run_dir, "probes", "imu_probe.txt"))
-    imu_sampled_ok = bool(imu_probe.get("ok")) if isinstance(imu_probe, dict) else None
 
     return {
         "run_id": run_id,
+        "run_dir": os.path.abspath(run_dir),
+        "input_hashes": {
+            "run_config.toml": _sha256_file(cfg_path),
+            "summary.json": _sha256_file(os.path.join(run_dir, "summary.json")),
+            "mission_summary.json": _sha256_file(os.path.join(run_dir, "mission_summary.json")),
+            "mav.tlog": _sha256_file(tlog),
+        },
         "freeze_ref": {
-            "simulation_profile": _toml_scalar(cfg_text, "simulation_profile"),
-            "control_mode": _toml_scalar(cfg_text, "control_mode"),
-            "canonical_config_hash": canonical_config_hash(cfg_text, run_id),
+            "simulation_profile": _dig(cfg, "inputs", "simulation_profile"),
+            "control_mode": _dig(cfg, "inputs", "control_mode"),
+            "canonical_config_hash": canonical_config_hash(cfg_text),
             "created_at": manifest.get("created_at") if isinstance(manifest, dict) else None,
             "companion_digest": None,  # 历史未捕获 → gap
         },
@@ -119,16 +164,17 @@ def extract(run_dir):
             "bin_present": bin_present,
             "tlog_bytes": tlog_bytes,
             "status": status,
-            "full_pass": full_pass,
-            "airborne": airborne,
+            "full_pass": status == "TASK_STATUS_OK",
+            "airborne": airborne_verdict(mission),      # True/False/None(UNKNOWN),仅正证据
             "mission_blockers": blockers,
             "abort_reason": abort_reason,
         },
-        "fcu_statustext": st,
+        "fcu_statustext": st,  # 含 protocol_stats(CRC 校验)、markers_seen、accels 计数
+        "arm_status": "UNKNOWN",  # 产物无带时间戳 arm 时序 → 不下任何 arm 结论
         "ros2_sampled": {
             "note": "仅采样时点,非整个 pre-arm 窗口连续证据",
-            "startup_readiness_ok": ext_nav_sampled_ok,
-            "imu_probe_ok": imu_sampled_ok,
+            "startup_readiness_ok": bool(readiness.get("ok")) if isinstance(readiness, dict) else None,
+            "imu_probe_ok": bool(imu_probe.get("ok")) if isinstance(imu_probe, dict) else None,
         },
         "evidence_gaps": list(RUNTIME_ONLY_GAPS),
     }
