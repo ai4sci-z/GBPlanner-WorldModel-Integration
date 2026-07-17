@@ -1,72 +1,38 @@
-# 活跃文档 claim manifest(R003-S2-FIX;逐主张处置;2026-07-16)
-# verification_status: CURRENT=与现场一致 / HISTORICAL=历史真实已标记 / SUPERSEDED=已推翻已标记 / STALE=本轮发现待修 / UNVERIFIED=未与现场交叉核对
-# disposition: KEEP / KEEP_MARKED / REWRITTEN / POINTERED / ARCHIVED / FIX_IN_C3
-document	line_or_section	claim_summary	claim_type	evidence_source	evidence_commit	verification_status	disposition	replacement_or_pointer
-CURRENT_STATUS.md	头部	本文=唯一当前状态入口;旧版已归档	治理契约	负责人裁定+docs/archive 存档	8105b0a	CURRENT	KEEP	-
-CURRENT_STATUS.md	§一	当前=R003-S2-FIX 放行执行(含四文件读取记录);WP303+ 阻塞	阶段状态	负责人放行令	04ee7a2	CURRENT	REWRITTEN	previous=FIX_IN_C3;04ee7a2 已补记
-CURRENT_STATUS.md	§一	固定路线 P0-P5 不跳步;多层只做预留	路线	R003 三份文件	e811d54	CURRENT	KEEP	-
-CURRENT_STATUS.md	§二	B21 缺陷+根因已验证(det=-1×3,L1.5 反事实 3/3)	根因状态	l15_frame_audit_evidence §3-4	908a95a	CURRENT	KEEP	台账四维表
-CURRENT_STATUS.md	§二	B22=候选/强支持;默认主线验收未闭合	根因状态	诊断臂 4/3/3+默认 6/3/3	eab0cc6	CURRENT	KEEP	台账四维表
-CURRENT_STATUS.md	§二	分母:默认 6/3/3;锚定两跑 2/1/1;诊断 4/3/3;L1.5 3/3/3	运行分母	artifacts/sim/hover/*+summary	11c3ca1	CURRENT	KEEP	-
-CURRENT_STATUS.md	§二	10/10 未开跑;长稳门未定义;OPEN-1 未定位	验收门	R003 门七/门八	e811d54	CURRENT	KEEP	-
-CURRENT_STATUS.md	§三	wm@288b486=候选·复验失败;77f0b67=候选·待复验;334c47d 被取代	实现状态	Codex 复验 2f/18p	0aa9d55	CURRENT	KEEP	台账 OPEN-2
-CURRENT_STATUS.md	§三	M0-M5 统一证据分级(窄验收≠无损)	里程碑分级	Codex 裁定口径	e811d54	CURRENT	KEEP	-
-CURRENT_STATUS.md	§三	companion 需按 wm HEAD retag;288b486 未 retag	运行前置	tag_policy=distro-git-commit	e811d54	CURRENT	KEEP	-
-CURRENT_STATUS.md	§四:56	门一=闭包协议指针,数值随 manifest 头部,不复制易过期计数	计数	governance/README §1	04ee7a2	CURRENT	REWRITTEN	previous=STALE(旧 3032 计数);04ee7a2 已改写
-CURRENT_STATUS.md	§四	门二:存在冻结未验收草稿 49b111d(fixture-timeout 失败),WP303 方案停点重审	阶段状态	49b111d+负责人裁定	04ee7a2	CURRENT	REWRITTEN	previous=STALE(旧"未实现"措辞);04ee7a2 已改写
-CURRENT_STATUS.md	§五	下一步=S2-FIX 收口序(C1-C4+校验+推送+§十六报告+停点)	指令	补充令 §九/§十六	04ee7a2	CURRENT	REWRITTEN	previous=FIX_IN_C3;04ee7a2 已对齐
-README.md	头部横幅	状态以 CURRENT_STATUS 为准	治理契约	-	04fc451	CURRENT	KEEP	-
-README.md	L15	wm 侧资产"规划为复用"(非已复用)	能力边界	本轮改写	feaace0	CURRENT	KEEP	-
-README.md	里程碑表	M2/M3/M4 分级措辞(切片对拍/浅单测/冒烟+未验证项)	里程碑分级	feaace0 改写	feaace0	CURRENT	KEEP	-
-README.md	§桥接成果	桥接期结论(50% vs 0% 等)为冻结 oracle	历史	stage5c/baseline_postfix 证据	-	HISTORICAL	KEEP_MARKED	-
-TASKS.md	顶部标记	当前阶段=R003 整改;分母;10/10 未开;多层禁止	阶段状态	本轮 banner	325fab6	CURRENT	KEEP	-
-TASKS.md	M0-M4 行	窄验收通过+未验证项内联	里程碑分级	feaace0 改写	feaace0	CURRENT	KEEP	-
-TASKS.md	M5 行	M5 BLOCKED_BY_GATE-4b/平台稳定	阶段状态	R003	-	CURRENT	KEEP	-
-TASKS.md	P-0 行	L0-L2 二分设计描述	历史	已执行至 B21/B22	325fab6	HISTORICAL	KEEP_MARKED	当前施工点行已改指 R003
-TASKS.md	§1.1	"后台进程…完成通知"机制	机制描述	R003 发现四整改中(WP303)	325fab6	CURRENT	KEEP	banner 已注明按发现四整改
-HANDOVER_LINUX.md	头部	职责拆分:环境重建参考有效;状态快照 SUPERSEDED	治理契约	本轮改写	325fab6	CURRENT	KEEP	-
-HANDOVER_LINUX.md	§0	接管协议(M2 切片/GATE 状态等)	历史	已标 SUPERSEDED 勿按此执行	325fab6	SUPERSEDED	KEEP_MARKED	CURRENT_STATUS
-HANDOVER_LINUX.md	§5	PORTABLE 铁律	技术参考	仍有效	-	CURRENT	KEEP	-
-HANDOVER_LINUX.md	附表	台账范围 B1–B22+OPEN	指针	本轮修正	08c752d	CURRENT	KEEP	-
-文档索引.md	头部	当前阶段=R003 治理;M5/Demo 禁止	阶段状态	本轮改写	65ccdd4	CURRENT	KEEP	-
-文档索引.md	当前入口表	唯一入口/台账/治理清单/Review_003 列示	治理契约	本轮改写	65ccdd4	CURRENT	KEEP	-
-文档索引.md	台账行	B1–B22 已入账;旧编号映射作废	编号	台账	65ccdd4	CURRENT	KEEP	-
-文档索引.md	sources 行	冻结第三方快照,禁入构建(治理实测)	构建边界	governance README §3	65ccdd4	CURRENT	KEEP	注:静态/构建/镜像零命中;运行时拼接=盲区
-接力棒_当前值班.md	当前块	值班=R003-S2-FIX 放行执行;硬约束含 wait_batch 禁改禁测	阶段状态	负责人放行令	a52b030	CURRENT	REWRITTEN	previous=FIX_IN_C3;04ee7a2+a52b030 已更新
-接力棒_当前值班.md	历史指针	301 行历史已归档	治理契约	docs/archive 存档	189b4ef	CURRENT	KEEP	-
-项目简洁汇报.md	全文	2026-07-16 重写版:任务/阶段/分级成果/坎/下一步	汇报	CURRENT_STATUS 对齐	f598dd6	CURRENT	KEEP	旧版已 ARCHIVED
-台账	头部	编号不携带状态;四维字段为准;B1–B20 标记=历史口径	编号契约	本轮修订	48f0c69	CURRENT	KEEP	-
-台账	四维表	B21:defect/root_cause=已验证;acceptance=10/10 未开	四维状态	l15 证据	48f0c69	CURRENT	KEEP	-
-台账	四维表	B22:root_cause=候选/强支持;implementation=候选;acceptance=阻塞	四维状态	Codex 裁定	48f0c69	CURRENT	KEEP	-
-台账	OPEN 节	OPEN-1 间歇 bring-up(候选假设矩阵,未定位)	问题状态	§4b 全分母	11c3ca1	CURRENT	KEEP	-
-台账	OPEN 节	OPEN-2 候选实现复验失败(2f/18p)	问题状态	Codex 复验	0aa9d55	CURRENT	KEEP	-
-台账	一句话现状节	07-06 端到端全绿	历史	已标 SUPERSEDED 历史快照	44cb073	SUPERSEDED	KEEP_MARKED	CURRENT_STATUS
-台账	下一步节	桥接期下一步	历史	已标 SUPERSEDED	44cb073	SUPERSEDED	KEEP_MARKED	CURRENT_STATUS §五
-台账	B1-B16 行	桥接期修复链逐条(✅/🔵 为当时窄验收口径)	历史	各 commit+当时实测	-	HISTORICAL	KEEP_MARKED	头部编号契约声明
-台账	B17-B20 行	迁移期修复(GATE-4 当时全绿=后被重开)	历史	gate4_native_pass_evidence	-	HISTORICAL	KEEP_MARKED	B21/B22 补充了后续证据
-Ubuntu审计	头部	DATED SNAPSHOT;三点过期声明(已提交/VISO 完结/NVIDIA 仅本机)	治理契约	本轮改写	325fab6	CURRENT	KEEP	-
-Ubuntu审计	§二表	4 处"未提交"改动	历史	实际已提交 f51976c/3da9c8a/99fe8de	325fab6	SUPERSEDED	KEEP_MARKED	头部声明+台账
-Ubuntu审计	§一表	12 commit 全保留判定	技术判断	当时逐条研判	-	HISTORICAL	KEEP_MARKED	-
-多层Demo设计	头部	保持 BLOCKED;平台现状=B21 验证/B22 候选/OPEN-1 未定位	阶段状态	本轮改写	04fc451+feaace0	CURRENT	KEEP	-
-多层Demo设计	§状态表	平台 60s 行=分母与门状态	验收门	本轮改写	feaace0	CURRENT	KEEP	-
-多层Demo设计	正文	多层功能代码禁止;硬门序列	指令	R003	-	CURRENT	KEEP	-
-l0_batch_evidence	头部指针	链级结论已精化为 B21+B22	指针	本轮添加	04fc451	CURRENT	KEEP	-
-l0_batch_evidence	正文	L0 6/6 稳 vs L2 5/5 翻(07-14 原始数据)	冻结证据	BIN+summary	-	HISTORICAL	KEEP	原始数值不改
-l1_bringup_evidence	头部指针	下一步/根因域表述已被 B21/B22 推进	指针	本轮添加	04fc451	CURRENT	KEEP	-
-l1_bringup_evidence	正文	L1 3/3 稳、L1.5 3/3 翻(07-15 原始数据)	冻结证据	BIN 全窗口重放	-	HISTORICAL	KEEP	原始数值不改
-l15_frame_audit	§3	B21 反射测量 det=-0.92/-0.95/-0.93	冻结证据	三翻机 BIN 拟合	df45567	HISTORICAL	KEEP	-
-l15_frame_audit	§4/§6	修复验证与 B22 测量(候选口径已纠)	冻结证据+纠偏	c15dc5f 措辞修正	c15dc5f	CURRENT	KEEP	-
-l15_frame_audit	§4b	三分母登记(6/3/3、4/3/3、3/3/3)+OPEN 假设矩阵	运行分母	11c3ca1	11c3ca1	CURRENT	KEEP	-
-governance/README.md	§1	闭包协议(两提交零路径增量+可检测过期)	治理契约	本轮 C2	-	CURRENT	KEEP	-
-governance/README.md	§2	第三方 LOCKED=0 与逐组件缺口	第三方状态	sources/MANIFEST.yaml 核验	-	CURRENT	KEEP	-
-governance/README.md	§3	构建引用扫描分类结果+盲区声明	构建边界	本轮重建扫描(逐段 rc)	-	CURRENT	KEEP	-
-governance/README.md	§5	残留容器登记与处置申请	外部状态	docker inspect	-	CURRENT	KEEP	待负责人裁决
-governance/README.md	§6	49b111d=冻结未验收草稿,fixture 失败	冻结件	负责人裁定	49b111d	CURRENT	KEEP	-
-docs/archive/CURRENT_STATUS_历史快照	头部	SUPERSEDED 声明+原文未改	归档契约	-	8105b0a	CURRENT	KEEP	-
-docs/archive/接力棒_历史轮次	头部	ARCHIVE 声明+原文未改	归档契约	-	189b4ef	CURRENT	KEEP	-
-docs/archive/项目简洁汇报_历史	头部	ARCHIVE 声明+当时口径说明	归档契约	-	f598dd6	CURRENT	KEEP	-
-TASKS.md	M1 行	M1=窄验收通过(最小 8 接口构建与注册;≠13msg+24srv 全量)	里程碑分级	m1_build_evidence	CLOSEOUT	CURRENT	REWRITTEN	previous=状态列孤立"完成/验收全达成"
-TASKS.md	预研A/任务12 行	07-06 端到端全绿=历史窄验收,行内直标非当前稳定结论	历史	run 20260706T130626	CLOSEOUT	HISTORICAL	KEEP_MARKED	行内身份标注,不再依赖顶部免责
-README.md	M1 行+复现命令+能力表	clean_repro=历史基线复现;jazzy 全绿=历史证据	历史	同上	CLOSEOUT	HISTORICAL	KEEP_MARKED	行内身份标注
-governance/README.md	§7	P0 余项方案停点(分支职责/Ubuntu 基准 tag 候选/ROS1 oracle tag 候选/依赖清单位置+schema);执行动作全部待负责人批准	治理方案	本次 CLOSEOUT	CLOSEOUT	CURRENT	KEEP	方案≠执行;未打 tag 未建文件
-governance/WP303_monitor生命周期方案_2026-07-16.md	全文	WP303 monitor 生命周期设计方案(未实施)	方案	真实调用链审查	3486672	CURRENT	KEEP	实施待放行;提交B升级为11字段带lifecycle
+# R003 第一方活跃文档统一注册表 + 逐主张清单(11 字段;真实路径;全 34 覆盖)
+# lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
+# generated_at_head=19b75b7 active_first_party_md=34 lifecycle_dist=CURRENT=8,EVIDENCE=4,REFERENCE=8,UNVERIFIED=14
+path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
+CURRENT_STATUS.md	整档	CURRENT	当前状态唯一权威	当前活跃事实源/入口	机器分类+人工规则	19b75b7	CURRENT_CONSISTENT	KEEP	-	19b75b7
+HANDOVER_LINUX.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
+README.md	整档	CURRENT	派生/参考;状态权威=CURRENT_STATUS.md	当前活跃事实源/入口	机器分类+人工规则	19b75b7	CURRENT_CONSISTENT	KEEP	-	19b75b7
+TASKS.md	整档	CURRENT	工作包队列权威	当前活跃事实源/入口	机器分类+人工规则	19b75b7	CURRENT_CONSISTENT	KEEP	-	19b75b7
+docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/GBPlanner原始论文与代码对应关系.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/Review_022_ROS2迁移路线切换后的无损接管审查_2026-07-08.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/jazzy全栈重建_施工指引.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/ros2迁移_voxblox选型_2026-07-07.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/ros2迁移_包清单与体量_2026-07-07.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/ros2迁移_直连架构契约_2026-07-07.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/world-model端到端Bug台账_给作者PR.md	整档	CURRENT	问题事实唯一权威	当前活跃事实源/入口	机器分类+人工规则	19b75b7	CURRENT_CONSISTENT	KEEP	-	19b75b7
+docs/worldmodel理解_0_总览_给ROS2迁移.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/worldmodel理解_1_编排与任务生命周期.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/worldmodel理解_2_ROS图与数据流.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/worldmodel理解_3_探索策略接口_GBPlanner接入点.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/上游改动审计_原生Ubuntu必要性_2026-07-14.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
+docs/原生Linux迁移检查单_2026-07-08.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
+docs/多层3D探索Demo设计_2026-07-14.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/术语表_科研小白版.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+docs/路线切换_ROS2迁移_2026-07-07.md	整档	UNVERIFIED	派生/参考;状态权威=CURRENT_STATUS.md	设计/历史文档,未逐行核对现场	机器分类+人工规则	19b75b7	UNVERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
+governance/README.md	整档	CURRENT	治理协议权威	当前活跃事实源/入口	机器分类+人工规则	19b75b7	CURRENT_CONSISTENT	KEEP	-	19b75b7
+governance/WP303_monitor生命周期方案_2026-07-16.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
+runbooks/diagnostics/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
+runbooks/gbplanner_ref/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
+runbooks/world-model-humble-fixes/baseline-patch/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
+runbooks/world-model-jazzy/l0_hover/l0_batch_evidence_2026-07-14.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
+runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
+runbooks/world-model-jazzy/l0_hover/l1_bringup_evidence_2026-07-15.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
+runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
+双Agent交替协作协议.md	整档	CURRENT	协作规则权威	当前活跃事实源/入口	机器分类+人工规则	19b75b7	CURRENT_CONSISTENT	KEEP	-	19b75b7
+接力棒_当前值班.md	整档	CURRENT	派生/参考;状态权威=CURRENT_STATUS.md	当前活跃事实源/入口	机器分类+人工规则	19b75b7	CURRENT_CONSISTENT	KEEP	-	19b75b7
+文档索引.md	整档	CURRENT	派生/参考;状态权威=CURRENT_STATUS.md	当前活跃事实源/入口	机器分类+人工规则	19b75b7	CURRENT_CONSISTENT	KEEP	-	19b75b7
+项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
