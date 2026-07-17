@@ -23,7 +23,9 @@ case "${1:-}" in
 esac
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-ROOT="${BC_ROOT:-$BC_ARTIFACT_BASE/batch_${TAG}_${STAMP}}"
+# 强唯一 batch_id:UTC 纳秒 + UUID(秒级戳不足以保证唯一)
+BATCH_ID="$(python3 -c 'import time,uuid;print(f"{time.time_ns()}_{uuid.uuid4().hex}")')"
+ROOT="${BC_ROOT:-$BC_ARTIFACT_BASE/batch_${TAG}_${BATCH_ID}}"
 mkdir -p "$ROOT/runs" || { echo "无法建 artifact root: $ROOT" >&2; exit 2; }
 
 # 主机 SITL 互斥(纯互斥,非生命探针);launch 期间持有,本脚本退出释放
@@ -36,7 +38,7 @@ fi
 # deadline 参数(可 env 覆盖供 dry-run 缩短);真实默认给足启动/收尾预算
 python3 "$BL" launch \
   --artifact-root "$ROOT" \
-  --batch-id "${TAG}_${STAMP}" \
+  --batch-id "${TAG}_${BATCH_ID}" \
   --expected-runs "$RUNS" \
   --duration "${WP303_DURATION:-$DURATION_SEC}" \
   --startup-budget "${WP303_STARTUP:-120}" \

@@ -33,6 +33,7 @@ PY
 bc_init() {
   local tag="$1"
   BC_TAG="$tag"
+  BC_BATCH_ID="${WP303_BATCH_ID:-${BATCH_ID:-unknown}}"
   BC_STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
   BC_ROOT="${BC_ROOT:-$BC_ARTIFACT_BASE/batch_${tag}_${BC_STAMP}}"
   mkdir -p "$BC_ROOT/runs"
@@ -56,7 +57,7 @@ bc_run() {
   end="$(date -u +%FT%TZ)"
   echo "=== $BC_TAG run $i rc=$rc end $end ===" | tee -a "$BC_LOG"
   bc_write_atomic "$BC_ROOT/runs/run_$i.json" \
-    "$(printf '{"run_index":%d,"start":"%s","end":"%s","rc":%d}' "$i" "$start" "$end" "$rc")"
+    "$(printf '{"schema_version":1,"batch_id":"%s","run_index":%d,"start":"%s","end":"%s","rc":%d}' "$BC_BATCH_ID" "$i" "$start" "$end" "$rc")"
   BC_RCS+=("$rc")
   return "$rc"
 }
@@ -70,7 +71,7 @@ bc_finalize() {
     map+="\"$idx\":$rc"; first=0; idx=$((idx+1))
   done
   bc_write_atomic "$BC_ROOT/batch_final.json" \
-    "$(printf '{"schema_version":1,"final":"done","run_rc_map":{%s}}' "$map")"
+    "$(printf '{"schema_version":1,"batch_id":"%s","final":"done","run_rc_map":{%s}}' "$BC_BATCH_ID" "$map")"
   echo "batch done: $(date -u +%FT%TZ)  agg_rc=$agg  root=$BC_ROOT" | tee -a "$BC_LOG"
   return "$agg"
 }

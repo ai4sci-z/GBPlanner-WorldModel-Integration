@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# WP303 fixture 硬门:20 例,每例断言三轴状态 + 精确 monitor 退出码 + 有界时间 + PID/PGID 残留。
+# WP303 fixture 硬门:33 例(1-23 生命周期 + 24-33 串批/身份/路径边界反例),
+# 每例断言三轴状态 + 精确 monitor 退出码 + 有界时间 + PID/PGID 残留 + batch_id 端到端绑定。
 # 只用 fake producer,绝不跑真实仿真/容器。残留用 fixture 记录的 PID/PGID 判定,不用 pgrep 模糊名。
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -35,10 +36,10 @@ cat > "$r/prod.sh" <<EOF
 AR="$r"; sleep $pre
 for i in \$(seq 1 $n); do
   rc=0; [ "\$i" = "$fr" ] && rc=1
-  printf '{"run_index":%d,"rc":%d}\n' "\$i" "\$rc" > "\$AR/runs/run_\$i.json"
+  printf '{"schema_version":1,"batch_id":"%s","run_index":%d,"rc":%d}\n' "\$WP303_BATCH_ID" "\$i" "\$rc" > "\$AR/runs/run_\$i.json"
   sleep 0.03
 done
-[ "$fin" = "1" ] && printf '{"schema_version":1,"final":"done"}\n' > "\$AR/batch_final.json"
+[ "$fin" = "1" ] && printf '{"schema_version":1,"batch_id":"%s","final":"done"}\n' "\$WP303_BATCH_ID" > "\$AR/batch_final.json"
 sleep $post
 EOF
 chmod +x "$r/prod.sh"; }
@@ -64,7 +65,7 @@ ck "3 outcome" SUCCEEDED "$(jget "$R/monitor_status.json" producer_outcome)"
 echo "=== 4 producer崩溃 ==="; R=$(mkroot f4)
 cat > "$R/prod.sh" <<EOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"; kill -9 -\$\$
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"; kill -9 -\$\$
 EOF
 chmod +x "$R/prod.sh"
 launch "$R" --expected-runs 2 >/dev/null 2>&1; ck "4 rc" 20 $?
@@ -74,7 +75,7 @@ ck "4 partial_index 存在" yes "$([ -f "$R/partial_index.json" ] && echo yes ||
 echo "=== 5 存活但超时 ==="; R=$(mkroot f5)
 cat > "$R/prod.sh" <<EOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"; sleep 30
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"; sleep 30
 EOF
 chmod +x "$R/prod.sh"
 # deadline 极短:startup0.3 + 2*(0.1+0.05+0.02)+0.2 ≈ 0.84s
@@ -93,9 +94,9 @@ ck "6 evidence" INCOMPLETE "$(jget "$R/monitor_status.json" evidence_status)"
 echo "=== 7 损坏run JSON不崩溃 ==="; R=$(mkroot f7)
 cat > "$R/prod.sh" <<EOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"
 printf '{bad json' > "$R/runs/run_2.json"
-printf '{"schema_version":1,"final":"done"}\n' > "$R/batch_final.json"
+printf '{"schema_version":1,"batch_id":"%s","final":"done"}\n' "\$WP303_BATCH_ID" > "$R/batch_final.json"
 EOF
 chmod +x "$R/prod.sh"
 launch "$R" --expected-runs 2 >/dev/null 2>&1; RC=$?
@@ -135,7 +136,7 @@ kill -9 $SPID 2>/dev/null; wait $SPID 2>/dev/null
 echo "=== 12 两monitor竞争(第二只读) ==="; R=$(mkroot f12)
 cat > "$R/prod.sh" <<EOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"; sleep 5
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"; sleep 5
 EOF
 chmod +x "$R/prod.sh"
 python3 "$BL" launch --artifact-root "$R" --batch-id b12 --startup-budget 1 --duration 5 \
@@ -150,7 +151,7 @@ touch "$R/CANCEL"; wait $LPID 2>/dev/null
 echo "=== 13 两批并行互不误杀 ==="; RA=$(mkroot f13a); RB=$(mkroot f13b)
 for RR in "$RA" "$RB"; do cat > "$RR/prod.sh" <<EOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$RR/runs/run_1.json"; sleep 5
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$RR/runs/run_1.json"; sleep 5
 EOF
 chmod +x "$RR/prod.sh"; done
 python3 "$BL" launch --artifact-root "$RB" --batch-id b13b --startup-budget 1 --duration 5 \
@@ -166,7 +167,7 @@ touch "$RB/CANCEL"; wait $LB 2>/dev/null
 echo "=== 14 cancel ==="; R=$(mkroot f14)
 cat > "$R/prod.sh" <<EOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"; sleep 30
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"; sleep 30
 EOF
 chmod +x "$R/prod.sh"
 ( sleep 0.5; touch "$R/CANCEL" ) &
@@ -180,8 +181,8 @@ echo "=== 15 deadline边界:producer 恰在 deadline 前完成→自然终态胜
 cat > "$R/prod.sh" <<PEOF
 #!/usr/bin/env bash
 sleep 0.45
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"
-printf '{"schema_version":1,"final":"done"}\n' > "$R/batch_final.json"
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"
+printf '{"schema_version":1,"batch_id":"%s","final":"done"}\n' "\$WP303_BATCH_ID" > "$R/batch_final.json"
 PEOF
 chmod +x "$R/prod.sh"
 python3 "$BL" launch --artifact-root "$R" --batch-id b15 --startup-budget 0.3 --duration 0.1 \
@@ -205,9 +206,9 @@ timeout 5 python3 "$BL" monitor --artifact-root "$R" >/dev/null 2>&1; ck "18 rc"
 echo "=== 19 monitor中断后重接管(恢复路径) ==="; R=$(mkroot f19)
 cat > "$R/prod.sh" <<EOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"; sleep 2
-printf '{"run_index":2,"rc":0}\n' > "$R/runs/run_2.json"
-printf '{"schema_version":1,"final":"done"}\n' > "$R/batch_final.json"; sleep 0.5
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"; sleep 2
+printf '{"schema_version":1,"batch_id":"%s","run_index":2,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_2.json"
+printf '{"schema_version":1,"batch_id":"%s","final":"done"}\n' "\$WP303_BATCH_ID" > "$R/batch_final.json"; sleep 0.5
 EOF
 chmod +x "$R/prod.sh"
 python3 "$BL" launch --artifact-root "$R" --batch-id b19 --startup-budget 1 --duration 3 \
@@ -220,7 +221,7 @@ ck "19 重接管outcome" SUCCEEDED "$(jget "$R/monitor_status.json" producer_out
 echo "=== 20 半写batch_final崩溃边界 ==="; R=$(mkroot f20)
 cat > "$R/prod.sh" <<EOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"
 printf '{"schema_ver' > "$R/batch_final.json"   # 半写损坏
 kill -9 -\$\$
 EOF
@@ -232,7 +233,7 @@ ck "20 rc(损坏final不算完成+身份死→CRASHED)" 20 $RC
 echo "=== 21 deadline 跨 monitor 重启不重置预算 ==="; R=$(mkroot f21)
 cat > "$R/prod.sh" <<PEOF
 #!/usr/bin/env bash
-printf '{"run_index":1,"rc":0}\n' > "$R/runs/run_1.json"; sleep 30
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"; sleep 30
 PEOF
 chmod +x "$R/prod.sh"
 python3 "$BL" launch --artifact-root "$R" --batch-id b21 --startup-budget 0.3 --duration 0.1 \
@@ -260,6 +261,101 @@ ck "23 monitor_status自动生成" yes "$([ -f "$ROOT23/monitor_status.json" ] &
 ck "23 pid=pgid=sid" yes "$(python3 -c "import json;d=json.load(open('$ROOT23/task_record.json'));print('yes' if d['pid']==d['pgid']==d['sid'] else 'no')" 2>/dev/null)"
 ck "23 outcome" SUCCEEDED "$(jget "$ROOT23/monitor_status.json" producer_outcome)"
 ck "23 run/final自动生成" yes "$([ -f "$ROOT23/runs/run_1.json" ] && [ -f "$ROOT23/batch_final.json" ] && echo yes || echo no)"
+
+# ========== 串批/身份/路径边界硬反例(WP303 stale-evidence 补正) ==========
+# 统一取 monitor 退出码(不用管道取码):写临时文件 + 单独 $?
+mrc(){ python3 "$BL" monitor --artifact-root "$1" >/dev/null 2>&1; echo $?; }
+
+echo "=== 24 旧成功 final + 新 producer:拒绝复用旧现场(不删旧证据) ==="; R=$(mkroot f24)
+printf '{"schema_version":1,"batch_id":"OLD","final":"done"}\n' > "$R/batch_final.json"
+OLDHASH=$(python3 -c "import hashlib;print(hashlib.sha256(open('$R/batch_final.json','rb').read()).hexdigest())")
+gen_prod "$R" 1 0 1
+launch "$R" --expected-runs 1 >/dev/null 2>&1
+ck "24 rc(旧现场→安全拒绝5)" 5 $?
+ck "24 未起 producer(无 task_record)" no "$([ -f "$R/task_record.json" ] && echo yes || echo no)"
+ck "24 旧 final 未被动过(hash不变)" "$OLDHASH" "$(python3 -c "import hashlib;print(hashlib.sha256(open('$R/batch_final.json','rb').read()).hexdigest())")"
+
+echo "=== 25 旧失败 final + 新 producer:同样拒绝 ==="; R=$(mkroot f25)
+printf '{"schema_version":1,"batch_id":"OLD","final":"failed"}\n' > "$R/batch_final.json"
+gen_prod "$R" 1 0 1
+launch "$R" --expected-runs 1 >/dev/null 2>&1
+ck "25 rc(旧失败现场→拒绝5)" 5 $?
+
+echo "=== 26 run JSON batch_id 不符→不计入 run_rc_map(伪造他批 run 不算数) ==="; R=$(mkroot f26)
+cat > "$R/prod.sh" <<EOF
+#!/usr/bin/env bash
+# 只伪造一条别批的 run(batch_id=EVIL),本批真 run 一个都不写
+printf '{"schema_version":1,"batch_id":"EVIL","run_index":1,"rc":0}\n' > "$R/runs/run_1.json"
+printf '{"schema_version":1,"batch_id":"%s","final":"done"}\n' "\$WP303_BATCH_ID" > "$R/batch_final.json"
+EOF
+chmod +x "$R/prod.sh"
+launch "$R" --expected-runs 1 >/dev/null 2>&1
+ck "26 rc(他批run不计→run不足→FAILED10)" 10 $?
+ck "26 run_rc_map 为空(EVIL被剔)" "{}" "$(python3 -c "import json;print(json.dumps(json.load(open('$R/monitor_status.json'))['run_rc_map']))" 2>/dev/null)"
+
+echo "=== 27 final batch_id 不符→不算终态(伪造他批 final 不判成功) ==="; R=$(mkroot f27)
+cat > "$R/prod.sh" <<EOF
+#!/usr/bin/env bash
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"
+# final 盖别批 id:不得被当成本批终态
+printf '{"schema_version":1,"batch_id":"EVIL","final":"done"}\n' > "$R/batch_final.json"
+sleep 30
+EOF
+chmod +x "$R/prod.sh"
+# deadline 短:final 无效→producer 仍活→到期 TIMED_OUT(证明未把他批 final 当成功)
+python3 "$BL" launch --artifact-root "$R" --batch-id b27 --startup-budget 0.3 --duration 0.1 \
+  --per-run-teardown 0.05 --inter-run-gap 0.02 --finalization-budget 0.2 --expected-runs 1 -- bash "$R/prod.sh" >/dev/null 2>&1
+ck "27 rc(他批final不算终态→TIMED_OUT30)" 30 $?
+PG=$(jget "$R/task_record.json" pgid); sleep 0.3
+
+echo "=== 28 final 缺 schema/batch_id/final 字段→失败关闭(不算终态) ==="; R=$(mkroot f28)
+cat > "$R/prod.sh" <<EOF
+#!/usr/bin/env bash
+printf '{"schema_version":1,"batch_id":"%s","run_index":1,"rc":0}\n' "\$WP303_BATCH_ID" > "$R/runs/run_1.json"
+printf '{"note":"no schema no batch_id no final"}\n' > "$R/batch_final.json"
+sleep 30
+EOF
+chmod +x "$R/prod.sh"
+python3 "$BL" launch --artifact-root "$R" --batch-id b28 --startup-budget 0.3 --duration 0.1 \
+  --per-run-teardown 0.05 --inter-run-gap 0.02 --finalization-budget 0.2 --expected-runs 1 -- bash "$R/prod.sh" >/dev/null 2>&1
+ck "28 rc(残缺final不算终态→TIMED_OUT30)" 30 $?
+PG=$(jget "$R/task_record.json" pgid); sleep 0.3
+
+echo "=== 29 同秒两次启动:batch_id 与 root 各不相同(强唯一 id) ==="
+ID1=$(python3 -c 'import time,uuid;print(f"{time.time_ns()}_{uuid.uuid4().hex}")')
+ID2=$(python3 -c 'import time,uuid;print(f"{time.time_ns()}_{uuid.uuid4().hex}")')
+ck "29 两 batch_id 不相等" yes "$([ "$ID1" != "$ID2" ] && echo yes || echo no)"
+ck "29 两 batch_id 均含下划线分段" yes "$(case "$ID1" in *_*) echo yes;; *) echo no;; esac)"
+
+echo "=== 30 显式 BC_ROOT 空目录:正常 dry-run(不误拒) ==="; R30="$TMP/f30"; mkdir -p "$R30"
+BC_ROOT="$R30" BC_LOCK_PATH="$TMP/host30.lock" WM="" INTER_RUN_SLEEP=0 \
+  WP303_DURATION=0.3 WP303_STARTUP=1 WP303_TEARDOWN=0.1 WP303_GAP=0.05 WP303_FINAL=0.5 \
+  NAVLAB_SIM_CMD='exit 0' bash "$HERE/run_batch.sh" l2 1 >/dev/null 2>&1
+ck "30 显式空 BC_ROOT dry-run rc" 0 $?
+ck "30 在指定 root 生成 task_record" yes "$([ -f "$R30/task_record.json" ] && echo yes || echo no)"
+
+echo "=== 31 显式 BC_ROOT 有历史:拒绝 + 旧证据 hash 不变 ==="; R31="$TMP/f31"; mkdir -p "$R31/runs"
+printf '{"schema_version":1,"batch_id":"OLD31","final":"done"}\n' > "$R31/batch_final.json"
+H31=$(python3 -c "import hashlib;print(hashlib.sha256(open('$R31/batch_final.json','rb').read()).hexdigest())")
+BC_ROOT="$R31" BC_LOCK_PATH="$TMP/host31.lock" WM="" INTER_RUN_SLEEP=0 \
+  WP303_DURATION=0.3 WP303_STARTUP=1 WP303_TEARDOWN=0.1 WP303_GAP=0.05 WP303_FINAL=0.5 \
+  NAVLAB_SIM_CMD='exit 0' bash "$HERE/run_batch.sh" l2 1 >/dev/null 2>&1
+ck "31 显式有史 BC_ROOT rc(拒绝5)" 5 $?
+ck "31 旧 final hash 不变" "$H31" "$(python3 -c "import hashlib;print(hashlib.sha256(open('$R31/batch_final.json','rb').read()).hexdigest())")"
+
+echo "=== 32 monitor 用同一合法 batch_id 复接管:可正常再判(幂等) ==="; R=$(mkroot f32); gen_prod "$R" 1 0 1
+launch "$R" --expected-runs 1 >/dev/null 2>&1
+ck "32 首判rc" 0 $?
+ck "32 复接管rc(同 batch_id 幂等)" 0 "$(mrc "$R")"
+ck "32 复接管 outcome 仍 SUCCEEDED" SUCCEEDED "$(jget "$R/monitor_status.json" producer_outcome)"
+
+echo "=== 33 required 路径边界:绝对/../symlink 越界一律拒(用法2) ==="; R=$(mkroot f33)
+ck "33 required 绝对路径拒(2)" 2 "$(python3 "$BL" launch --artifact-root "$R" --batch-id b33a --expected-runs 1 --required /etc/passwd -- bash -c 'true' >/dev/null 2>&1; echo $?)"
+R=$(mkroot f33b)
+ck "33 required ..越界拒(2)" 2 "$(python3 "$BL" launch --artifact-root "$R" --batch-id b33b --expected-runs 1 --required ../escape.BIN -- bash -c 'true' >/dev/null 2>&1; echo $?)"
+R=$(mkroot f33c); ln -s /etc "$R/etclink"
+ck "33 required symlink越界拒(2)" 2 "$(python3 "$BL" launch --artifact-root "$R" --batch-id b33c --expected-runs 1 --required etclink/passwd -- bash -c 'true' >/dev/null 2>&1; echo $?)"
+ck "33 越界拒后未起 producer(无 task_record)" no "$([ -f "$R/task_record.json" ] && echo yes || echo no)"
 
 echo "================================"
 echo "结果: PASS=$PASS FAIL=$FAIL"

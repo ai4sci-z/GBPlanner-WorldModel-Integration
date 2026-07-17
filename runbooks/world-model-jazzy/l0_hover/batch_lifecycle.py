@@ -240,17 +240,40 @@ def batch_deadline(rec):
 
 
 # ---------- 观察快照 + 判定 ----------
+def _final_valid(final, bid):
+    """final 必须:schema_version 匹配、batch_id 完全等于本批、final=='done'。任一不符 → 不算终态。"""
+    if not isinstance(final, dict):
+        return False
+    if final.get("schema_version") != SCHEMA_VERSION:
+        return False
+    if final.get("batch_id") != bid:
+        return False
+    return final.get("final") == "done"
+
+
 def observe(rec, artifact_root, t0, cancel_path):
     now = time.monotonic() - t0
-    final = read_json_safe(os.path.join(artifact_root, "batch_final.json"))
+    bid = rec["batch_id"]
+    raw_final = read_json_safe(os.path.join(artifact_root, "batch_final.json"))
+    final = raw_final if _final_valid(raw_final, bid) else None
     run_rc_map = {}
     runs_dir = os.path.join(artifact_root, "runs")
     if os.path.isdir(runs_dir):
         for fn in sorted(os.listdir(runs_dir)):
-            if fn.startswith("run_") and fn.endswith(".json"):
-                r = read_json_safe(os.path.join(runs_dir, fn))
-                if r and "run_index" in r and "rc" in r:
-                    run_rc_map[str(r["run_index"])] = r["rc"]
+            if not (fn.startswith("run_") and fn.endswith(".json")):
+                continue
+            r = read_json_safe(os.path.join(runs_dir, fn))
+            # 只接受 batch_id 完全匹配、字段与类型合法的 run;缺字段/类型错/重复 index → 失败关闭(跳过)
+            if not isinstance(r, dict):
+                continue
+            if r.get("batch_id") != bid:
+                continue
+            if not isinstance(r.get("run_index"), int) or not isinstance(r.get("rc"), int):
+                continue
+            key = str(r["run_index"])
+            if key in run_rc_map:
+                continue  # 重复 run_index → 不重复计入
+            run_rc_map[key] = r["rc"]
     return {
         "monotonic_now": now,
         "producer_identity_alive": identity_alive(rec),
@@ -403,10 +426,43 @@ def run_monitor(rec, record, artifact_root, cancel_path, readonly=False, child=N
 
 
 # ---------- 子命令 ----------
+STALE_MARKERS = ("task_record.json", "batch_final.json", "monitor_status.json",
+                 "partial_index.json", "CANCEL")
+
+
+def reject_stale_scene(artifact_root):
+    """启动 producer 前拒绝旧现场:目录已含任一生命周期文件 → 失败关闭,不删不覆盖。"""
+    found = [m for m in STALE_MARKERS if os.path.lexists(os.path.join(artifact_root, m))]
+    runs_dir = os.path.join(artifact_root, "runs")
+    if os.path.isdir(runs_dir):
+        for fn in os.listdir(runs_dir):
+            if fn.startswith("run_") and fn.endswith(".json"):
+                found.append(f"runs/{fn}")
+                break
+    if found:
+        die(RC_SECURITY, f"artifact_root 含历史生命周期文件,拒绝复用(旧证据未动): {found}")
+
+
+def validate_required_artifacts(required, artifact_root):
+    """required_artifacts 必须是 artifact_root 内的规范相对路径:
+    拒绝绝对路径、.. 越界、解析后越出 root 的 symlink。"""
+    real_root = os.path.realpath(artifact_root)
+    for rel in required:
+        if os.path.isabs(rel):
+            die(RC_USAGE, f"required 不得为绝对路径: {rel}")
+        target = os.path.join(real_root, rel)
+        real = os.path.realpath(target)
+        if not (real == real_root or real.startswith(real_root + os.sep)):
+            die(RC_USAGE, f"required 解析后越出 artifact_root: {rel} -> {real}")
+
+
 def cmd_launch(args):
     artifact_root = os.path.realpath(args.artifact_root)
     if not os.path.isdir(artifact_root):
         die(RC_USAGE, f"artifact_root 不存在: {artifact_root}")
+    # 启动前拒绝旧现场(串批伪造 10/10 的根因),且在写自己的 record 之前
+    reject_stale_scene(artifact_root)
+    validate_required_artifacts(args.required or [], artifact_root)
     os.makedirs(os.path.join(artifact_root, "runs"), exist_ok=True)
     record = os.path.join(artifact_root, "task_record.json")
     cancel_path = os.path.join(artifact_root, "CANCEL")
@@ -419,9 +475,12 @@ def cmd_launch(args):
     except OSError:
         die(RC_SECURITY, "另一个 monitor 已持锁")
 
-    # 启动 producer 于独立 session
+    # 启动 producer 于独立 session;自动注入 batch_id/BC_ROOT(producer 据此给 run/final 盖章)
     producer = args.producer
-    child = subprocess.Popen(producer, preexec_fn=os.setsid, cwd=artifact_root)
+    penv = dict(os.environ)
+    penv["WP303_BATCH_ID"] = args.batch_id
+    penv["BC_ROOT"] = artifact_root
+    child = subprocess.Popen(producer, preexec_fn=os.setsid, cwd=artifact_root, env=penv)
     pid = child.pid
     # 等 setsid 生效
     for _ in range(50):
