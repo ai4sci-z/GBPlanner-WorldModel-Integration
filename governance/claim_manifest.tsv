@@ -1,12 +1,12 @@
 # R003 第一方活跃文档统一注册表 + 逐主张清单(11 字段;真实路径;全 34 覆盖)
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
-# generated_at_head=7b4584c active_first_party_md=34 note=CURRENT 文档逐章节登记(evidence/last_verified 绑 P0 收口基线 7b4584c)
+# generated_at_head=f05b977 active_first_party_md=34 note=CURRENT 文档逐章节登记;CURRENT_STATUS 绑 WP303 stale-evidence 补正基线 f05b977(非最终发布 HEAD,精确 review commit 见 manifest 头 HEAD=)
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
-CURRENT_STATUS.md	§一 阶段与唯一施工点	CURRENT	当前状态唯一权威	固定路线+当前施工点=WP303	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
-CURRENT_STATUS.md	§三 已证事实与问题保守状态	CURRENT	当前状态唯一权威	B21已验证/B22候选/OPEN-1/OPEN-2 保守口径	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
-CURRENT_STATUS.md	§二 三仓基线	CURRENT	当前状态唯一权威	三仓 HEAD/角色/本轮可改否	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
-CURRENT_STATUS.md	§五 唯一下一动作	CURRENT	当前状态唯一权威	WP303 实现;Docker 归属 UNVERIFIED	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
-CURRENT_STATUS.md	§四 R003 九门	CURRENT	当前状态唯一权威	G1-G9 当前门状态	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+CURRENT_STATUS.md	§一 阶段与唯一施工点	CURRENT	当前状态唯一权威	固定路线+当前施工点=WP303	P0收口逐章节核对	f05b977	CURRENT_CONSISTENT	KEEP	-	f05b977
+CURRENT_STATUS.md	§三 已证事实与问题保守状态	CURRENT	当前状态唯一权威	B21已验证/B22候选/OPEN-1/OPEN-2 保守口径	P0收口逐章节核对	f05b977	CURRENT_CONSISTENT	KEEP	-	f05b977
+CURRENT_STATUS.md	§二 三仓基线	CURRENT	当前状态唯一权威	三仓 HEAD/角色/本轮可改否	P0收口逐章节核对	f05b977	CURRENT_CONSISTENT	KEEP	-	f05b977
+CURRENT_STATUS.md	§五 唯一下一动作	CURRENT	当前状态唯一权威	WP303 实现;Docker 归属 UNVERIFIED	P0收口逐章节核对	f05b977	CURRENT_CONSISTENT	KEEP	-	f05b977
+CURRENT_STATUS.md	§四 R003 九门	CURRENT	当前状态唯一权威	G1-G9 当前门状态	P0收口逐章节核对	f05b977	CURRENT_CONSISTENT	KEEP	-	f05b977
 HANDOVER_LINUX.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	2c646f2	CURRENT_ENTRY	KEEP	-	2c646f2
 TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
