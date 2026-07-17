@@ -1,36 +1,38 @@
 # R003 第一方活跃文档统一注册表 + 逐主张清单(11 字段;真实路径;全 34 覆盖)
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
-# generated_at_head=120c1ba active_first_party_md=31 note=CURRENT 文档逐章节登记;WP304 E0-CORRECT-2 重绑于 120c1ba(非最终发布 HEAD,精确 review commit 见 manifest 头 HEAD=)
+# generated_at_head=HEAD(提交三回绑为提交二 SHA;精确 review commit 见 manifest 头 HEAD=) active_first_party_md=31 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
-CURRENT_STATUS.md	§一 阶段与唯一施工点	CURRENT	当前状态唯一权威	固定路线+当前施工点=WP304 E0-CORRECT-2(WP303 已收口)	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-CURRENT_STATUS.md	§三 已证事实与问题保守状态	CURRENT	当前状态唯一权威	B21已验证/B22候选/OPEN-1/OPEN-2 保守口径	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-CURRENT_STATUS.md	§二 三仓基线	CURRENT	当前状态唯一权威	三仓 HEAD/角色/本轮可改否	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-CURRENT_STATUS.md	§五 唯一下一动作	CURRENT	当前状态唯一权威	进入 WP304 E1 方案停点;Docker 本轮 ps -a 可读为空	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-CURRENT_STATUS.md	§四 R003 九门	CURRENT	当前状态唯一权威	G1-G9 当前门状态	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
+CURRENT_STATUS.md	§一 目标与路线	CURRENT	当前状态唯一权威	固定路线 P0→P1(WP303-308)→P2→P3→P4;并列共存非替换;多层楼梯只做架构预留	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+CURRENT_STATUS.md	§二 当前位置(一句话)	CURRENT	当前状态唯一权威	P0 收尾+WP304;WP303 实现停点(真实仿真未验);E1 观测方案已交付,下一步 E1 sidecar 实现待放行	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+CURRENT_STATUS.md	§三 三仓基线	CURRENT	当前状态唯一权威	三仓分支@HEAD/角色/本轮可改否;wm origin=SZ-surveying 勿推	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+CURRENT_STATUS.md	§四 已证事实(按证据等级)	CURRENT	当前状态唯一权威	B21 已验证/B22 候选/默认主线 6/3/3+诊断臂旁证 4/3/3/OPEN-1 未定位/OPEN-2 归 WP305/M0-M4 窄验收	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+CURRENT_STATUS.md	§五 R003 九门	CURRENT	当前状态唯一权威	G1-G3 绿;G4 PARTIAL;G5 实现停点;G6=E0 补正落地+E1 方案交付;G7/G8 阻塞	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+CURRENT_STATUS.md	§六 推进思路(依赖链)	CURRENT	当前状态唯一权威	唯一施工点=E1 sidecar 实现(待放行);WP305/306 可并行;基线裁决 eab0cc6;P2/P3 未启动	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+CURRENT_STATUS.md	§七 环境备注	CURRENT	当前状态唯一权威	单 docker daemon;残留容器 zealous_curran 留裁决;P0 遗留 7 项登记 TASKS	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 HANDOVER_LINUX.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
-README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	2c646f2	CURRENT_ENTRY	KEEP	-	2c646f2
-TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
+README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	HEAD	CURRENT_ENTRY	KEEP	-	HEAD
+TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 docs/GBPlanner原始论文与代码对应关系.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	论文↔代码对应;桥接=正解结论SUPERSEDED,integration路径改归档位;论文摘录未逐页复核	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_包清单与体量_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结镜像实测盘点;CURRENT降级+scratchpad脚本留存标注;未重跑镜像复核	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_PARTIAL	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_直连架构契约_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	直连契约(M4/M5设计输入);ACTIVE降级+2路径改归档位+TF假设按理解(二)校正	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
-docs/world-model端到端Bug台账_给作者PR.md	B17-B22 历史修复链	CURRENT	问题事实唯一权威	编号不携带状态,四维为准	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-docs/world-model端到端Bug台账_给作者PR.md	OPEN 节	CURRENT	问题事实唯一权威	OPEN-1 间歇 bring-up / OPEN-2 纪元复验失败	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-docs/world-model端到端Bug台账_给作者PR.md	四维状态表(B21/B22)	CURRENT	问题事实唯一权威	defect/root_cause/impl/acceptance	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
+docs/world-model端到端Bug台账_给作者PR.md	B17-B22 历史修复链	CURRENT	问题事实唯一权威	编号不携带状态,四维为准	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+docs/world-model端到端Bug台账_给作者PR.md	OPEN 节	CURRENT	问题事实唯一权威	OPEN-1 间歇 bring-up / OPEN-2 纪元复验失败	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+docs/world-model端到端Bug台账_给作者PR.md	四维状态表(B21/B22)	CURRENT	问题事实唯一权威	defect/root_cause/impl/acceptance	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 docs/worldmodel理解_0_总览_给ROS2迁移.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	迁移技术索引;主线任务书降历史+替换澄清为按run接管并列+行号基准标历史环境	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/worldmodel理解_1_编排与任务生命周期.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	Go编排精读(e7ca9fc时点);行号基准补现环境+external_nav行降时点;行号级主张未重放验证	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_PARTIAL	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/worldmodel理解_2_ROS图与数据流.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	ROS图/数据流精读(上游快照时点);替换措辞统一改接管并列;行号级主张未重放验证	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_PARTIAL	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/worldmodel理解_3_探索策略接口_GBPlanner接入点.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	策略插拔契约(P4设计输入);4路径改归档位+基准补现环境;行号级主张未重放验证	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_PARTIAL	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/多层3D探索Demo设计_2026-07-14.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	远期架构预留(BLOCKED);定位句按R003章程校准+M5-0状态更新;功能代码继续禁止	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/术语表_科研小白版.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	科普术语表;4处过期主张修正(PR路径/分支提交数/Stage状态/fork计划)	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
-governance/README.md	§1 两门协议	CURRENT	治理协议权威	bound/current 门语义与能证/不能证	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
-governance/README.md	§2 第三方 LOCKED=0	CURRENT	治理协议权威	逐组件缺口	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
-governance/README.md	§3 构建引用扫描	CURRENT	治理协议权威	静态/构建/镜像零命中+运行时盲区	P0收口逐章节核对	2c646f2	CURRENT_CONSISTENT	KEEP	-	2c646f2
+governance/README.md	§1 两门协议	CURRENT	治理协议权威	bound/current 门语义与能证/不能证	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+governance/README.md	§2 第三方 LOCKED=0	CURRENT	治理协议权威	逐组件缺口	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+governance/README.md	§3 构建引用扫描	CURRENT	治理协议权威	静态/构建/镜像零命中+运行时盲区	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 governance/WP303_monitor生命周期方案_2026-07-16.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
-governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	OPEN-1 因果时间线+E0/E1/E2 设计+§9 E0 离线提取结果表(CRC 校验计数)	人工方案+只读产物提取	6c8f907	REFERENCE_MARKED	KEEP_MARKED	-	6c8f907
+governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	OPEN-1 因果时间线+E0/E1/E2 设计+§9 E0 离线提取结果表+§10 E1 可执行契约(E0-CORRECT 包D 修正)	人工方案+只读产物提取	HEAD	REFERENCE_MARKED	KEEP_MARKED	-	HEAD
 governance/P0_doc_audit_逐份审计_2026-07-18.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	14份文档逐行审计记录(C2字段×14+C3统一核查+C6/G4判定)	R003-E0-EVIDENCE-GATE 包C	HEAD	REFERENCE_MARKED	KEEP_MARKED	-	HEAD
-runbooks/world-model-jazzy/l0_hover/open1/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	WP304 E0 协议解码器/提取器/schema 草案说明+§3 提取结果表	人工方案+只读产物提取	1e1d48c	REFERENCE_MARKED	KEEP_MARKED	-	1e1d48c
+runbooks/world-model-jazzy/l0_hover/open1/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	WP304 E0 协议解码器/提取器/schema+逐输入 schema 门(UNSUPPORTED_SCHEMA)+§4b 标注冻结门与溯源实绑+§3 提取结果表	人工方案+只读产物提取	HEAD	REFERENCE_MARKED	KEEP_MARKED	-	HEAD
 runbooks/world-model-jazzy/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	目录导览(现役工具 vs 冻结证据分类)	实测分类 2026-07-18	HEAD	REFERENCE_MARKED	KEEP_MARKED	-	HEAD
 runbooks/diagnostics/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 runbooks/gbplanner_ref/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
@@ -39,7 +41,7 @@ runbooks/world-model-jazzy/l0_hover/l0_batch_evidence_2026-07-14.md	整档	EVIDE
 runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/l0_hover/l1_bringup_evidence_2026-07-15.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
-接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	P0收口逐章节核对	120c1ba	CURRENT_CONSISTENT	KEEP	-	120c1ba
-工作铁律.md	整档	CURRENT	执行纪律权威(非状态源)	实证/颗粒度/文档/收口/红线五章铁律	R003 系列+负责人反复强调条款的仓内固化	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
-文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	P0收口逐章节核对	2c646f2	CURRENT_ENTRY	KEEP	-	2c646f2
+接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+工作铁律.md	整档	CURRENT	执行纪律权威(非状态源)	实证/颗粒度/文档/收口/红线五章铁律	E0-CORRECT 逐章节核对	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	HEAD	CURRENT_ENTRY	KEEP	-	HEAD
 项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7

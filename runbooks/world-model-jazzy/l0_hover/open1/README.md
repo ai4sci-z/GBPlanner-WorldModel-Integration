@@ -43,8 +43,11 @@
 
 **已实现(`open1_extract.py` 输出)**:`freeze_ref{simulation_profile, control_mode, canonical_config_hash, created_at}`、
 `input_hashes{run_config/summary/mission_summary/tlog sha256}`、
-**`evidence_quality`(九输入独立质量:PRESENT_VALID/MISSING/EMPTY/MALFORMED/READ_ERROR/UNSUPPORTED/PRESENT_NO_MATCH;
-tlog 质量经协议解析判定,垃圾文件≠PRESENT_VALID)**、
+**`evidence_quality`(九输入独立质量:PRESENT_VALID/MISSING/EMPTY/MALFORMED/READ_ERROR/UNSUPPORTED/
+UNSUPPORTED_SCHEMA/PRESENT_NO_MATCH;tlog 质量经协议解析判定,垃圾文件≠PRESENT_VALID;
+**逐输入 schema 契约**:manifest 需 run_id/created_at/artifacts、summary 需已知 status+ok+blockers、
+mission `airborne_seen` 若在必须 bool、probes `ok` 若在必须 bool、run_config 需 inputs.simulation_profile/control_mode——
+合法 JSON 但 schema 不符 → UNSUPPORTED_SCHEMA,计入 CORRUPT 类,acceptance_eligible=False)**、
 **`evidence_errors` + `evidence_gate{required_inputs, failed_inputs, optional_gaps, reasons, status∈COMPLETE/INCOMPLETE/CORRUPT}`**、
 `outcome{bin_present, tlog_bytes, reported_task_status, reported_task_ok, evidence_complete,
 **acceptance_eligible(=业务主张∧证据门,R003 验收唯一依据)**, airborne(controller 侧结构化), mission_blockers, abort_reason}`、
@@ -55,17 +58,30 @@ tlog 质量经协议解析判定,垃圾文件≠PRESENT_VALID)**、
 宿主负载时序;SITL stdout/stderr + 退出码/生命周期(no-BIN 死因关键);heartbeat/dataflash 时刻;
 连续 external-nav/readiness 序列;arm request/ack/reject 时序 + EKF/INS 连续残差;companion digest。
 
+## 4b. 独立标注工具(open1_annotate.py):冻结验收门 + 溯源实绑
+
+- `verify` = **冻结验收门(fail-closed)**:行集必须恰等于冻结五 run,且
+  RAN=5 / PASS=5 / FAIL=0 / SKIP=0 才 rc=0;全 SKIP、部分 SKIP、行缺/行多均非零。
+- `replay` = 观测性回放(非验收门),SKIP 不判失败,rc 只随 FAIL。
+- **provenance 实绑**(每行核):claimed commit 必须 40-hex 且在 wm 仓 `git cat-file -t` 可解析为 commit;
+  registry 源必须解析为 `EXTERNAL_REGISTRY:<仓内文件>#<节锚>`,文件存在、节存在,且 **节区域内**
+  (锚到下一同级标题)同时含该 run_id、该 commit 前缀、该 profile(防前缀在他章出现的假绑定);
+  run_dir 基名必须==run_id。tool/data commit 由 git 派生,脏树/不可派生 → fail-closed。
+
 ## 5. 运行
 
 ```
 python3 test_open1_tlog.py       # G1 协议门:合成帧(真实 CRC)+ 真实 tlog CRC 自证
-python3 test_open1_extract.py    # G2 提取语义门(合成)+ G3 历史回放(5 run,绑 run_id/路径/hash)
+python3 test_open1_extract.py    # G2 提取语义门(合成)+ A-06 schema 反例 + G3 历史回放(5 run,绑 run_id/路径/hash)
+python3 test_open1_annotate.py   # B 反例门:TSV schema 失败关闭 + 冻结门/溯源反例(全SKIP/deadbeef/伪registry 必非零)
+python3 open1_annotate.py verify     # 冻结验收门(见 §4b)
 python3 open1_extract.py <run_dir>   # 只读打印单 run 提取 JSON
 ```
 
 ## 6. 下一步(申请)
 
-E0 已收口(离线提取器 + 协议解码器 + schema 草案)。**唯一申请动作 =
-进入 R003-WP304-E1 最小旁路观测补丁方案停点**(只写方案,不编码、不跑仿真;
-须先裁决 `eab0cc6` 独立 worktree 复现 ∣ 或 `288b486` 立新基线不合并历史统计)。
+E0 已收口(离线提取器 + 协议解码器 + schema 草案 + E0-CORRECT 补正:逐输入 schema 门 /
+标注冻结验收门与溯源实绑 / claim 语义时效门)。E1 可执行方案已交付
+(WP304 方案 §10;基线已裁决 = `eab0cc6` 独立 worktree 复现,`288b486` 原地不动)。
+**唯一申请动作 = 进入 WP304 E1 sidecar 实现停点**(实现 + fixture,零 wm 改动,不跑仿真)。
 未放行不跑 E1/E2、不启动仿真、不改 world-model。

@@ -126,8 +126,33 @@ for nm,txt in (("CURRENT_STATUS",cs),("Bug台账",bug)):
         z=line.replace(" ","")
         if "6/3/3" in z and "4/3/3" in z and not any(w in line for w in ("分层","旁证","诊断臂")):
             sem.append(f"{nm} 默认主线6/3/3与诊断臂4/3/3混写未分层")
+# A8 claim manifest 语义时效门(R003-WP304-E0-EVIDENCE-GATE-CORRECT 包C):
+# 防"生成头/last_verified 卡死在历史 commit、章节引用失效、跨源结论矛盾"类语义陈旧
+# 1 跨源矛盾:claim 写 "WP303 已收口" 而 CURRENT_STATUS 写 G5 PARTIAL/实现停点
+if "WP303 已收口" in cmt and re.search(r'WP303[^\n]{0,60}(PARTIAL|实现停点)', cs):
+    sem.append("claim: 'WP303 已收口' 与 CURRENT_STATUS 'WP303 实现停点/PARTIAL' 跨源矛盾")
+# 2 下一步矛盾:claim 仍写 进入 E1 方案停点,而 CURRENT_STATUS 已是 E1 sidecar 实现(方案已交付)
+if "E1 方案停点" in cmt and ("E1 sidecar 实现" in cs or "E1 观测方案已交付" in cs):
+    sem.append("claim: 下一动作仍写 'E1 方案停点',与 CURRENT_STATUS 'E1 sidecar 实现' 矛盾")
+# 3 章节引用闭包:CURRENT_STATUS 行引用的章节标题必须真实存在于正文
+for line in cmt.splitlines():
+    if line.startswith("CURRENT_STATUS.md\t"):
+        sec=line.split("\t")[1]
+        title=re.sub(r'^§[一二三四五六七八九十]+\s*','',sec)
+        if title and title not in cs:
+            sem.append(f"claim: CURRENT_STATUS 行引用不存在的章节: {sec}")
+# 4 时效:CURRENT 行 last_verified_commit 不得早于该文件最后变更 commit(短/长 SHA 均可;无效 rev 失败关闭)
+for line in cmt.splitlines():
+    p=line.rstrip("\n").split("\t")
+    if line.startswith("#") or line.startswith("path\t") or len(p)<11: continue
+    if p[2]!="CURRENT" or p[10] in ("HEAD","-",""): continue
+    lastc=subprocess.run(["git","log","-1","--format=%H","--",p[0]],capture_output=True,text=True).stdout.strip()
+    if not lastc: continue
+    r=subprocess.run(["git","merge-base","--is-ancestor",lastc,p[10]],capture_output=True,text=True)
+    if r.returncode!=0:
+        sem.append(f"claim: {p[0]}({p[1]}) last_verified={p[10][:7]} 早于文件最后变更 {lastc[:7]}(时效失守)")
 print(f"semantic_violations={len(sem)}")
-for x in sem[:20]: print("  SEM:",x)
+for x in sem[:40]: print("  SEM:",x)
 
 bad=len(broken)+len(unregistered)+len(claim_missing)+len(dup_auth)+len(lifecycle_missing)+len(sem)
 sys.exit(1 if bad else 0)
