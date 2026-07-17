@@ -6,14 +6,14 @@
 
 # GBPlanner → World-Model 集成
 
-把 **GBPlanner**(DARPA 地下赛冠军队 CERBERUS 的 3D 自主探索规划器,ROS1)接入 **world-model**(ROS2 jazzy 无人机仿真平台),替换其占位探索策略 `frontier_lite`,并用同口径数据证明升级价值。
+把 **GBPlanner**(DARPA 地下赛冠军队 CERBERUS 的 3D 自主探索规划器,ROS1)ROS2 无损迁移后,作为**独立、可配置选择、可切换、可回滚的探索算法**接入 **world-model**(ROS2 jazzy 无人机仿真平台),**与现有 `frontier_lite` 等算法并列共存**(非替换),并用同口径数据证明升级价值。(历史文档中"替换 frontier_lite"的措辞为旧方案,已作废,不指导当前架构。)
 
 ## 一、当前主线(2026-07-08):GBPlanner **ROS2 原生迁移**
 
 > 🔄 **2026-07-07 晚·导师最高指示**:放弃 ROS1↔ROS2 桥接,把 GBPlanner **迁移到 ROS2 原生**(ROS1+ROS2 双栈过重)。
 > 桥接线**冻结为 oracle 回归基准 + 科研叙事素材**(下方 §二 桥接期结论全部仍成立,不再演进);
 > world-model 侧资产(EKF/探针修复、ROS2 适配器 `trajectory_to_intent`、lidar3d、评测口径)**规划为复用**(桥接期产物;在 ROS2 直连主线上逐项验证后方可称"已复用")。
-> 权威蓝图:[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md) + [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
+> 历史设计蓝图(**UNVERIFIED,撰写当时语境,非当前权威**):[docs/路线切换_ROS2迁移_2026-07-07.md](docs/路线切换_ROS2迁移_2026-07-07.md) + [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。当前状态权威 = [CURRENT_STATUS.md](CURRENT_STATUS.md)。
 
 目标架构(从"双栈过桥"改为"ROS2 直连"):
 
@@ -66,7 +66,7 @@ world-model FCU 控制链 / Gazebo
 | [CURRENT_STATUS.md](CURRENT_STATUS.md) | **唯一事实源**:阶段/证据/卡点/纪律 |
 | [TASKS.md](TASKS.md) | 任务表(ROS2 迁移 M0-M5) |
 | [接力棒_当前值班.md](接力棒_当前值班.md) | 值班交接 |
-| [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md) | **当前主线任务书**(M0-M5 拆解/voxblox 风险/验收) |
+| [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md) | 迁移任务拆解 M0-M5(**历史设计·UNVERIFIED**;当前状态权威=CURRENT_STATUS.md) |
 | [文档索引.md](文档索引.md) | 全部文档带状态标签的索引 |
 
 > 桥接技术主文档 [docs/桥接查证与执行计划_2026-07-06.md](docs/archive/桥接查证与执行计划_2026-07-06.md) 已降级为 **REFERENCE / HISTORICAL**(oracle 与历史证据,不再作为施工入口)。

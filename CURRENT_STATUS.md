@@ -19,7 +19,7 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 
 | 仓 | 分支@HEAD | 角色 | 本轮 |
 |---|---|---|---|
-| GBPlanner-WorldModel-Integration | main@142a455(本轮 E0-CORRECT 起点;精确 review commit 见 governance/manifest_main.tsv 头 HEAD=) | 治理/证据/状态入口 | 可改 |
+| GBPlanner-WorldModel-Integration | main@**当前 HEAD 见 governance/manifest_main.tsv 头 `HEAD=`**(每次 manifest 刷新提交同步为最终 review commit;此处不写易过期的内嵌 SHA) | 治理/证据/状态入口 | 可改 |
 | gbp-feat | feat/gbplanner-ros2-port@17db3bae08d7(=upstream) | ROS2 迁移施工事实源(M1–M5) | 只读 |
 | world-model | fix/world-model-e2e-takeoff@288b48630237(=backup;origin=SZ-surveying 上游红线勿推) | 仿真/B17–B22 实现事实源 | 只读 |
 
@@ -62,4 +62,5 @@ E1 方案须先裁决:独立 worktree 钉 wm `eab0cc6` 复现历史 ∣ 或在 `
 并定义运行时缺口(宿主负载/SITL stdout+退出码/EKF 残差/arm 时序)如何捕获——**需改 world-model 则先申请扩权**。
 基线红线:禁 checkout/reset 当前 `288b486`;不放行 E1/E2 前不启动仿真、不改 world-model。
 
-Docker 容器归属本轮无法独立核验,一律记 UNVERIFIED,不写"零容器"为事实。
+Docker 本轮可读:`docker ps -a` 为空(无运行/退出残留容器)。历史容器由谁删除**不作推断**;
+容器归属的历史链仍记 UNVERIFIED,但不再写"无法独立核验 Docker"。

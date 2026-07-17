@@ -95,9 +95,11 @@ Cmd = 对 run `20260715T185957`(L1 孤儿批)执行 `slam_hover_probe.py`。
 
 ## 6. 冻结件登记
 
-`49b111d` 的 `runbooks/.../wait_batch.sh` + `test_wait_batch.sh` = **WP303 的冻结未验收草稿,
-fixture(timeout)存在失败**;不计入 R003-S2-FIX 成果;WP303 正式开始时从方案停点重审,
-负责人可要求保留/重做/废弃。
+`49b111d` 的 `runbooks/.../wait_batch.sh` + `test_wait_batch.sh` = **历史冻结未验收草稿**
+(当时 fixture timeout 失败);**已被 WP303 正式实现取代**:当前实现事实源 =
+`runbooks/world-model-jazzy/l0_hover/batch_lifecycle.py` + `batch_common.sh` + `run_batch.sh`
++ `test_wait_batch.sh`(75/75)/`test_batch_common.sh`(12/12)/`test_final_rc.py`(13),
+状态见 CURRENT_STATUS.md G5。本条仅作历史锚点,不再指导当前施工。
 
 ## 7. P0 余项方案停点(R003-S2-FIX-CLOSEOUT;**只方案,不执行**,执行动作全部待负责人批准)
 

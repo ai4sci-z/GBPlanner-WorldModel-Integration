@@ -59,7 +59,7 @@ Codex 现在可并行做(不冲突): 打磨 PR_BODY 到10项 / 对比设计加�
 4. 一句话写清"下一棒从哪读、从哪继续"。
 
 ## 5. 真正省 token 的用法(并行分工范例)
-- **Claude Code 值班**:啃 jazzy 全栈(构建 4 镜像 → e2e → gbplanner_gain 替换 frontier_lite)。
+- **Claude Code 值班**:啃 jazzy 全栈(构建 4 镜像 → e2e → gbplanner_gain 作为可切换插件与 frontier_lite 并列接入)。
 - **同期 Codex 并行**(碰的全是自己独占区,零冲突):把 `PR_BODY/ISSUE_BODY` 补到 10 项修复、对比设计加"证据状态"列、写组会讲稿、深读原始论文补对应关系。
 - **Claude Code 上限** → Codex 继续文档支线;**Codex 做完** → 等 Claude Code 恢复推主线。这样两条线都不空转。
 

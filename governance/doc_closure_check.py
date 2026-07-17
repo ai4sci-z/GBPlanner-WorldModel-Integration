@@ -86,6 +86,46 @@ for f in active_md:
     conflict=sorted(applied & done)
     if conflict:
         sem.append(f"{f}: 同文档既申请放行/进入又宣布完成 阶段 {conflict}")
+
+# A7 D5 机械门(R003-WP304-E0-CORRECT-2):文档事实闭包
+tk=readf("TASKS.md"); bt=readf("接力棒_当前值班.md"); rd=readf("README.md")
+cmt=readf("governance/claim_manifest.tsv"); bug=readf("docs/world-model端到端Bug台账_给作者PR.md")
+# 1 三状态文档当前工作包一致(均含 WP304)
+for nm,txt in (("CURRENT_STATUS",cs),("TASKS",tk),("接力棒",bt)):
+    if "WP304" not in txt: sem.append(f"{nm} 未含当前工作包 WP304")
+# 2 README 未历史化的"替换 frontier_lite"
+for i,line in enumerate(rd.splitlines(),1):
+    if "替换" in line and "frontier" in line and not any(w in line for w in ("非替换","历史","作废","并列","不指导")):
+        sem.append(f"README:{i} 未历史化的'替换 frontier_lite'")
+# 3 claim manifest 当前阶段不得仍是 WP303 施工点
+if "施工点=WP303" in cmt and "WP303 已收口" not in cmt:
+    sem.append("claim: 当前施工点仍写 WP303")
+# 4 状态文档不得内嵌易过期精确 main HEAD(main@<hex>)
+for nm,txt in (("CURRENT_STATUS",cs),("接力棒",bt)):
+    if re.search(r'main@[`*]{0,2}[0-9a-f]{7,40}\b', txt):
+        sem.append(f"{nm} 内嵌易过期精确 main HEAD(应引用 manifest 头)")
+# 5 阶段状态升级门:WP305 不得写成通过;WP306 三项不得写成完成;WP307/308 不得写成已开始
+if re.search(r'WP305[^\n]{0,16}(通过|完成|CLOSED|已关闭)', cs): sem.append("CURRENT_STATUS 把 WP305 写成通过/完成")
+if re.search(r'WP30[78][^\n]{0,16}(已开始|进行中|运行中|10/10 通过)', cs): sem.append("CURRENT_STATUS 把 WP307/308 写成已开始")
+# 6 "E0/运行时埋点已完成"违规(运行时埋点未实现);逐行 + 否定守卫(排除"不得称…已完成"这类禁止句)
+for nm,txt in (("CURRENT_STATUS",cs),("TASKS",tk),("接力棒",bt),("Bug台账",bug),("open1/README",readf("runbooks/world-model-jazzy/l0_hover/open1/README.md"))):
+    for line in txt.splitlines():
+        if any(x in line for x in ("E0 埋点已完成","运行时埋点已完成","运行时埋点已实现")):
+            if not any(neg in line for neg in ("不得","未实现","尚未","禁止","非","不是","≠","不能")):
+                sem.append(f"{nm} 违规:声称 E0/运行时埋点已完成")
+# 7 活跃 UNVERIFIED md 必须带历史/UNVERIFIED 标记(不得承担 current 权威)
+for line in cmt.splitlines():
+    p=line.split("\t")
+    if len(p)>2 and p[0].endswith(".md") and p[2]=="UNVERIFIED":
+        head="\n".join(readf(p[0]).splitlines()[:4])
+        if "UNVERIFIED" not in head and "不构成当前施工指令" not in head:
+            sem.append(f"UNVERIFIED 活跃文档缺历史标记: {p[0]}")
+# 8 默认主线 6/3/3 与诊断臂 4/3/3 混写(同行两组分母且未标分层/旁证/诊断臂)
+for nm,txt in (("CURRENT_STATUS",cs),("Bug台账",bug)):
+    for line in txt.splitlines():
+        z=line.replace(" ","")
+        if "6/3/3" in z and "4/3/3" in z and not any(w in line for w in ("分层","旁证","诊断臂")):
+            sem.append(f"{nm} 默认主线6/3/3与诊断臂4/3/3混写未分层")
 print(f"semantic_violations={len(sem)}")
 for x in sem[:20]: print("  SEM:",x)
 

@@ -1,3 +1,7 @@
+> **[历史/参考 · UNVERIFIED · 由 R003-WP304-E0-CORRECT-2 处置]** 本文为设计/历史记录,整体标记 UNVERIFIED;
+> 文中一切"当前/现在/下一步/待跑/替换 frontier_lite"等表述均属**撰写当时语境**,**不构成当前施工指令**。
+> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md);逐行逐主张审计未完成,列后续审查批次。
+
 > **[REFERENCE]** 论文↔代码对应(含 gbplanner_gain 失真标注)。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
 
 # GBPlanner 原始论文 ↔ 代码 对应关系(读原始论文后校准)

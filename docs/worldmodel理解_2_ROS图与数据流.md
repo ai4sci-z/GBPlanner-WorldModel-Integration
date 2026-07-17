@@ -1,3 +1,7 @@
+> **[历史/参考 · UNVERIFIED · 由 R003-WP304-E0-CORRECT-2 处置]** 本文为设计/历史记录,整体标记 UNVERIFIED;
+> 文中一切"当前/现在/下一步/待跑/替换 frontier_lite"等表述均属**撰写当时语境**,**不构成当前施工指令**。
+> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md);逐行逐主张审计未完成,列后续审查批次。
+
 # worldmodel 理解(二):运行时 ROS2 图与数据流
 
 > [REFERENCE] 2026-07-07 精读产物。读者定位:**要把 GBPlanner 移植成 ROS2 原生节点并接进 world-model 的人**。

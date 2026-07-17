@@ -25,3 +25,15 @@
 
 - exploration/navigation 的 cartographer 仍读原始 `/imu`(B22 只转正 hover 族)→ M5/P4 前必补。
 - world-model runner 探针完成即 SIGKILL mission(GATE-4b 本体 blocker)→ 属 world-model 改动,WP304 定位后另行方案。
+
+## P0 未执行遗留队列(登记,不擅自执行;每项列前置/决策点/验收/最迟门)
+
+| 遗留项 | 当前状态 | 前置条件 | 负责人决策点 | 验收标准 | 最迟须在此 R003 门前完成 |
+|---|---|---|---|---|---|
+| 分支职责最终裁决 | 提案在 governance/README §7,未定 | 无 | 是否设 dev 分支/archive 分支职责 | 三仓分支职责成文且机械可核 | R003-门二(事实源治理) |
+| Ubuntu 基准 annotated tag | 候选 `baseline/ubuntu-native-20260713`,未打 | 锚点 commit + pins 确认 | 批准打 tag | 两仓 tag 存在+说明+pins digest | R003-门八(长稳收口)前 |
+| ROS1 oracle annotated tag | 候选 `oracle/ros1-gbplanner-7301b535`,未打 | 镜像 digest 落 pins | 批准打 tag | tag+ADAPTER_FREEZE+镜像 digest | P2 对齐启动前 |
+| governance/dependencies.yaml | 未创建(新增路径,须与 manifest 再生同批) | schema 定稿 | 批准创建 | 机器可解析依赖清单+闭包通过 | R003-门二 |
+| feat sources/ 去重 | 提案已登记,未执行 | main 为唯一快照持有者确认 | 批准删除 feat sources/ | feat 去重后闭包 delta 干净+tag 兜底 | P2 前 |
+| world-model origin 只读机械保护 | 未实施(仅文档红线) | pre-push 钩子方案 | 批准增 pre-push 防护 | 可测试 pre-push 拒推 SZ-surveying | R003-门七(远端收口) |
+| 回滚锚点与恢复验证 | 未建立 | Ubuntu/ROS1 tag 就绪 | 批准建锚点 | 锚点 tag + 恢复演练证据 | R003-门八 |
