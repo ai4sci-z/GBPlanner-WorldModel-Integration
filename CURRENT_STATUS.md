@@ -11,7 +11,7 @@ WP305 epoch → WP306 GPU/IMU/truth audit → WP307 默认路径 10/10 → WP308
 → P2 ROS1/ROS2 对齐 → P3 3D 无损 → P4 WorldModel 独立可切换插件。**
 GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 
-**当前唯一施工点 = WP303:monitor 生命周期实现与 fixture 验收**(P0 收口后进入)。
+**当前唯一施工点已推进:WP303 monitor 生命周期已编码并通过 fixture(未做真实仿真);下一 = WP304 OPEN-1 因果时间线(方案停点)。**
 
 ## 二、三仓基线与角色
 
@@ -42,7 +42,7 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 | G2 | manifest current 闭包 | ✅ 三仓 rc=0 |
 | G3 | generate_manifest 测试 | ✅ 57/57;工具安全模型不再扩展,仅三固定输出 |
 | G4 | 文档闭包(链接/登记/路径/生命周期/语义) | 🟡 P0 收口中 |
-| G5 | WP303 monitor 生命周期实现 | ⬜ 未开始(当前施工点) |
+| G5 | WP303 monitor 生命周期实现 | 🟡 **已编码并通过 fixture**(test_wait_batch 42/42 + test_batch_common 12/12,前后残留=0);**未做真实仿真验收** |
 | G6 | WP304 OPEN-1 因果时间线 | ⛔ 阻塞(待 WP303) |
 | G7 | WP307 默认路径 10/10 | ⛔ 阻塞 |
 | G8 | WP308 长稳 | ⛔ 阻塞 |
@@ -50,8 +50,9 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 
 ## 五、唯一下一动作
 
-**WP303 实现**:实现可验证的批任务启动与监视机制(launcher + task record + 三轴状态 +
-fixture 验收),只跑 fixture 不跑真实仿真。契约与缺陷修订见
+**WP304 OPEN-1 因果时间线(方案停点)**:对失败/成功 run 逐层建启动+readiness 时间线,
+形成竞争假设矩阵,单变量可证伪实验须负责人放行后才跑。WP303 已编码通过 fixture(未做真实仿真验收),
+契约实体见 batch_lifecycle.py/batch_common.sh;原方案见
 [governance/WP303_monitor生命周期方案_2026-07-16.md](governance/WP303_monitor生命周期方案_2026-07-16.md)
 (原方案含已知缺陷,实施以当前工作包修订契约为准)。
 

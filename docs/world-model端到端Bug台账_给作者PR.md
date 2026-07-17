@@ -119,3 +119,17 @@
 - B1/B14/B15 说明作者**很可能从未端到端跑通过 exploration**（脚本编译不过、rangefinder 参数被固件无视、起飞被自身探索指令死锁）——任何人、任何 OS 跑到这步都会死,不是环境问题。
 - B15 死锁最有价值：起飞与导航指令的相序竞争，属经典临界区问题，作者代码缺相序门。
 - B14 是**跨 4 文件的系统性参数名漂移**,固件升级(4.5)后旧名静默失效,最隐蔽。
+
+## WP303 · 批监视生命周期(机制实现,非系统稳定;2026-07-17)
+
+**机制缺陷(原批脚本/冻结草稿)**:①三批脚本共用 `/tmp/l1_bisect_batch.lock` 且被当生命探针;
+②批脚本 rc 恒 0(不聚合 run rc);③无结构化 run 记录(只 grep 散文日志);④裸 `tail -f` 冒充监视,
+不传播退出码、不识别 producer 崩溃(F10);⑤旧 wait_batch 草稿 fixture-timeout 失败(49b111d)。
+
+**实现证据**:`batch_lifecycle.py`(身份=PID/PGID/SID/starttime/boot_id;三轴状态;批级 deadline;
+flock 多 monitor 让位;取证先于清理;PID 复用→NOT_ATTEMPTED;容器归属不可核验→NOT_ATTEMPTED)+
+`batch_common.sh`(结构化 run 记录+聚合 rc+主机 SITL 互斥)。测试 `test_wait_batch.sh` 20 fixture/42 断言、
+`test_batch_common.sh` 12 干跑断言,全绿,前后 PID/PGID 残留=0。
+
+**边界(勿夸大)**:只跑 fixture,**未做真实仿真验收**;不证明 GATE-4b 稳定;OPEN-1 间歇性 bring-up
+仍未定位(归 WP304)。此条只登记"批监视机制已实现并通过 fixture",不登记系统稳定。

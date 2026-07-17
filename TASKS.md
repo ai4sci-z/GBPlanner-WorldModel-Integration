@@ -7,7 +7,7 @@
 
 | WP | 任务 | 依赖 | 验收门 | 状态 |
 |---|---|---|---|---|
-| **WP303** | monitor 生命周期实现:launcher + task record + 三轴状态(producer_outcome/evidence_status/cleanup_status)+ ≥20 fixture;只跑 fixture 不跑真实仿真 | P0 收口 | test_wait_batch 全绿;前后 PID/PGID 无残留;有界退出+真实退出码 | **当前施工点** |
+| **WP303** | monitor 生命周期实现:launcher + task record + 三轴状态(producer_outcome/evidence_status/cleanup_status)+ ≥20 fixture;只跑 fixture 不跑真实仿真 | P0 收口 | test_wait_batch 42/42 + test_batch_common 12/12,前后 PID/PGID 无残留 | 🟡 **实现停点:fixture 通过,真实仿真未做** |
 | WP304 | OPEN-1 因果时间线:对失败/成功 run 逐层建时间线,竞争假设矩阵,单变量可证伪实验(方案停点先行) | WP303 | 时间线+假设矩阵成文,负责人放行方可跑实验 | ⛔ 阻塞 |
 | WP305 | 时钟纪元契约修复(OPEN-2):测试与 pymavlink 环境解耦,补节点重启/来源生命周期反例 | WP303 | 反例矩阵全绿,独立复验通过 | ⛔ 阻塞 |
 | WP306 | 三独立单元:GPU 支持矩阵 / IMU covariance(C'=RCRᵀ)+types.go 反注释 / truth audit 混合匹配 fail-closed | WP303 | 各单元反例测试通过 | ⛔ 阻塞 |
