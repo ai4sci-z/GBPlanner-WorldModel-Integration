@@ -1,4 +1,4 @@
-# R003 动作八 五态清单(第二阶段补正版;--verify 可随时校验闭包)
+# R003 动作八 五态清单(提交一补正版;--verify-bound / --verify-current)
 # worktree=/home/ai4s/projects/world-model HEAD=288b48630237aaf65e1899a24377dcd23183e2f0 files=609
 # category: ACTIVE_REFERENCE=197, CURRENT_AUTHORITY=403, THIRD_PARTY=9
 # audit: PARTIAL=18, THIRD_PARTY_UNVERIFIED=9, UNVERIFIED=574, VERIFIED_FAIL=6, VERIFIED_PASS=2

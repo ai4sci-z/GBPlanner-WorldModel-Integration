@@ -1,4 +1,4 @@
-# R003 动作八 五态清单(第二阶段补正版;--verify 可随时校验闭包)
+# R003 动作八 五态清单(提交一补正版;--verify-bound / --verify-current)
 # worktree=/home/ai4s/projects/gbp-feat HEAD=17db3bae08d783494ef544b3b1ebd0258324c352 files=1433
 # category: ACTIVE_REFERENCE=368, ARCHIVE=14, CURRENT_AUTHORITY=90, THIRD_PARTY=961
 # audit: THIRD_PARTY_UNVERIFIED=961, UNVERIFIED=472
