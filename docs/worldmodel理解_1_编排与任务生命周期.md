@@ -1,14 +1,21 @@
-> **[历史/参考 · UNVERIFIED · 由 R003-WP304-E0-CORRECT-2 处置]** 本文为设计/历史记录,整体标记 UNVERIFIED;
-> 文中一切"当前/现在/下一步/待跑/替换 frontier_lite"等表述均属**撰写当时语境**,**不构成当前施工指令**。
-> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md);逐行逐主张审计未完成,列后续审查批次。
+> **[技术参考 · 已逐行审计+基准重放核验(R003-E0-CORRECT-2,2026-07-18)]** Go 编排层精读。
+> 审计改动:①"CURRENT"降为技术参考;②行号基准补现环境注记;③external_nav 行降为时点;④失效路径改归档位。
+> **核心主张经 `git show` 对基准 commit 重放核验**:
+> ✓ 成立(@e7ca9fc):exploration duration=150s、gate 默认(26s/0.10/3/0.35)、rosbag grace=5.0、
+>   退出码 OK=0/ERROR=1/BLOCKED=20、exploration_probe 脚本 90("was 35")/容器 150、
+>   run_id 格式 `20060102T150405.000000000Z`、服务顺序(router→baseline→overlay→helpers→external_nav→height)。
+> ✗ **基准失配(重要)**:§3.3 的 frame_contract 脚本 90("was 45")/容器 150 与"L288-293 被遮蔽死分支"
+>   在 **e7ca9fc 不成立**(当时=45/90、无死分支);它们在 **30e0f6d 及现 HEAD(288b486)成立**。
+>   即本文部分内容实际对应 30e0f6d+ 的树,**自称的统一基准 e7ca9fc 不准确**——引用 §3.3 时以 30e0f6d+ 为准。
+> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
 
 # worldmodel 理解(一):Go 编排层与任务生命周期
 
-> 状态:CURRENT(2026-07-07)
+> 状态:技术参考(精读于 2026-07-07;不承载当前状态)
 > 读者:准备把 GBPlanner 移植成 ROS2 原生节点并接进 world-model 的人。
 > 依据:精读 `orchestration/sim/`(cmd/navlab-sim、internal/tasks/、internal/tasks/helpers/、internal/runtime/)。
 >
-> **⚠️ 行号基准**:本文行号以 **WSL `~/ws-clean/world-model`、分支 `fix/world-model-e2e-takeoff` @ `e7ca9fc`** 为准(= 我们实跑通过的现状,含 B16 探针修复与预算调整)。
+> **⚠️ 行号基准(历史环境)**:本文行号以 **WSL `~/ws-clean/world-model` @ `e7ca9fc`** 为准(撰写时实跑现状,含 B16 修复)。**现事实源 = 原生 Ubuntu `/home/ai4s/projects/world-model`@`288b486`,其后经 B17-B22/epoch 修改链,external_nav/imu/gpu/runtime_specs 相关文件已变——引用行号须按符号名重定位,机制描述在涉改文件上须对照现 HEAD 复核。**
 > Windows 镜像 `sources\world-model-源码\` 有 **3 个文件是旧版**(不含 45→90/35→90/容器150 与 QoS 内省):
 > `orchestration/sim/internal/tasks/runtime_specs.go`、`internal/tasks/helpers/runtime_specs.go`、`internal/tasks/helpers/templates/python/ros_probe.py.tmpl`。其余本文引用的文件(runtime_runner.go、gate_evaluation.go、live_summary.go、helpers/execution_plan.go、cmd/navlab-sim/main.go)两处内容一致。
 > 下文路径均相对仓库根 `world-model/orchestration/sim/`。
@@ -114,7 +121,7 @@ t3  run.completed / run.blocked
 | 5 | slam_backend(SlamBackendContainer) | navlab/slam-cartographer | Cartographer SLAM | 入:`/scan` `/navlab/slam/imu`;出:**`/slam/odom`** `/navlab/slam/status`(默认 helpers/slam.go:87-97) | execution_plan.go:219-243 |
 | 6 | fcu_controller(FCUControllerContainer) | images.runtime | 起飞/控制闭环:消费 **`/navlab/fcu/setpoint/intent`**(JSON String)→ 下发 `/ap/v1/cmd_vel` + MAVLink;监督任务完成(读 `/navlab/exploration/status`)与降落 | 入:intent、`/slam/odom`、rangefinder、`/ap/v1/*`;出:`/navlab/fcu/controller/status` `/navlab/fcu/setpoint/output` `/navlab/fcu/owner/status` | execution_plan.go:245-275;参数注入 runtime_artifacts.go:157-200 |
 | 7 | exploration_workflow(navlab-exploration-workflow) | images.runtime | 探索策略本体(frontier_lite 内建;`strategy=external` 时整体让位,见 §5) | 出:`/navlab/fcu/setpoint/intent`、**`/navlab/exploration/status`** 及 goal/coverage/frontiers/path/markers 审查族;入:`/navlab/fcu/controller/status` `/slam/odom` | execution_plan.go:489-540 |
-| 8 | mavlink_external_nav(MAVLinkExternalNavContainer) | images.runtime | `/external_nav/odom` → MAVLink 视觉/外部导航注入 SITL(udpin:14553);现状 `--no-align-yaw-to-fcu`(EKF yaw 源修复,commit 99bcfa1) | 入:`/external_nav/odom` `/navlab/fcu/local_position_pose`;出:`/mavlink_external_nav/status` | runtime_specs.go:447-495(参数 458-472) |
+| 8 | mavlink_external_nav(MAVLinkExternalNavContainer) | images.runtime | `/external_nav/odom` → MAVLink 视觉/外部导航注入 SITL(udpin:14553);〔e7ca9fc 时点〕`--no-align-yaw-to-fcu`(EKF yaw 源修复,commit 99bcfa1);**此后该服务经 B21 东轴镜像修复(908a95a)与 epoch 候选(288b486)多轮修改,本行不代表现状** | 入:`/external_nav/odom` `/navlab/fcu/local_position_pose`;出:`/mavlink_external_nav/status` | runtime_specs.go:447-495(参数 458-472) |
 | 9 | height_estimator(navlab-height-estimator) | images.runtime | 测距计 → 高度估计 | 入:`/rangefinder/down/range`;出:`/height/estimate` `/height/status` | runtime_specs.go:497-542 |
 | R | exploration_rosbag | images.runtime | `ros2 bag record -s mcap --compression-format zstd -o … --topics <清单>`;由编排层 SIGINT 收尾(非定时自杀) | 录制清单=ExplorationTaskReviewTopics | `internal/runtime/docker_backend.go:363-398`;runtime_specs.go:184-217 |
 
@@ -198,4 +205,4 @@ gate 对 exploration 指标**只是复读**:`metricSummaryFromEvidence` 从探�
 ## 附:文中未展开但相邻的文件
 
 - `internal/tasks/runtime_fsm.go` — task/rosbag FSM 产物;`internal/tasks/workflow_summaries.go` — DAG/doctor 摘要;`internal/tasks/simulation_profiles.go` — ideal/realistic profile 对 runtimeConfig 的覆写;`internal/runtime/docker_backend.go` — Docker SDK 后端(host 网络、日志尾抓取、rosbag SIGINT finalize)。
-- 佐证材料(以源码为准):`CURRENT_STATUS.md`、`docs/桥接查证与执行计划_2026-07-06.md`、`runbooks/world-model-jazzy/stage5a_diagnosis.md`。
+- 佐证材料(以源码为准):`CURRENT_STATUS.md`、`docs/archive/桥接查证与执行计划_2026-07-06.md`(已归档)、`runbooks/world-model-jazzy/stage5a_diagnosis.md`。

@@ -1,6 +1,9 @@
-> **[历史/参考 · UNVERIFIED · 由 R003-WP304-E0-CORRECT-2 处置]** 本文为设计/历史记录,整体标记 UNVERIFIED;
-> 文中一切"当前/现在/下一步/待跑/替换 frontier_lite"等表述均属**撰写当时语境**,**不构成当前施工指令**。
-> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md);逐行逐主张审计未完成,列后续审查批次。
+> **[历史施工记录 · 已逐行审计+提交号核验(R003-E0-CORRECT-2,2026-07-18)]** 镜像阶段(9/9)历史记录。
+> **提交号核验发现**:文中 wm 提交 `68c19bf`/`12ab9f0` 为 WSL 时代 SHA,Linux 迁移变基后不在现历史;
+> 修复本体均在,现 SHA = `a05e20b`(fast-lio cstdint)/`43da557`(gazebo-sensor QoS),正文已标注映射。
+> 审计改动:①"真替换 frontier_lite"目标句标作废并给当前并列口径;②WSL/Windows 命令段标历史环境
+> (现=原生 Ubuntu,路径勿照抄);③两个失效引用改指真实归档位置。镜像构建数据与坑修记录为当时实测,原样保留。
+> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
 
 > **[HISTORICAL]** 镜像阶段已完成(9/9)。当前状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准。
 
@@ -13,7 +16,7 @@
 ## 一、目标与验收
 1. 补齐 9/9 **jazzy** 镜像(`docker images | grep 'navlab.*jazzy'` 数到 9)。
 2. `cd ~/ws/world-model/orchestration/sim && NAVLAB_SIM_DISTRO=jazzy go run ./cmd/navlab-sim run exploration --live-preflight` 端到端跑绿(或至少 FCU 起飞、frontier_lite 出指标)。
-3. jazzy 上把 `strategy=gbplanner_gain` 真替换 frontier_lite 跑一遍(证明"模块直接替换")。
+3. 〔撰写时目标,措辞已作废〕jazzy 上以 `strategy=gbplanner_gain` 切换运行一遍——当时表述为"替换 frontier_lite/模块直接替换";**当前口径=按 run 可切换选择、frontier_lite 并列保留**(见 CURRENT_STATUS)。
 
 ## 二、现状(2026-07-05 晚终版):✅✅ **9/9 全部建成+开箱验真,镜像阶段收官**
 > official-baseline(17GB级):**原版 Dockerfile 零补丁一次过**(预研判断全中:ros-gz 天然配 Harmonic、--break-system-packages
@@ -26,14 +29,14 @@
 - ✅ 本轮新建 3(全部 `docker images` 实测 + 开箱验真):
   - `gazebo-headless:jazzy-latest`(5.21GB)——原版 Dockerfile 零补丁,BuildKit 直建。
   - `fast-lio:jazzy-latest`(1.85GB)——**坑:Livox-SDK2 GCC13 缺 `<cstdint>`**(std::uint8_t 不识),
-    修法=cmake 加 `-DCMAKE_CXX_FLAGS="-include cstdint"`(改 in-repo Dockerfile,向后兼容,已提交 world-model 分支 `68c19bf`)。
+    修法=cmake 加 `-DCMAKE_CXX_FLAGS="-include cstdint"`(改 in-repo Dockerfile,向后兼容,已提交 world-model 分支〔当时 SHA `68c19bf`;**Linux 迁移变基后现历史中为 `a05e20b`**〕)。
     开箱:install 里 fast_lio+livox_ros_driver2、livox .so 实在。
   - `gazebo-sensor:jazzy-latest`(1.97GB)——**坑:ydlidar `declare_parameter("name")` 无默认值**(jazzy rclcpp 同 humble 已移除,
     原样构建实测失败打脸"jazzy 或许没这坑"),修法=humble 同款 26 处 sed(`gazebo-sensor-jazzy.Dockerfile` v2)。
     开箱:venv python 直接能跑(Py3.12.3 系统 python)→ **实锤 d8ff119 悬空软链坑 jazzy 不存在**,该 COPY 条件化依据坐实。
 - 🔵 `official-baseline`:**预研结论=jazzy 用原版 Dockerfile 零补丁**(ros-gz 天然配 Harmonic、--break-system-packages Py3.12 必需、
   MICRO_ROS_AGENT_REF=jazzy 默认即对),只传 jazzy args+代理。构建已发车(最重,ArduPilot master 克隆+colcon 全家桶)。
-- 📌 同日在 world-model 分支补 2 提交:`68c19bf`(fast-lio cstdint)+`12ab9f0`(坑#8 emulator sensor-data QoS,还清"本地 M 未提交"欠账)。
+- 📌 同日在 world-model 分支补 2 提交:〔当时 SHA〕`68c19bf`(fast-lio cstdint,**现历史=`a05e20b`**)+`12ab9f0`(坑#8 emulator sensor-data QoS,**现历史=`43da557`**;还清"本地 M 未提交"欠账)。
 
 ## 三、构建命令(逐镜像)
 
@@ -44,6 +47,8 @@
 > 镜像分组(build.go 实锤):**infra**=ardupilot-sitl/mavlink-router/**gazebo-headless**/**fast-lio**;**runtime**=companion/slam-cartographer/**gazebo-sensor**/**official-baseline**。
 
 ```bash
+# 〔历史环境:以下命令为 WSL/Windows 时代路径(/mnt/c/CCproject…),现环境=原生 Ubuntu
+#  /home/ai4s/projects/…,勿照抄路径;build_jazzy.sh 思路仍可参考〕
 # 前置:挂 keepalive(WSL 空闲关机杀 docker)
 wsl bash -lc 'nohup sleep infinity >/dev/null 2>&1 &'
 # 逐镜像(直用 BuildKit,自带真产物核验):
@@ -81,4 +86,4 @@ docker images | grep 'navlab/.*jazzy'
 - `d8ff119`(COPY uv python):**jazzy 有害,要条件化或移出 PR**。
 - 坑#7 QoS 修复(`navlab/sim/gazebo_sensor/cli.py`)**本地 M 未提交**(不在 10 提交里)——通用修复,PR 前补提交。
 - 其余 9 项:jazzy 语言层已验/通用 bug,但**未全栈实跑**——jazzy 全栈跑通后才算真兼容。
-- 详见 `docs/PR兼容性与jazzy评估.md`、`integration/world-model-PR/PR物料清单.md`。
+- 详见 `docs/archive/PR兼容性与jazzy评估.md`、`archive/integration_桥接线冻结/world-model-PR/PR物料清单.md`(两文件均已归档)。

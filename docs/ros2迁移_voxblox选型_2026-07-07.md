@@ -1,10 +1,11 @@
-> **[历史/参考 · UNVERIFIED · 由 R003-WP304-E0-CORRECT-2 处置]** 本文为设计/历史记录,整体标记 UNVERIFIED;
-> 文中一切"当前/现在/下一步/待跑/替换 frontier_lite"等表述均属**撰写当时语境**,**不构成当前施工指令**。
-> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md);逐行逐主张审计未完成,列后续审查批次。
+> **[历史调研快照 · 已逐行审计(R003-E0-CORRECT-2 补正,2026-07-18)]** voxblox 选型调研(2026-07-07 时点)。
+> 审计改动:①"CURRENT"降为历史快照(网络数据均为检索当日);②§6 回填执行结果(vendored voxblox
+> 基底 pin d08e9d4,M2 对拍窄验收 PASS,fast-integrator/3D 分层语义未关闭)。选型结论与理由为当时判断,保留。
+> 外部仓库现状未复查(逐行审计不含重新联网检索)。当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
 
 # ROS2 迁移:voxblox 选型调研(2026-07-07)
 
-> 状态:CURRENT · 检索日期:**2026-07-07**(联网 WebSearch/WebFetch + GitHub API 实查)
+> 状态:**历史调研快照**(检索日期 2026-07-07,联网 WebSearch/WebFetch + GitHub API 实查;仓库星数/push 日期均为当日数据,现已过时)
 > 服务对象:任务 #15「GBPlanner ROS1→ROS2 原生移植」中的地图后端选型。
 > 结论先行:**首选 = 沿用 voxblox,以 snt-arg/voxblox_ros2_minimal 为底座做 Jazzy 适配(参照 GabrieleSantangelo/voxblox-ros2 的 Jazzy Docker),并与 GBPlanner 实际依赖的 ntnu-arl/voxblox fork 做 diff 合并;ROS1 版留作 oracle 回归。备选 = OctoMap ros2 分支 + dynamicEDT3D。**
 
@@ -127,7 +128,7 @@ GBPlanner 对地图后端的硬依赖只有两条(map_manager 抽象层):
 3. 风险与对冲:两个移植仓 star≈0、无社区背书,"there are some lacking" 自述在案 → 对冲手段就是第 1 条的 oracle 回归 + 保留 ntnu-arl/voxblox diff 审计;若底座质量不过关,退路按序为:自己按 PR #413 改法重迁 voxblox_ros 层(core 不动,成本可控)→ OctoMap 保底(接受调参重来)。
 4. nvblox 明确**不作为本次迁移目标**:GPU 硬依赖 + 语义漂移双重代价,只在"等价迁移完成、有 ROS2 基线之后"作为性能升级路线另立实验。
 
-## 6. 落地动作(供任务 #15 拆解)
+## 6. 落地动作(撰写时计划;**后续已执行**:gbp-feat `ros2_port` vendored voxblox,基底 pin `d08e9d4`〔snt-arg 迁移链〕,M2 数值对拍窄验收 PASS〔TSDF 零失配 / ESDF RMS 2.5e-05;fast integrator 失配与 3D 分层语义未关闭,见 CURRENT_STATUS M2 口径〕)
 
 1. clone snt-arg/voxblox_ros2_minimal,Jazzy 容器内编译(Dockerfile 抄 GabrieleSantangelo 仓 2026-03-17 提交);
 2. `git diff ethz-asl/voxblox..ntnu-arl/voxblox` 审计 GBPlanner 定制点,移植到 ROS2 底座;

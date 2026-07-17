@@ -1,13 +1,19 @@
-> **[历史/参考 · UNVERIFIED · 由 R003-WP304-E0-CORRECT-2 处置]** 本文为设计/历史记录,整体标记 UNVERIFIED;
-> 文中一切"当前/现在/下一步/待跑/替换 frontier_lite"等表述均属**撰写当时语境**,**不构成当前施工指令**。
-> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md);逐行逐主张审计未完成,列后续审查批次。
+> **[技术参考 · 已逐行审计(R003-E0-CORRECT-2 补正,2026-07-18)]** 运行时 ROS2 图与数据流精读(上游快照时点)。
+> 审计改动:①源码基准补现环境注记(现 HEAD=288b486,B17-B22/epoch 涉改文件须重定位复核);
+> ②"替换 frontier_lite/替换点/替换位置"统一改为"strategy=external 按 run 接管,frontier_lite 并列保留";
+> ③尾注失效引用改指归档位。§5 坑位驻点多已被后续 B21/B22 修复演进(5.1 修复已入 clean 分支主线),按时点记录保留。
+> **核心主张已对基准快照(sources/world-model-源码)重放核验,6/6 成立**:cartographer lua 五参
+> (map/imu_link/base_link/provide_odom=false/use_odometry=false)、parm 五参(VISO 1/POSXY 6/POSZ 2/
+> VELXY 0/YAW 1)、external_nav 换系 `(y,−x,−z)`+`π/2−yaw`(=B21 后定位的东轴镜像,快照即缺陷原样,交叉印证)、
+> navlab_models lidar_3d→lidar_2d、bridge cloud_in←/lidar/points、slam.go IMU 回声(/imu→/imu)。
+> 当前状态唯一权威 = [CURRENT_STATUS.md](../CURRENT_STATUS.md)。
 
 # worldmodel 理解(二):运行时 ROS2 图与数据流
 
 > [REFERENCE] 2026-07-07 精读产物。读者定位:**要把 GBPlanner 移植成 ROS2 原生节点并接进 world-model 的人**。
-> 依据源码快照:`sources/world-model-源码\`(与 WSL `~/ws-clean/world-model` 上游基线一致;行号以该快照为准)。
+> 依据源码快照(**历史环境**):`sources/world-model-源码\`(Windows 上游快照;行号以该快照为准)。**现事实源=原生 Ubuntu `/home/ai4s/projects/world-model`@`288b486`(经 B17-B22/epoch 修改链),涉改文件须按符号名重定位复核。**
 > 注意:本快照是**上游原样**,不含本项目在 clean 分支上的修复(EKF yaw 源、IMU 回声等);凡涉及处会显式标注。
-> 主线以 `exploration` 任务(`orchestration/sim/configs/tasks/exploration.yaml`)为例,这是 GBPlanner 要替换的 frontier_lite 所在的工作流。
+> 主线以 `exploration` 任务(`orchestration/sim/configs/tasks/exploration.yaml`)为例,这是 frontier_lite 内建策略所在的工作流——GBPlanner 经 `strategy=external` **按 run 接管**它(frontier_lite 并列保留,非删除替换;当前口径见 CURRENT_STATUS)。
 
 ---
 
@@ -16,7 +22,7 @@
 Gazebo 出传感 → ros_gz_bridge/自研 relay 进 ROS2 → cartographer 2D 出 `map→base_link` → 适配器变 `/slam/odom` → 兵分两路:
 ① **回灌**:`/external_nav/odom` → MAVLink ODOMETRY → ArduPilot EKF(飞控的位置估计来自 SLAM);
 ② **决策**:exploration_workflow 读 `/slam/odom` 出 intent(JSON)→ fcu_controller 双路下发(DDS `/ap/v1/cmd_vel` + MAVLink 位置 setpoint)→ SITL 动 → Gazebo 动 → 传感变 → 闭环。
-GBPlanner 移植的落点就是替换"决策"框(intent 的生产者),其余链路原样复用。
+GBPlanner 移植的落点就是**运行时接管**"决策"框(intent 的生产者;strategy=external 让位机制,frontier_lite 并列保留),其余链路原样复用。
 
 ---
 
@@ -31,7 +37,7 @@ GBPlanner 移植的落点就是替换"决策"框(intent 的生产者),其余链�
 | `navlab-official-maze-x2-sensor`(gazebo_sensor) | 自研传感 runtime:2D 雷达 vendor 协议仿真链 + 下视测距投影(见 §2.1) | `helpers/execution_plan.go:198-211`;`navlab/sim/gazebo_sensor/runtime.py:212-239` |
 | `navlab-slam-backend` | `navlab.common.slam.cli launch --backend cartographer` → `navlab_slam_bringup.launch.py`(imu_bridge + 静态 TF×2 + cartographer_node + occupancy_grid + cartographer_adapter + external_nav_bridge) | `helpers/execution_plan.go:232-242`;launch 全文 `navlab/common/slam/ros/scenarios/navlab_slam_bringup/launch/navlab_slam_bringup.launch.py` |
 | `navlab-fcu-controller` | 模板生成的 `fcu_controller_runtime.py`(唯一控制权属者) | `helpers/execution_plan.go:257-267`;模板 `helpers/templates/python/fcu_controller_runtime.py.tmpl` |
-| `navlab-exploration-workflow` | 模板生成的 `exploration_workflow_runtime.py`(frontier_lite,**GBPlanner 替换点**) | `helpers/execution_plan.go:502-512`;模板 `exploration_workflow_runtime.py.tmpl` |
+| `navlab-exploration-workflow` | 模板生成的 `exploration_workflow_runtime.py`(frontier_lite,**GBPlanner 接管点:strategy=external 时让位**) | `helpers/execution_plan.go:502-512`;模板 `exploration_workflow_runtime.py.tmpl` |
 | `navlab-mavlink-external-nav` | `navlab.real.companion.nodes.external_nav`:ROS odom → MAVLink ODOMETRY,endpoint `udpin:0.0.0.0:14553` | `runtime_specs.go:444-459` |
 | `navlab-height-estimator` | `navlab.real.companion.nodes.height_estimator`:`/rangefinder/down/range` → `/height/estimate` | `runtime_specs.go:494-505` |
 | 探针/rosbag 容器 | exploration_probe、frame_contract_probe、`ros2 bag record`(mcap) | `helpers/execution_plan.go:513-529`、`642-662` |
@@ -290,10 +296,10 @@ GBPlanner 的轨迹跟踪若直接换算成 intent,必须把这层"位置外推"
 | TF | `/tf` 上的 map→base_link(adapter 过门版)+ `/tf_static` 两条静态边 | 无 map→odom;传感帧见 §3 |
 | 输出:轨迹/速度 | 折算成 intent JSON 发 `/navlab/fcu/setpoint/intent`(格式 tmpl:141-158) | 经 fcu_controller 双路下发;或长期方案:改 fcu_controller 增加轨迹接口 |
 | 完成信号 | 发 `/navlab/exploration/status`(JSON,含 ok/accepted_goals/path_length_m/blockers,tmpl:175-207) | fcu_controller 以此触发 landing 链(runtime_artifacts.go:167) |
-| 替换位置 | `exploration_workflow` 服务(容器 `navlab-exploration-workflow`,execution_plan.go:502-512);config 入口 `orchestration/sim/configs/tasks/exploration.yaml:20`(strategy) | 本项目已有 external 让位补丁与 `/gbp/*` 适配器先例(CURRENT_STATUS.md) |
+| 接管位置(strategy 切换) | `exploration_workflow` 服务(容器 `navlab-exploration-workflow`,execution_plan.go:502-512);config 入口 `orchestration/sim/configs/tasks/exploration.yaml:20`(strategy) | 本项目已有 external 让位补丁与 `/gbp/*` 适配器先例(CURRENT_STATUS.md) |
 
 坑位自查表(上线前逐条过):§5.1 EKF yaw 源已改 6?§5.2 近 wp 减速?§5.3 map↔NED 对齐策略?§5.4 只走一条下发路?§5.5 对比指标口径?§5.6 IMU 接线劈开?
 
 ---
 
-*本文档所有行号基于 `sources/world-model-源码` 快照;若上游更新请以 `git blame` 校准。姊妹篇:worldmodel理解_1(编排与模板生成机制,若已存在)、`docs/桥接查证与执行计划_2026-07-06.md`(GBPlanner 桥接实操)、`runbooks/world-model-jazzy/stage5a_diagnosis.md`(EKF 根因链原始记录)。*
+*本文档所有行号基于 `sources/world-model-源码` 快照;若上游更新请以 `git blame` 校准。姊妹篇:worldmodel理解_1(编排与模板生成机制,若已存在)、`docs/archive/桥接查证与执行计划_2026-07-06.md`(GBPlanner 桥接实操,已归档)、`runbooks/world-model-jazzy/stage5a_diagnosis.md`(EKF 根因链原始记录)。*
