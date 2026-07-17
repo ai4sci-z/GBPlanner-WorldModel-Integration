@@ -11,7 +11,8 @@ WP305 epoch → WP306 GPU/IMU/truth audit → WP307 默认路径 10/10 → WP308
 → P2 ROS1/ROS2 对齐 → P3 3D 无损 → P4 WorldModel 独立可切换插件。**
 GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 
-**当前唯一施工点已推进:WP303 monitor 生命周期已编码并通过 fixture(未做真实仿真);下一 = WP304 OPEN-1 因果时间线(方案停点)。**
+**当前唯一施工点已推进:WP303 生命周期补正完成(75/12/13 全绿,batch_id 端到端绑定+拒绝旧现场);
+WP304 OPEN-1 到达修订方案停点(只读时间线+竞争假设矩阵,未启动实验)。下一 = 待放行 E0 埋点实现。**
 
 ## 二、三仓基线与角色
 
@@ -43,17 +44,19 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 | G3 | generate_manifest 测试 | ✅ 57/57;工具安全模型不再扩展,仅三固定输出 |
 | G4 | 文档闭包(链接/登记/路径/生命周期/语义) | 🟡 P0 收口中 |
 | G5 | WP303 monitor 生命周期实现 | 🟡 **PARTIAL(实现停点,未发布)**:已编码+正式入口 e2e dry-run 通过(test_wait_batch **75/75**〔1-23 生命周期 + 24-33 串批/身份/路径边界反例〕+ test_batch_common 12/12 + test_final_rc 13/13);batch_id 端到端绑定(纳秒+UUID 强唯一,producer 经 WP303_BATCH_ID 盖章,monitor 只认本批 run/final);正式入口拒绝旧现场(不删旧证据);required 路径边界拒绝绝对/../symlink 越界;deadline 跨重启不重置;三轴退出码。**未做真实仿真验收** |
-| G6 | WP304 OPEN-1 因果时间线 | ⛔ 阻塞(待 WP303) |
+| G6 | WP304 OPEN-1 因果时间线 | 🟡 **修订方案停点**(只读时间线+竞争假设矩阵完成;OPEN-1 定位分级见 [governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md);**未启动实验**;申请下一动作=放行 E0 埋点实现) |
 | G7 | WP307 默认路径 10/10 | ⛔ 阻塞 |
 | G8 | WP308 长稳 | ⛔ 阻塞 |
 | G9 | 六项收口纪律 | 🔁 持续 |
 
 ## 五、唯一下一动作
 
-**WP304 OPEN-1 因果时间线(方案停点)**:对失败/成功 run 逐层建启动+readiness 时间线,
-形成竞争假设矩阵,单变量可证伪实验须负责人放行后才跑。WP303 已编码通过 fixture(未做真实仿真验收),
-契约实体见 batch_lifecycle.py/batch_common.sh;原方案见
-[governance/WP303_monitor生命周期方案_2026-07-16.md](governance/WP303_monitor生命周期方案_2026-07-16.md)
-(原方案含已知缺陷,实施以当前工作包修订契约为准)。
+**放行 WP304 E0 埋点实现**:WP304 修订方案已到停点——只读时间线(样本分层 A 默认主线/B 诊断臂旁证)、
+证据分级(F1-F5:no-BIN≠accel 已证伪,tlog 大小=时长产物,ROS2 侧仅采样点健康)、
+竞争假设矩阵(H1-H5 全保留)见
+[governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md)。
+实验分 E0(埋点方案+fixture,不启动仿真)/E1(静默 pilot ≤3)/E2(交错区组负载对照);
+**当前只申请放行 E0**,不放行 A/B 各 10 次。基线红线:历史属 wm `eab0cc6`,禁 checkout/reset 当前 `288b486`。
+WP303 契约实体见 batch_lifecycle.py/batch_common.sh。
 
 Docker 容器归属本轮无法独立核验,一律记 UNVERIFIED,不写"零容器"为事实。

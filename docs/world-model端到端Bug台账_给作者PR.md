@@ -101,7 +101,7 @@
 
 | # | 编号纪律 | 问题(观测) | 根因域/判定 | 处置 | 状态 |
 |---|---|---|---|---|---|
-| OPEN-1 | (未定案,勿编 B 号) | **间歇性 bring-up 失败**:同 commit(`eab0cc6`)同配置下,默认主线 6 攻 3 过、诊断臂 4 攻 3 过,未起飞 4 次(签名:`Arm: Accels inconsistent` / `waiting_for_fcu_external_nav` / SITL 无 BIN 起栈死)| 候选假设矩阵见 `runbooks/.../l15_frame_audit_evidence_2026-07-16.md` §4b:宿主负载∣SITL 加计初始化瞬态∣FSM readiness 竞态∣runner 生命周期(R003-A01) | 未修——须单变量复现后修,再 10/10 验收(R003-F11/G10) | 🔴 OPEN,封 GATE-4b 稳定性宣称 |
+| OPEN-1 | (未定案,勿编 B 号) | **间歇性 bring-up 失败**:同 wm 提交(`eab0cc6`,**注:默认主线 profile=slam-direct-no-odom-prior 与诊断臂 imu-flu-correction 非同配置,分层统计**)。默认主线 attempts6/airborne3/full-pass3;诊断臂旁证 4/3/3。失败分两类:**BIN-present**(`Arm: Accels inconsistent` 未消解——但该串成功 run 也出现,非判别器)/ **no-BIN**(SITL 无 BIN 起栈死,根因 UNKNOWN,≠accel)| 竞争假设 H1-H5 + 证据分级 F1-F5 见 [governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](../governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md) | 未修——WP304 分阶段 E0 埋点→E1 静默 pilot→E2 交错负载对照;禁直接 A/B×10;10/10 验收(R003-F11/G10) | 🔴 OPEN,封 GATE-4b 稳定性宣称 |
 | OPEN-2 | (登记,勿编 B 号) | **候选实现独立复验失败(Codex,2026-07-16)**:`wm 288b486`(时钟纪元契约)在 `navlab/.venv/bin/pytest -q navlab/tests/companion/test_external_nav_sender.py` 下 **2 failed / 18 passed**——`test_send_tick_drops_old_packets_and_recovers_after_confirmed_reset` 与 `test_send_tick_zero_stamp_stream_counts_and_recovers` 均因发送路径访问 `mavlink.MAV_FRAME_LOCAL_FRD` 时 `mavlink=None`(宿主 venv 无 pymavlink,fallback 导入置 None;容器内 20/20 过=环境依赖测试,不合格) | 节点级测试未与 pymavlink 环境解耦 | 待边界清晰修复提交(第四/五阶段);**`288b486` 状态=候选实现·独立复验失败;`77f0b67` 状态=候选实现·GPU 阶段待完整复验;两者均不得写成已通过** | 🔴 OPEN |
 
 证据链:`runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md`(测量方法+判决表)、
