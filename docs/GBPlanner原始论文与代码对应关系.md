@@ -36,7 +36,7 @@ GBPlanner 的贡献是一个 **bifurcated(二分)local + global 规划架构**(�
 | 3D 占据地图(occ/free/unknown) | **voxblox**(编译进 gbplanner,`planner_common` 封装) |
 | 规划触发 / 航点下发 | `planner_control_interface`(PCI)+ `pci_general`(`pci_general.cpp`:发 `command/trajectory`) |
 | 传感器 FOV / 增益权重 / 采样参数 | `gbplanner/config/<robot>/gbplanner_config.yaml`(`unknown_voxel_gain=60` 等) |
-| RViz 可视化(红球/紫球/绿线) | `gbplanner/src/gbplanner_rviz.cpp`(配色见 [体积增益与RViz界面详解.md](体积增益与RViz界面详解.md)) |
+| RViz 可视化(红球/紫球/绿线) | `gbplanner/src/gbplanner_rviz.cpp`(配色见 [体积增益与RViz界面详解.md](archive/体积增益与RViz界面详解.md)(历史归档)) |
 
 ## 三、我们 `gbplanner_gain` 原型 vs 原始论文(诚实标注失真)
 
@@ -50,7 +50,7 @@ GBPlanner 的贡献是一个 **bifurcated(二分)local + global 规划架构**(�
 | 全局层 | frontier + DTW + time budget 返航 | **无** | ⚠️ 只有局部,无全局 reposition/返航 |
 | 传感器 | 3D 雷达(OS0-64,360°×90°) | 依赖 SLAM 的 2D `/map` | ⚠️ 2D |
 
-**结论(要求13 的正解)**:`gbplanner_gain` 只是"把 world-model 的脚本决策换成读图选向"的**决策层第一步原型**,借用了体积增益的**思想**,但**不是** GBPlanner 算法本身。**真正忠于原始论文的集成 = 桥接方案(ros1_bridge)**:让原版 ROS1 GBPlanner(完整 3D RRG + global frontier + PCI)原样运行,只在 ROS2 侧做数据搬运(见 [桥接接口规格.md](桥接接口规格.md)、`integration/ros1_bridge/`)。这样才不失真。
+**结论(要求13 的正解)**:`gbplanner_gain` 只是"把 world-model 的脚本决策换成读图选向"的**决策层第一步原型**,借用了体积增益的**思想**,但**不是** GBPlanner 算法本身。**真正忠于原始论文的集成 = 桥接方案(ros1_bridge)**:让原版 ROS1 GBPlanner(完整 3D RRG + global frontier + PCI)原样运行,只在 ROS2 侧做数据搬运(见 [桥接接口规格.md](archive/桥接接口规格.md)(历史归档)、`integration/ros1_bridge/`)。这样才不失真。
 
 ## 四、mentor 论文(arXiv:2201.07067)的定位
 是 GBPlanner 的**应用/扩展**(落地工作),不是原始算法。它是很好的落地参考(告诉我们"怎么用/怎么部署"),但**算法原理必须以 JFR 2020 为准**。后续文档统一:**原理引 JFR 2020;落地/应用引 2201.07067**。

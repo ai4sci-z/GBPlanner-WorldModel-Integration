@@ -69,3 +69,4 @@ TASKS.md	M1 行	M1=窄验收通过(最小 8 接口构建与注册;≠13msg+24srv
 TASKS.md	预研A/任务12 行	07-06 端到端全绿=历史窄验收,行内直标非当前稳定结论	历史	run 20260706T130626	CLOSEOUT	HISTORICAL	KEEP_MARKED	行内身份标注,不再依赖顶部免责
 README.md	M1 行+复现命令+能力表	clean_repro=历史基线复现;jazzy 全绿=历史证据	历史	同上	CLOSEOUT	HISTORICAL	KEEP_MARKED	行内身份标注
 governance/README.md	§7	P0 余项方案停点(分支职责/Ubuntu 基准 tag 候选/ROS1 oracle tag 候选/依赖清单位置+schema);执行动作全部待负责人批准	治理方案	本次 CLOSEOUT	CLOSEOUT	CURRENT	KEEP	方案≠执行;未打 tag 未建文件
+governance/WP303_monitor生命周期方案_2026-07-16.md	全文	WP303 monitor 生命周期设计方案(未实施)	方案	真实调用链审查	3486672	CURRENT	KEEP	实施待放行;提交B升级为11字段带lifecycle

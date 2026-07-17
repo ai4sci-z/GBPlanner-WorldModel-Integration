@@ -27,51 +27,9 @@ trajectory_to_intent 适配器(桥接期资产,直接复用)
 world-model FCU 控制链 / Gazebo
 ```
 
-**迁移里程碑**(拆解与验收见任务书;**状态列只是快照,以 [CURRENT_STATUS.md](CURRENT_STATUS.md) 为准**,本表不再单独维护进度):
-
-| 里程碑 | 内容 | 状态(2026-07-15 快照) |
-|---|---|---|
-| **M0** | 侦察 + 路线冻结 + 入口文档收口 | ✅(07-08) |
-| **M1** | `planner_msgs` ROS2 最小消息包 | ✅ 窄验收:最小 8 接口构建与注册(07-08);≠13msg+24srv 全量迁移 |
-| M2 | voxblox ROS2 后端(与 ROS1 oracle 对拍 voxel/ESDF)| 🟡 切片对拍通过(fast 失配未归因、3D Demo 查询未测) |
-| M3 | 算法核心 ROS1-free 剥离(rrg/planner_common) | 🟡 编译+浅单测通过(07-14);行为等价未证明 |
-| M4 | ROS2 planner 节点壳 | 🟡 M4a 合成冒烟通过(07-14);M4b 真场景长时未验证 |
-| M5 | world-model 直连联跑 + oracle 回归 + 同口径公平对比 | ⏸ **BLOCKED_BY_PLATFORM_STABILITY**(GATE-4b 悬停硬门重开) |
-
-> 最大技术风险 = **voxblox 地图后端**(gain/碰撞语义变则 GBPlanner 行为变):第一版沿用 voxblox core(snt-arg minimal 底座 + Jazzy 适配),**不用 nvblox**,用 ROS1 原版做逐体素对拍。
-
-## 二、桥接阶段(已冻结,作为 oracle 与阶段性证据)
-
-> 桥接阶段已完成使命:**证明 GBPlanner 接入 world-model 有探索增益,并暴露双 ROS 栈维护成本**;结论冻结为迁移 oracle,不再追桥接 final 批跑 / thinbridge 稳定性 / ROS1 RViz / 桥接 PR。以下为已坐实的桥接期成果(不夸大):
-
-**桥接式融合**(B2.5 自写薄桥)—— ROS1 原版 GBPlanner 通过自写 TCP 薄桥接入 ROS2 world-model,链路每段都有证据文件:
-
-```text
-world-model 3D lidar(lidar3d 净增量)/ odom
-        ↓  ROS2 → ROS1 自写 TCP 薄桥(官方 ros1_bridge 与 zenoh 均实验判死)
-GBPlanner / voxblox 3D 建图 / trajectory 规划
-        ↓  ROS1 → ROS2 薄桥回流(/gbp/trajectory,只接 PCI 执行轨迹)
-trajectory_to_intent 适配器(fail-closed + Procrustes 坐标对齐 + PD + 诚实计数)
-        ↓
-world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
-        ↓
-飞机实际 odom 运动(去混流可归因)+ exploration gate(以 strategy=gbplanner 通过)
-```
-
-**三大鸿沟逐项定性**(诚实边界,勿夸大)——这些正是 ROS2 迁移要从根上消除的:
-
-| 鸿沟 | 桥接期状态 | 证据 | ROS2 迁移如何消除 |
-|---|---|---|---|
-| ROS1 GBPlanner ↔ ROS2 world-model | 桥接式打通 | B2.5 薄桥;odom/3D 点云/trajectory 全过桥(stage2~3.5) | **M1-M4 原生 ROS2 节点,无桥** |
-| 2D 雷达平台 ↔ GBPlanner 需要 3D | 已做一版 | 独立 lidar3d 净增量;voxblox TSDF zspan 13.2m;5b FOV 对照证明行为随 3D 输入变化 | M2 voxblox ROS2 直接消费 /wm/cloud3d |
-| trajectory ↔ FCU 控制接口 | 已适配并可归因 | 适配器消费 /gbp/trajectory;cmd_vel 签名;4c 去混流归因;5a gate 通过 | M5 沿用同一适配器(**此资产迁移后复用**) |
-
-**桥接期已坐实的核心数字**(冻结为 oracle,汇报可引):
-
-- **Stage2~5 主链全有实证**:transport→消费闭环→dry-run→3D 数据链→FCU 消费直证→4c 去混流可归因 PASS→5a gate 机制 PASS(3 次重现)→5b 3D 行为对照成立→5c 6 run 定档;
-- **runA = GBPlanner 策略下首个 TASK_STATUS_OK 完整全绿 run**(零探针失败);
-- **🏆 公平对比定档(同 EKF 修复、同环境、同窗口口径)**:GBPlanner gate 达标 **3/6=50% vs frontier_lite 0/6=0%**——基线 accepted 恒=2(窗口结构性失败),修复前 2/6 全绿实为 EKF 跑飞"馈赠";我方 accepted=真实运动到达,口径更严;
-- 路上根治 **world-model 上游 EKF 参考系真 bug**(罗盘 yaw vs SLAM 位置差 δ→运动即发散跑飞;修复入 clean 分支 99bcfa1,BIN 验尸全程留痕)——此修复 world-model 侧**迁移后继续受益**。
+**迁移里程碑 M0–M5**:当前状态、证据等级、阻塞项**一律以 [CURRENT_STATUS.md](CURRENT_STATUS.md) §三为准**,
+本页不复制里程碑进度(避免双事实源)。任务拆解与验收门见
+[任务书](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
 
 ## 三、桥接阶段表(已冻结,历史证据 / oracle)
 
@@ -111,14 +69,14 @@ world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
 | [docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md) | **当前主线任务书**(M0-M5 拆解/voxblox 风险/验收) |
 | [文档索引.md](文档索引.md) | 全部文档带状态标签的索引 |
 
-> 桥接技术主文档 [docs/桥接查证与执行计划_2026-07-06.md](docs/桥接查证与执行计划_2026-07-06.md) 已降级为 **REFERENCE / HISTORICAL**(oracle 与历史证据,不再作为施工入口)。
+> 桥接技术主文档 [docs/桥接查证与执行计划_2026-07-06.md](docs/archive/桥接查证与执行计划_2026-07-06.md) 已降级为 **REFERENCE / HISTORICAL**(oracle 与历史证据,不再作为施工入口)。
 
 复现命令:`bash runbooks/world-model-jazzy/clean_repro.sh`(**历史基线复现**:重现 07-06 桥接期窄验收绿,非当前平台稳定结论)· `runbooks/world-model-jazzy/stage5c_run.sh <n>`(融合联跑一键)· `runbooks/gbplanner_ref/run_light.sh`(GBPlanner 单侧)· 证据全在 `runbooks/world-model-jazzy/*_evidence.txt`。
 
 ## 六、历史阶段(已完成,仅背景资料,入口见 [docs/archive/](docs/archive/))
 
 - **预研 A**(world-model 复现与全绿):35 轮排障实录、humble 运行时记录、构建排错 → `docs/archive/`;Bug 修复链事实源 → [Bug 台账](docs/world-model端到端Bug台账_给作者PR.md)(B1~B16 + EKF 参考系修复,PR 素材)
-- **预研 B**(GBPlanner 官方仿真复现):291.3m 自主探索+13 万体素建图实测 → [预研B_复现GBPlanner](docs/预研B_复现GBPlanner.md)
-- **科普/参考**:[术语表·科研小白版](docs/术语表_科研小白版.md)、[论文↔代码对应](docs/GBPlanner原始论文与代码对应关系.md)、[体积增益与RViz详解](docs/体积增益与RViz界面详解.md)、[算法核心演示](docs/算法核心演示_体积增益选路.md)
+- **预研 B**(GBPlanner 官方仿真复现):291.3m 自主探索+13 万体素建图实测 → [预研B_复现GBPlanner](docs/archive/预研B_复现GBPlanner.md)
+- **科普/参考**:[术语表·科研小白版](docs/术语表_科研小白版.md)、[论文↔代码对应](docs/GBPlanner原始论文与代码对应关系.md)、[体积增益与RViz详解](docs/archive/体积增益与RViz界面详解.md)、[算法核心演示](docs/archive/算法核心演示_体积增益选路.md)
 - **旧方案(已判死/已取代)**:官方 ros1_bridge、zenoh 双桥、gbplanner_core 重写路线 → `docs/archive/OBSOLETE_*`
 - 旧版全景蓝图 README(科普+名词表+历史叙事)→ [docs/archive/README_历史全景蓝图_2026-07-06.md](docs/archive/README_历史全景蓝图_2026-07-06.md)

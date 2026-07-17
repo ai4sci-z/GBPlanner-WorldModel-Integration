@@ -3,7 +3,7 @@
 > 唯一问题台账 = [docs/world-model端到端Bug台账_给作者PR.md](docs/world-model端到端Bug台账_给作者PR.md)。
 > 2026-07-16 前的旧版全文 = [docs/archive/CURRENT_STATUS_历史快照_截至2026-07-16.md](docs/archive/CURRENT_STATUS_历史快照_截至2026-07-16.md)(SUPERSEDED,原始数值未改)。
 
-# CURRENT_STATUS(最后更新:2026-07-16,R003 整改·第二阶段"仓库和文档治理")
+# CURRENT_STATUS(最后更新:2026-07-17,R003 治理真实性补正:R1 事实源收敛/R2 文档闭包/R3 清单闭包连续授权施工中)
 
 ## 一、当前阶段(唯一有效口径)
 

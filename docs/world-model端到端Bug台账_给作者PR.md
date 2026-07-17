@@ -55,7 +55,7 @@
 ## C. 不进主 PR（humble 专用，需条件化）
 | # | 提交 | 说明 |
 |---|---|---|
-| C1 | `d8ff119` | gazebo-sensor 补拷 uv 托管 python——**jazzy 有害**(该路径不存在,COPY failed)。仅 humble 需要。PR 前条件化或移出。详见 [PR兼容性与jazzy评估.md](PR兼容性与jazzy评估.md) |
+| C1 | `d8ff119` | gazebo-sensor 补拷 uv 托管 python——**jazzy 有害**(该路径不存在,COPY failed)。仅 humble 需要。PR 前条件化或移出。详见 [PR兼容性与jazzy评估.md](../docs/archive/PR兼容性与jazzy评估.md)(历史归档) |
 
 ---
 
