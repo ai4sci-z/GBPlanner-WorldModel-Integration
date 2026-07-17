@@ -13,7 +13,7 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 
 **当前唯一施工点已推进:WP303 生命周期补正完成(75/12/13 全绿);WP304 OPEN-1 E0 收口
 (离线提取器+CRC 校验协议解码器+观测 schema 草案;证伪"accel=失败判别器";arm 时序/no-BIN 死因=UNKNOWN;
-运行时埋点未实现)。下一 = 待放行进入 E1 最小旁路观测补丁方案停点。**
+运行时埋点未实现);证据门/独立标注补正收口(R003-E0-EVIDENCE-GATE 包A/B:evidence_gate+acceptance_eligible,可复现标注 v2);E1 可执行方案已交付(WP304 §10)。下一 = 待放行 E1 最小旁路观测补丁**实现停点**(实现+fixture,不跑仿真)。**
 
 ## 二、三仓基线与角色
 
@@ -45,22 +45,23 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 | G3 | generate_manifest 测试 | ✅ 57/57;工具安全模型不再扩展,仅三固定输出 |
 | G4 | 文档闭包(链接/登记/路径/生命周期/语义) | 🟡 **PARTIAL**:14 份活跃文档逐行事实审计完成(8 REFERENCE_VERIFIED / 5 REFERENCE_PARTIAL / 1 ARCHIVE,逐份读取范围+重放核验+未核实范围见 [governance/P0_doc_audit_逐份审计_2026-07-18.md](governance/P0_doc_audit_逐份审计_2026-07-18.md));5 份 PARTIAL 的未核实范围(外部仓现状/镜像复测/次级行号重放)关闭前 G4 不改通过;doc_closure rc=0 只证机械门,不替代人工逐主张审计 |
 | G5 | WP303 monitor 生命周期实现 | 🟡 **PARTIAL(实现停点,未发布)**:已编码+正式入口 e2e dry-run 通过(test_wait_batch **75/75**〔1-23 生命周期 + 24-33 串批/身份/路径边界反例〕+ test_batch_common 12/12 + test_final_rc 13/13);batch_id 端到端绑定(纳秒+UUID 强唯一,producer 经 WP303_BATCH_ID 盖章,monitor 只认本批 run/final);正式入口拒绝旧现场(不删旧证据);required 路径边界拒绝绝对/../symlink 越界;deadline 跨重启不重置;三轴退出码。**未做真实仿真验收** |
-| G6 | WP304 OPEN-1 因果时间线 | 🟡 **E0 收口停点**(离线提取器+协议解码器+schema 草案,未启动仿真、未实现运行时埋点):CRC 校验协议解析证伪"accel=失败判别器"(成功与 BIN-失败 accel 均=20、no-BIN=0);airborne 取 mission_summary 正证据;**arm 时序/no-BIN 死因/是否同源 = UNKNOWN**。见 [governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md) §9 + [runbooks/…/open1/](runbooks/world-model-jazzy/l0_hover/open1/);申请下一动作=进入 E1 最小旁路观测补丁方案停点 |
+| G6 | WP304 OPEN-1 因果时间线 | 🟡 **E0 收口停点**(离线提取器+协议解码器+schema 草案,未启动仿真、未实现运行时埋点):CRC 校验协议解析证伪"accel=失败判别器"(成功与 BIN-失败 accel 均=20、no-BIN=0);airborne 取 mission_summary 正证据;**arm 时序/no-BIN 死因/是否同源 = UNKNOWN**。见 [governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md) §9 + [runbooks/…/open1/](runbooks/world-model-jazzy/l0_hover/open1/);包A/B 证据门+独立标注收口、包D E1 可执行方案(§10)已交付;申请下一动作=放行 E1 **实现停点** |
 | G7 | WP307 默认路径 10/10 | ⛔ 阻塞 |
 | G8 | WP308 长稳 | ⛔ 阻塞 |
 | G9 | 六项收口纪律 | 🔁 持续 |
 
 ## 五、唯一下一动作
 
-**进入 R003-WP304-E1 最小旁路观测补丁方案停点**(只写方案、不编码、不跑仿真):E0 已收口
+**放行 R003-WP304-E1 最小旁路观测补丁实现停点**(实现+fixture,不跑真实仿真):E0 已收口+证据门/独立标注补正收口(包A/B),E1 可执行方案已交付(WP304 §10:基线裁决=eab0cc6 独立 worktree、20 项真实调用链 file:line、26 观测字段契约、纯旁路/A-A 门/WP303 联合门/STOP 条件;sidecar 方案默认零 wm 改动)。E0 收口
 (离线提取器 + CRC 校验协议解码器 + 观测 schema 草案,未启动仿真、未实现运行时埋点)。
 最强事实(绑证据):CRC 校验后 accel 文本在成功与 BIN-失败均=20、no-BIN=0 → **非成败判别器**;
 airborne 取 mission_summary 正证据;**arm 时序 / no-BIN 直接死因 / 两类是否同源 = UNKNOWN**。见
 [governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md](governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md) §9
 + [runbooks/…/open1/](runbooks/world-model-jazzy/l0_hover/open1/)。
-E1 方案须先裁决:独立 worktree 钉 wm `eab0cc6` 复现历史 ∣ 或在 `288b486` 立新基线但不与历史 6/3/3 合并统计;
-并定义运行时缺口(宿主负载/SITL stdout+退出码/EKF 残差/arm 时序)如何捕获——**需改 world-model 则先申请扩权**。
-基线红线:禁 checkout/reset 当前 `288b486`;不放行 E1/E2 前不启动仿真、不改 world-model。
+基线已裁决(WP304 §10.1):**推荐 eab0cc6 独立 detached worktree 复现历史**;288b486 原地不动,
+其上样本=新基线不并入历史 6/3/3(eab0cc6..288b486 三提交动 external_nav+GPU,因果污染实证)。
+运行时缺口捕获=sidecar 旁路方案(§10.3-10.4),**默认零 wm 改动**;须改 wm 即触发 STOP 申请扩权。
+基线红线:禁 checkout/reset 当前 `288b486`;E1 实现停点只写代码+fixture,不启动仿真。
 
 Docker 本轮可读:`docker ps -a` 为空(无运行/退出残留容器)。历史容器由谁删除**不作推断**;
 容器归属的历史链仍记 UNVERIFIED,但不再写"无法独立核验 Docker"。
