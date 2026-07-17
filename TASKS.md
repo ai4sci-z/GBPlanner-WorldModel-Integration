@@ -38,4 +38,4 @@
 | world-model origin 只读机械保护 | 未实施(仅文档红线) | pre-push 钩子方案 | 批准增 pre-push 防护 | 可测试 pre-push 拒推 SZ-surveying | R003-门七(远端收口) |
 | 回滚锚点与恢复验证 | 未建立 | Ubuntu/ROS1 tag 就绪 | 批准建锚点 | 锚点 tag + 恢复演练证据 | R003-门八 |
 | runbooks/world-model-jazzy 物理重组(208 平铺→分子目录) | 已建导览 README,物理重组未做 | 全量引用清点 | 批准重组(大量 rename+manifest churn) | 引用零断链+闭包 delta 干净 | P2 前 |
-| Docker context 统一(system vs Desktop 双 daemon) | 已写入铁律 §17,机械防护未做 | 方案(env DOCKER_CONTEXT 或卸载 Desktop) | 批准统一方式 | 所有工具/CI 显式 context,E1 前必须 | WP304-E1 前 |
+| ~~Docker context 统一~~ | **已解决(2026-07-18)**:负责人批准卸载 Docker Desktop;单 system daemon,舰队 47GB 完整,config 残留已清 | — | — | 裸 docker 命令直达舰队 ✓ | 已关闭 |

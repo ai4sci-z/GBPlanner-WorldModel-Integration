@@ -67,13 +67,14 @@ P1 关门 → P2 ROS1/ROS2 对齐(oracle 冻结)→ P3 3D 无损 → P4 插件�
 
 - E1 基线已裁决:`eab0cc6` 独立 detached worktree 复现历史(288b486 原地不动,其上样本=新基线);
   companion 镜像 `jazzy-eab0cc6f0d54` 已确认在盘(system docker daemon)。
-- E1 前置雷(须先排):Docker 双 daemon(舰队在 system/default context,CLI 默认却是 Desktop——
-  操作必须显式 `--context default`);runner 探针完即 SIGKILL mission(GATE-4b 本体,wm 改动待批);
+- E1 前置雷:~~Docker 双 daemon~~(**已排除**:Desktop 于 07-18 卸载,单 system daemon);
+  runner 探针完即 SIGKILL mission(GATE-4b 本体,wm 改动待批);
   RTF≈0.08(单 run ≈25 分钟墙钟,批次预算按此排)。
 - P2/P3 是论文核心交付(等价性证据);P1 稳定门未过前不启动,但 oracle 资产
   (gbplanner-ref 镜像、桥接期证据)已冻结待用。
 
 ## 七、环境备注
 
-- 残留容器 `zealous_curran`(system daemon,Exited)= 台账登记在案的验尸容器,保留待负责人裁决。
+- Docker:单 daemon(system;Desktop 已卸载,config.json credsStore/context 残留已清)。
+- 残留容器 `zealous_curran`(Exited)= 台账登记在案的验尸容器,保留待负责人裁决。
 - P0 未执行遗留(tag/分支裁决/依赖清单等 7 项)登记于 [TASKS.md](TASKS.md),不擅自执行。
