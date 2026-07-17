@@ -131,5 +131,12 @@ flock 多 monitor 让位;取证先于清理;PID 复用→NOT_ATTEMPTED;容器归
 `batch_common.sh`(结构化 run 记录+聚合 rc+主机 SITL 互斥)。测试 `test_wait_batch.sh` 20 fixture/42 断言、
 `test_batch_common.sh` 12 干跑断言,全绿,前后 PID/PGID 残留=0。
 
+**补正(2026-07-17,机制)**:接真实入口——`run_batch.sh` 正式入口(自动 launch→session→record→monitor→
+传播 rc,批脚本降 producer-only,主机 SITL 互斥);原子写 run/final(tempfile+fsync+rename);
+deadline 绝对 monotonic 存 record 跨 monitor 重启不重置(boot_id 守卫);三轴退出码优先级
+(cleanup≠CLEAN→60/evidence 缺失→50/outcome);第二 monitor 专用退出码 75。测试
+54(test_wait_batch)+12(test_batch_common)+13(test_final_rc)全绿,正式入口 e2e dry-run 通过。
+**仍未做真实仿真验收;OPEN-1 未定位。**
+
 **边界(勿夸大)**:只跑 fixture,**未做真实仿真验收**;不证明 GATE-4b 稳定;OPEN-1 间歇性 bring-up
 仍未定位(归 WP304)。此条只登记"批监视机制已实现并通过 fixture",不登记系统稳定。

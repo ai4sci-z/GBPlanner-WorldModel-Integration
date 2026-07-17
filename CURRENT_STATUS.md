@@ -17,7 +17,7 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 
 | 仓 | 分支@HEAD | 角色 | 本轮 |
 |---|---|---|---|
-| GBPlanner-WorldModel-Integration | main@7b4584c(=origin/main) | 治理/证据/状态入口 | 可改 |
+| GBPlanner-WorldModel-Integration | main@9423a3a(=origin/main) | 治理/证据/状态入口 | 可改 |
 | gbp-feat | feat/gbplanner-ros2-port@17db3ba(=upstream) | ROS2 迁移施工事实源(M1–M5) | 只读 |
 | world-model | fix/world-model-e2e-takeoff@288b486(=backup;origin=SZ-surveying 上游红线勿推) | 仿真/B17–B22 实现事实源 | 只读 |
 
@@ -42,7 +42,7 @@ GPS-denied 多层楼梯探索只做架构预留,不进入当前实现。
 | G2 | manifest current 闭包 | ✅ 三仓 rc=0 |
 | G3 | generate_manifest 测试 | ✅ 57/57;工具安全模型不再扩展,仅三固定输出 |
 | G4 | 文档闭包(链接/登记/路径/生命周期/语义) | 🟡 P0 收口中 |
-| G5 | WP303 monitor 生命周期实现 | 🟡 **已编码并通过 fixture**(test_wait_batch 42/42 + test_batch_common 12/12,前后残留=0);**未做真实仿真验收** |
+| G5 | WP303 monitor 生命周期实现 | 🟡 **已编码+正式入口 e2e dry-run 通过**(test_wait_batch 54/54 + test_batch_common 12/12 + test_final_rc 13/13;正式入口 run_batch.sh 自动 launch→record→monitor→传播 rc;deadline 跨重启不重置;三轴退出码);**未做真实仿真验收** |
 | G6 | WP304 OPEN-1 因果时间线 | ⛔ 阻塞(待 WP303) |
 | G7 | WP307 默认路径 10/10 | ⛔ 阻塞 |
 | G8 | WP308 长稳 | ⛔ 阻塞 |
