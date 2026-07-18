@@ -1,614 +1,614 @@
 # R003 动作八 五态清单(提交一补正版;--verify-bound / --verify-current)
-# worktree=/home/ai4s/projects/world-model HEAD=288b48630237aaf65e1899a24377dcd23183e2f0 files=609
+# worktree=/home/ai4s/projects/world-model HEAD=e569ecfaafa23c3b6507db29ca818d17f7e264e8 files=609
 # category: ACTIVE_REFERENCE=197, CURRENT_AUTHORITY=403, THIRD_PARTY=9
 # audit: PARTIAL=18, THIRD_PARTY_UNVERIFIED=9, UNVERIFIED=574, VERIFIED_FAIL=6, VERIFIED_PASS=2
 path	lines	category	audit_status	review_commit	note
-.github/workflows/main-validation.yml	280	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-.gitignore	27	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-.gitmodules	24	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED
-.golangci.yml	23	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-README.md	117	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-cliff.toml	76	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-compose/docker-compose.yaml	120	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/README.md	48	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/README.md	16	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/orchestration/doctor_result_blocked.json	27	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/orchestration/real_task_result.json	47	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/orchestration/sim_navigation_summary.json	83	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/orchestration/sim_task_request.json	27	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/runtime/real_process_event.json	11	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/runtime/sim_runtime_plan.json	71	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/safety/motor_debug_ack_failed.json	10	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/examples/sensors/real_source_evidence.json	20	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/examples_test.go	40	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/go.mod	5	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/go.sum	4	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/orchestration/v1/artifact_manifest.pb.go	266	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/orchestration/v1/doctor_result.pb.go	386	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/orchestration/v1/task_request.pb.go	263	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/orchestration/v1/task_result.pb.go	430	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/runtime/v1/probe_spec.pb.go	308	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/runtime/v1/process_event.pb.go	263	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/runtime/v1/runtime_plan.pb.go	175	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/runtime/v1/service_spec.pb.go	463	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/runtime/v1/task_result.pb.go	499	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/safety/v1/command_policy.pb.go	176	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/safety/v1/mavlink_ack.pb.go	195	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/safety/v1/readiness_gate.pb.go	158	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/sensors/v1/frame_contract.pb.go	256	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/sensors/v1/source_evidence.pb.go	239	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/go/navlab/sensors/v1/topic_contract.pb.go	265	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/__init__.py	1	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/__init__.py	1	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/orchestration/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/orchestration/v1/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/orchestration/v1/artifact_manifest_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/orchestration/v1/doctor_result_pb2.py	44	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/orchestration/v1/task_request_pb2.py	42	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/orchestration/v1/task_result_pb2.py	45	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/runtime/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/runtime/v1/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/runtime/v1/probe_spec_pb2.py	44	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/runtime/v1/process_event_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/runtime/v1/runtime_plan_pb2.py	39	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/runtime/v1/service_spec_pb2.py	47	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/runtime/v1/task_result_pb2.py	45	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/safety/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/safety/v1/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/safety/v1/command_policy_pb2.py	37	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/safety/v1/mavlink_ack_pb2.py	38	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/safety/v1/readiness_gate_pb2.py	37	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/sensors/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/sensors/v1/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/sensors/v1/frame_contract_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/sensors/v1/source_evidence_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/navlab_contracts/navlab/sensors/v1/topic_contract_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/pyproject.toml	6	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/tests/__init__.py	1	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/python/tests/test_generated_contracts.py	53	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/rust/Cargo.lock	386	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/rust/Cargo.toml	19	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/rust/build.rs	39	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/gen/rust/src/lib.rs	106	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/orchestration/v1/artifact_manifest.proto	25	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/orchestration/v1/doctor_result.proto	38	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/orchestration/v1/task_request.proto	27	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/orchestration/v1/task_result.proto	46	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/runtime/v1/probe_spec.proto	29	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/runtime/v1/process_event.proto	27	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/runtime/v1/runtime_plan.proto	17	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/runtime/v1/service_spec.proto	43	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/runtime/v1/task_result.proto	57	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/safety/v1/command_policy.proto	15	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/safety/v1/mavlink_ack.proto	18	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/safety/v1/readiness_gate.proto	13	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/sensors/v1/frame_contract.proto	24	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/sensors/v1/source_evidence.proto	23	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-contracts/proto/navlab/sensors/v1/topic_contract.proto	25	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-devbox.json	20	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-devbox.lock	297	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docker/README.md	219	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/entrypoints/start-fast-lio.sh	21	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/entrypoints/start-gazebo-sensor.sh	31	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/entrypoints/start-gazebo.sh	12	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/entrypoints/start-mavlink-router.sh	71	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/entrypoints/start-navlab-companion.sh	13	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/entrypoints/start-sitl.sh	70	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/base/ros-base.Dockerfile	42	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/infra/ardupilot-sitl.Dockerfile	74	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/infra/fast-lio.Dockerfile	60	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/infra/gazebo-headless.Dockerfile	55	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/infra/mavlink-router.Dockerfile	37	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/runtime/companion.Dockerfile	50	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/runtime/gazebo-sensor.Dockerfile	57	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/runtime/official-baseline.Dockerfile	159	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-docker/images/runtime/sim-python.Dockerfile	29	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/images/runtime/slam.Dockerfile	26	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/navlab_models/navlab_iq_quad/model.config	13	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/navlab_models/navlab_iq_quad/model.sdf	151	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/profiles/ahrs-set-origin.lua	55	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/profiles/navlab-exploration-foxglove-lite-topics.txt	46	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/profiles/navlab-hover-foxglove-lite-topics.txt	52	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/profiles/navlab-navigation-foxglove-lite-topics.txt	49	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/profiles/navlab-rosbag-topics.txt	20	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/profiles/navlab-sitl-external-nav.parm	59	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/profiles/navlab-sitl-gps-baseline.parm	39	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-docker/profiles/rosbag-topics.txt	6	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/profiles/x2-vendor-sim.yaml	23	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/worlds/empty_headless.sdf	13	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/worlds/navlab_iq_quad_figure8.sdf	219	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/worlds/navlab_iq_quad_obstacle.sdf	88	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docker/worlds/uav_obstacle_5m.sdf	136	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-docs/README.md	218	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/debug.param	1269	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/decisions.md	2689	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/foxglove/hover_legacy_display_scene.json	210	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/foxglove/hover_replay_aligned_scan_scene.json	204	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/contracts_proto_semantic_boundary_design.md	445	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/lab_env_service_refactor_todo.md	311	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/navlab_fsm_schema.md	162	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/navlab_real_sim_package_boundary_design.md	594	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_config_precedence_split_design.md	515	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_go_sim_rust_real_split_design.md	609	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_legacy_helper_deep_split_todo.md	215	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_runtime_backend_guide.md	196	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_runtime_backend_inventory.md	142	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_runtime_backend_refactor_todo.md	408	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_runtime_mode_real_vs_sim_design.md	393	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_sim_python_parity_audit.md	240	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_sim_remaining_migration_design.md	436	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_sim_tui_monitor_design.md	430	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/orchestration_workflow_schema.md	251	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/general/sim_task_parity_differences_audit.md	592	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/images/hover_replay_aligned_points_proof.svg	1	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/images/official_maze_topdown.svg	67	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/notes/hover_external_nav_fail_closed_todo.md	2792	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/notes/hover_mission_pipeline_refactor_todo.md	1086	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/notes/hover_xy_stability_design.md	445	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/notes/real_hover_orchestration_gap_audit.md	759	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/notes/real_hover_orchestration_gap_todo.md	582	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/ori.param	1251	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/param_debug_vs_ori_comparison.md	227	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/project-map.md	9	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/requirements/project-index.yaml	1006	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_ardupilot_externalnav_reading.md	221	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_ardupilot_ros2_official_alignment.md	275	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_cartographer_real_machine_tuning.md	123	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_master_roadmap.md	531	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p0_official_baseline_design.md	319	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p10_body_fixed_lidar_scan_integrity_design.md	552	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p11_bounded_2d_lidar_scan_stabilization_design.md	674	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p12_airframe_disturbance_scan_robustness_design.md	630	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p13_nav2_indoor_navigation_design.md	705	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p1_official_maze_x2_design.md	199	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p2_rangefinder_imu_design.md	298	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p3_slam_backend_quality_design.md	364	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p4_fcu_state_machine_design.md	544	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p5_frame_contract_design.md	469	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p6_slam_hover_gate_design.md	436	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p7_official_maze_motion_gate_design.md	468	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p8_official_maze_exploration_design.md	461	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_p9_official_maze_overlay_replay_design.md	526	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_real_flight_preflight_doctor_design.md	580	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_real_motor_debug_design.md	281	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_real_orchestration_rust_review.md	300	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_real_pre_takeoff_development_confirmation.md	318	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_real_prepare_and_task_doctor_design.md	461	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_reference_projects_analysis.md	366	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/navlab_unified_landing_sequence_design.md	661	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P0_official_baseline_todo.md	305	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P10_body_fixed_lidar_scan_integrity_todo.md	299	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P11_bounded_2d_lidar_scan_stabilization_todo.md	310	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P12_airframe_disturbance_scan_robustness_todo.md	378	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P13_nav2_indoor_navigation_todo.md	280	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P14_benewake_rangefinder_sitl_todo.md	76	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P1_official_maze_x2_todo.md	193	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P2_rangefinder_imu_todo.md	247	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P3_slam_backend_quality_todo.md	316	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P4_fcu_state_machine_todo.md	336	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P5_frame_contract_todo.md	380	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P6_slam_hover_gate_todo.md	647	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P7_official_maze_motion_gate_todo.md	423	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P8_official_maze_exploration_todo.md	357	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/P9_official_maze_overlay_replay_todo.md	383	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/real_flight_preflight_doctor_todo.md	229	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/real_prepare_and_task_doctor_todo.md	745	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/scenarios/indoor/todos/unified_landing_sequence_todo.md	290	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/sim/README.md	122	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/sim/examples/blocked_by_stop_guard.yaml	13	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/sim/examples/straight_line_demo.yaml	13	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/sim/todo.md	223	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/sim/x2_lidar_protocol_todo.md	250	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/sim/x2_lidar_simulation_design.md	339	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-docs/工作流程.txt	673	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-justfile	70	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-lefthook.yml	67	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-navlab/README.md	125	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/__init__.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/__init__.py	176	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/command_adapter.py	92	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/context.py	235	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/evidence/__init__.py	71	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/evidence/hover.py	458	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/evidence/landing.py	614	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/evidence/summary.py	459	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/fsm.py	189	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/hover_landing.py	323	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/mavlink_protocol.py	73	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/pipeline.py	199	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/policy.py	218	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/runtime_state.py	709	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/stages/__init__.py	93	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/stages/hover.py	703	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/stages/landing.py	282	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/stages/prefix.py	197	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/companion/mission/summary_runtime.py	470	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/contracts.py	85	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/interfaces/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/interfaces/ydlidar_interfaces/CMakeLists.txt	20	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/interfaces/ydlidar_interfaces/msg/ScanFeatures.msg	13	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/interfaces/ydlidar_interfaces/package.xml	23	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/logging.py	95	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/perception/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/perception/contract.py	33	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/perception/front_sector.py	111	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/perception/scan_features.py	97	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/perception/scan_reference_drift.py	691	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/pose.py	17	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/process_manager.py	138	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/rosbag.py	105	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/backends.py	80	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/cli.py	33	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/config.py	163	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/quality_gate.py	86	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/bridges/navlab_external_nav_bridge/CMakeLists.txt	39	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/bridges/navlab_external_nav_bridge/README.md	18	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/bridges/navlab_external_nav_bridge/config/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/bridges/navlab_external_nav_bridge/config/navlab_external_nav_bridge.params.yaml	40	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/bridges/navlab_external_nav_bridge/launch/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/bridges/navlab_external_nav_bridge/package.xml	25	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/bridges/navlab_external_nav_bridge/src/navlab_external_nav_bridge_node.cpp	816	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/CMakeLists.txt	39	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/README.md	51	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_2d_diagnostic_odom.lua	63	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_2d_hover.lua	74	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_2d_hover_no_odom_prior.lua	71	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_2d_real.lua	55	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_adapter.params.yaml	22	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/launch/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/launch/navlab_cartographer_adapter.launch.py	237	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/package.xml	25	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_cartographer_adapter/src/navlab_cartographer_adapter_node.cpp	499	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_fake_odom/CMakeLists.txt	33	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_fake_odom/README.md	13	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_fake_odom/config/navlab_fake_odom.params.yaml	18	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_fake_odom/launch/navlab_fake_odom.launch.py	37	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_fake_odom/package.xml	22	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/localization/navlab_fake_odom/src/navlab_fake_odom_node.cpp	149	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/scenarios/navlab_slam_bringup/CMakeLists.txt	10	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/scenarios/navlab_slam_bringup/README.md	26	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/scenarios/navlab_slam_bringup/config/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/scenarios/navlab_slam_bringup/launch/navlab_slam_bringup.launch.py	376	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/scenarios/navlab_slam_bringup/package.xml	23	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/CMakeLists.txt	48	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/README.md	19	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/config/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/config/navlab_slam_imu_bridge.params.yaml	14	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/include/navlab_slam_imu_bridge/timestamp.hpp	17	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/launch/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/package.xml	23	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/src/navlab_slam_imu_bridge_node.cpp	306	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/test/imu_timestamp_test.cpp	21	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/slam/runtime.py	26	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/common/toml_values.py	133	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/config.toml	230	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/pyproject.toml	21	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/__init__.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/common/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/common/fcu_status.py	124	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/external_nav.py	689	CURRENT_AUTHORITY	VERIFIED_FAIL	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/height_estimator.py	193	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/imu_bridge.py	318	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/mavlink_bridge.py	175	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/motor_debug.py	378	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/pose_mirror.py	1005	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/rangefinder_bridge.py	235	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/real/companion/nodes/ydlidar_x2_scan.py	181	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/__init__.py	4	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/common/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/__init__.py	52	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/command_adapter.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/context.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/evidence/__init__.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/evidence/hover.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/evidence/landing.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/evidence/summary.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/fsm.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/hover_landing.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/mavlink_commands.py	325	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/pipeline.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/runtime_state.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/stages/__init__.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/stages/hover.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/stages/landing.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/stages/prefix.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/mission/summary_runtime.py	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/external_nav_source_selector.py	973	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/gazebo_truth_odom.py	296	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/gazebo_truth_trajectory.py	175	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/hover_mission.py	1174	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/imu_frame_corrector.py	140	CURRENT_AUTHORITY	VERIFIED_FAIL	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/obstacle_mission.py	727	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/odom_relay.py	48	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/scan_features.py	177	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/scan_reference_correction.py	650	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/scan_reference_drift.py	316	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/vehicle_markers.py	242	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/nodes/world_markers.py	251	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/acceptance.py	700	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/acceptance_cli.py	217	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/cli.py	71	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/config.py	633	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/doctor.py	56	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/hover_acceptance.py	476	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/launcher.py	109	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/rosbag_profile.py	61	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/status.py	11	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/templates/foxglove_notes.md.j2	20	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/companion/runtime/world_markers.py	444	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/airframe_disturbance.py	300	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/airframe_disturbance_runtime.py	205	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/benewake_tfmini_serial.py	300	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/cli.py	178	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/cloud_scan_projection.py	158	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/config.py	900	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/range_projection.py	126	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/runtime.py	263	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/scan_integrity.py	463	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/scan_stabilization.py	546	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/scan_time_normalizer.py	318	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/x2/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/x2/emulator.py	311	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/x2/protocol.py	192	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/x2/scan_source.py	106	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/sim/gazebo_sensor/x2/smoke.py	333	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/common/test_contracts.py	56	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/common/test_front_sector.py	79	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/common/test_hover_source_audit.py	113	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/common/test_process_manager.py	35	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/common/test_rosbag.py	123	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_acceptance_artifacts.py	132	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_acceptance_summary.py	494	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_config.py	116	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_external_nav_sender.py	370	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_external_nav_source_selector.py	740	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_gazebo_truth_odom.py	142	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_gazebo_truth_trajectory.py	79	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_height_estimator.py	95	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_hover_mission.py	1590	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_imu_bridge.py	81	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_imu_frame_corrector.py	47	CURRENT_AUTHORITY	VERIFIED_FAIL	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_mission_fsm.py	36	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_mission_hover_evidence.py	219	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_mission_mavlink_commands.py	66	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_mission_pipeline.py	410	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_mission_prefix_stages.py	317	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_mission_runtime_state.py	243	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_mission_state_owners.py	482	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_mission_summary.py	222	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_obstacle_mission.py	272	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_policy.py	70	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_pose_mirror.py	229	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_scan_features.py	57	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_scan_reference_correction.py	271	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_scan_reference_drift.py	354	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_vehicle_markers.py	43	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/companion/test_world_markers.py	327	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/conftest.py	8	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/test_airframe_disturbance.py	85	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/test_rangefinder.py	35	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/test_scan_integrity.py	92	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/test_scan_stabilization.py	112	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/x2/test_cloud_scan_projection.py	35	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/x2/test_driver_smoke.py	61	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/x2/test_protocol.py	104	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/x2/test_protocol_config.py	91	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/x2/test_scan_source.py	109	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/x2/test_sensor_ownership.py	109	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/x2/test_sensor_runtime.py	312	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/gazebo_sensor/x2/test_serial_emulator.py	139	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/slam/test_cartographer_adapter_contract.py	62	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/slam/test_cartographer_official_alignment.py	74	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/slam/test_external_nav_bridge_contract.py	41	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/slam/test_quality_gate.py	97	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/slam/test_ros_workspace_ownership.py	25	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-navlab/tests/slam/test_runtime_config.py	98	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-navlab/tests/slam/test_sitl_external_nav_params.py	90	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-navlab/uv.lock	809	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/Cargo.lock	2781	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/Cargo.toml	46	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/README.md	191	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/benches/motor_debug_plan.rs	36	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/config.toml	229	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/configs/tasks/hover.yaml	24	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/configs/tasks/motor-debug.yaml	16	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/cli.rs	695	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/config.rs	631	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/contracts.rs	354	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/errors.rs	8	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/lib.rs	9	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/logging/config.rs	26	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/logging/init.rs	61	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/logging/mod.rs	5	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/main.rs	8	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/runtime/mavlink.rs	1241	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/runtime/mod.rs	12	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/runtime/process.rs	750	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/tasks/mod.rs	52	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/tasks/motor_debug.rs	1855	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/tasks/real_hover.rs	1033	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/tasks/registry.rs	66	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/ui.rs	12	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/workflows/common_doctor.rs	959	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/workflows/doctor_chain.rs	468	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/workflows/fsm.rs	398	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/workflows/mod.rs	30	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/workflows/preflight.rs	594	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/workflows/prepare.rs	1205	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/workflows/task_doctor.rs	539	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/real/src/workflows/workflow.rs	547	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/README.md	210	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/cmd/navlab-sim/contracts_test.go	183	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/cmd/navlab-sim/main.go	1331	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/config.toml	227	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/configs/rosbag/navigation.yaml	41	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/configs/tasks/exploration.yaml	30	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/configs/tasks/hover-slam-only.yaml	12	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/configs/tasks/hover.yaml	33	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/configs/tasks/navigation.yaml	63	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/configs/tasks/scan-robustness.yaml	27	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/go.mod	84	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/go.sum	224	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/artifacts/layout/layout.go	95	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/artifacts/writer.go	454	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/artifacts/writer_test.go	211	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/cdr_test.go	88	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/contract.go	754	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/contract_test.go	203	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/health.go	525	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/health_test.go	243	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/initialization.go	775	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/initialization_test.go	288	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/metrics.go	163	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/raw_source.go	272	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/raw_source_test.go	119	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/trajectory.go	577	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/trajectory_test.go	49	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/audits/hover/util.go	419	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/config/defaults.go	642	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/config/loader.go	267	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/config/loader_test.go	202	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/config/task_runtime.go	202	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/config/task_runtime_test.go	165	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/config/types.go	734	CURRENT_AUTHORITY	VERIFIED_FAIL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/foxglove/replay.go	1421	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/foxglove/replay_aligned_scan.go	637	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/foxglove/replay_display_tf.go	629	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/foxglove/replay_test.go	1314	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/foxglove/upload.go	1086	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/foxglove/upload_test.go	446	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/fsm/recorder.go	152	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/fsm/recorder_test.go	47	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/fsm/schema.go	89	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/images/build.go	498	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/images/build_test.go	365	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/runtime/docker_backend.go	668	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/runtime/docker_backend_test.go	353	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/runtime/docker_resource_probe.go	174	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/runtime/specs.go	232	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/doctor_summary.go	70	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/doctor_summary_test.go	43	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/gate_evaluation.go	3647	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/gate_evaluation_test.go	2495	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/execution_plan.go	752	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/execution_plan_test.go	852	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/landing.go	220	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/landing_test.go	32	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/motion.go	35	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/motion_test.go	23	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/navlab_models.go	107	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/navlab_models_test.go	46	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/official_maze_overlay.go	187	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/registry.go	228	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/registry_test.go	23	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/rosbag_profiles.go	33	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/rosbag_profiles_test.go	19	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/rosbag_topic_sets.go	159	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/runtime_specs.go	1578	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/runtime_templates_test.go	198	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/slam.go	183	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/slam_test.go	123	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates.go	51	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/parm/navlab_gps_baseline.parm.tmpl	22	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl	43	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/parm/official_gazebo_iris.parm.tmpl	1	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/costmap_health_probe.py.tmpl	104	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl	254	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/external_nav_source_selector_runtime.py.tmpl	28	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/fcu_controller_runtime.py.tmpl	938	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/hover_mission_runtime.py.tmpl	79	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/nav2_lifecycle_probe.py.tmpl	98	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/navigation_adapter_runtime.py.tmpl	329	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/navigation_mission_runtime.py.tmpl	401	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/navigation_status_probe.py.tmpl	115	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/official_maze_overlay_runtime.py.tmpl	95	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/ros_probe.py.tmpl	377	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/scan_reference_correction_runtime.py.tmpl	40	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/scan_reference_drift_runtime.py.tmpl	50	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/python/slam_only_probe.py.tmpl	203	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/sdf/fixtures/official_iris_with_lidar.sdf.tmpl	10	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/sdf/fixtures/official_maze.sdf.tmpl	27	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/sdf/rangefinder_down_overlay.sdf.tmpl	126	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/yaml/bridge_override.yaml.tmpl	51	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/yaml/external_nav_bridge_params.yaml.tmpl	40	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/yaml/nav2_params.yaml.tmpl	341	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/helpers/templates/yaml/vendor_profile.yaml.tmpl	23	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/hover_slo_policy.go	42	CURRENT_AUTHORITY	VERIFIED_PASS	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/hover_slo_policy_test.go	39	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/live_summary.go	396	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/live_summary_hover_health_test.go	73	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/live_summary_test.go	97	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/registry.go	195	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/registry_test.go	176	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_artifacts.go	1002	CURRENT_AUTHORITY	VERIFIED_PASS	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_artifacts_test.go	1009	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_fsm.go	609	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_fsm_test.go	188	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_plan_contract.go	156	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_runner.go	745	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_runner_test.go	619	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_specs.go	778	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/runtime_specs_test.go	813	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/simulation_profiles.go	182	CURRENT_AUTHORITY	VERIFIED_FAIL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/simulation_profiles_test.go	186	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/stage1_matrix.go	171	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/stage1_matrix_test.go	107	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/startup_readiness_policy.go	114	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/startup_readiness_policy_test.go	78	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/types.go	78	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/workflow_summaries.go	1881	CURRENT_AUTHORITY	VERIFIED_FAIL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tasks/workflow_summaries_test.go	451	CURRENT_AUTHORITY	PARTIAL	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tui/events.go	14	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tui/model.go	435	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tui/replay.go	336	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tui/replay_test.go	216	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/tui/run.go	77	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-orchestration/sim/internal/ui/styles.go	63	CURRENT_AUTHORITY	UNVERIFIED	288b48630237	B17-B22 实现事实源
-patches/ardupilot_gazebo_esc_lag.patch	81	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-pyproject.toml	31	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/README.md	13	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/.python-version	1	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/README.md	0	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/main.py	9	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/pyproject.toml	20	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/src/__init__.py	1	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/src/cli.py	218	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/src/command_logging.py	30	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/src/mavlink_serial.py	142	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/src/maze.py	134	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/src/ros_setup.py	271	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/tests/conftest.py	8	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/command/uv.lock	402	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/contracts/README.md	12	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/contracts/generate-contracts-go.sh	44	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/contracts/generate-contracts-python.sh	51	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/diagnostics/hover_source_audit.py	513	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/diagnostics/hover_timing_diagnose.py	439	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/ops/kill-serial-holders.sh	144	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/ops/watch_fcu_rangefinder.py	97	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/quality/check-contracts.sh	115	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/quality/check-go.sh	143	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/quality/check-python.sh	141	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/quality/check-rust.sh	116	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/quality/format-go.sh	184	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/quality/format-python.sh	94	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-scripts/quality/format-rust.sh	85	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
-third_party/FAST_LIO	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
-third_party/Livox-SDK2	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
-third_party/YDLidar-SDK	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
-third_party/ardupilot	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
-third_party/ardupilot_gazebo	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
-third_party/livox_ros_driver2	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
-third_party/mavlink-router	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
-third_party/ydlidar_ros2_driver	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	288b48630237	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
-uv.lock	3	ACTIVE_REFERENCE	UNVERIFIED	288b48630237	-
+.github/workflows/main-validation.yml	280	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+.gitignore	27	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+.gitmodules	24	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED
+.golangci.yml	23	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+README.md	117	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+cliff.toml	76	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+compose/docker-compose.yaml	120	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/README.md	48	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/README.md	16	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/orchestration/doctor_result_blocked.json	27	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/orchestration/real_task_result.json	47	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/orchestration/sim_navigation_summary.json	83	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/orchestration/sim_task_request.json	27	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/runtime/real_process_event.json	11	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/runtime/sim_runtime_plan.json	71	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/safety/motor_debug_ack_failed.json	10	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/examples/sensors/real_source_evidence.json	20	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/examples_test.go	40	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/go.mod	5	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/go.sum	4	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/orchestration/v1/artifact_manifest.pb.go	266	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/orchestration/v1/doctor_result.pb.go	386	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/orchestration/v1/task_request.pb.go	263	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/orchestration/v1/task_result.pb.go	430	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/runtime/v1/probe_spec.pb.go	308	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/runtime/v1/process_event.pb.go	263	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/runtime/v1/runtime_plan.pb.go	175	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/runtime/v1/service_spec.pb.go	463	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/runtime/v1/task_result.pb.go	499	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/safety/v1/command_policy.pb.go	176	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/safety/v1/mavlink_ack.pb.go	195	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/safety/v1/readiness_gate.pb.go	158	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/sensors/v1/frame_contract.pb.go	256	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/sensors/v1/source_evidence.pb.go	239	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/go/navlab/sensors/v1/topic_contract.pb.go	265	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/__init__.py	1	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/__init__.py	1	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/orchestration/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/orchestration/v1/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/orchestration/v1/artifact_manifest_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/orchestration/v1/doctor_result_pb2.py	44	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/orchestration/v1/task_request_pb2.py	42	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/orchestration/v1/task_result_pb2.py	45	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/runtime/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/runtime/v1/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/runtime/v1/probe_spec_pb2.py	44	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/runtime/v1/process_event_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/runtime/v1/runtime_plan_pb2.py	39	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/runtime/v1/service_spec_pb2.py	47	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/runtime/v1/task_result_pb2.py	45	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/safety/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/safety/v1/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/safety/v1/command_policy_pb2.py	37	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/safety/v1/mavlink_ack_pb2.py	38	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/safety/v1/readiness_gate_pb2.py	37	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/sensors/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/sensors/v1/__init__.py	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/sensors/v1/frame_contract_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/sensors/v1/source_evidence_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/navlab_contracts/navlab/sensors/v1/topic_contract_pb2.py	40	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/pyproject.toml	6	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/tests/__init__.py	1	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/python/tests/test_generated_contracts.py	53	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/rust/Cargo.lock	386	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/rust/Cargo.toml	19	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/rust/build.rs	39	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/gen/rust/src/lib.rs	106	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/orchestration/v1/artifact_manifest.proto	25	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/orchestration/v1/doctor_result.proto	38	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/orchestration/v1/task_request.proto	27	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/orchestration/v1/task_result.proto	46	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/runtime/v1/probe_spec.proto	29	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/runtime/v1/process_event.proto	27	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/runtime/v1/runtime_plan.proto	17	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/runtime/v1/service_spec.proto	43	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/runtime/v1/task_result.proto	57	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/safety/v1/command_policy.proto	15	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/safety/v1/mavlink_ack.proto	18	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/safety/v1/readiness_gate.proto	13	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/sensors/v1/frame_contract.proto	24	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/sensors/v1/source_evidence.proto	23	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+contracts/proto/navlab/sensors/v1/topic_contract.proto	25	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+devbox.json	20	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+devbox.lock	297	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docker/README.md	219	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/entrypoints/start-fast-lio.sh	21	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/entrypoints/start-gazebo-sensor.sh	31	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/entrypoints/start-gazebo.sh	12	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/entrypoints/start-mavlink-router.sh	71	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/entrypoints/start-navlab-companion.sh	13	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/entrypoints/start-sitl.sh	70	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/base/ros-base.Dockerfile	42	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/infra/ardupilot-sitl.Dockerfile	74	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/infra/fast-lio.Dockerfile	60	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/infra/gazebo-headless.Dockerfile	55	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/infra/mavlink-router.Dockerfile	37	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/runtime/companion.Dockerfile	50	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/runtime/gazebo-sensor.Dockerfile	57	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/runtime/official-baseline.Dockerfile	159	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+docker/images/runtime/sim-python.Dockerfile	29	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/images/runtime/slam.Dockerfile	26	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/navlab_models/navlab_iq_quad/model.config	13	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/navlab_models/navlab_iq_quad/model.sdf	151	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/ahrs-set-origin.lua	55	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/navlab-exploration-foxglove-lite-topics.txt	46	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/navlab-hover-foxglove-lite-topics.txt	52	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/navlab-navigation-foxglove-lite-topics.txt	49	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/navlab-rosbag-topics.txt	20	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/navlab-sitl-external-nav.parm	59	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/navlab-sitl-gps-baseline.parm	39	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/rosbag-topics.txt	6	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/profiles/x2-vendor-sim.yaml	23	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/worlds/empty_headless.sdf	13	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/worlds/navlab_iq_quad_figure8.sdf	219	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/worlds/navlab_iq_quad_obstacle.sdf	88	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docker/worlds/uav_obstacle_5m.sdf	136	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+docs/README.md	218	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/debug.param	1269	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/decisions.md	2689	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/foxglove/hover_legacy_display_scene.json	210	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/foxglove/hover_replay_aligned_scan_scene.json	204	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/contracts_proto_semantic_boundary_design.md	445	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/lab_env_service_refactor_todo.md	311	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/navlab_fsm_schema.md	162	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/navlab_real_sim_package_boundary_design.md	594	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_config_precedence_split_design.md	515	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_go_sim_rust_real_split_design.md	609	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_legacy_helper_deep_split_todo.md	215	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_runtime_backend_guide.md	196	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_runtime_backend_inventory.md	142	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_runtime_backend_refactor_todo.md	408	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_runtime_mode_real_vs_sim_design.md	393	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_sim_python_parity_audit.md	240	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_sim_remaining_migration_design.md	436	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_sim_tui_monitor_design.md	430	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/orchestration_workflow_schema.md	251	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/general/sim_task_parity_differences_audit.md	592	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/images/hover_replay_aligned_points_proof.svg	1	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/images/official_maze_topdown.svg	67	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/notes/hover_external_nav_fail_closed_todo.md	2792	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/notes/hover_mission_pipeline_refactor_todo.md	1086	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/notes/hover_xy_stability_design.md	445	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/notes/real_hover_orchestration_gap_audit.md	759	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/notes/real_hover_orchestration_gap_todo.md	582	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/ori.param	1251	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/param_debug_vs_ori_comparison.md	227	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/project-map.md	9	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/requirements/project-index.yaml	1006	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_ardupilot_externalnav_reading.md	221	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_ardupilot_ros2_official_alignment.md	275	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_cartographer_real_machine_tuning.md	123	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_master_roadmap.md	531	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p0_official_baseline_design.md	319	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p10_body_fixed_lidar_scan_integrity_design.md	552	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p11_bounded_2d_lidar_scan_stabilization_design.md	674	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p12_airframe_disturbance_scan_robustness_design.md	630	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p13_nav2_indoor_navigation_design.md	705	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p1_official_maze_x2_design.md	199	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p2_rangefinder_imu_design.md	298	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p3_slam_backend_quality_design.md	364	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p4_fcu_state_machine_design.md	544	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p5_frame_contract_design.md	469	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p6_slam_hover_gate_design.md	436	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p7_official_maze_motion_gate_design.md	468	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p8_official_maze_exploration_design.md	461	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_p9_official_maze_overlay_replay_design.md	526	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_real_flight_preflight_doctor_design.md	580	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_real_motor_debug_design.md	281	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_real_orchestration_rust_review.md	300	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_real_pre_takeoff_development_confirmation.md	318	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_real_prepare_and_task_doctor_design.md	461	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_reference_projects_analysis.md	366	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/navlab_unified_landing_sequence_design.md	661	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P0_official_baseline_todo.md	305	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P10_body_fixed_lidar_scan_integrity_todo.md	299	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P11_bounded_2d_lidar_scan_stabilization_todo.md	310	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P12_airframe_disturbance_scan_robustness_todo.md	378	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P13_nav2_indoor_navigation_todo.md	280	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P14_benewake_rangefinder_sitl_todo.md	76	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P1_official_maze_x2_todo.md	193	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P2_rangefinder_imu_todo.md	247	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P3_slam_backend_quality_todo.md	316	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P4_fcu_state_machine_todo.md	336	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P5_frame_contract_todo.md	380	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P6_slam_hover_gate_todo.md	647	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P7_official_maze_motion_gate_todo.md	423	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P8_official_maze_exploration_todo.md	357	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/P9_official_maze_overlay_replay_todo.md	383	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/real_flight_preflight_doctor_todo.md	229	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/real_prepare_and_task_doctor_todo.md	745	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/scenarios/indoor/todos/unified_landing_sequence_todo.md	290	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/sim/README.md	122	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/sim/examples/blocked_by_stop_guard.yaml	13	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/sim/examples/straight_line_demo.yaml	13	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/sim/todo.md	223	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/sim/x2_lidar_protocol_todo.md	250	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/sim/x2_lidar_simulation_design.md	339	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+docs/工作流程.txt	673	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+justfile	70	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+lefthook.yml	67	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+navlab/README.md	125	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/__init__.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/__init__.py	176	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/command_adapter.py	92	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/context.py	235	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/evidence/__init__.py	71	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/evidence/hover.py	458	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/evidence/landing.py	614	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/evidence/summary.py	459	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/fsm.py	189	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/hover_landing.py	323	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/mavlink_protocol.py	73	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/pipeline.py	199	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/policy.py	218	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/runtime_state.py	709	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/stages/__init__.py	93	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/stages/hover.py	703	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/stages/landing.py	282	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/stages/prefix.py	197	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/companion/mission/summary_runtime.py	470	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/contracts.py	85	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/interfaces/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/interfaces/ydlidar_interfaces/CMakeLists.txt	20	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/interfaces/ydlidar_interfaces/msg/ScanFeatures.msg	13	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/interfaces/ydlidar_interfaces/package.xml	23	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/logging.py	95	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/perception/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/perception/contract.py	33	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/perception/front_sector.py	111	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/perception/scan_features.py	97	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/perception/scan_reference_drift.py	691	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/pose.py	17	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/process_manager.py	138	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/rosbag.py	105	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/backends.py	80	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/cli.py	33	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/config.py	163	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/quality_gate.py	86	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/bridges/navlab_external_nav_bridge/CMakeLists.txt	39	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/bridges/navlab_external_nav_bridge/README.md	18	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/bridges/navlab_external_nav_bridge/config/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/bridges/navlab_external_nav_bridge/config/navlab_external_nav_bridge.params.yaml	40	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/bridges/navlab_external_nav_bridge/launch/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/bridges/navlab_external_nav_bridge/package.xml	25	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/bridges/navlab_external_nav_bridge/src/navlab_external_nav_bridge_node.cpp	816	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/CMakeLists.txt	39	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/README.md	51	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_2d_diagnostic_odom.lua	63	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_2d_hover.lua	74	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_2d_hover_no_odom_prior.lua	71	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_2d_real.lua	55	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/config/navlab_cartographer_adapter.params.yaml	22	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/launch/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/launch/navlab_cartographer_adapter.launch.py	237	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/package.xml	25	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_cartographer_adapter/src/navlab_cartographer_adapter_node.cpp	499	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_fake_odom/CMakeLists.txt	33	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_fake_odom/README.md	13	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_fake_odom/config/navlab_fake_odom.params.yaml	18	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_fake_odom/launch/navlab_fake_odom.launch.py	37	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_fake_odom/package.xml	22	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/localization/navlab_fake_odom/src/navlab_fake_odom_node.cpp	149	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/scenarios/navlab_slam_bringup/CMakeLists.txt	10	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/scenarios/navlab_slam_bringup/README.md	26	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/scenarios/navlab_slam_bringup/config/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/scenarios/navlab_slam_bringup/launch/navlab_slam_bringup.launch.py	376	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/scenarios/navlab_slam_bringup/package.xml	23	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/CMakeLists.txt	48	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/README.md	19	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/config/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/config/navlab_slam_imu_bridge.params.yaml	14	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/include/navlab_slam_imu_bridge/timestamp.hpp	17	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/launch/.gitkeep	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/package.xml	23	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/src/navlab_slam_imu_bridge_node.cpp	306	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/ros/sensors/navlab_slam_imu_bridge/test/imu_timestamp_test.cpp	21	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/slam/runtime.py	26	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/common/toml_values.py	133	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/config.toml	230	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/pyproject.toml	21	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/__init__.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/common/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/common/fcu_status.py	124	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/external_nav.py	689	CURRENT_AUTHORITY	VERIFIED_FAIL	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/height_estimator.py	193	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/imu_bridge.py	318	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/mavlink_bridge.py	175	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/motor_debug.py	378	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/pose_mirror.py	1005	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/rangefinder_bridge.py	235	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/real/companion/nodes/ydlidar_x2_scan.py	181	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/__init__.py	4	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/common/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/__init__.py	52	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/command_adapter.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/context.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/evidence/__init__.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/evidence/hover.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/evidence/landing.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/evidence/summary.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/fsm.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/hover_landing.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/mavlink_commands.py	325	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/pipeline.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/runtime_state.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/stages/__init__.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/stages/hover.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/stages/landing.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/stages/prefix.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/mission/summary_runtime.py	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/external_nav_source_selector.py	973	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/gazebo_truth_odom.py	296	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/gazebo_truth_trajectory.py	175	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/hover_mission.py	1174	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/imu_frame_corrector.py	140	CURRENT_AUTHORITY	VERIFIED_FAIL	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/obstacle_mission.py	727	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/odom_relay.py	48	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/scan_features.py	177	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/scan_reference_correction.py	650	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/scan_reference_drift.py	316	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/vehicle_markers.py	242	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/nodes/world_markers.py	251	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/acceptance.py	700	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/acceptance_cli.py	217	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/cli.py	71	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/config.py	633	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/doctor.py	56	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/hover_acceptance.py	476	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/launcher.py	109	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/rosbag_profile.py	61	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/status.py	11	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/templates/foxglove_notes.md.j2	20	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/companion/runtime/world_markers.py	444	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/airframe_disturbance.py	300	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/airframe_disturbance_runtime.py	205	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/benewake_tfmini_serial.py	300	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/cli.py	178	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/cloud_scan_projection.py	158	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/config.py	900	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/range_projection.py	126	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/runtime.py	263	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/scan_integrity.py	463	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/scan_stabilization.py	546	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/scan_time_normalizer.py	318	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/x2/__init__.py	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/x2/emulator.py	311	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/x2/protocol.py	192	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/x2/scan_source.py	106	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/sim/gazebo_sensor/x2/smoke.py	333	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/common/test_contracts.py	56	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/common/test_front_sector.py	79	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/common/test_hover_source_audit.py	113	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/common/test_process_manager.py	35	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/common/test_rosbag.py	123	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_acceptance_artifacts.py	132	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_acceptance_summary.py	494	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_config.py	116	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_external_nav_sender.py	370	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_external_nav_source_selector.py	740	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_gazebo_truth_odom.py	142	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_gazebo_truth_trajectory.py	79	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_height_estimator.py	95	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_hover_mission.py	1590	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_imu_bridge.py	81	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_imu_frame_corrector.py	47	CURRENT_AUTHORITY	VERIFIED_FAIL	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_mission_fsm.py	36	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_mission_hover_evidence.py	219	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_mission_mavlink_commands.py	66	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_mission_pipeline.py	410	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_mission_prefix_stages.py	317	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_mission_runtime_state.py	243	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_mission_state_owners.py	482	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_mission_summary.py	222	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_obstacle_mission.py	272	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_policy.py	70	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_pose_mirror.py	229	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_scan_features.py	57	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_scan_reference_correction.py	271	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_scan_reference_drift.py	354	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_vehicle_markers.py	43	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/companion/test_world_markers.py	327	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/conftest.py	8	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/test_airframe_disturbance.py	85	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/test_rangefinder.py	35	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/test_scan_integrity.py	92	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/test_scan_stabilization.py	112	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/x2/test_cloud_scan_projection.py	35	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/x2/test_driver_smoke.py	61	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/x2/test_protocol.py	104	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/x2/test_protocol_config.py	91	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/x2/test_scan_source.py	109	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/x2/test_sensor_ownership.py	109	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/x2/test_sensor_runtime.py	312	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/gazebo_sensor/x2/test_serial_emulator.py	139	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/slam/test_cartographer_adapter_contract.py	62	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/slam/test_cartographer_official_alignment.py	74	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/slam/test_external_nav_bridge_contract.py	41	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/slam/test_quality_gate.py	97	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/slam/test_ros_workspace_ownership.py	25	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/slam/test_runtime_config.py	98	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+navlab/tests/slam/test_sitl_external_nav_params.py	90	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+navlab/uv.lock	809	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/Cargo.lock	2781	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/Cargo.toml	46	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/README.md	191	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/benches/motor_debug_plan.rs	36	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/config.toml	229	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/configs/tasks/hover.yaml	24	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/configs/tasks/motor-debug.yaml	16	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/cli.rs	695	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/config.rs	631	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/contracts.rs	354	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/errors.rs	8	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/lib.rs	9	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/logging/config.rs	26	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/logging/init.rs	61	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/logging/mod.rs	5	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/main.rs	8	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/runtime/mavlink.rs	1241	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/runtime/mod.rs	12	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/runtime/process.rs	750	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/tasks/mod.rs	52	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/tasks/motor_debug.rs	1855	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/tasks/real_hover.rs	1033	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/tasks/registry.rs	66	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/ui.rs	12	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/workflows/common_doctor.rs	959	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/workflows/doctor_chain.rs	468	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/workflows/fsm.rs	398	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/workflows/mod.rs	30	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/workflows/preflight.rs	594	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/workflows/prepare.rs	1205	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/workflows/task_doctor.rs	539	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/real/src/workflows/workflow.rs	547	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/README.md	210	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/cmd/navlab-sim/contracts_test.go	183	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/cmd/navlab-sim/main.go	1331	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/config.toml	227	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/configs/rosbag/navigation.yaml	41	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/configs/tasks/exploration.yaml	30	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/configs/tasks/hover-slam-only.yaml	12	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/configs/tasks/hover.yaml	33	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/configs/tasks/navigation.yaml	63	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/configs/tasks/scan-robustness.yaml	27	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/go.mod	84	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/go.sum	224	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/artifacts/layout/layout.go	95	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/artifacts/writer.go	454	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/artifacts/writer_test.go	211	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/cdr_test.go	88	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/contract.go	754	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/contract_test.go	203	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/health.go	525	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/health_test.go	243	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/initialization.go	775	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/initialization_test.go	288	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/metrics.go	163	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/raw_source.go	272	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/raw_source_test.go	119	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/trajectory.go	577	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/trajectory_test.go	49	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/audits/hover/util.go	419	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/config/defaults.go	642	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/config/loader.go	267	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/config/loader_test.go	202	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/config/task_runtime.go	202	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/config/task_runtime_test.go	165	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/config/types.go	734	CURRENT_AUTHORITY	VERIFIED_FAIL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/foxglove/replay.go	1421	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/foxglove/replay_aligned_scan.go	637	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/foxglove/replay_display_tf.go	629	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/foxglove/replay_test.go	1314	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/foxglove/upload.go	1086	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/foxglove/upload_test.go	446	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/fsm/recorder.go	152	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/fsm/recorder_test.go	47	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/fsm/schema.go	89	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/images/build.go	498	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/images/build_test.go	365	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/runtime/docker_backend.go	668	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/runtime/docker_backend_test.go	353	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/runtime/docker_resource_probe.go	174	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/runtime/specs.go	236	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/doctor_summary.go	70	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/doctor_summary_test.go	43	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/gate_evaluation.go	3647	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/gate_evaluation_test.go	2495	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/execution_plan.go	767	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/execution_plan_test.go	906	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/landing.go	220	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/landing_test.go	32	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/motion.go	35	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/motion_test.go	23	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/navlab_models.go	107	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/navlab_models_test.go	46	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/official_maze_overlay.go	187	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/registry.go	228	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/registry_test.go	23	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/rosbag_profiles.go	33	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/rosbag_profiles_test.go	19	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/rosbag_topic_sets.go	159	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/runtime_specs.go	1578	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/runtime_templates_test.go	198	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/slam.go	183	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/slam_test.go	123	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates.go	51	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/parm/navlab_gps_baseline.parm.tmpl	22	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/parm/official_external_nav.parm.tmpl	43	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/parm/official_gazebo_iris.parm.tmpl	1	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/costmap_health_probe.py.tmpl	104	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/exploration_workflow_runtime.py.tmpl	254	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/external_nav_source_selector_runtime.py.tmpl	28	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/fcu_controller_runtime.py.tmpl	938	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/hover_mission_runtime.py.tmpl	79	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/nav2_lifecycle_probe.py.tmpl	98	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/navigation_adapter_runtime.py.tmpl	329	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/navigation_mission_runtime.py.tmpl	401	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/navigation_status_probe.py.tmpl	115	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/official_maze_overlay_runtime.py.tmpl	95	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/ros_probe.py.tmpl	377	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/scan_reference_correction_runtime.py.tmpl	40	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/scan_reference_drift_runtime.py.tmpl	50	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/python/slam_only_probe.py.tmpl	203	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/sdf/fixtures/official_iris_with_lidar.sdf.tmpl	10	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/sdf/fixtures/official_maze.sdf.tmpl	27	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/sdf/rangefinder_down_overlay.sdf.tmpl	126	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/yaml/bridge_override.yaml.tmpl	51	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/yaml/external_nav_bridge_params.yaml.tmpl	40	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/yaml/nav2_params.yaml.tmpl	341	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/helpers/templates/yaml/vendor_profile.yaml.tmpl	23	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/hover_slo_policy.go	42	CURRENT_AUTHORITY	VERIFIED_PASS	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/hover_slo_policy_test.go	39	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/live_summary.go	396	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/live_summary_hover_health_test.go	73	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/live_summary_test.go	97	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/registry.go	195	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/registry_test.go	176	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_artifacts.go	1010	CURRENT_AUTHORITY	VERIFIED_PASS	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_artifacts_test.go	1067	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_fsm.go	609	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_fsm_test.go	188	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_plan_contract.go	156	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_runner.go	824	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_runner_test.go	695	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_specs.go	788	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/runtime_specs_test.go	826	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/simulation_profiles.go	182	CURRENT_AUTHORITY	VERIFIED_FAIL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/simulation_profiles_test.go	186	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/stage1_matrix.go	171	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/stage1_matrix_test.go	107	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/startup_readiness_policy.go	114	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/startup_readiness_policy_test.go	78	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/types.go	78	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/workflow_summaries.go	1881	CURRENT_AUTHORITY	VERIFIED_FAIL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tasks/workflow_summaries_test.go	451	CURRENT_AUTHORITY	PARTIAL	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tui/events.go	14	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tui/model.go	435	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tui/replay.go	336	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tui/replay_test.go	216	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/tui/run.go	77	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+orchestration/sim/internal/ui/styles.go	63	CURRENT_AUTHORITY	UNVERIFIED	e569ecfaafa2	B17-B22 实现事实源
+patches/ardupilot_gazebo_esc_lag.patch	81	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+pyproject.toml	31	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/README.md	13	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/.python-version	1	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/README.md	0	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/main.py	9	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/pyproject.toml	20	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/src/__init__.py	1	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/src/cli.py	218	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/src/command_logging.py	30	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/src/mavlink_serial.py	142	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/src/maze.py	134	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/src/ros_setup.py	271	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/tests/conftest.py	8	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/command/uv.lock	402	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/contracts/README.md	12	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/contracts/generate-contracts-go.sh	44	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/contracts/generate-contracts-python.sh	51	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/diagnostics/hover_source_audit.py	513	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/diagnostics/hover_timing_diagnose.py	439	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/ops/kill-serial-holders.sh	144	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/ops/watch_fcu_rangefinder.py	97	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/quality/check-contracts.sh	115	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/quality/check-go.sh	143	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/quality/check-python.sh	141	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/quality/check-rust.sh	116	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/quality/format-go.sh	184	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/quality/format-python.sh	94	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+scripts/quality/format-rust.sh	85	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
+third_party/FAST_LIO	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
+third_party/Livox-SDK2	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
+third_party/YDLidar-SDK	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
+third_party/ardupilot	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
+third_party/ardupilot_gazebo	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
+third_party/livox_ros_driver2	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
+third_party/mavlink-router	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
+third_party/ydlidar_ros2_driver	-1	THIRD_PARTY	THIRD_PARTY_UNVERIFIED	e569ecfaafa2	冻结外部实现/子仓引用;SHA 见 .gitmodules 与 pins_2026-07-14.yaml;per-component license 记录缺,故 UNVERIFIED;gitlink/不可读
+uv.lock	3	ACTIVE_REFERENCE	UNVERIFIED	e569ecfaafa2	-
