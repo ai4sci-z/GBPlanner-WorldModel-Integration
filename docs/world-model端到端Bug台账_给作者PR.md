@@ -103,7 +103,7 @@
 | # | 编号纪律 | 问题(观测) | 根因域/判定 | 处置 | 状态 |
 |---|---|---|---|---|---|
 | OPEN-1 | (未定案,勿编 B 号) | 间歇性 bring-up 失败(wm `eab0cc6`,默认主线 6/3/3,诊断臂旁证 4/3/3,两 profile 分层统计)。两类失败:BIN-present(prearm 循环未过;`Arm: Accels inconsistent` 文本在成功与失败 run 计数均=20,**非判别器**)/ no-BIN(SITL 无 BIN,死因 UNKNOWN;SITL 控制台未落盘是主观测缺口) | 竞争假设 H1-H5 与实验设计见 [WP304 方案](../governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md) | 未修——按 WP304 分阶段(E1 观测→pilot→E2 对照),10/10 验收 | 🔴 OPEN,封 GATE-4b 稳定性宣称 |
-| OPEN-2 | (登记,勿编 B 号) | **候选实现独立复验失败(Codex,2026-07-16)**:`wm 288b486`(时钟纪元契约)在 `navlab/.venv/bin/pytest -q navlab/tests/companion/test_external_nav_sender.py` 下 **2 failed / 18 passed**——`test_send_tick_drops_old_packets_and_recovers_after_confirmed_reset` 与 `test_send_tick_zero_stamp_stream_counts_and_recovers` 均因发送路径访问 `mavlink.MAV_FRAME_LOCAL_FRD` 时 `mavlink=None`(宿主 venv 无 pymavlink,fallback 导入置 None;容器内 20/20 过=环境依赖测试,不合格) | 节点级测试未与 pymavlink 环境解耦 | 待边界清晰修复提交(第四/五阶段);**`288b486` 状态=候选实现·独立复验失败;`77f0b67` 状态=候选实现·GPU 阶段待完整复验;两者均不得写成已通过** | 🔴 OPEN |
+| OPEN-2 | (登记,勿编 B 号) | 原观测(Codex,2026-07-16):`wm 288b486` 在宿主 venv 下 **2 failed/18 passed**(发送路径访问 `mavlink.MAV_FRAME_LOCAL_FRD` 时 `mavlink=None`,pymavlink 环境债)。**OPEN-2 的环境依赖复验失败观测已消除**(wm `750032a`,2026-07-18):测试模块在 pymavlink 缺席时条件注入 spec 常量(20/12/3,容器内 pymavlink 2.4.49 实测取值,含防漂移断言),并补 WP305 节点重启/来源生命周期反例 | 节点级测试未与 pymavlink 环境解耦(已解耦) | **WP305 反例矩阵与双环境独立复验通过**:宿主 venv(无 pymavlink)22 passed + companion 容器(真 pymavlink 2.4.49)ran=22 fails=0。**真实仿真行为验收未执行,归 WP307**。`77f0b67`(GPU)本轮 go 单测复核 rc=0,真实仿真同归 WP307 | 🟢 环境债已解;行为验收归 WP307 |
 
 证据链:`runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md`(测量方法+判决表)、
 `l1_bringup_evidence_2026-07-15.md`(L0-L2 二分矩阵)。

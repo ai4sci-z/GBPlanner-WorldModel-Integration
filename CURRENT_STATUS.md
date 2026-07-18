@@ -30,12 +30,14 @@ E1 观测方案已交付;下一步是 E1 sidecar 实现(待负责人放行),此�
 - **B21 已验证**:external_nav 位置换系东轴取负(左手系反射喂入,BIN 帧审计 det≈−0.9);
   修复(wm `908a95a`)后 det≈+1,真值臂反事实 3/3 稳。
 - **B22 候选(强支持)**:iris IMU roll-180 倒装致 SLAM 朝向反 180°;修复候选 wm `eab0cc6`
-  (仅 hover 族接线;exploration/navigation 仍读原始 `/imu`,M5 前必补)。
+  (hover 族接线 `eab0cc6`;exploration/navigation 接线已补齐 `e569ecf`,fixture 级,真实仿真未验)。
 - **默认主线分母(2026-07-15,wm eab0cc6)**:attempts 6 / airborne 3 / full-pass 3;
   诊断臂旁证 4/3/3。10/10 未开跑,禁写"稳定/FIXED/关门"。
 - **OPEN-1 未定位**:同 commit 间歇性 bring-up 失败。已证伪"Accels inconsistent=判别器"
   (CRC 校验计数在成功与失败 run 均=20);no-BIN 类死因 UNKNOWN(SITL 控制台未落盘是主观测缺口)。
-- **OPEN-2**:时钟纪元候选(wm `288b486`)独立复验失败(测试依赖 pymavlink 环境),归 WP305。
+- **OPEN-2**:OPEN-2 的环境依赖复验失败观测已消除(wm `750032a`);WP305 反例矩阵与双环境
+  独立复验通过(宿主 venv 22 passed + companion 容器真 pymavlink 2.4.49 ran=22 fails=0);
+  真实仿真行为验收未执行,归 WP307。
 - **M0-M4 = 窄验收**(编译/单测/切片对拍);行为等价与 3D 无损未证,归 P2/P3。
 - **B23 runner 等 mission + B22 exploration/navigation IMU 接线补齐(wm `faadb2a`/`e569ecf`,2026-07-18)**:
   先红后绿 + 全模块 11 包测试 ok;状态词=**已编码+单测通过,真实仿真未验**,不改判任何门。
@@ -60,7 +62,7 @@ E1 观测方案已交付;下一步是 E1 sidecar 实现(待负责人放行),此�
 ──────────────────────────────────────────────────────────────────────────
 E1 sidecar 实现     →  E1 实现停点(fixture 绿) →  E1 pilot(≤3,另批) →  E2 负载对照
 (待放行;零 wm 改动)                              ↳ OPEN-1 新数据
-WP305 epoch 修复    →  独立复验通过             →  与 E1 无依赖,可并行  →  —
+WP305 epoch 复验    →  已达成(双环境独立复验) →  真实仿真验收归 WP307 →  —
 WP306 三单元        →  各单元反例测试绿         →  与 E1 无依赖,可并行  →  —
 ──────────────────────────────────────────────────────────────────────────
 OPEN-1 定位 + WP305/306 完 → WP307 默认 10/10 → WP308 长稳 → P1 关门

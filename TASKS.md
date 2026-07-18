@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 | **WP303** | monitor 生命周期实现:launcher + task record + 三轴状态 + fixture;batch_id 端到端绑定+拒绝旧现场(stale-evidence 补正);只跑 fixture 不跑真实仿真 | P0 收口 | 正式入口 run_batch.sh e2e dry-run + test_wait_batch **75/75** + test_batch_common 12/12 + test_final_rc 13/13,残留=0 | 🟡 **PARTIAL 实现停点未发布:dry-run 通过,真实仿真未做** |
 | **WP304** | OPEN-1 因果时间线:样本分层 + F1-F5 + H1-H5 + E0/E1/E2;**E0 已收口**(open1/ 离线提取器 + CRC 校验协议解码器 + 观测 schema 草案 + 环境无关 fixture;证伪"accel=判别器";arm/no-BIN 死因=UNKNOWN;运行时埋点未实现;**E0-CORRECT 补正:逐输入 schema 门(UNSUPPORTED_SCHEMA)+ 标注冻结验收门(RAN=5/PASS=5/SKIP=0 + provenance 实绑)+ claim 语义时效门**) | WP303 | 逐阶段放行;E0+证据门/标注补正 done,E1 可执行方案 done(WP304 §10,基线=eab0cc6 worktree,sidecar 零 wm 改动),下一=E1 实现停点(实现+fixture,不跑仿真) | 🟡 **E1 方案交付:申请放行 E1 实现停点** |
-| WP305 | 时钟纪元契约修复(OPEN-2):测试与 pymavlink 环境解耦,补节点重启/来源生命周期反例 | WP303 | 反例矩阵全绿,独立复验通过 | ⛔ 阻塞 |
+| WP305 | 时钟纪元契约修复(OPEN-2):测试与 pymavlink 环境解耦,补节点重启/来源生命周期反例 | WP303 | 反例矩阵全绿,独立复验通过 | 🟢 **代码/环境独立复验完成**(wm `750032a`,双环境:venv 22P + 容器 ran=22 fails=0);真实仿真验收归 WP307 |
 | WP306 | 三独立单元:GPU 支持矩阵 / IMU covariance(C'=RCRᵀ)+types.go 反注释 / truth audit 混合匹配 fail-closed | WP303 | 各单元反例测试通过 | ⛔ 阻塞 |
 | WP307 | 默认路径连续 10/10:固定 commit/镜像/场景,全 attempts 入分母 | WP304–306 | 10/10 发起/起飞/full-pass,产物完整无残留 | ⛔ 阻塞 |
 | WP308 | 长稳门 + R003 收口:固定时长/漂移/断链/崩溃阈值 | WP307 | 负责人批准的长稳指标全满足 | ⛔ 阻塞 |
@@ -39,3 +39,4 @@
 | 回滚锚点与恢复验证 | 未建立 | Ubuntu/ROS1 tag 就绪 | 批准建锚点 | 锚点 tag + 恢复演练证据 | R003-门八 |
 | runbooks/world-model-jazzy 物理重组(208 平铺→分子目录) | 已建导览 README,物理重组未做 | 全量引用清点 | 批准重组(大量 rename+manifest churn) | 引用零断链+闭包 delta 干净 | P2 前 |
 | ~~Docker context 统一~~ | **已解决(2026-07-18)**:负责人批准卸载 Docker Desktop;单 system daemon,舰队 47GB 完整,config 残留已清 | — | — | 裸 docker 命令直达舰队 ✓ | 已关闭 |
+| 下一编号 Review:为 dependencies.yaml 增加专用 schema/字段/枚举/状态一致性反例验收 | R003 冻结后新发现,仅登记不实现(R003-CLOSE 硬冻结规则 5) | 下一编号 Review 开启 | 负责人排期 | 专用验收器 + 反例矩阵全绿 | 下一编号 Review |
