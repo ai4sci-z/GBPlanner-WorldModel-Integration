@@ -23,8 +23,8 @@
 
 ## 相邻技术债(并入对应 WP,不单列)
 
-- exploration/navigation 的 cartographer 仍读原始 `/imu`(B22 只转正 hover 族)→ M5/P4 前必补。
-- world-model runner 探针完成即 SIGKILL mission(GATE-4b 本体 blocker)→ 属 world-model 改动,WP304 定位后另行方案。
+- ~~exploration/navigation cartographer 读原始 `/imu`~~ / ~~runner 探针完即 SIGKILL mission~~:
+  **已修(wm `e569ecf`/`faadb2a`,2026-07-18,先红后绿 fixture 级)**;真实仿真验收并入 WP307 默认 10/10。
 
 ## P0 未执行遗留队列(登记,不擅自执行;每项列前置/决策点/验收/最迟门)
 

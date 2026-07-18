@@ -23,7 +23,7 @@ E1 观测方案已交付;下一步是 E1 sidecar 实现(待负责人放行),此�
 |---|---|---|---|
 | GBPlanner-WorldModel-Integration | main(HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`) | 治理/证据/状态入口 | 可改 |
 | gbp-feat | feat/gbplanner-ros2-port@`17db3bae08d7` | ROS2 迁移代码(M1-M5) | 只读 |
-| world-model | fix/world-model-e2e-takeoff@`288b48630237`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 只读 |
+| world-model | fix/world-model-e2e-takeoff@`e569ecfaafa2`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 授权修复已入(B23 runner 等 mission + B22 exploration/navigation 接线,fixture 级) |
 
 ## 四、已证事实(按证据等级)
 
@@ -37,6 +37,8 @@ E1 观测方案已交付;下一步是 E1 sidecar 实现(待负责人放行),此�
   (CRC 校验计数在成功与失败 run 均=20);no-BIN 类死因 UNKNOWN(SITL 控制台未落盘是主观测缺口)。
 - **OPEN-2**:时钟纪元候选(wm `288b486`)独立复验失败(测试依赖 pymavlink 环境),归 WP305。
 - **M0-M4 = 窄验收**(编译/单测/切片对拍);行为等价与 3D 无损未证,归 P2/P3。
+- **B23 runner 等 mission + B22 exploration/navigation IMU 接线补齐(wm `faadb2a`/`e569ecf`,2026-07-18)**:
+  先红后绿 + 全模块 11 包测试 ok;状态词=**已编码+单测通过,真实仿真未验**,不改判任何门。
 
 ## 五、R003 九门
 
@@ -68,8 +70,10 @@ P1 关门 → P2 ROS1/ROS2 对齐(oracle 冻结)→ P3 3D 无损 → P4 插件�
 - E1 基线已裁决:`eab0cc6` 独立 detached worktree 复现历史(288b486 原地不动,其上样本=新基线);
   companion 镜像 `jazzy-eab0cc6f0d54` 已确认在盘(system docker daemon)。
 - E1 前置雷:~~Docker 双 daemon~~(**已排除**:Desktop 于 07-18 卸载,单 system daemon);
-  runner 探针完即 SIGKILL mission(GATE-4b 本体,wm 改动待批);
+  ~~runner 探针完即 SIGKILL mission~~(**已修 B23**,wm `faadb2a`,fixture 级;真实仿真未验);
   RTF≈0.08(单 run ≈25 分钟墙钟,批次预算按此排)。
+- ⚠️ 基线注记:E1 历史复现基线仍=`eab0cc6` 独立 worktree(裁决不变);B23/B22 接线修复在
+  `288b486` 之上(`e569ecf`),属**未来新基线材料**,不得混入 eab0cc6 历史统计。
 - P2/P3 是论文核心交付(等价性证据);P1 稳定门未过前不启动,但 oracle 资产
   (gbplanner-ref 镜像、桥接期证据)已冻结待用。
 

@@ -1,4 +1,4 @@
-> **[CURRENT · 唯一问题台账]** 覆盖 **B1–B22 + OPEN 编号**(上游真 bug 修复链 + 未定案问题)。
+> **[CURRENT · 唯一问题台账]** 覆盖 **B1–B23 + OPEN 编号**(上游真 bug 修复链 + 未定案问题)。
 > 最后更新 **2026-07-16(R003 治理)**。全局状态以 [CURRENT_STATUS.md](../CURRENT_STATUS.md) 为准;本文只承载问题条目。
 > **编号契约(2026-07-16 修订,消除编号≠状态的歧义)**:**B 号与 OPEN 号都只是历史稳定的
 > 问题编号,编号本身不携带任何状态语义**;条目的真实状态一律以状态字段为准,四维模型 =
@@ -78,7 +78,7 @@
 4. 顺手修 clean 分支测试断言遗留：`slam_test.go`（旧 `/imu`→`/navlab/slam/imu`+自吞回声守卫）、`runtime_artifacts_test.go`（RNGFND 旧参数名→4.5 新名+裸旧名守卫）。
 **验证（实测,run `20260706T130626`）**：`TASK_STATUS_OK`、blockers 空、4 探针全 ok（frame_contract 8/8 话题）、accepted_goals=3/3、path 1.06m、SIM+0.720m、电机 1950;`go build/vet/test ./...` 全绿;clean_repro.sh 首次 rc=0。
 
-## B17–B22 · 原生迁移与 GATE-4b 排障期新增上游真 bug（2026-07-13 → 07-16,commit 均在 fix/world-model-e2e-takeoff）
+## B17–B23 · 原生迁移与 GATE-4b 排障期新增上游真 bug（2026-07-13 → 07-18,commit 均在 fix/world-model-e2e-takeoff）
 
 | # | 提交 | 症状（失败现场） | 根因 | 最小改动 | 状态 |
 |---|---|---|---|---|---|
@@ -88,6 +88,7 @@
 | B20 | `99fe8de` | `/external_nav/odom` 只有 1.3Hz(SLAM 明明 202Hz) | 桥的 odom 输出挂在 500ms 墙钟 status 定时器上 | 逐新鲜样本事件驱动发布(保量测 stamp) | ✅ VISP 2→20Hz;非翻机充分根因 |
 | B21 | `908a95a` | **GATE-4b 悬停翻机主案**:external-nav 喂入下起飞后姿态确定性发散,armed 14-30s AngErr CrashCheck(L1.5 真值喂入 3/3 翻、L2 SLAM 喂入 5/5 翻;GPS 臂 L0/L1 全稳) | `ros_enu_position_to_mavlink_local_frd()` 返回 `(y,-x,-z)`:对任何右手源帧都把东轴镜像成**左手系喂入**(det=−1),而 yaw 路径是真旋转 → 与 IMU 惯性基准不可调和,EK3 创新反馈正反馈发散。BIN 实测:VISP.PN=+truth_N、VISP.PE=−truth_E,LS 拟合 det=−0.92/−0.95/−0.93(3/3);代码注释宣称的 "map x=west,y=north" 帧约定为左手系,物理不可能,同测量证伪 | `(y, x, -z)`(标准 ENU→NED,一个符号) | ✅ 缺陷与修复已验证:L1.5 真值臂反事实 3/3 稳(roll≤0.5°,喂入 det=+1.0,首见完整起降);L2 当时仍翻 → 揭出第二层 B22 |
 | B22 | `eab0cc6` | B21 修复后 L2(SLAM 喂入)仍 3/3 翻:喂入 yaw ≡ 真值 −180°(VISP.Y −91.4° vs SIM +90.0°,动态跟踪)而位置与真值方向余弦 +1.0000 | 官方 iris 模型 IMU 在 imu_link 内 roll-180 倒装,ros_gz 桥不修数据、TF 声称 identity → Cartographer 吃倒置 IMU(静止 z 加速度 −9.8),朝向估计反 180° 而平面位置照常 → 又一个位置/yaw 非刚体不一致(B21 同类) | 主线默认启用 imu_frame_corrector(roll180_flu,数据侧修正,冻结模型不动) | 🔵 **candidate mainline, acceptance pending(R003)**:诊断反事实 pass(4 攻 3 过全绿);默认主线 6 攻 3 过;G01/G02/G10(10/10)未关,不得称稳定 |
+| B23 | `faadb2a` | **runner 不等 mission(GATE-4b 前置 blocker)**:必需探针全过后 runner 立即 teardown 全部服务,hover/navigation mission 容器被 docker stop(SIGTERM→SIGKILL)在飞行中掐死;红案实测旧 runner 事件序=`probe:frame_probe → stop:hover_mission`(无任何 wait) | 探针完成 ≠ 任务完成:runner 缺 mission 生命周期语义,把有限时长任务当常驻服务清理 | `*_mission` 服务标 `WaitForExit`,探针过后 runner 有界等待其自然退出(任务 deadline 封顶,超时=task_runtime_timeout stage `mission_wait` 并落 mission_summary;非零退出码只记事件,判决归 mission_summary) | 🔵 **已编码+单测通过(先红后绿,3 反例+命名单测;全模块 11 包 ok)**;真实仿真未验,不改判 GATE-4b 门 |
 
 
 ### B21/B22 四维状态(唯一权威状态,行内标记从此表)
@@ -95,7 +96,7 @@
 | 编号 | defect_status | root_cause_status | implementation_status | acceptance_status |
 |---|---|---|---|---|
 | B21 | 已验证(BIN 拟合 det=−1 ×3) | **已验证**(L1.5 单变量反事实 3/3) | 修复已提交(`908a95a`)且反事实验证 | 短窗诊断臂通过;默认路径 10/10 未开 |
-| B22 | 已验证(yaw≡真值−180° 实测) | **候选/强支持**(诊断臂单变量反事实 4 攻 3 过;竞争假设未清零) | 候选实现(`eab0cc6`,主线接线已落地) | **阻塞**(默认主线 6 攻 3 过;10/10 与长稳未开;OPEN-1 未定位) |
+| B22 | 已验证(yaw≡真值−180° 实测) | **候选/强支持**(诊断臂单变量反事实 4 攻 3 过;竞争假设未清零) | 候选实现(`eab0cc6`,hover 族主线接线已落地;**exploration/navigation 接线补齐 `e569ecf`,fixture 级先红后绿,真实仿真未验**) | **阻塞**(默认主线 6 攻 3 过;10/10 与长稳未开;OPEN-1 未定位) |
 
 ## OPEN · 未定案问题(活跃;OPEN 号同样只是编号,状态见各行字段)
 
