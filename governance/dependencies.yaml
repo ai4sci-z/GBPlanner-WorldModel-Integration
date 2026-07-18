@@ -1,0 +1,191 @@
+# 机器可读依赖清单(R003-G08 验收件;schema 见 governance/README §7.4)
+# 生成:2026-07-18,全字段来源=实测(ls-tree/.gitmodules/LICENSE 文件/镜像内实测)或既有 pin 记录;
+# 不确定处一律 UNVERIFIED + 风险标注,不靠记忆填写。
+# lock_status 判定规则(governance/README §2):upstream+commit/tag/digest+license(或明确"未声明"+风险标记)
+# +build_role+恢复方法 五要素机器可解析 → THIRD_PARTY_LOCKED;任一缺失 → THIRD_PARTY_UNVERIFIED。
+
+schema: {component, kind, name, version_or_sha, digest, source_url, license, build_role, pinned_by, notes, lock_status}
+
+components:
+
+  # ---- world-model 8 个 gitlink(SHA=git ls-tree HEAD 实测;URL=.gitmodules)----
+  - component: wm/third_party/ardupilot
+    kind: submodule
+    name: ardupilot
+    version_or_sha: ba55ebe16d5ec036a26b43f099bcee4aef1d25ae
+    source_url: https://github.com/ArduPilot/ardupilot.git
+    license: GPL-3.0(官方镜像内 /opt/navlab_official_ws/src/ardupilot/COPYING.txt 实测;本地 submodule 未初始化)
+    build_role: SITL 固件源(official-baseline 镜像内另检 e0fa4a47,见 firmware 段)
+    pinned_by: .gitmodules + gitlink SHA
+    restore: git submodule update --init third_party/ardupilot
+    lock_status: THIRD_PARTY_LOCKED
+  - component: wm/third_party/ardupilot_gazebo
+    kind: submodule
+    name: ardupilot_gazebo
+    version_or_sha: 082a0fe231f6e63bc8d1598f1cba461d9e2ea7f5
+    source_url: https://github.com/ArduPilot/ardupilot_gazebo.git
+    license: LGPL-3.0(LICENSE.md 实测)
+    build_role: Gazebo ArduPilot 插件
+    pinned_by: .gitmodules + gitlink SHA
+    restore: git submodule update --init third_party/ardupilot_gazebo
+    lock_status: THIRD_PARTY_LOCKED
+  - component: wm/third_party/FAST_LIO
+    kind: submodule
+    name: FAST_LIO_ROS2
+    version_or_sha: 2fffc570a25d0df172720bac034fbdb6a13d2162
+    source_url: https://github.com/Ericsii/FAST_LIO_ROS2.git
+    license: GPL-2.0(LICENSE 实测)
+    build_role: LIO 备选(fast-lio 镜像)
+    pinned_by: .gitmodules + gitlink SHA
+    restore: git submodule update --init third_party/FAST_LIO
+    lock_status: THIRD_PARTY_LOCKED
+  - component: wm/third_party/livox_ros_driver2
+    kind: submodule
+    name: livox_ros_driver2
+    version_or_sha: 13eb05e4e6dd7a765b934d0c5fd6236676a57b49
+    source_url: https://github.com/Livox-SDK/livox_ros_driver2.git
+    license: Livox 自定义 MIT 风格(LICENSE.txt 实测)
+    build_role: Livox 雷达驱动
+    pinned_by: .gitmodules + gitlink SHA
+    restore: git submodule update --init third_party/livox_ros_driver2
+    lock_status: THIRD_PARTY_LOCKED
+  - component: wm/third_party/Livox-SDK2
+    kind: submodule
+    name: Livox-SDK2
+    version_or_sha: f5d9375f84efe2b15bc0a052d3e18482ed13adf4
+    source_url: https://github.com/Livox-SDK/Livox-SDK2
+    license: Livox 自定义 MIT 风格(LICENSE.txt 实测)
+    build_role: Livox SDK
+    pinned_by: .gitmodules + gitlink SHA
+    restore: git submodule update --init third_party/Livox-SDK2
+    lock_status: THIRD_PARTY_LOCKED
+  - component: wm/third_party/mavlink-router
+    kind: submodule
+    name: mavlink-router
+    version_or_sha: 2362c620f483cef1edd574fb962a373a288e4b9e
+    source_url: https://github.com/mavlink-router/mavlink-router.git
+    license: Apache-2.0(LICENSE 实测)
+    build_role: MAVLink 路由(14550 镜像口)
+    pinned_by: .gitmodules + gitlink SHA
+    restore: git submodule update --init third_party/mavlink-router
+    lock_status: THIRD_PARTY_LOCKED
+  - component: wm/third_party/YDLidar-SDK
+    kind: submodule
+    name: YDLidar-SDK
+    version_or_sha: 6bd776315dcbe8366ae8abd0c5b62f1ef655962b
+    source_url: https://github.com/YDLIDAR/YDLidar-SDK.git
+    license: YDLIDAR 自定义 MIT 风格(LICENSE.txt 实测)
+    build_role: YDLidar SDK
+    pinned_by: .gitmodules + gitlink SHA
+    restore: git submodule update --init third_party/YDLidar-SDK
+    lock_status: THIRD_PARTY_LOCKED
+  - component: wm/third_party/ydlidar_ros2_driver
+    kind: submodule
+    name: ydlidar_ros2_driver
+    version_or_sha: 6b9f249de1a4ce2d3f44dd773dd3dcd0aade22f4
+    source_url: https://github.com/YDLIDAR/ydlidar_ros2_driver.git
+    license: "UNVERIFIED:检出树 LICENSE.txt 为空文件(0 字节),许可不明,分发前须与上游核实"
+    build_role: YDLidar ROS2 驱动
+    pinned_by: .gitmodules + gitlink SHA
+    restore: git submodule update --init third_party/ydlidar_ros2_driver
+    lock_status: THIRD_PARTY_UNVERIFIED   # license 要素缺(空文件≠未声明)
+
+  # ---- gbp-feat vendored ----
+  - component: feat/ros2_port/src/voxblox_ros2_minimal
+    kind: vendor
+    name: voxblox_ros2_minimal
+    version_or_sha: d08e9d4(snt-arg upstream HEAD 2025-12-01;剥 .git 整树收入,后续改动=本仓独立 commit 维护 fork)
+    source_url: https://github.com/snt-arg/voxblox_ros2_minimal
+    license: BSD 风格(ETHZ ASL,LICENSE 实测;含 minkindr/xmlrpcpp 子许可,见各子目录 LICENSE)
+    build_role: M2 voxblox ROS2 底座(9 包)
+    pinned_by: ros2_port/README.md §M2 + vendored 树本身
+    restore: git clone https://github.com/snt-arg/voxblox_ros2_minimal && git checkout d08e9d4
+    lock_status: THIRD_PARTY_LOCKED
+
+  # ---- main sources/ 快照(浏览用,governance 实测零构建引用)----
+  - component: main/sources/gbplanner_ros-源码
+    kind: snapshot
+    name: gbplanner_ros
+    version_or_sha: 7301b5350915cf3a4055072ad559842db37b4ca9
+    source_url: https://github.com/ntnu-arl/gbplanner_ros
+    license: BSD-3-Clause(仓级 LICENSE;package.xml 均 TODO)
+    build_role: 禁入构建(浏览/oracle 对拍参照)
+    pinned_by: sources/MANIFEST.yaml
+    restore: git clone + checkout 7301b535
+    lock_status: THIRD_PARTY_LOCKED
+  - component: main/sources/adaptive_obb_ros-源码
+    kind: snapshot
+    name: adaptive_obb_ros
+    version_or_sha: 7dc24c973d233f63d73f2a8548e6f5227bc422bb
+    source_url: https://github.com/ntnu-arl/adaptive_obb_ros
+    license: "未声明(无 LICENSE,package.xml=TODO)——风险标记:仅研究参考,分发前须与上游确认"
+    build_role: 禁入构建(依赖剥离参照)
+    pinned_by: sources/MANIFEST.yaml
+    restore: git clone + checkout 7dc24c97
+    lock_status: THIRD_PARTY_LOCKED   # license 按规则以"明确未声明+风险标记"计
+  - component: main/sources/world-model-源码
+    kind: snapshot
+    name: world-model 浏览快照(588 文件,无 .git)
+    version_or_sha: "UNVERIFIED:快照未钉上游 SHA(登记缺口,升级 LOCKED 的条件)"
+    source_url: https://github.com/SZ-surveying/world-model(红线勿推;authoritative=ai4sci-z/world-model)
+    license: 上游未附 LICENSE(私有协作仓)——风险标记
+    build_role: 禁入构建(离线查阅;修复一律走 working clone)
+    pinned_by: sources/MANIFEST.yaml
+    restore: 以 working clone + backup 远端为准,快照不再更新
+    lock_status: THIRD_PARTY_UNVERIFIED   # SHA 要素缺
+  - component: main/sources/GBPlanner原始论文
+    kind: document
+    name: GBPlanner 论文 JFR2020(DOI 10.1002/rob.21993)
+    version_or_sha: JFR 2020 发表版
+    source_url: https://doi.org/10.1002/rob.21993
+    license: 出版物版权(Wiley)——风险标记:仓内仅作研究留档,不再分发
+    build_role: 禁入构建(文献)
+    pinned_by: sources/MANIFEST.yaml
+    restore: DOI 下载
+    lock_status: THIRD_PARTY_LOCKED
+
+  # ---- 固件/宿主 clone(pins_2026-07-14.yaml)----
+  - component: firmware/ardupilot(镜像内)
+    kind: firmware
+    name: ArduPilot(official-baseline 内实测)
+    version_or_sha: e0fa4a47e18beb0b19108dd02053b5e675c9bf92(V4.8.0-dev,镜像内 git log 实测)
+    source_url: https://github.com/ArduPilot/ardupilot
+    license: GPL-3.0(镜像内 COPYING.txt 实测)
+    build_role: SITL 固件(运行时)
+    pinned_by: pins_2026-07-14.yaml(Dockerfile ARG 未 pin,重建时须传 ARDUPILOT_REF=e0fa4a47…)
+    restore: 镜像在盘;重建走 Dockerfile+REF
+    lock_status: THIRD_PARTY_LOCKED
+  - component: host/ardupilot_gz
+    kind: host-clone
+    name: ardupilot_gz(宿主同级 clone)
+    version_or_sha: 8df4dc1726e37504e6fc8b952d02e554cfa3176f
+    source_url: https://github.com/ArduPilot/ardupilot_gz
+    license: "UNVERIFIED:本轮未读其 LICENSE(宿主 clone,非构建输入)"
+    build_role: 宿主辅助(非镜像构建输入)
+    pinned_by: pins_2026-07-14.yaml
+    restore: git clone + checkout 8df4dc17
+    lock_status: THIRD_PARTY_UNVERIFIED
+
+  # ---- docker 镜像(pins_2026-07-14.yaml 实测;ID=本机层 ID 非注册表 digest,跨机不可复现)----
+  - component: images/navlab-fleet
+    kind: docker-image
+    name: 9 navlab 镜像 + gbplanner_stack + gbplanner-ref + voxblox_ros2_port
+    version_or_sha: 以 pins_2026-07-14.yaml images 段逐条 ID 为准(另:companion:jazzy-eab0cc6f0d54 在盘)
+    source_url: 本仓 runbooks/world-model-jazzy/*.Dockerfile + wm docker/ 构建
+    license: 聚合镜像(基底 ros:jazzy 等,许可随各基底)
+    build_role: 全运行链
+    pinned_by: pins_2026-07-14.yaml
+    restore: build_all_jazzy_native.sh(BuildKit 直建+verify_jazzy_images.sh 验真)
+    lock_status: THIRD_PARTY_UNVERIFIED   # 本机 ID 非 digest,跨机复现要素缺;升级需 registry digest 落 pins
+
+  # ---- 运行环境 ----
+  - component: env/os-ros
+    kind: os|ros
+    name: Ubuntu 24.04 + ROS 2 jazzy
+    version_or_sha: 宿主 24.04(HANDOVER_LINUX);容器内 jazzy(镜像 pinned)
+    source_url: ubuntu.com / ros.org
+    license: 各自发行许可
+    build_role: 运行时基座
+    pinned_by: 镜像基底 + HANDOVER_LINUX
+    restore: 镜像重建/系统重装手册
+    lock_status: THIRD_PARTY_LOCKED

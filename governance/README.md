@@ -39,24 +39,30 @@
 每仓收口数字(review_commit、tracked、rows、missing/extra/duplicate、delta)见各 TSV 头部与
 阶段收口报告;本 README 不复制易过期数值。
 
-## 2. 第三方锁定判定(本轮 LOCKED = 0)
+## 2. 第三方锁定判定(2026-07-18:LOCKED 13 / UNVERIFIED 4,清单=dependencies.yaml)
 
 **判定规则**:`THIRD_PARTY_LOCKED` 要求组件记录五要素齐备且机器可解析——upstream、
 commit/tag/digest、license(或明确"未声明"+风险标记)、build role、恢复方法。
 任一缺失 → `THIRD_PARTY_UNVERIFIED`。
 
-**本轮全部第三方为 UNVERIFIED,逐组件缺口**:
+**逐组件记录 = [dependencies.yaml](dependencies.yaml)**(2026-07-18 创建,license 全部
+文件/镜像实测,不靠记忆)。**LOCKED 13**:wm gitlink×7(ardupilot GPL-3.0 镜像内实测/
+ardupilot_gazebo LGPL-3.0/FAST_LIO GPL-2.0/livox×2 与 YDLidar-SDK 厂商 MIT 风格/
+mavlink-router Apache-2.0)、feat vendored voxblox(BSD 风格 d08e9d4)、main 快照
+gbplanner_ros(BSD-3)+adaptive_obb(明确未声明+风险标记)+论文(出版物版权标记)、
+镜像内 ArduPilot 固件(e0fa4a47,GPL-3.0)、OS/ROS 基座。
 
-| 组件 | 已有 | 缺口(升级 LOCKED 的条件) |
-|---|---|---|
-| main `sources/world-model-源码/`(588 文件) | upstream、恢复方式(MANIFEST.yaml) | **快照未钉 commit;上游无 LICENSE**(需钉快照对应上游 SHA + license 风险标记) |
-| main `sources/GBPlanner原始论文.pdf` | 出处 DOI | license 字段缺(出版物版权,需明确标注) |
-| feat `sources/**`(592 项,含 2 个遗留损坏 gitlink) | — | **feat 分支无 MANIFEST.yaml**;需去重或补记录(依赖的 main commit 也须记录) |
-| feat vendored voxblox(~370 文件) | 基底 pin d08e9d4(ros2_port/README) | per-component license 记录缺;第一方补丁边界未成文 |
-| wm 8 个 gitlink | upstream+SHA(.gitmodules、pins_2026-07-14.yaml) | per-component license 与 build role 记录缺 |
+**仍 UNVERIFIED 4(升级条件)**:
+
+| 组件 | 缺口 |
+|---|---|
+| wm `third_party/ydlidar_ros2_driver` | 检出树 LICENSE.txt 为**空文件**(0 字节),须与上游核实 |
+| main `sources/world-model-源码/` | **快照未钉上游 SHA**;上游无 LICENSE(风险已标记) |
+| host `ardupilot_gz` clone | LICENSE 未读(非构建输入,低风险) |
+| docker 镜像舰队 | pins 记录为**本机层 ID 非注册表 digest**,跨机复现要素缺 |
 
 注:main `sources/MANIFEST.yaml`、`sources/README.md`、mentor 任务文档为**第一方治理资产**
-(ACTIVE_REFERENCE),不计第三方。
+(ACTIVE_REFERENCE),不计第三方;feat `sources/**` 去重提案仍待批(见 §4/§7)。
 
 ## 3. 构建不引用快照的核验(2026-07-16 重建,逐段 rc)
 
@@ -117,12 +123,10 @@ Cmd = 对 run `20260715T185957`(L1 孤儿批)执行 `slam_hover_probe.py`。
    (10.7GB,`gbplanner_ros@7301b535`)+ 适配器冻结清单 `integration/ros1_bridge/ADAPTER_FREEZE.md`
    + 桥接期 stage1–5 证据;输入 = stage 证据 rosbag 与参数集;已知限制 = ROS1 noetic 容器、
    2D SLAM 语境、公平对比为窗口口径。待批动作:主仓打 tag + 镜像 digest 落 pins。
-4. **机器可读依赖清单**:唯一位置候选 `governance/dependencies.yaml`
-   (**新增路径将改变闭包 delta——创建必须与 manifest 再生成同批**);schema:
-   `{component, kind: os|ros|docker-image|pip|go|submodule|vendor|snapshot, name, version_or_sha,
-   digest, source_url, license, build_role, pinned_by, notes}`;初始条目来源 =
-   pins_2026-07-14.yaml + wm .gitmodules + sources/MANIFEST.yaml + ros2_port vendor 记录。
+4. **机器可读依赖清单**:✅ **已创建(2026-07-18,负责人队列放行)** = `governance/dependencies.yaml`,
+   与 manifest 再生成同批提交(零路径增量协议);条目来源 = pins_2026-07-14.yaml + wm .gitmodules
+   实测 SHA + sources/MANIFEST.yaml + ros2_port vendor 记录 + LICENSE/镜像内实测。
 5. **历史退出容器规则(交 WP303 方案纳入)**:批结束登记退出容器(ID/关联 run/退出码),
    证据确认后按保留期清理;现存 `zealous_curran` 保留至本次收口后由负责人裁决。
-6. **本轮明确未执行**:打任何 tag / 建 dev 分支 / 远端更名 / 创建 dependencies.yaml /
-   feat sources 去重 / 容器清理。
+6. **仍未执行(待负责人批准)**:打任何 tag / 建 dev 分支 / 远端更名 /
+   feat sources 去重 / 容器清理。(dependencies.yaml 已于 2026-07-18 创建,见第 4 条。)
