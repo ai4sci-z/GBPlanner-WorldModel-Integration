@@ -378,8 +378,67 @@ def final_rc(outcome, ev, cleanup):
             "TIMED_OUT": RC_TIMED_OUT, "CANCELLED": RC_CANCELLED}[outcome]
 
 
+# ---------- telemetry sidecar(WP304 E1;纯旁路,失败绝不改 producer rc) ----------
+def start_telemetry(artifact_root, penv):
+    """WP303_TELEMETRY=on 时启动 sidecar(命令注入自 WP303_TELEMETRY_CMD,
+    fixture 用 fake;独立 session)。off=完全不启动、不建目录、不动 producer argv。
+    batch_id/run 根经与 producer 相同的 WP303_BATCH_ID/BC_ROOT 贯通;
+    run_id 由 sidecar 从 producer 的 runs/run_*.json 记录读取,不另造第二套。"""
+    if penv.get("WP303_TELEMETRY", "off") != "on":
+        return {"enabled": False}, None
+    tcmd = penv.get("WP303_TELEMETRY_CMD", "").strip()
+    if not tcmd:
+        die(RC_USAGE, "WP303_TELEMETRY=on 需要 WP303_TELEMETRY_CMD")
+    tchild = subprocess.Popen(shlex.split(tcmd), preexec_fn=os.setsid,
+                              cwd=artifact_root, env=penv)
+    st = pid_starttime(tchild.pid)
+    return {"enabled": True, "cmd": tcmd, "pid": tchild.pid,
+            "pid_starttime": st if st is not None else "gone"}, tchild
+
+
+def finalize_telemetry(rec, tchild):
+    """cleanup owner=WP303 monitor:回收 sidecar 并单独记录 telemetry_status。
+    sidecar rc 只入 telemetry_status,绝不参与 final_rc(producer rc 保真)。"""
+    tinfo = rec.get("telemetry") or {"enabled": False}
+    if not tinfo.get("enabled"):
+        return {"enabled": False, "state": "OFF", "sidecar_rc": None}
+    rc = None
+    if tchild is not None:
+        try:
+            rc = tchild.wait(timeout=TERM_GRACE_SEC)
+        except Exception:
+            rc = None
+    if rc is None:
+        # 未自然退出(或本 monitor 无句柄):按身份核验后 TERM→KILL 其 session 组
+        pid = tinfo.get("pid")
+        st = pid_starttime(pid) if pid else None
+        if st is not None and st == tinfo.get("pid_starttime"):
+            for sig in (signal.SIGTERM, signal.SIGKILL):
+                try:
+                    os.killpg(pid, sig)
+                except (ProcessLookupError, PermissionError):
+                    break
+                deadline = time.monotonic() + TERM_GRACE_SEC
+                while time.monotonic() < deadline and pid_starttime(pid) == tinfo.get("pid_starttime") \
+                        and not pid_is_zombie(pid):
+                    time.sleep(POLL_SEC)
+                if pid_starttime(pid) != tinfo.get("pid_starttime") or pid_is_zombie(pid):
+                    break
+            if tchild is not None:
+                try:
+                    tchild.wait(timeout=TERM_GRACE_SEC)
+                except Exception:
+                    pass
+            return {"enabled": True, "state": "KILLED", "sidecar_rc": None}
+        # 身份已不在:进程已消失,只能记录 rc 未观测
+        return {"enabled": True, "state": "GONE", "sidecar_rc": None}
+    state = "OK" if rc == 0 else "CRASHED"
+    return {"enabled": True, "state": state, "sidecar_rc": rc}
+
+
 # ---------- monitor 主循环 ----------
-def run_monitor(rec, record, artifact_root, cancel_path, readonly=False, child=None):
+def run_monitor(rec, record, artifact_root, cancel_path, readonly=False, child=None,
+                telemetry_child=None):
     t0 = time.monotonic()
     outcome, terminal = None, False
     while not terminal:
@@ -409,6 +468,11 @@ def run_monitor(rec, record, artifact_root, cancel_path, readonly=False, child=N
         cleanup = do_cleanup(rec, force_fail=force_fail)  # 正常终态也确认无残留
 
     ev, missing = evidence_status(rec, artifact_root)
+    if readonly:
+        telemetry_status = {"enabled": (rec.get("telemetry") or {}).get("enabled", False),
+                            "state": "NOT_ATTEMPTED", "sidecar_rc": None}
+    else:
+        telemetry_status = finalize_telemetry(rec, telemetry_child)
     status = {
         "schema_version": SCHEMA_VERSION,
         "batch_id": rec["batch_id"],
@@ -417,6 +481,7 @@ def run_monitor(rec, record, artifact_root, cancel_path, readonly=False, child=N
         "evidence_missing": missing,
         "cleanup_status": cleanup,
         "container_cleanup": "NOT_ATTEMPTED",  # 容器归属不可核验
+        "telemetry_status": telemetry_status,  # 与 producer_outcome 分离,绝不参与 final_rc
         "run_rc_map": snap["run_rc_map"],
         "readonly": readonly,
     }
@@ -482,6 +547,7 @@ def cmd_launch(args):
     penv["BC_ROOT"] = artifact_root
     child = subprocess.Popen(producer, preexec_fn=os.setsid, cwd=artifact_root, env=penv)
     pid = child.pid
+    tinfo, tchild = start_telemetry(artifact_root, penv)
     # 等 setsid 生效
     for _ in range(50):
         try:
@@ -511,6 +577,7 @@ def cmd_launch(args):
             "finalization_budget": args.finalization_budget,
         },
         "required_artifacts": args.required or [],
+        "telemetry": tinfo,
         "created_at_monotonic": time.monotonic(),
     }
     # 绝对 monotonic deadline 存盘:monitor 重启从 record 恢复,不重置预算(boot_id 守卫)
@@ -522,7 +589,8 @@ def cmd_launch(args):
     finally:
         os.umask(old)
     validate_record_path(record, artifact_root)
-    rc = run_monitor(rec, record, artifact_root, cancel_path, readonly=False, child=child)
+    rc = run_monitor(rec, record, artifact_root, cancel_path, readonly=False, child=child,
+                     telemetry_child=tchild)
     try:
         child.wait(timeout=1)
     except Exception:
