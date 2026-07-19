@@ -65,9 +65,9 @@ def gen_scene(root, batch_id):
     entry = {"schema_version": "wp304.run_registry.v1", "batch_id": batch_id, "run_index": 1,
              "world_model_run_id": RID, "world_model_run_dir": run_dir,
              "producer_pid": 1, "producer_pid_starttime": "1", "start_utc": 1.0,
-             "start_monotonic": 1.0, "end_utc": None, "rc": None,
+             "start_monotonic": 1.0, "end_utc": 9.0, "end_monotonic": 9.0, "rc": 0,
              "identity_status": "RESOLVED", "discovery_method": "unique_new_dir_in_window",
-             "watch_dir": watch, "pre_set": [], "phase": "resolved"}
+             "watch_dir": watch, "pre_set": [], "phase": "finished"}
     open(os.path.join(reg, "attempt_1.json"), "w").write(json.dumps(entry))
     fixture = {"proc": {"/proc/loadavg": ["0.5 0.6 0.7 1/100 42\n"],
                         "/proc/stat": ["cpu 100 0 100 800 0 0 0 0 0 0\n",

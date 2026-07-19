@@ -383,16 +383,17 @@ DEFAULT_SIDECAR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                "open1", "telemetry_sidecar.py")
 
 
-def default_telemetry_argv(artifact_root, batch_id, penv):
-    """项目内默认 sidecar argv(E1C-02.3):真实验收不依赖任何外部脚本。
-    backend 默认 real;fixture 仅测试(WP303_TELEMETRY_BACKEND=fixture + FIXTURE_INPUT)。"""
+def default_telemetry_argv(artifact_root, batch_id, penv, expected_runs=1):
+    """项目内默认 sidecar argv(E1C-02.3/E1L-03.1):真实验收不依赖任何外部脚本。
+    覆盖全部 expected runs(--expected-runs N,非固定 run 1);backend 默认 real,
+    fixture 仅测试。"""
     backend = penv.get("WP303_TELEMETRY_BACKEND", "real")
     argv = [sys.executable, DEFAULT_SIDECAR,
             "--artifact-root", artifact_root,
             "--batch-id", batch_id,
             "--run-registry", os.path.join(artifact_root, "run_registry"),
             "--world-model-root", penv.get("WM", "/home/ai4s/projects/world-model"),
-            "--backend", backend, "--once",
+            "--backend", backend, "--expected-runs", str(int(expected_runs)),
             "--registry-wait-sec", penv.get("WP303_TELEMETRY_REGISTRY_WAIT", "5")]
     if backend == "fixture":
         fi = penv.get("WP303_TELEMETRY_FIXTURE_INPUT", "").strip()
@@ -401,7 +402,7 @@ def default_telemetry_argv(artifact_root, batch_id, penv):
     return argv
 
 
-def start_telemetry(artifact_root, batch_id, penv):
+def start_telemetry(artifact_root, batch_id, penv, expected_runs=1):
     """WP303_TELEMETRY=on 时由 launcher 启动 sidecar(独立 session)。
     默认命令=版本库内 telemetry_sidecar.py(完整 argv 落 task record);
     WP303_TELEMETRY_CMD 覆盖仅限 fixture/test(record 显式标注),真实验收不得依赖。
@@ -415,7 +416,7 @@ def start_telemetry(artifact_root, batch_id, penv):
         argv = shlex.split(override)
         tinfo = {"enabled": True, "argv": argv, "cmd_override_fixture_test_only": True}
     else:
-        argv = default_telemetry_argv(artifact_root, batch_id, penv)
+        argv = default_telemetry_argv(artifact_root, batch_id, penv, expected_runs)
         tinfo = {"enabled": True, "argv": argv, "cmd_override_fixture_test_only": False}
     tchild = subprocess.Popen(argv, preexec_fn=os.setsid, cwd=artifact_root, env=penv)
     st = pid_starttime(tchild.pid)
@@ -593,7 +594,7 @@ def cmd_launch(args):
     penv["BC_ROOT"] = artifact_root
     child = subprocess.Popen(producer, preexec_fn=os.setsid, cwd=artifact_root, env=penv)
     pid = child.pid
-    tinfo, tchild = start_telemetry(artifact_root, args.batch_id, penv)
+    tinfo, tchild = start_telemetry(artifact_root, args.batch_id, penv, args.expected_runs)
     # 等 setsid 生效
     for _ in range(50):
         try:
