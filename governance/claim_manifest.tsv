@@ -45,3 +45,4 @@ runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;�
 工作铁律.md	整档	CURRENT	执行纪律权威(非状态源)	实证/颗粒度/文档/收口/红线五章铁律	E0-CORRECT 逐章节核对	33449ff	CURRENT_CONSISTENT	KEEP	-	33449ff
 文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	da695d3	CURRENT_ENTRY	KEEP	-	da695d3
 项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
+governance/ros2_host_env_pins_2026-07-20.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	宿主 ROS2 环境 pins(方案A 裁决;版本/回滚/激活;未 source 仍 fail-closed)	宿主 dpkg 实测 2026-07-20	bae00bc	REFERENCE_MARKED	KEEP_MARKED	-	bae00bc
