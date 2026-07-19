@@ -104,3 +104,21 @@ python3 test_telemetry_sidecar.py     # 存储/采集/只读适配/容量反例�
 python3 test_open1_arm_timeline.py    # 合成固定向量 + 五 run 真 tlog 自证回放
 python3 test_telemetry_entry.py       # WP303 正式入口 20 案 dry-run(红案20/21)
 ```
+
+## 7b. E1-CORRECT(2026-07-19):可执行 sidecar 闭合
+
+状态词:E1 sidecar 具备项目内可执行 CLI,并通过 fixture backend 的真实主循环、run-id 握手、
+进程级互斥/恢复和正式证据门 dry-run;真实 Docker/ROS、A/A 和行为验收未执行。
+
+- `telemetry_sidecar.py` = 正式 CLI(`--backend real|fixture`,real 本轮禁用);
+- `run_registry.py` = run 身份注册表 + `aggregate` 五层分母正式聚合入口;
+- writer 互斥 = 内核 flock;恢复 = 死后显式 recover(CORRUPT 拒写);
+- WP303 on 默认命令 = 版本库内 sidecar(task record 存全量 argv;覆盖=fixture/test only);
+- monitor 三态:process_state / evidence_state(来自产物)/ finalization_state。
+
+```
+python3 test_run_registry.py     # 12 案:唯一新增/零/双/mtime/symlink/半写/重复
+python3 test_writer_mutex.py     # 9 案进程级:并发拒/TERM/SIGKILL 恢复/损坏 index 拒写
+python3 test_telemetry_cli.py    # CLI 反例 + fixture 真主循环 + required 闭包 + 五层聚合
+python3 test_telemetry_entry.py  # 入口 20 案:默认 CLI/三态/三身份全等/off 零变化
+```
