@@ -52,8 +52,22 @@ bc_run() {
   local start end rc
   start="$(date -u +%FT%TZ)"
   echo "=== $BC_TAG run $i start $start ===" | tee -a "$BC_LOG"
+  # E1C-03 run 身份握手(纯观察:目录集合冻结;失败绝不改 run rc,不动 navlab-sim argv)
+  # 默认跟随 WP303_TELEMETRY(off=零变化;telemetry on 时必须有 registry 供 sidecar 取 run_id)
+  local _rr_on="${WP303_RUN_REGISTRY:-${WP303_TELEMETRY:-off}}"
+  local _rrdir="$BC_ROOT/run_registry" _rrwatch="${BC_WATCH_DIR:-$BC_ARTIFACT_BASE/hover}"
+  local _rrpy="$(dirname "${BASH_SOURCE[0]}")/open1/run_registry.py"
+  if [ "$_rr_on" = "on" ] && [ -f "$_rrpy" ]; then
+    python3 "$_rrpy" begin --registry-dir "$_rrdir" --batch-id "$BC_BATCH_ID" \
+      --run-index "$i" --watch-dir "$_rrwatch" >>"$BC_LOG" 2>&1 || true
+  fi
   "$@" >>"$BC_LOG" 2>&1
   rc=$?
+  if [ "$_rr_on" = "on" ] && [ -f "$_rrpy" ]; then
+    python3 "$_rrpy" resolve --registry-dir "$_rrdir" --run-index "$i" \
+      --timeout-sec "${BC_REGISTRY_RESOLVE_SEC:-2}" >>"$BC_LOG" 2>&1 || true
+    python3 "$_rrpy" finish --registry-dir "$_rrdir" --run-index "$i" --rc "$rc" >>"$BC_LOG" 2>&1 || true
+  fi
   end="$(date -u +%FT%TZ)"
   echo "=== $BC_TAG run $i rc=$rc end $end ===" | tee -a "$BC_LOG"
   bc_write_atomic "$BC_ROOT/runs/run_$i.json" \
