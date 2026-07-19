@@ -1,6 +1,6 @@
 # R003 第一方活跃文档统一注册表 + 逐主张清单(11 字段;真实路径;全 34 覆盖)
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
-# generated_at_head=c281f54(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=31 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
+# generated_at_head=0a22fd3(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=31 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
 CURRENT_STATUS.md	§一 目标与路线	CURRENT	当前状态唯一权威	固定路线 P0→P1(WP303-308)→P2→P3→P4;并列共存非替换;多层楼梯只做架构预留	E0-CORRECT 逐章节核对	c281f54	CURRENT_CONSISTENT	KEEP	-	c281f54
 CURRENT_STATUS.md	§二 当前位置(一句话)	CURRENT	当前状态唯一权威	P0 收尾+WP304;WP303 实现停点(真实仿真未验);E1 观测方案已交付,下一步 E1 sidecar 实现待放行	E0-CORRECT 逐章节核对	c281f54	CURRENT_CONSISTENT	KEEP	-	c281f54
@@ -41,7 +41,7 @@ runbooks/world-model-jazzy/l0_hover/l0_batch_evidence_2026-07-14.md	整档	EVIDE
 runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/l0_hover/l1_bringup_evidence_2026-07-15.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
-接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	E0-CORRECT 逐章节核对	c281f54	CURRENT_CONSISTENT	KEEP	-	c281f54
+接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	E0-CORRECT 逐章节核对	0a22fd3	CURRENT_CONSISTENT	KEEP	-	0a22fd3
 工作铁律.md	整档	CURRENT	执行纪律权威(非状态源)	实证/颗粒度/文档/收口/红线五章铁律	E0-CORRECT 逐章节核对	33449ff	CURRENT_CONSISTENT	KEEP	-	33449ff
 文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	da695d3	CURRENT_ENTRY	KEEP	-	da695d3
 项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
