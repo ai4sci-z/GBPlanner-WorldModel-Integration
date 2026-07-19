@@ -54,7 +54,7 @@ CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependenci
 | G3 生成器测试 | ✅ | 57/57 |
 | G4 文档闭包 | 🟡 PARTIAL | 14 份逐行审计完成(8 全核/5 部分/1 归档),未核范围见 [审计记录](governance/P0_doc_audit_逐份审计_2026-07-18.md) |
 | G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真未验 |
-| G6 WP304 因果链 | 🟡 A/A-PREFLIGHT 施工中 | VC-01/VC-02=VERIFIED_CLOSED(00 包复锁过);AA-PF-01=BLOCKED_BY_OWNER_DECISION(宿主无 rclpy,三方案矩阵见 WP304 §11.1;双域/topic 权威失败关闭已落地 20 案);AA-PF-02:post-run 权威管道已闭合(summary handles+sha256+fail-closed 15 案),live 路径=BLOCKED_BY_OWNER_DECISION(上游契约提案 WP304 §11.3);AA-PF-03/04 施工中 |
+| G6 WP304 因果链 | 🟡 A/A-PREFLIGHT 施工中 | VC-01/VC-02=VERIFIED_CLOSED(00 包复锁过);AA-PF-01=BLOCKED_BY_OWNER_DECISION(宿主无 rclpy,三方案矩阵见 WP304 §11.1;双域/topic 权威失败关闭已落地 20 案);AA-PF-02:post-run 权威管道已闭合(summary handles+sha256+fail-closed 15 案),live 路径=BLOCKED_BY_OWNER_DECISION(上游契约提案 WP304 §11.3);AA-PF-03=固化(aa_pair_contract:双基线/配对/B23 六态/合并守卫,反例全绿);AA-PF-04 施工中 |
 | G7 默认 10/10 | ⛔ | 待 WP304-306 |
 | G8 长稳 | ⛔ | 待 G7 |
 | G9 六项收口 | 🔁 持续 | — |
