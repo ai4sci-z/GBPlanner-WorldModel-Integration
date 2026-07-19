@@ -22,6 +22,13 @@
 **verifier 不能证明**:audit_status 所代表的审查结论本身是否正确——那是人工审查产物,
 机器只验证"未被篡改且可追溯到登记来源",不验证审查质量(GOV-04 诚实契约)。
 
+**doc_closure_check.py 能力边界(同属 GOV-04,2026-07-19 记录)**:其六项输出为
+**结构性与既定规则检查**(断链/登记/路径/权威/生命周期 + 已编码的特定过期串与时效规则)。
+它**不能识别**未编码的跨文档自然语言矛盾(例如"OPEN-2 已通过 vs 仍失败"、
+"license 全实测 vs UNVERIFIED 4"这类语义冲突);因此 `semantic_violations=0`
+只表示既定规则通过,**不得解释为全部自然语言主张一致**。专用语义反例验收
+登记于下一编号 Review(R003 已冻结,本轮不实现)。
+
 ## 1b. 闭包协议(解决"清单提交即过期")
 
 采用**两提交零路径增量**方案:
@@ -45,8 +52,11 @@
 commit/tag/digest、license(或明确"未声明"+风险标记)、build role、恢复方法。
 任一缺失 → `THIRD_PARTY_UNVERIFIED`。
 
-**逐组件记录 = [dependencies.yaml](dependencies.yaml)**(2026-07-18 创建,license 全部
-文件/镜像实测,不靠记忆)。**LOCKED 13**:wm gitlink×7(ardupilot GPL-3.0 镜像内实测/
+**逐组件记录 = [dependencies.yaml](dependencies.yaml)**(2026-07-18 创建)。
+dependencies.yaml 已创建并可解析;17 个组件、LOCKED 13 / UNVERIFIED 4 和八个 gitlink
+SHA/URL 可复核。**许可信息按逐组件证据等级记录,不宣称全部 license 已验证**
+(逐条证据等级见清单字段:部分为文件/镜像实测,部分为"明确未声明+风险标记",
+四项 UNVERIFIED 见下表)。**LOCKED 13**:wm gitlink×7(ardupilot GPL-3.0 镜像内实测/
 ardupilot_gazebo LGPL-3.0/FAST_LIO GPL-2.0/livox×2 与 YDLidar-SDK 厂商 MIT 风格/
 mavlink-router Apache-2.0)、feat vendored voxblox(BSD 风格 d08e9d4)、main 快照
 gbplanner_ros(BSD-3)+adaptive_obb(明确未声明+风险标记)+论文(出版物版权标记)、
