@@ -15,7 +15,8 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 ## 二、当前位置(一句话)
 
 **P0 治理收尾 + P1 前置(WP304)。** WP303 批生命周期已到实现停点;WP304 的离线证据链与
-E1 观测方案已交付;下一步是 E1 sidecar 实现(待负责人放行),此后才有新实验数据。
+E1 观测方案已交付;**R003 已硬冻结于 R003-CLOSE 状态闭环停点**。唯一待决:是否在
+R003 状态闭环经 Codex 复验通过后,另行放行 WP304 E1 sidecar 实现停点(此后才有新实验数据)。
 
 ## 三、三仓基线
 
@@ -23,7 +24,7 @@ E1 观测方案已交付;下一步是 E1 sidecar 实现(待负责人放行),此�
 |---|---|---|---|
 | GBPlanner-WorldModel-Integration | main(HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`) | 治理/证据/状态入口 | 可改 |
 | gbp-feat | feat/gbplanner-ros2-port@`17db3bae08d7` | ROS2 迁移代码(M1-M5) | 只读 |
-| world-model | fix/world-model-e2e-takeoff@`e569ecfaafa2`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 授权修复已入(B23 runner 等 mission + B22 exploration/navigation 接线,fixture 级) |
+| world-model | fix/world-model-e2e-takeoff@`750032a3aad8`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 授权修复已入(`faadb2a` B23 + `e569ecf` B22 接线 + `750032a` OPEN-2 解耦,fixture 级)并**重新冻结** |
 
 ## 四、已证事实(按证据等级)
 
@@ -61,7 +62,8 @@ E1 观测方案已交付;下一步是 E1 sidecar 实现(待负责人放行),此�
 当前唯一施工点          下一停点                  解锁                    仍阻塞
 ──────────────────────────────────────────────────────────────────────────
 E1 sidecar 实现     →  E1 实现停点(fixture 绿) →  E1 pilot(≤3,另批) →  E2 负载对照
-(待放行;零 wm 改动)                              ↳ OPEN-1 新数据
+(冻结:待 Codex 复验                               ↳ OPEN-1 新数据
+ R003 闭环后另行放行;零 wm 改动)
 WP305 epoch 复验    →  已达成(双环境独立复验) →  真实仿真验收归 WP307 →  —
 WP306 三单元        →  各单元反例测试绿         →  与 E1 无依赖,可并行  →  —
 ──────────────────────────────────────────────────────────────────────────
@@ -74,8 +76,9 @@ P1 关门 → P2 ROS1/ROS2 对齐(oracle 冻结)→ P3 3D 无损 → P4 插件�
 - E1 前置雷:~~Docker 双 daemon~~(**已排除**:Desktop 于 07-18 卸载,单 system daemon);
   ~~runner 探针完即 SIGKILL mission~~(**已修 B23**,wm `faadb2a`,fixture 级;真实仿真未验);
   RTF≈0.08(单 run ≈25 分钟墙钟,批次预算按此排)。
-- ⚠️ 基线注记:E1 历史复现基线仍=`eab0cc6` 独立 worktree(裁决不变);B23/B22 接线修复在
-  `288b486` 之上(`e569ecf`),属**未来新基线材料**,不得混入 eab0cc6 历史统计。
+- ⚠️ 基线注记:E1 历史复现基线仍=`eab0cc6` 独立 worktree(裁决不变);授权修复链在
+  `288b486` 之上(`faadb2a`→`e569ecf`→`750032a`,当前材料),属**未来新基线材料**,
+  不得混入 eab0cc6 历史统计。
 - P2/P3 是论文核心交付(等价性证据);P1 稳定门未过前不启动,但 oracle 资产
   (gbplanner-ref 镜像、桥接期证据)已冻结待用。
 
