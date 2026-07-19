@@ -676,6 +676,8 @@ class FixtureBackend:
         return self.data.get("config_hash", "UNAVAILABLE")
 
     def container_name(self):
+        if self.data.get("omit_container_identity"):
+            raise TelemetryWriteError("fixture: 容器身份不可得")
         return self.data.get("container", "official_baseline")
 
     def docker_inspect(self, name):
@@ -837,12 +839,78 @@ class ConcreteRosSubscribeAdapter:
             pass
 
 
+OFFICIAL_BASELINE_LOGICAL = "official_baseline"
+
+
+def resolve_container_identity(run_dir, run_id=None, logical_service=OFFICIAL_BASELINE_LOGICAL):
+    """AA-PF-02:容器身份权威解析(禁 docker ps/前缀/唯一容器假设/全局字符串)。
+    权威来源=本 run 的 summary.json service_handles(收官落盘→仅 post-run 可得;
+    live 模式无上游预启动 handle 产物 → UNAVAILABLE,须上游契约,见 WP304 §11.3)。
+    绑定:run_dir 基名==run_id;handle.service_name==logical;唯一;记录来源 sha256。"""
+    rid = os.path.basename(os.path.normpath(run_dir))
+    if run_id is not None and run_id != rid:
+        return {"status": "CORRUPT", "reason": f"run_id 不绑:{run_id}!={rid}"}
+    sp = os.path.join(run_dir, "summary.json")
+    if not os.path.exists(sp):
+        return {"status": "UNAVAILABLE",
+                "reason": "summary.json 不在(live 期无权威 handle 产物;须上游契约)"}
+    try:
+        raw = open(sp, "rb").read()
+        sj = json.loads(raw.decode("utf-8"))
+    except (OSError, ValueError) as e:
+        return {"status": "CORRUPT", "reason": f"summary.json 不可解析: {e}"}
+    handles = []
+
+    def walk(obj):
+        if isinstance(obj, dict):
+            if obj.get("service_name") == logical_service and "container_name" in obj:
+                handles.append(obj)
+            for v in obj.values():
+                walk(v)
+        elif isinstance(obj, list):
+            for x in obj:
+                walk(x)
+    walk(sj)
+    # 去重(同一 handle 序列化多处出现时按内容折叠)
+    uniq = {json.dumps(h, sort_keys=True) for h in handles}
+    handles = [json.loads(x) for x in sorted(uniq)]
+    if not handles:
+        return {"status": "UNAVAILABLE",
+                "reason": f"summary 无 {logical_service} runtime handle(只有逻辑名不算身份)"}
+    if len(handles) > 1:
+        return {"status": "AMBIGUOUS", "reason": f"多候选 handle={len(handles)}"}
+    h = handles[0]
+    name = (h.get("container_name") or "").strip()
+    ident = (h.get("identifier") or "").strip()
+    if not name:
+        return {"status": "CORRUPT", "reason": "handle.container_name 为空"}
+    return {"status": "RESOLVED",
+            "logical_service": logical_service,
+            "runtime_container_name": name,
+            "identifier": ident or "UNAVAILABLE",
+            "identifier_matches_name": (ident == name) if ident else None,
+            "source_artifact": "summary.json",
+            "source_sha256": hashlib.sha256(raw).hexdigest(),
+            "run_id_bound": rid,
+            "fixture_test_only": False}
+
+
+def verify_container_identity_source(run_dir, recorded):
+    """来源防篡改:重算 summary.json sha256 与记录比对。"""
+    try:
+        raw = open(os.path.join(run_dir, recorded.get("source_artifact", "summary.json")),
+                   "rb").read()
+    except OSError:
+        return False
+    return hashlib.sha256(raw).hexdigest() == recorded.get("source_sha256")
+
+
 class RealBackend:
     """real 数据源(--backend real 才构造;本轮任何测试/dry-run 不得使用/未实测)。"""
 
-    def __init__(self, container, ros_domain_id, system_ros_domain_id=None,
+    def __init__(self, container=None, ros_domain_id=None, system_ros_domain_id=None,
                  ros_topics=None):
-        self._container = container
+        self._container = container   # real 模式禁默认名:须经权威解析注入(set_container)
         self._ros_domain = ros_domain_id            # sidecar 域(--ros-domain-id)
         self._system_ros_domain = system_ros_domain_id   # 被测系统域(独立来源)
         self._ros_topics = ros_topics
@@ -873,7 +941,13 @@ class RealBackend:
     def config_hash(self):
         return "UNAVAILABLE"
 
+    def set_container(self, name):
+        self._container = name
+
     def container_name(self):
+        if not self._container:
+            raise TelemetryWriteError(
+                "real backend 容器身份未注入(禁默认名/禁 docker ps 猜测;须权威解析)")
         return self._container
 
     def docker_inspect(self, name):
@@ -987,7 +1061,31 @@ def _process_attempt(cfg, backend, entry, live, batch_final):
     console_chunks = []
     console_lock = _threading.Lock()
     wait_result = {"code": None, "post_run": False}
-    cname = backend.container_name()
+    # AA-PF-02:容器身份判定(fixture=测试注入显式标记;real=本 run 权威产物解析)
+    if isinstance(backend, FixtureBackend):
+        try:
+            cident = {"status": "RESOLVED",
+                      "runtime_container_name": backend.container_name(),
+                      "logical_service": OFFICIAL_BASELINE_LOGICAL,
+                      "source_artifact": "fixture_input",
+                      "fixture_test_only": True}
+        except TelemetryWriteError as e:
+            cident = {"status": "UNAVAILABLE", "reason": str(e), "fixture_test_only": True}
+    else:
+        cident = resolve_container_identity(run_dir, run_id)
+        if cident.get("status") == "RESOLVED":
+            if cident.get("identifier_matches_name") is False:
+                cident = {"status": "UNKNOWN",
+                          "reason": f"identifier≠container_name({cident['identifier']}"
+                                    f"≠{cident['runtime_container_name']}),不可信",
+                          **{k: v for k, v in cident.items() if k != "status"}}
+            else:
+                backend.set_container(cident["runtime_container_name"])
+    container_ok = cident.get("status") == "RESOLVED"
+    cname = cident.get("runtime_container_name") if container_ok else None
+    if not container_ok:
+        for nm in ("sitl_proc", "sitl_console", "container_exit"):
+            collectors[nm]["error_state"] = f"容器身份不可信/不可得: {cident.get('reason', cident.get('status'))}"
 
     def should_stop():
         return stop_local.is_set()
@@ -1069,9 +1167,11 @@ def _process_attempt(cfg, backend, entry, live, batch_final):
 
     threads = []
     if live:
-        specs = [("host", host_loop), ("sitl_proc", top_loop),
-                 ("sitl_console", logs_loop), ("container_exit", wait_loop),
+        specs = [("host", host_loop),
                  ("readiness", ros_loop("readiness")), ("extnav", ros_loop("extnav"))]
+        if container_ok:
+            specs += [("sitl_proc", top_loop), ("sitl_console", logs_loop),
+                      ("container_exit", wait_loop)]
         for name, fn in specs:
             t = _threading.Thread(target=guard, args=(name, fn), daemon=True)
             t.start()
@@ -1090,19 +1190,20 @@ def _process_attempt(cfg, backend, entry, live, batch_final):
         recq.put(("host", _rec(cfg, run_id, "host.mem", mem, post_run=True)))
         recq.put(("host", _rec(cfg, run_id, "host.cpu_freq",
                                read_cpu_freq(backend.read_file), post_run=True)))
-        recq.put(("sitl_proc", _rec(cfg, run_id, "sitl.proc",
-                                    backend.docker_top(cname), post_run=True)))
-        try:
-            for chunk in backend.logs_follow(cname, lambda: False):
-                if gov.admit("telemetry/sitl_console.log", len(chunk.encode("utf-8"))):
-                    console_chunks.append(chunk)
-                    collectors["sitl_console"]["records"] += 1
-        except OSError:
-            collectors["sitl_console"]["error_state"] = "console 不可得"
-        code = backend.wait_blocking(cname, lambda: False)
-        if code is not None:
-            wait_result["code"] = code
-            wait_result["post_run"] = True
+        if container_ok:
+            recq.put(("sitl_proc", _rec(cfg, run_id, "sitl.proc",
+                                        backend.docker_top(cname), post_run=True)))
+            try:
+                for chunk in backend.logs_follow(cname, lambda: False):
+                    if gov.admit("telemetry/sitl_console.log", len(chunk.encode("utf-8"))):
+                        console_chunks.append(chunk)
+                        collectors["sitl_console"]["records"] += 1
+            except OSError:
+                collectors["sitl_console"]["error_state"] = "console 不可得"
+            code = backend.wait_blocking(cname, lambda: False)
+            if code is not None:
+                wait_result["code"] = code
+                wait_result["post_run"] = True
         for key in ("readiness", "extnav"):
             try:
                 for msg in backend.ros_stream(key, lambda: False):
@@ -1196,16 +1297,17 @@ def _process_attempt(cfg, backend, entry, live, batch_final):
                      run_root=run_dir, overwrite=True)
     with console_lock:
         console = "".join(console_chunks)
-    if console_chunks or collectors["sitl_console"]["error_state"] is None:
+    if console_chunks or (container_ok and collectors["sitl_console"]["error_state"] is None):
         atomic_write(os.path.join(run_dir, "telemetry", "sitl_console.log"),
                      console.encode("utf-8"), run_root=run_dir, overwrite=True)
-    exit_fields = container_exit_fields(wait_result["code"]) if wait_result["code"] is not None \
-        else {"official_baseline_container_exit_code": C.UNAVAILABLE,
-              "sitl_process_exit_code": C.UNAVAILABLE}
-    exit_fields["post_run_derived"] = bool(wait_result["post_run"])
-    atomic_write(os.path.join(run_dir, "telemetry", "official_baseline_container_exit.json"),
-                 json.dumps(exit_fields, sort_keys=True).encode("utf-8"),
-                 run_root=run_dir, overwrite=True)
+    if container_ok:
+        exit_fields = container_exit_fields(wait_result["code"]) if wait_result["code"] is not None \
+            else {"official_baseline_container_exit_code": C.UNAVAILABLE,
+                  "sitl_process_exit_code": C.UNAVAILABLE}
+        exit_fields["post_run_derived"] = bool(wait_result["post_run"])
+        atomic_write(os.path.join(run_dir, "telemetry", "official_baseline_container_exit.json"),
+                     json.dumps(exit_fields, sort_keys=True).encode("utf-8"),
+                     run_root=run_dir, overwrite=True)
     fz = collect_freeze(git_runner=backend.git, image_inspect=backend.image_inspect,
                         config_hash=backend.config_hash(), batch_id=cfg["batch_id"],
                         run_id=run_id, image_refs=backend.image_refs())
@@ -1233,6 +1335,7 @@ def _process_attempt(cfg, backend, entry, live, batch_final):
                  "dropped_records": dropped_counts,
                  "telemetry_overrun": False,
                  "ros_domains": cfg.get("ros_domains"),
+                 "container_identity": cident,
                  "finalized_monotonic_ns": time.monotonic_ns()}
     atomic_write(os.path.join(run_dir, "telemetry", "sidecar_final_status.json"),
                  json.dumps(run_final, ensure_ascii=False, sort_keys=True,
@@ -1427,7 +1530,7 @@ def main(argv=None):
             ap.error("--backend fixture 需要 --fixture-input")
         backend = FixtureBackend(a.fixture_input)
     else:
-        backend = RealBackend(container="official_baseline", ros_domain_id=a.ros_domain_id,
+        backend = RealBackend(container=None, ros_domain_id=a.ros_domain_id,
                               system_ros_domain_id=a.system_ros_domain_id,
                               ros_topics={"readiness": a.ros_readiness_topic,
                                           "extnav": a.ros_extnav_topic})
