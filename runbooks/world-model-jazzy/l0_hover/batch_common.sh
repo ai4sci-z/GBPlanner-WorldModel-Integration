@@ -57,15 +57,25 @@ bc_run() {
   local _rr_on="${WP303_RUN_REGISTRY:-${WP303_TELEMETRY:-off}}"
   local _rrdir="$BC_ROOT/run_registry" _rrwatch="${BC_WATCH_DIR:-$BC_ARTIFACT_BASE/hover}"
   local _rrpy="$(dirname "${BASH_SOURCE[0]}")/open1/run_registry.py"
+  local _rrwpid=""
   if [ "$_rr_on" = "on" ] && [ -f "$_rrpy" ]; then
     python3 "$_rrpy" begin --registry-dir "$_rrdir" --batch-id "$BC_BATCH_ID" \
       --run-index "$i" --watch-dir "$_rrwatch" >>"$BC_LOG" 2>&1 || true
+    # E1L-02:并发 watcher——producer 运行期间即时 RESOLVE,不等 producer 结束
+    python3 "$_rrpy" watch --registry-dir "$_rrdir" --run-index "$i" \
+      --timeout-sec "${BC_REGISTRY_WATCH_SEC:-300}" --poll-sec 0.05 >>"$BC_LOG" 2>&1 &
+    _rrwpid=$!
   fi
   "$@" >>"$BC_LOG" 2>&1
   rc=$?
   if [ "$_rr_on" = "on" ] && [ -f "$_rrpy" ]; then
-    python3 "$_rrpy" resolve --registry-dir "$_rrdir" --run-index "$i" \
-      --timeout-sec "${BC_REGISTRY_RESOLVE_SEC:-2}" >>"$BC_LOG" 2>&1 || true
+    # finish 前有界回收 watcher(先给自然完成窗;仍活则 TERM→CANCELLED 终态)
+    if [ -n "$_rrwpid" ]; then
+      local _w
+      for _w in $(seq 1 20); do kill -0 "$_rrwpid" 2>/dev/null || break; sleep 0.05; done
+      kill -0 "$_rrwpid" 2>/dev/null && kill -TERM "$_rrwpid" 2>/dev/null
+      wait "$_rrwpid" 2>/dev/null || true
+    fi
     python3 "$_rrpy" finish --registry-dir "$_rrdir" --run-index "$i" --rc "$rc" >>"$BC_LOG" 2>&1 || true
   fi
   end="$(date -u +%FT%TZ)"

@@ -173,11 +173,104 @@ def cmd_resolve(a):
 def cmd_finish(a):
     entry = _load_entry(a.registry_dir, a.run_index)
     entry["end_utc"] = time.time()
+    entry["end_monotonic"] = time.monotonic()
     entry["rc"] = int(a.rc)
     entry["phase"] = "finished"
     _atomic_write(_entry_path(a.registry_dir, a.run_index), entry)
     print(json.dumps({"finished": True, "run_index": entry["run_index"], "rc": entry["rc"]}))
     return 0
+
+
+WATCHER_STATES = ("WAITING", "RESOLVED", "UNKNOWN_ZERO_CANDIDATE",
+                  "UNKNOWN_MULTIPLE_CANDIDATES", "INVALID_CANDIDATE",
+                  "TIMED_OUT", "CANCELLED", "CRASHED")
+
+
+def cmd_watch(a):
+    """独立 registry watcher(E1L-02):producer 运行期间并发观察目录集合差,
+    唯一合法新目录一出现立即原子写 RESOLVED——不等 producer 结束。
+    终态∈WATCHER_STATES,全程记录 candidates/rejected/双 monotonic/身份/reason。"""
+    import hashlib as _h
+    import signal as _sig
+    entry = _load_entry(a.registry_dir, a.run_index)
+    if entry.get("pre_set") is None:
+        entry.update({"identity_status": "UNKNOWN", "watcher_state": "UNKNOWN_ZERO_CANDIDATE",
+                      "watcher_reason": "watch 根不可读", "phase": "watched"})
+        _atomic_write(_entry_path(a.registry_dir, a.run_index), entry)
+        print(json.dumps({"watch": "UNKNOWN", "reason": "watch 根不可读"}))
+        return 0
+    watch = entry["watch_dir"]
+    pre = set(entry["pre_set"])
+    me_st = _pid_starttime(os.getpid()) or "UNKNOWN"
+    entry.update({"phase": "watching", "watcher_state": "WAITING",
+                  "watcher_pid": os.getpid(), "watcher_pid_starttime": me_st,
+                  "watcher_start_monotonic": time.monotonic(),
+                  "pre_set_sha256": _h.sha256("\n".join(sorted(pre)).encode()).hexdigest(),
+                  "candidates": [], "rejected_candidates": [], "watcher_reason": None})
+    _atomic_write(_entry_path(a.registry_dir, a.run_index), entry)
+    cancelled = {"flag": False}
+
+    def _on_term(_s, _f):
+        cancelled["flag"] = True
+    _sig.signal(_sig.SIGTERM, _on_term)
+    _sig.signal(_sig.SIGINT, _on_term)
+
+    def finalize(state, reason, run_id=None, run_dir=None, valid=(), rejected=()):
+        entry["watcher_state"] = state
+        entry["watcher_reason"] = reason
+        entry["watcher_end_monotonic"] = time.monotonic()
+        entry["candidates"] = list(valid)
+        entry["rejected_candidates"] = list(rejected)
+        if state == "RESOLVED":
+            entry["identity_status"] = "RESOLVED"
+            entry["world_model_run_id"] = run_id
+            entry["world_model_run_dir"] = run_dir
+            entry["resolved_monotonic"] = entry["watcher_end_monotonic"]
+            entry["discovery_method"] = "concurrent_watcher_unique_new_dir"
+            entry["phase"] = "resolved"
+        else:
+            entry["identity_status"] = "UNKNOWN"
+            entry["discovery_method"] = f"watcher:{state}"
+            entry["phase"] = "watched"
+        _atomic_write(_entry_path(a.registry_dir, a.run_index), entry)
+        print(json.dumps({"watch": state, "run_id": run_id, "reason": reason},
+                         ensure_ascii=False))
+        return 0
+
+    deadline = time.monotonic() + float(a.timeout_sec)
+    try:
+        rejected_all = []
+        while True:
+            if cancelled["flag"]:
+                return finalize("CANCELLED", "收到 TERM/INT")
+            cur = _snapshot(watch)
+            if cur is not None:
+                fresh = sorted(set(cur) - pre)
+                if fresh:
+                    valid, rejected = [], []
+                    for name in fresh:
+                        ok, why = _valid_new_dir(watch, name)
+                        (valid.append(name) if ok else rejected.append(why))
+                    rejected_all = rejected
+                    if len(valid) == 1:
+                        return finalize("RESOLVED", "唯一合法新增", valid[0],
+                                        os.path.join(watch, valid[0]), valid, rejected)
+                    if len(valid) >= 2:
+                        return finalize("UNKNOWN_MULTIPLE_CANDIDATES",
+                                        f"同窗多候选={valid}", valid=valid, rejected=rejected)
+                    # 只有非法候选:继续等到超时(可能合法目录稍后出现)
+            if time.monotonic() >= deadline:
+                if rejected_all:
+                    return finalize("INVALID_CANDIDATE",
+                                    f"窗口内仅非法候选: {rejected_all}", rejected=rejected_all)
+                return finalize("TIMED_OUT", "窗口内零候选(UNKNOWN_ZERO_CANDIDATE)")
+            time.sleep(float(a.poll_sec))
+    except Exception as e:  # 崩溃也留终态
+        try:
+            finalize("CRASHED", f"{type(e).__name__}: {e}")
+        except Exception:
+            pass
+        return 70
 
 
 def load_registry(registry_dir, batch_id=None):
@@ -324,6 +417,11 @@ def main(argv=None):
     pr.add_argument("--run-index", required=True, type=int)
     pr.add_argument("--timeout-sec", default="2.0")
     pr.add_argument("--poll-sec", default="0.05")
+    pw = sub.add_parser("watch")
+    pw.add_argument("--registry-dir", required=True)
+    pw.add_argument("--run-index", required=True, type=int)
+    pw.add_argument("--timeout-sec", default="300")
+    pw.add_argument("--poll-sec", default="0.05")
     pf = sub.add_parser("finish")
     pf.add_argument("--registry-dir", required=True)
     pf.add_argument("--run-index", required=True, type=int)
@@ -338,7 +436,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     try:
         return {"begin": cmd_begin, "resolve": cmd_resolve, "finish": cmd_finish,
-                "read": cmd_read, "aggregate": cmd_aggregate}[a.cmd](a)
+                "watch": cmd_watch, "read": cmd_read, "aggregate": cmd_aggregate}[a.cmd](a)
     except (RegistryError, C.ContractError) as e:
         print(json.dumps({"error": str(e)}, ensure_ascii=False))
         return 5
