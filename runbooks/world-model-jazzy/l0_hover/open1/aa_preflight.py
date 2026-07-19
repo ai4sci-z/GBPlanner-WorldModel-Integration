@@ -6,8 +6,10 @@
 不改仓库、不写 world-model;除 --output 指定文件外零产物。
 状态枚举:READY / BLOCKED / CORRUPT / OWNER_DECISION_REQUIRED(禁布尔吞原因)。"""
 import argparse
+import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -49,6 +51,30 @@ def _can_import(mod):
     cp = subprocess.run([sys.executable, "-c", f"import {mod}"],
                         capture_output=True, text=True, timeout=30)
     return cp.returncode == 0, (cp.stderr.strip().splitlines() or [""])[-1]
+
+
+# ---- hash/digest 严格 schema(真实性门,2026-07-20 补正) ----------------------
+# 算法=sha256;输入=已物化文件的精确字节;编码=小写十六进制 64 位。
+# 非 schema 值(占位符 PLAN_PENDING*/UNKNOWN/TODO、空串、短串、大写、非 hex)一律
+# 不满足格式门——按 schema 拒绝,不依赖黑名单枚举。
+SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _valid_sha256_hex(v):
+    return isinstance(v, str) and bool(SHA256_HEX.match(v))
+
+
+def _valid_image_digest(v):
+    pre = "sha256:"
+    return isinstance(v, str) and v.startswith(pre) and bool(SHA256_HEX.match(v[len(pre):]))
+
+
+def _sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def run_preflight(plan, main_repo, wm_repo):
@@ -102,10 +128,33 @@ def run_preflight(plan, main_repo, wm_repo):
         and plan.get("owner_approvals", {}).get("container_identity_upstream") is True,
         f"source={cis!r};live 权威管道须上游契约+负责人批准(§11.3)",
         owner="container_identity_upstream")
-    add("image_digests_present", bool(plan.get("image_digests")),
-        f"digests={str(plan.get('image_digests'))[:60]}")
-    add("runtime_plan_hash_present", bool(plan.get("runtime_plan_hash")),
-        f"hash={str(plan.get('runtime_plan_hash'))[:16]}")
+    # 镜像 digest:严格 schema(sha256:+小写64hex),逐项验证;占位符按格式拒绝
+    digs = plan.get("image_digests")
+    digs_ok = (isinstance(digs, dict) and bool(digs)
+               and all(_valid_image_digest(v) for v in digs.values()))
+    add("image_digests_valid", digs_ok,
+        f"digests={str(digs)[:80]}(须 sha256:<64位小写hex>,占位/缺前缀/格式错一律拒)")
+    # 计划物化真实性门:preflight 必须发生在 canonical config / runtime plan
+    # 原子落盘之后;hash 由本门独立重算文件字节比对——非空占位符不得通过启动门。
+    for label, path_key, hash_key in (
+            ("config", "config_path", "config_hash"),
+            ("runtime_plan", "runtime_plan_path", "runtime_plan_hash")):
+        p_path = plan.get(path_key)
+        p_hash = plan.get(hash_key)
+        fmt_ok = _valid_sha256_hex(p_hash)
+        add(f"{label}_hash_schema_valid", fmt_ok,
+            f"{hash_key}={str(p_hash)[:32]!r}(schema=sha256 小写 64hex;"
+            f"PLAN_PENDING*/UNKNOWN/TODO/空串/短串/非hex 均不满足)")
+        if not fmt_ok:
+            continue
+        if not (isinstance(p_path, str) and os.path.isfile(p_path)):
+            add(f"{label}_materialized", False,
+                f"{path_key}={p_path!r}(计划未物化:文件不存在;禁止运行后补 hash)")
+            continue
+        add(f"{label}_materialized", True, f"{path_key}={p_path}")
+        actual = _sha256_file(p_path)
+        add(f"{label}_hash_matches_file", actual == p_hash,
+            f"declared={p_hash[:16]}… recomputed={actual[:16]}…(独立重算文件字节)")
     add("identity_wait_budget_derived",
         isinstance(plan.get("identity_wait_sec"), (int, float)) and plan.get("identity_wait_sec", 0) > 0,
         f"identity_wait_sec={plan.get('identity_wait_sec')}")
@@ -127,6 +176,25 @@ def run_preflight(plan, main_repo, wm_repo):
             reasons += v["exclusion_reasons"]
     add("pair_plan_frozen_fields_match", bool(pairs) and pair_ok,
         "; ".join(reasons[:4]) if reasons else "全冻结字段一致")
+    # pair 成员与顶层计划冻结值一致性(防止四 run 内部一致但整体挂错计划)
+    runs = [r for p in pairs for r in (p.get("off", {}), p.get("on", {}))]
+    top_dig = digs.get("companion") if isinstance(digs, dict) else None
+    incons = []
+    for r in runs:
+        rid = r.get("run_id") or "?"
+        if r.get("config_hash") != plan.get("config_hash"):
+            incons.append(f"{rid}:config_hash≠顶层")
+        if r.get("image_digests") != top_dig:
+            incons.append(f"{rid}:image_digests≠顶层companion")
+        if r.get("main_commit") != plan.get("main_commit"):
+            incons.append(f"{rid}:main_commit≠顶层")
+        if r.get("world_model_commit") != wm_sha:
+            incons.append(f"{rid}:world_model_commit≠现场")
+    add("pair_hashes_consistent_with_plan", bool(runs) and not incons,
+        "; ".join(incons[:4]) if incons else "四 run 与顶层 config_hash/digest/SHA 一致")
+    ids = [r.get("run_id") for r in runs]
+    add("run_ids_unique_nonempty",
+        bool(runs) and all(ids) and len(set(ids)) == len(ids), f"run_ids={ids}")
     fake_done = [k for k, v in plan.get("real_validation_claims", {}).items() if v]
     add("no_fake_real_validation_claims", not fake_done,
         f"被声称已完成的真实验证={fake_done}(必须全为 false)")

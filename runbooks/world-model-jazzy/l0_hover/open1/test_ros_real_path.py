@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""WP304 AA-PF-01 · ROS real-path 失败关闭门(10 案)。
+"""WP304 AA-PF-01 · ROS real-path 失败关闭门。
 
 expected 来源=E1 required evidence 契约 + wm 冻结源码实证
 (/external_nav/status=std_msgs/String,bridge cpp L89;readiness 连续 topic 无
-发布者=未验证)。宿主实测=无 rclpy/std_msgs。零真实 ROS 图。"""
+发布者=未验证)。裁决后(2026-07-20 方案A)宿主 sourced 有 rclpy/std_msgs;
+"无 rclpy"保留为剥离环境子进程历史反例(环境无关)。零真实 ROS 图
+(default factory 仅在剥离环境子进程里走到,不会 rclpy.init)。
+运行前置:source /opt/ros/jazzy/setup.bash(未 source=如实红)。SKIP 恒=0。"""
 import json
 import os
 import subprocess
@@ -56,16 +59,60 @@ def fake_factory():
 
 GOOD_TOPICS = {"readiness": "/mavlink_external_nav/status", "extnav": "/external_nav/status"}
 
-print("======== 案1/2 宿主 rclpy/std_msgs 缺失(真实实测)========")
-cp = subprocess.run([sys.executable, "-c", "import rclpy"], capture_output=True, text=True)
-ck("案1 前提:宿主无 rclpy", cp.returncode != 0, True)
+def stripped_ros_env():
+    """剥离 ROS 环境的子进程 env:复现裁决前/未 source 宿主(环境无关历史反例)。"""
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("PYTHONPATH", "AMENT_PREFIX_PATH", "CMAKE_PREFIX_PATH",
+                        "COLCON_PREFIX_PATH", "LD_LIBRARY_PATH", "ROS_DISTRO",
+                        "ROS_VERSION", "ROS_PYTHON_VERSION")
+           and not k.startswith("RMW_")}
+    env["PATH"] = "/usr/bin:/bin"
+    return env
+
+
+print("======== 案0 前置:裁决后 sourced 现实 ========")
+ck("案0 裁决后宿主(sourced)有 rclpy",
+   subprocess.run([sys.executable, "-c", "import rclpy"],
+                  capture_output=True).returncode, 0)
+ck("案0b 裁决后宿主(sourced)有 std_msgs",
+   subprocess.run([sys.executable, "-c", "from std_msgs.msg import String"],
+                  capture_output=True).returncode, 0)
+
+print("======== 案1/2 历史反例:未 source/无 rclpy(剥离环境子进程)========")
+senv = stripped_ros_env()
+cp = subprocess.run([sys.executable, "-c", "import rclpy"],
+                    capture_output=True, text=True, env=senv)
+ck("案1 剥离环境无 rclpy", cp.returncode != 0, True)
 cp = subprocess.run([sys.executable, "-c", "from std_msgs.msg import String"],
-                    capture_output=True, text=True)
-ck("案2 前提:宿主无 std_msgs", cp.returncode != 0, True)
-rejects("案1b default factory → RosAdapterUnavailable(明确原因,非崩)",
-        lambda: S.ConcreteRosSubscribeAdapter(ros_domain_id="7", system_domain_id="7",
-                                              topics=GOOD_TOPICS),
+                    capture_output=True, text=True, env=senv)
+ck("案2 剥离环境无 std_msgs", cp.returncode != 0, True)
+snippet = ("import sys; sys.path.insert(0, %r)\n"
+           "import telemetry_sidecar as S\n"
+           "try:\n"
+           "    S.ConcreteRosSubscribeAdapter(ros_domain_id='7', system_domain_id='7',\n"
+           "        topics={'readiness': '/mavlink_external_nav/status',\n"
+           "                'extnav': '/external_nav/status'})\n"
+           "    print('LAUNCHED')\n"
+           "except S.RosAdapterUnavailable as e:\n"
+           "    print('UNAVAILABLE:', e)\n"
+           "except Exception as e:\n"
+           "    print('CRASH:', type(e).__name__, e)\n") % HERE
+cp = subprocess.run([sys.executable, "-c", snippet],
+                    capture_output=True, text=True, env=senv, timeout=60)
+ck("案1b 无 rclpy 时 default factory → RosAdapterUnavailable(明确原因,非崩)",
+   cp.stdout.strip().startswith("UNAVAILABLE:"), True)
+print(f"    ↳ {cp.stdout.strip()[:100]}")
+res = S.ConcreteRosSubscribeAdapter._resolve_msg_class("std_msgs/msg/String")
+ck("案1c sourced:消息类型解析为真类(非字符串;str 直传会在真实 rclpy 崩)",
+   (res.__name__, isinstance(res, str)), ("String", False))
+rejects("案1d 不可导入的消息类型 → RosAdapterUnavailable(fail-closed)",
+        lambda: S.ConcreteRosSubscribeAdapter._resolve_msg_class("no_such_pkg/msg/Nope"),
         S.RosAdapterUnavailable)
+fac = fake_factory()
+ad = S.ConcreteRosSubscribeAdapter(ros_domain_id="7", system_domain_id="7",
+                                   topics=GOOD_TOPICS, node_factory=fac)
+ck("案1e create_subscription 收到解析后的类(2026-07-20 补正:曾直传 str)",
+   [t.__name__ for t, _ in ad._node.subs], ["String", "String"])
 
 print("======== 案3 topic 消息类型权威校验 ========")
 ck("权威登记:/external_nav/status=String(bridge cpp L89)",

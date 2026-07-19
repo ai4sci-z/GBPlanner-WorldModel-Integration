@@ -111,17 +111,33 @@ ck("shutdown 幂等(只关一次)", shutdowns["n"], 1)
 cb(Msg({"state": "late"}))
 ck("shutdown 后不再接收", ad.drain(), [])
 
-print("======== rclpy 不可用语义(default factory)========")
-try:
-    S.ConcreteRosSubscribeAdapter(ros_domain_id="0", system_domain_id="0", topics=GOOD_TOPICS)
-    got = "构造成功(本机竟有 rclpy?)"
-except S.RosAdapterUnavailable as e:
-    got = "RosAdapterUnavailable"
-    print(f"    ↳ {e}")
-except S.RosWriteRefused:
-    got = "RosWriteRefused"
-ck("宿主无 rclpy → RosAdapterUnavailable(明确 INCOMPLETE 语义,不炸 producer)",
-   got, "RosAdapterUnavailable")
+print("======== rclpy 不可用语义(default factory;剥离环境子进程历史反例)========")
+# 2026-07-20 补正:裁决后 sourced 宿主已有 rclpy——在本进程直接构造 default factory
+# 会 rclpy.init() 建真实 node(违反"不启动真实 ROS 图")。改为剥离 ROS 环境的
+# 子进程复现"无 rclpy"历史状态,环境无关。
+import subprocess  # noqa: E402
+_senv = {k: v for k, v in os.environ.items()
+         if k not in ("PYTHONPATH", "AMENT_PREFIX_PATH", "CMAKE_PREFIX_PATH",
+                      "COLCON_PREFIX_PATH", "LD_LIBRARY_PATH", "ROS_DISTRO",
+                      "ROS_VERSION", "ROS_PYTHON_VERSION")
+         and not k.startswith("RMW_")}
+_senv["PATH"] = "/usr/bin:/bin"
+_snippet = ("import sys; sys.path.insert(0, %r)\n"
+            "import telemetry_sidecar as S\n"
+            "try:\n"
+            "    S.ConcreteRosSubscribeAdapter(ros_domain_id='0', system_domain_id='0',\n"
+            "        topics={'readiness': '/mavlink_external_nav/status',\n"
+            "                'extnav': '/external_nav/status'})\n"
+            "    print('LAUNCHED')\n"
+            "except S.RosAdapterUnavailable as e:\n"
+            "    print('UNAVAILABLE:', e)\n"
+            "except Exception as e:\n"
+            "    print('CRASH:', type(e).__name__, e)\n") % HERE
+_cp = subprocess.run([sys.executable, "-c", _snippet], capture_output=True,
+                     text=True, env=_senv, timeout=60)
+ck("无 rclpy(剥离环境) → RosAdapterUnavailable(明确 INCOMPLETE 语义,不炸 producer)",
+   _cp.stdout.strip().startswith("UNAVAILABLE:"), True)
+print(f"    ↳ {_cp.stdout.strip()[:100]}")
 
 print("================================")
 print(f"结果: FAIL={FAIL}")

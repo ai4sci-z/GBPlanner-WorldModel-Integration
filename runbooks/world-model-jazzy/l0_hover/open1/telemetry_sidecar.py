@@ -779,6 +779,10 @@ class ConcreteRosSubscribeAdapter:
                 raise RosWriteRefused(
                     f"{key} topic {topic} 类型不符:权威={auth} 配置={msg_type}")
         self._msg_type = msg_type
+        # 真实 rclpy 的 create_subscription 需要消息类,传字符串会在裁决后 sourced
+        # 宿主上 AttributeError 崩(str 无 _TYPE_SUPPORT;2026-07-20 补正实测)——
+        # 统一在此解析为类,不可导入=fail-closed。
+        self._msg_class = self._resolve_msg_class(msg_type)
         self._q = _queue.Queue()
         self._shut = False
         factory = node_factory or self._default_factory
@@ -792,7 +796,17 @@ class ConcreteRosSubscribeAdapter:
                            time.time_ns(), time.monotonic_ns()))
             return _cb
         for key, topic in self._topics.items():
-            self._node.create_subscription(self._msg_type, topic, make_cb(key), 10)
+            self._node.create_subscription(self._msg_class, topic, make_cb(key), 10)
+
+    @staticmethod
+    def _resolve_msg_class(msg_type):
+        """"std_msgs/msg/String" → 实际消息类;不可导入 → RosAdapterUnavailable。"""
+        try:
+            pkg, mod, cls = msg_type.split("/")
+            m = __import__(f"{pkg}.{mod}", fromlist=[cls])
+            return getattr(m, cls)
+        except Exception as e:
+            raise RosAdapterUnavailable(f"消息类型不可导入: {msg_type}: {e}") from e
 
     @staticmethod
     def _default_factory():
