@@ -18,8 +18,13 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 E1 观测方案已交付;**R003 状态闭环已经 Codex 独立复验 VERIFIED_PASS 关闭(2026-07-19;
 复验基线=CLOSE-05 收口态,精确 HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`)**。分类:VERIFIED_CLOSED=R003-CLOSE-01..05/OPEN-2 环境复验/状态闭环;
 CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependencies 专用语义验收器。
-**E1L-CORRECT 完成:证据门段链闭包(入口/index/段一致,损坏→CORRUPT/零记录→INCOMPLETE)与身份等待预算单一来源(launcher 推导,watcher/sidecar 同源)两缺陷红→绿;未运行真实仿真;未验证真实 Docker daemon 采集链;未验证真实 ROS 图;未执行 OFF×2/ON×2 A/A;真实 sidecar 行为仍须 A/A 验证**。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
-下一步 = **E1 A/A 实验停点,须 Codex 独立现场复验本轮后由负责人另行明确放行;OFF×2 + ON×2,任何控制语义差异立即停止**。
+**A/A-PREFLIGHT 停点(2026-07-20)**:VC-01/VC-02=VERIFIED_CLOSED(独立复锁+套外反例过);
+AA-PF-01=BLOCKED_BY_OWNER_DECISION(宿主无 rclpy/std_msgs;三方案矩阵 §11.1;readiness topic 待裁);
+AA-PF-02=post-run 权威管道闭合,live=BLOCKED_BY_OWNER_DECISION(上游契约提案 §11.3);
+AA-PF-03=固化;AA-PF-04=preflight gate 建成,当前正式输出 OWNER_DECISION_REQUIRED(禁 READY=预期)。
+**禁止启动 A/A**:E1L-CORRECT 代码修复独立通过,但真实 A/A 前置未闭合;待负责人具名裁决
+(ROS 环境方案/readiness topic/容器身份上游契约/P2-OFFLINE-PREP 并行)。
+未运行真实仿真;real Docker/ROS 未实测;OPEN-1 未定位;G6 未关闭;WP307 未解锁。
 
 ## 三、三仓基线
 
@@ -54,7 +59,7 @@ CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependenci
 | G3 生成器测试 | ✅ | 57/57 |
 | G4 文档闭包 | 🟡 PARTIAL | 14 份逐行审计完成(8 全核/5 部分/1 归档),未核范围见 [审计记录](governance/P0_doc_audit_逐份审计_2026-07-18.md) |
 | G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真未验 |
-| G6 WP304 因果链 | 🟡 A/A-PREFLIGHT 施工中 | VC-01/VC-02=VERIFIED_CLOSED(00 包复锁过);AA-PF-01=BLOCKED_BY_OWNER_DECISION(宿主无 rclpy,三方案矩阵见 WP304 §11.1;双域/topic 权威失败关闭已落地 20 案);AA-PF-02:post-run 权威管道已闭合(summary handles+sha256+fail-closed 15 案),live 路径=BLOCKED_BY_OWNER_DECISION(上游契约提案 WP304 §11.3);AA-PF-03=固化(aa_pair_contract:双基线/配对/B23 六态/合并守卫,反例全绿);AA-PF-04 施工中 |
+| G6 WP304 因果链 | 🟡 A/A-PREFLIGHT 停点 | VC-01/02 复锁过;AA-PF-01/02(live)=BLOCKED_BY_OWNER_DECISION;AA-PF-03/04 固化;preflight=OWNER_DECISION_REQUIRED;禁 A/A 待具名裁决 |
 | G7 默认 10/10 | ⛔ | 待 WP304-306 |
 | G8 长稳 | ⛔ | 待 G7 |
 | G9 六项收口 | 🔁 持续 | — |
