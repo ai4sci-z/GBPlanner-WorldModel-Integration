@@ -18,7 +18,9 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 E1 观测方案已交付;**R003 状态闭环已经 Codex 独立复验 VERIFIED_PASS 关闭(2026-07-19;
 复验基线=CLOSE-05 收口态,精确 HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`)**。分类:VERIFIED_CLOSED=R003-CLOSE-01..05/OPEN-2 环境复验/状态闭环;
 CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependencies 专用语义验收器。
-唯一待决:**负责人是否正式放行 WP304 E1 sidecar 实现停点**(放行前不开始;此后才有新实验数据)。
+E1 实现停点已放行并达成(2026-07-19):**E1 sidecar 已编码并通过 fixture/dry-run;
+未执行真实仿真、A/A、pilot 或行为验收。** 下一步 = **E1 A/A 实验停点,须负责人另行放行;
+OFF×2 + ON×2,任何控制语义差异立即停止**(此后才有新实验数据)。
 
 ## 三、三仓基线
 
@@ -53,7 +55,7 @@ CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependenci
 | G3 生成器测试 | ✅ | 57/57 |
 | G4 文档闭包 | 🟡 PARTIAL | 14 份逐行审计完成(8 全核/5 部分/1 归档),未核范围见 [审计记录](governance/P0_doc_audit_逐份审计_2026-07-18.md) |
 | G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真未验 |
-| G6 WP304 因果链 | 🟡 E1 方案停点 | 离线证据链+E1 方案见 [WP304 方案](governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md);E0 证据门补正落地(schema 门/标注冻结门/claim 时效门) |
+| G6 WP304 因果链 | 🟡 E1 实现停点达成 | E0 证据门补正落地;E1 sidecar 已编码并通过 fixture/dry-run(WP304 §10.10),未执行真实仿真/A/A/pilot/行为验收;下一=A/A 实验停点待放行 |
 | G7 默认 10/10 | ⛔ | 待 WP304-306 |
 | G8 长稳 | ⛔ | 待 G7 |
 | G9 六项收口 | 🔁 持续 | — |
@@ -63,9 +65,9 @@ CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependenci
 ```
 当前唯一施工点          下一停点                  解锁                    仍阻塞
 ──────────────────────────────────────────────────────────────────────────
-E1 sidecar 实现     →  E1 实现停点(fixture 绿) →  E1 pilot(≤3,另批) →  E2 负载对照
-(冻结:待 Codex 复验                               ↳ OPEN-1 新数据
- R003 闭环后另行放行;零 wm 改动)
+E1 A/A 实验(OFF×2+ON×2)→  A/A 无扰动门(D6)   →  E1 pilot(≤3,另批) →  E2 负载对照
+(待负责人另行放行;                                  ↳ OPEN-1 新数据
+ sidecar 已编码+fixture/dry-run 绿,真实仿真未执行)
 WP305 epoch 复验    →  已达成(双环境独立复验) →  真实仿真验收归 WP307 →  —
 WP306 三单元        →  各单元反例测试绿         →  与 E1 无依赖,可并行  →  —
 ──────────────────────────────────────────────────────────────────────────

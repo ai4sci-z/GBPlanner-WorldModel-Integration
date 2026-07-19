@@ -8,7 +8,7 @@
 | WP | 任务 | 依赖 | 验收门 | 状态 |
 |---|---|---|---|---|
 | **WP303** | monitor 生命周期实现:launcher + task record + 三轴状态 + fixture;batch_id 端到端绑定+拒绝旧现场(stale-evidence 补正);只跑 fixture 不跑真实仿真 | P0 收口 | 正式入口 run_batch.sh e2e dry-run + test_wait_batch **75/75** + test_batch_common 12/12 + test_final_rc 13/13,残留=0 | 🟡 **PARTIAL 实现停点未发布:dry-run 通过,真实仿真未做** |
-| **WP304** | OPEN-1 因果时间线:样本分层 + F1-F5 + H1-H5 + E0/E1/E2;**E0 已收口**(open1/ 离线提取器 + CRC 校验协议解码器 + 观测 schema 草案 + 环境无关 fixture;证伪"accel=判别器";arm/no-BIN 死因=UNKNOWN;运行时埋点未实现;**E0-CORRECT 补正:逐输入 schema 门(UNSUPPORTED_SCHEMA)+ 标注冻结验收门(RAN=5/PASS=5/SKIP=0 + provenance 实绑)+ claim 语义时效门**) | WP303 | 逐阶段放行;E0+证据门/标注补正 done,E1 可执行方案 done(WP304 §10,基线=eab0cc6 worktree,sidecar 零 wm 改动),下一=E1 实现停点(实现+fixture,不跑仿真) | 🟡 **E1 方案交付:申请放行 E1 实现停点** |
+| **WP304** | OPEN-1 因果时间线:样本分层 + F1-F5 + H1-H5 + E0/E1/E2;**E0 已收口**(open1/ 离线提取器 + CRC 校验协议解码器 + 观测 schema 草案 + 环境无关 fixture;证伪"accel=判别器";arm/no-BIN 死因=UNKNOWN;运行时埋点未实现;**E0-CORRECT 补正:逐输入 schema 门(UNSUPPORTED_SCHEMA)+ 标注冻结验收门(RAN=5/PASS=5/SKIP=0 + provenance 实绑)+ claim 语义时效门**) | WP303 | 逐阶段放行;E0+证据门/标注补正 done,E1 方案 done,**E1 sidecar 已编码并通过 fixture/dry-run(2026-07-19,WP304 §10.10;未执行真实仿真/A/A/pilot/行为验收)**,下一=E1 A/A 实验停点(OFF×2+ON×2,须另行放行) | 🟡 **E1 实现停点达成:待放行 A/A 实验停点** |
 | WP305 | 时钟纪元契约修复(OPEN-2):测试与 pymavlink 环境解耦,补节点重启/来源生命周期反例 | WP303 | 反例矩阵全绿,独立复验通过 | 🟢 **代码/环境独立复验完成**(wm `750032a`,双环境:venv 22P + 容器 ran=22 fails=0);真实仿真验收归 WP307 |
 | WP306 | 三独立单元:GPU 支持矩阵 / IMU covariance(C'=RCRᵀ)+types.go 反注释 / truth audit 混合匹配 fail-closed | WP303 | 各单元反例测试通过 | ⛔ 阻塞 |
 | WP307 | 默认路径连续 10/10:固定 commit/镜像/场景,全 attempts 入分母 | WP304–306 | 10/10 发起/起飞/full-pass,产物完整无残留 | ⛔ 阻塞 |

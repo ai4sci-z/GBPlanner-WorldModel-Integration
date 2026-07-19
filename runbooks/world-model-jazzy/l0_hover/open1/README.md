@@ -80,8 +80,27 @@ python3 open1_extract.py <run_dir>   # 只读打印单 run 提取 JSON
 
 ## 6. 下一步(申请)
 
-E0 已收口(离线提取器 + 协议解码器 + schema 草案 + E0-CORRECT 补正:逐输入 schema 门 /
-标注冻结验收门与溯源实绑 / claim 语义时效门)。E1 可执行方案已交付
-(WP304 方案 §10;基线已裁决 = `eab0cc6` 独立 worktree 复现,`288b486` 原地不动)。
-**唯一申请动作 = 进入 WP304 E1 sidecar 实现停点**(实现 + fixture,零 wm 改动,不跑仿真)。
-未放行不跑 E1/E2、不启动仿真、不改 world-model。
+E0 已收口(离线提取器 + 协议解码器 + schema 草案 + E0-CORRECT 补正)。
+E1 sidecar 实现停点已于 2026-07-19 获负责人放行并达成(见 §7):
+**E1 sidecar 已编码并通过 fixture/dry-run;未执行真实仿真、A/A、pilot 或行为验收。**
+下一步 = **E1 A/A 实验停点,须负责人另行放行;OFF×2 + ON×2,任何控制语义差异立即停止。**
+未放行不跑 A/A/pilot/E2、不启动仿真、不改 world-model。
+
+## 7. E1 sidecar(2026-07-19;状态词:已编码并通过 fixture/dry-run,未执行真实仿真/A/A/pilot/行为验收)
+
+- `telemetry_contract.py` 契约层:schema/身份/D4 字段表/evidence gate/五层分母/airborne 语义。
+- `telemetry_sidecar.py` 采集层:原子写(tmp→fsync→rename→dirfsync)/不可变 JSONL 段+原子 index
+  (sha256/双时戳/truncated/dropped)/单 writer 互斥/崩溃恢复(不猜修)/宿主 /proc 采集
+  (cpu_freq 不可读=UNAVAILABLE)/Docker 只读(容器退出码≠SITL 进程退出码=UNAVAILABLE)
+  /ROS 只订不发(同 ROS_DOMAIN_ID)/容量与 CPU3%/64MB 预算(超→telemetry_overrun,不碰 producer)。
+- `open1_arm_timeline.py`:tlog→telemetry/arm_timeline.json(arm request/ACK/reject/statustext;
+  crc_extra 50/152/143 经真 tlog 自证+判别性反证;无可靠时戳→UNKNOWN)。
+- 入口:`batch_lifecycle.py` `WP303_TELEMETRY=on|off`(默认 off=零变化;on 由 launcher 启停,
+  batch_id/run 根贯通,run_id 读 producer run 记录;telemetry_status 与 producer rc 分录)。
+
+```
+python3 test_telemetry_contract.py    # 契约反例门(红案1-10/24/25+gate+五层)
+python3 test_telemetry_sidecar.py     # 存储/采集/只读适配/容量反例门(红案11-19/22/23)
+python3 test_open1_arm_timeline.py    # 合成固定向量 + 五 run 真 tlog 自证回放
+python3 test_telemetry_entry.py       # WP303 正式入口 20 案 dry-run(红案20/21)
+```
