@@ -1,4 +1,4 @@
-# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-18)
+# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-20)
 
 > 问题事实源 = [docs/world-model端到端Bug台账_给作者PR.md](docs/world-model端到端Bug台账_给作者PR.md);
 > 任务队列 = [TASKS.md](TASKS.md);交接 = [接力棒_当前值班.md](接力棒_当前值班.md);
@@ -22,8 +22,12 @@ CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependenci
 source /opt/ros/jazzy 激活;未 source 仍 fail-closed);readiness=/mavlink_external_nav/status;
 wm 上游契约已实现(service.started 原子发布 service_handles.json 含真实 container_id,
 wm@9a1ce95 推 backup);sidecar live 身份消费就绪;FUTURE_CANDIDATE=9a1ce95(显式推进)。
-**preflight(sourced+全计划)可达 READY**。A/A 实验本体待负责人明确启动指令;
-接缝:companion 镜像须按 jazzy-9a1ce95c56e2 重建后方可真实运行。
+**preflight(sourced+全计划)可达 READY**。**A/A 环境接线已闭合(2026-07-20)**:
+companion 镜像 `jazzy-9a1ce95c56e2` 已重建在盘(rc=0+docker images 真产物;全层 CACHED=
+内容同上一版,本质为 tag 绑定新 HEAD,非行为验证);preflight 以**真实镜像 digest** 复核
+READY 18/18(证据=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md);
+plan 级占位与"E1 启动时须以当时 HEAD/真实值重跑 preflight"边界见该文 §3.1)。
+A/A 实验本体待负责人明确启动指令。
 P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
 
 ## 三、三仓基线
