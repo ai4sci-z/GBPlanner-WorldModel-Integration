@@ -72,10 +72,39 @@ def atomic_write(path, data, run_root, overwrite=False):
         raise TelemetryWriteError(f"原子写失败: {path}: {e}") from e
 
 
-# ---------- 不可变 JSONL 段 + index(E1-02.2/02.3) ----------
+# ---------- 不可变 JSONL 段 + index(E1-02.2/02.3;E1C-04 内核锁互斥+恢复协议) ----------
+def _current_boot_id():
+    try:
+        return open("/proc/sys/kernel/random/boot_id").read().strip()
+    except OSError:
+        return "UNKNOWN"
+
+
+def _identity_alive(ident):
+    """旧 writer 存活判定:同 boot ∧ PID 在 ∧ starttime 匹配。
+    boot_id 不同 → 不是同一存活进程(跨 boot 不得冒充连续)。"""
+    if ident.get("boot_id") != _current_boot_id():
+        return False
+    pid = ident.get("pid")
+    try:
+        data = open(f"/proc/{pid}/stat").read()
+    except (OSError, TypeError):
+        return False
+    f = data[data.rfind(")") + 2:].split()
+    if not f or f[0] == "Z":
+        return False
+    return len(f) > 19 and f[19] == str(ident.get("pid_starttime"))
+
+
 class SegmentStore:
     """段式 JSONL 证据仓:当前段只在内存;seal() 才落盘为不可变段并登记 index。
-    单 writer 互斥:writer.lock 记录身份;身份不符即拒(红案19)。"""
+
+    互斥与恢复协议(E1C-04):
+    - 并发互斥 = 内核锁:独立 lock fd + flock(LOCK_EX|LOCK_NB),writer 生命周期持有,
+      进程亡由内核自动释放。任何并发第二 writer(无论身份)立即失败。
+    - writer.json 只是审计元数据,不是锁。拿到内核锁后:旧身份仍活(同 boot+PID+starttime)
+      → 拒绝;已死 → 走恢复:recover() 核 index/segment 完整性,CORRUPT 拒写,
+      tmp 只登记 incomplete,从已验证 index 取 next 段号,写入**新**身份(不复用旧 PID/starttime)。"""
 
     def __init__(self, dir_path, run_root, identity, name="segment"):
         C.validate_writer_identity(identity, run_root)
@@ -87,21 +116,47 @@ class SegmentStore:
         self._buf = []
         self._closed = False
         os.makedirs(dir_path, exist_ok=True)
-        self._lock_path = os.path.join(dir_path, "writer.lock")
-        if os.path.exists(self._lock_path):
-            try:
-                prev = json.load(open(self._lock_path, encoding="utf-8"))
-            except (OSError, ValueError) as e:
-                raise TelemetryWriteError(f"writer.lock 不可读: {e}") from e
-            if not C.identity_matches(prev, self._ident):
-                raise TelemetryWriteError(
-                    f"第二 writer 被拒:锁持有者 {prev.get('pid')}/{prev.get('pid_starttime')}"
-                    f" ≠ 本身份 {self._ident['pid']}/{self._ident['pid_starttime']}")
-        else:
-            atomic_write(self._lock_path,
+        # 1) 内核锁(并发互斥的唯一权威)
+        self._lock_fd = os.open(os.path.join(dir_path, "writer.lockfd"),
+                                os.O_CREAT | os.O_RDWR, 0o600)
+        try:
+            import fcntl
+            fcntl.flock(self._lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as e:
+            os.close(self._lock_fd)
+            raise TelemetryWriteError(f"第二 writer 被拒(内核锁被持有): {e}") from e
+        try:
+            # 2) 审计身份与恢复协议
+            self._audit_path = os.path.join(dir_path, "writer.json")
+            prev = None
+            if os.path.exists(self._audit_path):
+                try:
+                    prev = json.load(open(self._audit_path, encoding="utf-8"))
+                except (OSError, ValueError) as e:
+                    raise TelemetryWriteError(f"writer 审计元数据损坏: {e}") from e
+            if prev is not None and not C.identity_matches(prev, self._ident):
+                if _identity_alive(prev):
+                    raise TelemetryWriteError(
+                        f"第二 writer 被拒:旧 writer 仍存活 "
+                        f"{prev.get('pid')}/{prev.get('pid_starttime')}/{prev.get('boot_id')}")
+                # 旧 writer 已死:显式恢复(核完整性,不猜修,不复用旧身份)
+                rec = recover(dir_path)
+                if rec["status"] == "CORRUPT":
+                    raise TelemetryWriteError(
+                        f"恢复拒绝:index/segment 不一致 → CORRUPT: {rec['reasons']}")
+            atomic_write(self._audit_path,
                          json.dumps(self._ident, sort_keys=True).encode("utf-8"),
-                         run_root=run_root)
-        self._next = self._recover_next_number()
+                         run_root=run_root, overwrite=True)
+            self._next = self._recover_next_number()
+        except TelemetryWriteError:
+            self._release_lock()
+            raise
+
+    def _release_lock(self):
+        try:
+            os.close(self._lock_fd)
+        except OSError:
+            pass
 
     def _index_path(self):
         return os.path.join(self._dir, "index.json")
@@ -137,6 +192,7 @@ class SegmentStore:
         os.chmod(final, 0o444)  # 已封存段永久只读
         entry = {
             "segment": n,
+            "file": os.path.basename(final),
             "schema_version": C.SCHEMA_VERSION,
             "record_count": len(self._buf),
             "first_utc_ns": self._buf[0]["utc_ns"],
@@ -159,6 +215,7 @@ class SegmentStore:
 
     def close(self):
         self._closed = True
+        self._release_lock()
 
 
 def recover(dir_path):
@@ -180,7 +237,8 @@ def recover(dir_path):
     if len(nums) != len(set(nums)):
         reasons.append(f"重复段号: {sorted(nums)}")
     for e in idx.get("segments", []):
-        p = os.path.join(dir_path, f"segment-{e.get('segment')}.jsonl")
+        fname = e.get("file") or f"segment-{e.get('segment')}.jsonl"
+        p = os.path.join(dir_path, fname)
         if not os.path.exists(p):
             reasons.append(f"index 指向不存在的段: {os.path.basename(p)}")
             continue
@@ -190,9 +248,11 @@ def recover(dir_path):
             continue
         segments.append(e)
     # 未登记的正式段文件 = writer 序列被绕过 → CORRUPT
+    import re as _re
     on_disk = {f for f in os.listdir(dir_path)
-               if f.startswith("segment-") and f.endswith(".jsonl")}
-    listed = {f"segment-{e.get('segment')}.jsonl" for e in idx.get("segments", [])}
+               if _re.match(r"^(.+-)?segment-\d+\.jsonl$", f)}
+    listed = {(e.get("file") or f"segment-{e.get('segment')}.jsonl")
+              for e in idx.get("segments", [])}
     for orphan in sorted(on_disk - listed):
         reasons.append(f"存在未登记段: {orphan}")
     status = "CORRUPT" if reasons else "OK"
