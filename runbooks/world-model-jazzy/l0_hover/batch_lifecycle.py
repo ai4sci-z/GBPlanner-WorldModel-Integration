@@ -379,29 +379,72 @@ def final_rc(outcome, ev, cleanup):
 
 
 # ---------- telemetry sidecar(WP304 E1;纯旁路,失败绝不改 producer rc) ----------
-def start_telemetry(artifact_root, penv):
-    """WP303_TELEMETRY=on 时启动 sidecar(命令注入自 WP303_TELEMETRY_CMD,
-    fixture 用 fake;独立 session)。off=完全不启动、不建目录、不动 producer argv。
-    batch_id/run 根经与 producer 相同的 WP303_BATCH_ID/BC_ROOT 贯通;
-    run_id 由 sidecar 从 producer 的 runs/run_*.json 记录读取,不另造第二套。"""
+DEFAULT_SIDECAR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "open1", "telemetry_sidecar.py")
+
+
+def default_telemetry_argv(artifact_root, batch_id, penv):
+    """项目内默认 sidecar argv(E1C-02.3):真实验收不依赖任何外部脚本。
+    backend 默认 real;fixture 仅测试(WP303_TELEMETRY_BACKEND=fixture + FIXTURE_INPUT)。"""
+    backend = penv.get("WP303_TELEMETRY_BACKEND", "real")
+    argv = [sys.executable, DEFAULT_SIDECAR,
+            "--artifact-root", artifact_root,
+            "--batch-id", batch_id,
+            "--run-registry", os.path.join(artifact_root, "run_registry"),
+            "--world-model-root", penv.get("WM", "/home/ai4s/projects/world-model"),
+            "--backend", backend, "--once",
+            "--registry-wait-sec", penv.get("WP303_TELEMETRY_REGISTRY_WAIT", "5")]
+    if backend == "fixture":
+        fi = penv.get("WP303_TELEMETRY_FIXTURE_INPUT", "").strip()
+        if fi:
+            argv += ["--fixture-input", fi]
+    return argv
+
+
+def start_telemetry(artifact_root, batch_id, penv):
+    """WP303_TELEMETRY=on 时由 launcher 启动 sidecar(独立 session)。
+    默认命令=版本库内 telemetry_sidecar.py(完整 argv 落 task record);
+    WP303_TELEMETRY_CMD 覆盖仅限 fixture/test(record 显式标注),真实验收不得依赖。
+    off=完全不启动、不建目录、不动 producer argv。batch_id/run 根经
+    WP303_BATCH_ID/BC_ROOT 与 producer 同源贯通;run_id 由 sidecar 从 run registry
+    取真实 world-model run 身份,不另造第二套。"""
     if penv.get("WP303_TELEMETRY", "off") != "on":
         return {"enabled": False}, None
-    tcmd = penv.get("WP303_TELEMETRY_CMD", "").strip()
-    if not tcmd:
-        die(RC_USAGE, "WP303_TELEMETRY=on 需要 WP303_TELEMETRY_CMD")
-    tchild = subprocess.Popen(shlex.split(tcmd), preexec_fn=os.setsid,
-                              cwd=artifact_root, env=penv)
+    override = penv.get("WP303_TELEMETRY_CMD", "").strip()
+    if override:
+        argv = shlex.split(override)
+        tinfo = {"enabled": True, "argv": argv, "cmd_override_fixture_test_only": True}
+    else:
+        argv = default_telemetry_argv(artifact_root, batch_id, penv)
+        tinfo = {"enabled": True, "argv": argv, "cmd_override_fixture_test_only": False}
+    tchild = subprocess.Popen(argv, preexec_fn=os.setsid, cwd=artifact_root, env=penv)
     st = pid_starttime(tchild.pid)
-    return {"enabled": True, "cmd": tcmd, "pid": tchild.pid,
-            "pid_starttime": st if st is not None else "gone"}, tchild
+    tinfo.update({"pid": tchild.pid, "pid_starttime": st if st is not None else "gone"})
+    return tinfo, tchild
 
 
-def finalize_telemetry(rec, tchild):
-    """cleanup owner=WP303 monitor:回收 sidecar 并单独记录 telemetry_status。
+def _telemetry_evidence_states(artifact_root):
+    """E1C-05.4:evidence/finalization 状态来自 sidecar final status 产物,
+    绝不由 rc=0 单独推断。"""
+    p = os.path.join(artifact_root, "telemetry", "sidecar_final_status.json")
+    if not os.path.exists(p):
+        return "UNKNOWN", "MISSING"
+    try:
+        fs = json.load(open(p, encoding="utf-8"))
+    except (OSError, ValueError):
+        return "CORRUPT", "CORRUPT"
+    return fs.get("evidence_state", "UNKNOWN"), fs.get("finalization_state", "WRITTEN")
+
+
+def finalize_telemetry(rec, tchild, artifact_root):
+    """cleanup owner=WP303 monitor:回收 sidecar 并分录三状态
+    (process_state / evidence_state / finalization_state),三者可同时存在;
     sidecar rc 只入 telemetry_status,绝不参与 final_rc(producer rc 保真)。"""
     tinfo = rec.get("telemetry") or {"enabled": False}
     if not tinfo.get("enabled"):
-        return {"enabled": False, "state": "OFF", "sidecar_rc": None}
+        return {"enabled": False, "process_state": "OFF", "sidecar_rc": None,
+                "evidence_state": "OFF", "finalization_state": "OFF"}
+    ev, fin = None, None
     rc = None
     if tchild is not None:
         try:
@@ -409,7 +452,6 @@ def finalize_telemetry(rec, tchild):
         except Exception:
             rc = None
     if rc is None:
-        # 未自然退出(或本 monitor 无句柄):按身份核验后 TERM→KILL 其 session 组
         pid = tinfo.get("pid")
         st = pid_starttime(pid) if pid else None
         if st is not None and st == tinfo.get("pid_starttime"):
@@ -429,11 +471,14 @@ def finalize_telemetry(rec, tchild):
                     tchild.wait(timeout=TERM_GRACE_SEC)
                 except Exception:
                     pass
-            return {"enabled": True, "state": "KILLED", "sidecar_rc": None}
-        # 身份已不在:进程已消失,只能记录 rc 未观测
-        return {"enabled": True, "state": "GONE", "sidecar_rc": None}
-    state = "OK" if rc == 0 else "CRASHED"
-    return {"enabled": True, "state": state, "sidecar_rc": rc}
+            proc_state = "KILLED"
+        else:
+            proc_state = "GONE"
+    else:
+        proc_state = "EXITED_ZERO" if rc == 0 else "EXITED_NONZERO"
+    ev, fin = _telemetry_evidence_states(artifact_root)
+    return {"enabled": True, "process_state": proc_state, "sidecar_rc": rc,
+            "evidence_state": ev, "finalization_state": fin}
 
 
 # ---------- monitor 主循环 ----------
@@ -470,9 +515,10 @@ def run_monitor(rec, record, artifact_root, cancel_path, readonly=False, child=N
     ev, missing = evidence_status(rec, artifact_root)
     if readonly:
         telemetry_status = {"enabled": (rec.get("telemetry") or {}).get("enabled", False),
-                            "state": "NOT_ATTEMPTED", "sidecar_rc": None}
+                            "process_state": "NOT_ATTEMPTED", "sidecar_rc": None,
+                            "evidence_state": "UNKNOWN", "finalization_state": "UNKNOWN"}
     else:
-        telemetry_status = finalize_telemetry(rec, telemetry_child)
+        telemetry_status = finalize_telemetry(rec, telemetry_child, artifact_root)
     status = {
         "schema_version": SCHEMA_VERSION,
         "batch_id": rec["batch_id"],
@@ -547,7 +593,7 @@ def cmd_launch(args):
     penv["BC_ROOT"] = artifact_root
     child = subprocess.Popen(producer, preexec_fn=os.setsid, cwd=artifact_root, env=penv)
     pid = child.pid
-    tinfo, tchild = start_telemetry(artifact_root, penv)
+    tinfo, tchild = start_telemetry(artifact_root, args.batch_id, penv)
     # 等 setsid 生效
     for _ in range(50):
         try:
