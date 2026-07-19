@@ -63,7 +63,7 @@ bc_run() {
       --run-index "$i" --watch-dir "$_rrwatch" >>"$BC_LOG" 2>&1 || true
     # E1L-02:并发 watcher——producer 运行期间即时 RESOLVE,不等 producer 结束
     python3 "$_rrpy" watch --registry-dir "$_rrdir" --run-index "$i" \
-      --timeout-sec "${BC_REGISTRY_WATCH_SEC:-300}" --poll-sec 0.05 >>"$BC_LOG" 2>&1 &
+      --timeout-sec "${BC_REGISTRY_WATCH_SEC:-${WP303_IDENTITY_WAIT_SEC:-300}}" --poll-sec 0.05 >>"$BC_LOG" 2>&1 &
     _rrwpid=$!
   fi
   "$@" >>"$BC_LOG" 2>&1

@@ -382,19 +382,36 @@ def final_rc(outcome, ev, cleanup):
 DEFAULT_SIDECAR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                "open1", "telemetry_sidecar.py")
 
+# E1L-CORRECT-02:身份等待窗口的唯一来源 = launcher 启动预算推导
+# (dry-run 与正式路径共用本函数;watcher 与 sidecar 消费同一值,不再有孤立 5/120/300)。
+IDENTITY_WAIT_MARGIN_SEC = 10.0
 
-def default_telemetry_argv(artifact_root, batch_id, penv, expected_runs=1):
-    """项目内默认 sidecar argv(E1C-02.3/E1L-03.1):真实验收不依赖任何外部脚本。
-    覆盖全部 expected runs(--expected-runs N,非固定 run 1);backend 默认 real,
-    fixture 仅测试。"""
+
+def identity_wait_sec(args):
+    """sidecar 每 attempt 身份等待窗口 = startup_budget + duration + per_run_teardown
+    + inter_run_gap + 固定余量。覆盖任一 attempt 从上一 attempt 结束到本 attempt
+    run 目录出现的最长合法间隔;有界。"""
+    return (float(args.startup_budget) + float(args.duration)
+            + float(args.per_run_teardown) + float(args.inter_run_gap)
+            + IDENTITY_WAIT_MARGIN_SEC)
+
+
+def default_telemetry_argv(artifact_root, batch_id, penv, expected_runs=1,
+                           identity_wait=None):
+    """项目内默认 sidecar argv:真实验收不依赖任何外部脚本;等待窗口由
+    identity_wait_sec(launcher 预算)推导,WP303_TELEMETRY_REGISTRY_WAIT 覆盖
+    仅限 fixture/test(record 显式标注)。"""
     backend = penv.get("WP303_TELEMETRY_BACKEND", "real")
+    override = penv.get("WP303_TELEMETRY_REGISTRY_WAIT", "").strip()
+    wait = override if override else str(identity_wait if identity_wait is not None else
+                                         IDENTITY_WAIT_MARGIN_SEC)
     argv = [sys.executable, DEFAULT_SIDECAR,
             "--artifact-root", artifact_root,
             "--batch-id", batch_id,
             "--run-registry", os.path.join(artifact_root, "run_registry"),
             "--world-model-root", penv.get("WM", "/home/ai4s/projects/world-model"),
             "--backend", backend, "--expected-runs", str(int(expected_runs)),
-            "--registry-wait-sec", penv.get("WP303_TELEMETRY_REGISTRY_WAIT", "5")]
+            "--registry-wait-sec", wait]
     if backend == "fixture":
         fi = penv.get("WP303_TELEMETRY_FIXTURE_INPUT", "").strip()
         if fi:
@@ -402,7 +419,7 @@ def default_telemetry_argv(artifact_root, batch_id, penv, expected_runs=1):
     return argv
 
 
-def start_telemetry(artifact_root, batch_id, penv, expected_runs=1):
+def start_telemetry(artifact_root, batch_id, penv, expected_runs=1, identity_wait=None):
     """WP303_TELEMETRY=on 时由 launcher 启动 sidecar(独立 session)。
     默认命令=版本库内 telemetry_sidecar.py(完整 argv 落 task record);
     WP303_TELEMETRY_CMD 覆盖仅限 fixture/test(record 显式标注),真实验收不得依赖。
@@ -416,8 +433,12 @@ def start_telemetry(artifact_root, batch_id, penv, expected_runs=1):
         argv = shlex.split(override)
         tinfo = {"enabled": True, "argv": argv, "cmd_override_fixture_test_only": True}
     else:
-        argv = default_telemetry_argv(artifact_root, batch_id, penv, expected_runs)
-        tinfo = {"enabled": True, "argv": argv, "cmd_override_fixture_test_only": False}
+        argv = default_telemetry_argv(artifact_root, batch_id, penv, expected_runs,
+                                      identity_wait=identity_wait)
+        tinfo = {"enabled": True, "argv": argv, "cmd_override_fixture_test_only": False,
+                 "identity_wait_sec_derived": identity_wait,
+                 "registry_wait_override_fixture_test_only":
+                     bool(penv.get("WP303_TELEMETRY_REGISTRY_WAIT", "").strip())}
     tchild = subprocess.Popen(argv, preexec_fn=os.setsid, cwd=artifact_root, env=penv)
     st = pid_starttime(tchild.pid)
     tinfo.update({"pid": tchild.pid, "pid_starttime": st if st is not None else "gone"})
@@ -592,9 +613,12 @@ def cmd_launch(args):
     penv = dict(os.environ)
     penv["WP303_BATCH_ID"] = args.batch_id
     penv["BC_ROOT"] = artifact_root
+    _iw = identity_wait_sec(args)
+    penv["WP303_IDENTITY_WAIT_SEC"] = str(_iw)   # watcher 与 sidecar 同源消费
     child = subprocess.Popen(producer, preexec_fn=os.setsid, cwd=artifact_root, env=penv)
     pid = child.pid
-    tinfo, tchild = start_telemetry(artifact_root, args.batch_id, penv, args.expected_runs)
+    tinfo, tchild = start_telemetry(artifact_root, args.batch_id, penv, args.expected_runs,
+                                    identity_wait=_iw)
     # 等 setsid 生效
     for _ in range(50):
         try:
