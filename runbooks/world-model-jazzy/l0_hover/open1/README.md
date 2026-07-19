@@ -122,3 +122,20 @@ python3 test_writer_mutex.py     # 9 案进程级:并发拒/TERM/SIGKILL 恢复/
 python3 test_telemetry_cli.py    # CLI 反例 + fixture 真主循环 + required 闭包 + 五层聚合
 python3 test_telemetry_entry.py  # 入口 20 案:默认 CLI/三态/三身份全等/off 零变化
 ```
+
+## 7c. E1L(2026-07-19):运行期旁路链闭合
+
+状态词:E1 sidecar 已形成运行期状态机:在 fixture 子进程仍存活时完成真实 run-id 握手、
+连续采集、周期封存和正式 evidence/five-layer dry-run;real Docker/ROS 仅编码及 recording
+fixture,A/A 和真实行为验收未执行。
+
+- `run_registry.py watch` = 并发 watcher(producer 存活期 resolve;8 终态);
+- `--once` = 完整处理一个 attempt;多 run = `--expected-runs N`(WP303 默认命令);
+- 状态机 WAIT_IDENTITY→ACTIVE(连续+周期封存)→FINISHING;采集器独立线程互不阻塞;
+- concrete ROS adapter 已编码并过 recording-node fixture(真实 ROS 图未验);
+- 事后派生一律标 `post_run_derived`。
+
+```
+python3 test_telemetry_runtime.py   # R1-R15+watcher 终态+SIGKILL 恢复+全时序 dry-run(58P)
+python3 test_ros_adapter.py         # concrete 只订不发结构门(12P)
+```
