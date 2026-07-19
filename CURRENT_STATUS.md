@@ -18,9 +18,7 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 E1 观测方案已交付;**R003 状态闭环已经 Codex 独立复验 VERIFIED_PASS 关闭(2026-07-19;
 复验基线=CLOSE-05 收口态,精确 HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`)**。分类:VERIFIED_CLOSED=R003-CLOSE-01..05/OPEN-2 环境复验/状态闭环;
 CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependencies 专用语义验收器。
-**E1 sidecar 已形成运行期状态机:在 fixture 子进程仍存活时完成真实 run-id 握手、连续采集、周期封存和正式 evidence/five-layer dry-run;real Docker/ROS 仅编码及 recording fixture,A/A 和真实行为验收未执行**(E1L 收口,2026-07-19;Codex 运行期反例全闭)。
-下一步 = **E1 A/A 实验停点,须负责人另行放行;OFF×2 + ON×2,任何控制语义差异立即停止**。
-保留边界:OPEN-1 未定位;real backend 未实测;A/A/pilot 未执行;G6 未关闭;WP307 未解锁。
+**Codex 已复现:recover(telemetry_dir)=CORRUPT 但正式 evaluate_run_evidence() 仍使 evidence gate 得到 COMPLETE(段链漏验);且正式入口 sidecar 身份等待默认 5s 与 run_batch 120s 启动预算/300s watcher 不一致。E1L 状态 REOPENED/PARTIAL,A/A 不得放行。此为 E1 既有 required evidence 契约的失败,非冻结后新增范围**。当前令=R003-WP304-E1L-CORRECT(仅修此二缺陷;仍禁真实仿真/A/A)。
 
 ## 三、三仓基线
 
@@ -55,7 +53,7 @@ CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependenci
 | G3 生成器测试 | ✅ | 57/57 |
 | G4 文档闭包 | 🟡 PARTIAL | 14 份逐行审计完成(8 全核/5 部分/1 归档),未核范围见 [审计记录](governance/P0_doc_audit_逐份审计_2026-07-18.md) |
 | G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真未验 |
-| G6 WP304 因果链 | 🟡 E1L 停点达成 | E1 sidecar 已形成运行期状态机:在 fixture 子进程仍存活时完成真实 run-id 握手、连续采集、周期封存和正式 evidence/five-layer dry-run;real Docker/ROS 仅编码及 recording fixture,A/A 和真实行为验收未执行;下一=A/A 实验停点待放行 |
+| G6 WP304 因果链 | 🔴 E1L REOPENED/PARTIAL | 证据门段链漏验(recover=CORRUPT 而 gate=COMPLETE)+ 身份等待预算 5/120/300 不一致(Codex 复现);E1L-CORRECT 施工中 |
 | G7 默认 10/10 | ⛔ | 待 WP304-306 |
 | G8 长稳 | ⛔ | 待 G7 |
 | G9 六项收口 | 🔁 持续 | — |
