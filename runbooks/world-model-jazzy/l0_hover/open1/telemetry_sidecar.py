@@ -713,6 +713,8 @@ class FixtureBackend:
         return int(d.get("wait", 0))
 
     def ros_stream(self, key, should_stop):
+        if self.data.get("ros_raise"):
+            raise RosAdapterUnavailable("fixture: adapter 初始化异常")
         stream = self.data.get("ros_stream", {}).get(key)
         if stream is None:
             stream = [{"delay": 0.0, "msg": m} for m in self.data.get("ros", {}).get(key, [])]
@@ -732,7 +734,19 @@ class FixtureBackend:
 
 
 # ---------- E1L-05 · concrete ROS 只订不发适配层(real backend 专用) ----------
-ROS_SUBSCRIBE_TOPICS = {"readiness": "/navlab/startup_readiness/status",
+# 权威 topic/消息类型注册(逐条绑 wm 冻结源码证据;不在册=未验证=fail-closed)
+AUTHORITATIVE_TOPIC_TYPES = {
+    # navlab_external_nav_bridge_node.cpp L42-43/L89:status_topic 默认
+    # "/external_nav/status",create_publisher<std_msgs::msg::String>
+    "/external_nav/status": "std_msgs/msg/String",
+    # external_nav.py L653/L340:--status-topic 默认 "/mavlink_external_nav/status",
+    # create_publisher(String, ...)
+    "/mavlink_external_nav/status": "std_msgs/msg/String",
+}
+# readiness 连续 topic:wm 无 "/navlab/startup_readiness/status" 发布者(readiness
+# 是 probe/audit 采样)。E1 readiness 订阅目标须由 A/A runbook 裁决后经 CLI 显式传入;
+# 默认不设=fail-closed。extnav 默认=已实证的 /external_nav/status。
+ROS_SUBSCRIBE_TOPICS = {"readiness": None,
                         "extnav": "/external_nav/status"}
 
 
@@ -742,11 +756,28 @@ class ConcreteRosSubscribeAdapter:
     有界 spin;shutdown 幂等。rclpy 不可用 → RosAdapterUnavailable
     (调用方标 readiness/extnav INCOMPLETE,producer 不受影响)。"""
 
-    def __init__(self, ros_domain_id, system_domain_id, topics=None, node_factory=None):
+    def __init__(self, ros_domain_id, system_domain_id, topics=None, node_factory=None,
+                 msg_type="std_msgs/msg/String"):
+        if ros_domain_id is None or str(ros_domain_id).strip() == "":
+            raise RosAdapterUnavailable("sidecar ROS domain 未配置(禁止静默 domain 0)")
+        if system_domain_id is None or str(system_domain_id).strip() == "":
+            raise RosAdapterUnavailable("被测系统 ROS domain 未知(fail-closed)")
         if str(ros_domain_id) != str(system_domain_id):
             raise RosWriteRefused(
                 f"必须与被测系统同一 ROS_DOMAIN_ID(自 {ros_domain_id} ≠ 被测 {system_domain_id})")
         self._topics = dict(topics or ROS_SUBSCRIBE_TOPICS)
+        for key, topic in self._topics.items():
+            if not topic:
+                raise RosAdapterUnavailable(
+                    f"{key} 订阅 topic 未配置(须 A/A runbook 裁决后显式传入)")
+            auth = AUTHORITATIVE_TOPIC_TYPES.get(topic)
+            if auth is None:
+                raise RosAdapterUnavailable(
+                    f"{key} topic {topic} 的消息类型未经 wm 源码验证(fail-closed)")
+            if auth != msg_type:
+                raise RosWriteRefused(
+                    f"{key} topic {topic} 类型不符:权威={auth} 配置={msg_type}")
+        self._msg_type = msg_type
         self._q = _queue.Queue()
         self._shut = False
         factory = node_factory or self._default_factory
@@ -760,7 +791,7 @@ class ConcreteRosSubscribeAdapter:
                            time.time_ns(), time.monotonic_ns()))
             return _cb
         for key, topic in self._topics.items():
-            self._node.create_subscription("std_msgs/msg/String", topic, make_cb(key), 10)
+            self._node.create_subscription(self._msg_type, topic, make_cb(key), 10)
 
     @staticmethod
     def _default_factory():
@@ -809,9 +840,12 @@ class ConcreteRosSubscribeAdapter:
 class RealBackend:
     """real 数据源(--backend real 才构造;本轮任何测试/dry-run 不得使用/未实测)。"""
 
-    def __init__(self, container, ros_domain_id):
+    def __init__(self, container, ros_domain_id, system_ros_domain_id=None,
+                 ros_topics=None):
         self._container = container
-        self._ros_domain = ros_domain_id
+        self._ros_domain = ros_domain_id            # sidecar 域(--ros-domain-id)
+        self._system_ros_domain = system_ros_domain_id   # 被测系统域(独立来源)
+        self._ros_topics = ros_topics
         self._ros_adapter = None
 
     def read_file(self, path):
@@ -881,9 +915,11 @@ class RealBackend:
 
     def ros_stream(self, key, should_stop):
         if self._ros_adapter is None:
+            # 双域独立来源(CLI 显式传入;缺任一 → fail-closed,不读 env 双充、不默认 0)
             self._ros_adapter = ConcreteRosSubscribeAdapter(
-                ros_domain_id=os.environ.get("ROS_DOMAIN_ID", "0"),
-                system_domain_id=os.environ.get("ROS_DOMAIN_ID", "0"))
+                ros_domain_id=self._ros_domain,
+                system_domain_id=self._system_ros_domain,
+                topics=self._ros_topics)
         ad = self._ros_adapter
         while not should_stop():
             ad.spin_bounded(0.2, should_stop)
@@ -1068,8 +1104,11 @@ def _process_attempt(cfg, backend, entry, live, batch_final):
             wait_result["code"] = code
             wait_result["post_run"] = True
         for key in ("readiness", "extnav"):
-            for msg in backend.ros_stream(key, lambda: False):
-                recq.put((key, _rec(cfg, run_id, key, msg, post_run=True)))
+            try:
+                for msg in backend.ros_stream(key, lambda: False):
+                    recq.put((key, _rec(cfg, run_id, key, msg, post_run=True)))
+            except (RosAdapterUnavailable, RosWriteRefused, OSError) as e:
+                collectors[key]["error_state"] = f"{type(e).__name__}: {e}"
         finished_evt.set()
 
     # ---- ACTIVE:连续 drain + 周期封存(flush_interval / record limit 先到先封) ----
@@ -1193,6 +1232,7 @@ def _process_attempt(cfg, backend, entry, live, batch_final):
                  "truncated": dict(gov.truncated),
                  "dropped_records": dropped_counts,
                  "telemetry_overrun": False,
+                 "ros_domains": cfg.get("ros_domains"),
                  "finalized_monotonic_ns": time.monotonic_ns()}
     atomic_write(os.path.join(run_dir, "telemetry", "sidecar_final_status.json"),
                  json.dumps(run_final, ensure_ascii=False, sort_keys=True,
@@ -1350,7 +1390,13 @@ def main(argv=None):
     ap.add_argument("--world-model-root", required=True)
     ap.add_argument("--backend", required=True, choices=["real", "fixture"])
     ap.add_argument("--fixture-input", default=None)
-    ap.add_argument("--ros-domain-id", default=None)
+    ap.add_argument("--ros-domain-id", default=None,
+                    help="sidecar 自身 ROS domain(real backend 必填)")
+    ap.add_argument("--system-ros-domain-id", default=None,
+                    help="被测系统 ROS domain(独立来源,real backend 必填)")
+    ap.add_argument("--ros-readiness-topic", default=None,
+                    help="readiness 订阅 topic(A/A runbook 裁决后显式传入)")
+    ap.add_argument("--ros-extnav-topic", default="/external_nav/status")
     ap.add_argument("--segment-record-limit", type=int, default=1000)
     ap.add_argument("--flush-interval", type=float, default=1.0)
     ap.add_argument("--host-interval-sec", type=float, default=None)
@@ -1369,13 +1415,22 @@ def main(argv=None):
            "expected_runs": expected, "registry_wait_sec": a.registry_wait_sec,
            "segment_record_limit": a.segment_record_limit,
            "flush_interval": a.flush_interval, "host_interval_sec": a.host_interval_sec,
-           "ros_domain_id": a.ros_domain_id}
+           "ros_domain_id": a.ros_domain_id,
+           "system_ros_domain_id": a.system_ros_domain_id,
+           "ros_domains": {"sidecar_domain": a.ros_domain_id,
+                            "sidecar_domain_source": ("cli_arg" if a.ros_domain_id else "unset"),
+                            "system_domain": a.system_ros_domain_id,
+                            "system_domain_source": ("cli_arg" if a.system_ros_domain_id else "unset"),
+                            "fixture_test_only": a.backend == "fixture"}}
     if a.backend == "fixture":
         if not a.fixture_input:
             ap.error("--backend fixture 需要 --fixture-input")
         backend = FixtureBackend(a.fixture_input)
     else:
-        backend = RealBackend(container="official_baseline", ros_domain_id=a.ros_domain_id)
+        backend = RealBackend(container="official_baseline", ros_domain_id=a.ros_domain_id,
+                              system_ros_domain_id=a.system_ros_domain_id,
+                              ros_topics={"readiness": a.ros_readiness_topic,
+                                          "extnav": a.ros_extnav_topic})
     if a.validate_only:
         import run_registry as RR
         reg = RR.load_registry(a.run_registry, a.batch_id)

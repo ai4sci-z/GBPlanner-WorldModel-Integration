@@ -72,26 +72,27 @@ def make_factory():
 
 
 print("======== 只订不发(concrete adapter 本体)========")
+GOOD_TOPICS = {"readiness": "/mavlink_external_nav/status", "extnav": "/external_nav/status"}
 node, spins, shutdowns, factory = make_factory()
 ad = S.ConcreteRosSubscribeAdapter(ros_domain_id="7", system_domain_id="7",
-                                   node_factory=factory)
+                                   topics=GOOD_TOPICS, node_factory=factory)
 kinds = sorted({c[0] for c in node.calls})
 ck("实际只出现 create_subscription", kinds, ["create_subscription"])
 ck("恰两个订阅", len([c for c in node.calls if c[0] == "create_subscription"]), 2)
 topics = sorted(c[2] for c in node.calls if c[0] == "create_subscription")
-ck("订阅 topic 与契约一致", topics, sorted(S.ROS_SUBSCRIBE_TOPICS.values()))
+ck("订阅 topic 与契约一致", topics, sorted(GOOD_TOPICS.values()))
 ck("publisher/service/client/参数方法零调用",
    [c for c in node.calls if c[0] != "create_subscription"], [])
 
 print("======== domain / callback / shutdown 语义 ========")
 try:
     S.ConcreteRosSubscribeAdapter(ros_domain_id="7", system_domain_id="8",
-                                  node_factory=factory)
+                                  topics=GOOD_TOPICS, node_factory=factory)
     ck("domain 不一致拒绝", "被放行", "RosWriteRefused")
 except S.RosWriteRefused:
     ck("domain 不一致拒绝", "RosWriteRefused", "RosWriteRefused")
 # callback 只写内部队列
-cb = node.subs[S.ROS_SUBSCRIBE_TOPICS["extnav"]]
+cb = node.subs[GOOD_TOPICS["extnav"]]
 cb(Msg({"state": "healthy"}))
 out = ad.drain()
 ck("callback 只写 sidecar 内部队列", (len(out), out[0][0], out[0][1]),
@@ -112,7 +113,7 @@ ck("shutdown 后不再接收", ad.drain(), [])
 
 print("======== rclpy 不可用语义(default factory)========")
 try:
-    S.ConcreteRosSubscribeAdapter(ros_domain_id="0", system_domain_id="0")
+    S.ConcreteRosSubscribeAdapter(ros_domain_id="0", system_domain_id="0", topics=GOOD_TOPICS)
     got = "构造成功(本机竟有 rclpy?)"
 except S.RosAdapterUnavailable as e:
     got = "RosAdapterUnavailable"
