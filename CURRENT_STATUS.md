@@ -15,8 +15,8 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 ## 二、当前位置(一句话)
 
 **P0 治理收尾 + P1 前置(WP304)。** WP303 批生命周期已到实现停点;WP304 的离线证据链与
-E1 观测方案已交付;**R003 状态闭环已经 Codex 独立复验 VERIFIED_PASS 关闭(2026-07-19,
-基线 main@eee2b1a)**。分类:VERIFIED_CLOSED=R003-CLOSE-01..05/OPEN-2 环境复验/状态闭环;
+E1 观测方案已交付;**R003 状态闭环已经 Codex 独立复验 VERIFIED_PASS 关闭(2026-07-19;
+复验基线=CLOSE-05 收口态,精确 HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`)**。分类:VERIFIED_CLOSED=R003-CLOSE-01..05/OPEN-2 环境复验/状态闭环;
 CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependencies 专用语义验收器。
 唯一待决:**负责人是否正式放行 WP304 E1 sidecar 实现停点**(放行前不开始;此后才有新实验数据)。
 
