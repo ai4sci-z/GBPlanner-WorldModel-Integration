@@ -1,19 +1,19 @@
 # R003 第一方活跃文档统一注册表 + 逐主张清单(11 字段;真实路径;全 34 覆盖)
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
-# generated_at_head=c5a0de9(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=31 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
+# generated_at_head=19b307b(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=32 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
-CURRENT_STATUS.md	§一 目标与路线	CURRENT	当前状态唯一权威	固定路线 P0→P1(WP303-308)→P2→P3→P4;并列共存非替换;多层楼梯只做架构预留	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
-CURRENT_STATUS.md	§二 当前位置(一句话)	CURRENT	当前状态唯一权威	P0 收尾+WP304;WP303 实现停点(真实仿真未验);E1 观测方案已交付,下一步 E1 sidecar 实现待放行	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
-CURRENT_STATUS.md	§三 三仓基线	CURRENT	当前状态唯一权威	三仓分支@HEAD/角色/本轮可改否;wm origin=SZ-surveying 勿推	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
-CURRENT_STATUS.md	§四 已证事实(按证据等级)	CURRENT	当前状态唯一权威	B21 已验证/B22 候选/默认主线 6/3/3+诊断臂旁证 4/3/3/OPEN-1 未定位/OPEN-2 环境债已消除(行为验收归 WP307)/M0-M4 窄验收	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
-CURRENT_STATUS.md	§五 R003 九门	CURRENT	当前状态唯一权威	G1-G3 绿;G4 PARTIAL;G5 实现停点;G6=E0 补正落地+E1 方案交付;G7/G8 阻塞	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
-CURRENT_STATUS.md	§六 推进思路(依赖链)	CURRENT	当前状态唯一权威	E1L 达成:运行期状态机(存活期握手/连续采集/周期封存/证据门 dry-run;real 仅编码+recording fixture),下一=A/A 停点待放行;WP305 双环境复验已达成/WP306 可并行;基线裁决 eab0cc6;P2/P3 未启动	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
-CURRENT_STATUS.md	§七 环境备注	CURRENT	当前状态唯一权威	单 docker daemon;残留容器 zealous_curran 留裁决;P0 遗留 7 项登记 TASKS	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
+CURRENT_STATUS.md	§一 目标与路线	CURRENT	当前状态唯一权威	固定路线 P0→P1(WP303-308)→P2→P3→P4;并列共存非替换;多层楼梯只做架构预留	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
+CURRENT_STATUS.md	§二 当前位置(一句话)	CURRENT	当前状态唯一权威	P0 收尾+WP304;R003 状态闭环 VERIFIED_PASS;A/A 前置+环境接线闭合(四裁决+companion 镜像重建+preflight 真实 digest READY);唯一待决=负责人 A/A 启动指令;P2-OFFLINE-PREP 获准并行未开工	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
+CURRENT_STATUS.md	§三 三仓基线	CURRENT	当前状态唯一权威	三仓分支@HEAD/角色/本轮可改否;wm origin=SZ-surveying 勿推	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
+CURRENT_STATUS.md	§四 已证事实(按证据等级)	CURRENT	当前状态唯一权威	B21 已验证/B22 候选/默认主线 6/3/3+诊断臂旁证 4/3/3/OPEN-1 未定位/OPEN-2 环境债已消除(行为验收归 WP307)/M0-M4 窄验收	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
+CURRENT_STATUS.md	§五 R003 九门	CURRENT	当前状态唯一权威	G1-G3 绿;G4 PARTIAL;G5 实现停点;G6=E0 补正落地+E1 方案交付;G7/G8 阻塞	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
+CURRENT_STATUS.md	§六 推进思路(依赖链)	CURRENT	当前状态唯一权威	E1L 达成:运行期状态机(存活期握手/连续采集/周期封存/证据门 dry-run;real 仅编码+recording fixture),下一=A/A 停点待放行;WP305 双环境复验已达成/WP306 可并行;基线裁决 eab0cc6;P2/P3 未启动	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
+CURRENT_STATUS.md	§七 环境备注	CURRENT	当前状态唯一权威	单 docker daemon;残留容器 zealous_curran 留裁决;P0 遗留 7 项登记 TASKS	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
 HANDOVER_LINUX.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	33449ff	CURRENT_ENTRY	KEEP	-	33449ff
-TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
-TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
-TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
+TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
+TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
+TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
 docs/GBPlanner原始论文与代码对应关系.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	论文↔代码对应;桥接=正解结论SUPERSEDED,integration路径改归档位;论文摘录未逐页复核	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_包清单与体量_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结镜像实测盘点;CURRENT降级+scratchpad脚本留存标注;未重跑镜像复核	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_PARTIAL	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_直连架构契约_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	直连契约(M4/M5设计输入);ACTIVE降级+2路径改归档位+TF假设按理解(二)校正	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
@@ -41,8 +41,9 @@ runbooks/world-model-jazzy/l0_hover/l0_batch_evidence_2026-07-14.md	整档	EVIDE
 runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/l0_hover/l1_bringup_evidence_2026-07-15.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
-接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	E0-CORRECT 逐章节核对	c5a0de9	CURRENT_CONSISTENT	KEEP	-	c5a0de9
+接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	E0-CORRECT 逐章节核对	19b307b	CURRENT_CONSISTENT	KEEP	-	19b307b
 工作铁律.md	整档	CURRENT	执行纪律权威(非状态源)	实证/颗粒度/文档/收口/红线五章铁律	E0-CORRECT 逐章节核对	33449ff	CURRENT_CONSISTENT	KEEP	-	33449ff
 文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	da695d3	CURRENT_ENTRY	KEEP	-	da695d3
 项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 governance/ros2_host_env_pins_2026-07-20.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	宿主 ROS2 环境 pins(方案A 裁决;版本/回滚/激活;未 source 仍 fail-closed)	宿主 dpkg 实测 2026-07-20	bae00bc	REFERENCE_MARKED	KEEP_MARKED	-	bae00bc
+governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:companion 镜像 jazzy-9a1ce95c56e2 重建+preflight 真实 digest READY(plan 级边界见 §3.1;不改判门)	宿主 docker/preflight 实测 2026-07-20	19b307b	EVIDENCE_FROZEN	KEEP	-	19b307b
