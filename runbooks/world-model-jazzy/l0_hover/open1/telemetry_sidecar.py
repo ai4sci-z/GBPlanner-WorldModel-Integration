@@ -745,10 +745,9 @@ AUTHORITATIVE_TOPIC_TYPES = {
     # create_publisher(String, ...)
     "/mavlink_external_nav/status": "std_msgs/msg/String",
 }
-# readiness 连续 topic:wm 无 "/navlab/startup_readiness/status" 发布者(readiness
-# 是 probe/audit 采样)。E1 readiness 订阅目标须由 A/A runbook 裁决后经 CLI 显式传入;
-# 默认不设=fail-closed。extnav 默认=已实证的 /external_nav/status。
-ROS_SUBSCRIBE_TOPICS = {"readiness": None,
+# readiness 连续 topic:负责人裁决(2026-07-20,WP304 §11.7)= /mavlink_external_nav/status
+# (已实证 std_msgs/String,external_nav.py L340/653)。extnav=已实证 /external_nav/status。
+ROS_SUBSCRIBE_TOPICS = {"readiness": "/mavlink_external_nav/status",
                         "extnav": "/external_nav/status"}
 
 
@@ -850,10 +849,45 @@ def resolve_container_identity(run_dir, run_id=None, logical_service=OFFICIAL_BA
     rid = os.path.basename(os.path.normpath(run_dir))
     if run_id is not None and run_id != rid:
         return {"status": "CORRUPT", "reason": f"run_id 不绑:{run_id}!={rid}"}
+    # live 权威来源(上游契约,wm service.started 原子发布):优先消费
+    lp = os.path.join(run_dir, "runtime", "service_handles.json")
+    if os.path.exists(lp):
+        try:
+            raw = open(lp, "rb").read()
+            doc = json.loads(raw.decode("utf-8"))
+        except (OSError, ValueError) as e:
+            return {"status": "CORRUPT", "reason": f"service_handles.json 不可解析: {e}"}
+        if doc.get("schema_version") != "navlab.runtime.service_handles.v1":
+            return {"status": "CORRUPT",
+                    "reason": f"service_handles schema 未知: {doc.get('schema_version')!r}"}
+        if doc.get("run_id") != rid:
+            return {"status": "CORRUPT",
+                    "reason": f"service_handles run_id 不绑: {doc.get('run_id')!r}!={rid}"}
+        cands = [h for h in (doc.get("handles") or [])
+                 if h.get("service_name") == logical_service]
+        if not cands:
+            return {"status": "UNAVAILABLE",
+                    "reason": f"service_handles 尚无 {logical_service}(服务未启动)"}
+        if len(cands) > 1:
+            return {"status": "AMBIGUOUS", "reason": f"service_handles 多候选={len(cands)}"}
+        h = cands[0]
+        name = (h.get("container_name") or "").strip()
+        if not name:
+            return {"status": "CORRUPT", "reason": "service_handles.container_name 为空"}
+        return {"status": "RESOLVED", "logical_service": logical_service,
+                "runtime_container_name": name,
+                "identifier": (h.get("identifier") or "UNAVAILABLE"),
+                "container_id": (h.get("container_id") or "UNAVAILABLE"),
+                "identifier_matches_name": None,
+                "source_artifact": "runtime/service_handles.json",
+                "source_sha256": hashlib.sha256(raw).hexdigest(),
+                "run_id_bound": rid, "live_capable": True,
+                "fixture_test_only": False}
     sp = os.path.join(run_dir, "summary.json")
     if not os.path.exists(sp):
         return {"status": "UNAVAILABLE",
-                "reason": "summary.json 不在(live 期无权威 handle 产物;须上游契约)"}
+                "reason": "无 runtime/service_handles.json 且无 summary.json"
+                          "(live 权威产物须上游契约版本 wm≥9a1ce95)"}
     try:
         raw = open(sp, "rb").read()
         sj = json.loads(raw.decode("utf-8"))
@@ -1499,8 +1533,8 @@ def main(argv=None):
                     help="sidecar 自身 ROS domain(real backend 必填)")
     ap.add_argument("--system-ros-domain-id", default=None,
                     help="被测系统 ROS domain(独立来源,real backend 必填)")
-    ap.add_argument("--ros-readiness-topic", default=None,
-                    help="readiness 订阅 topic(A/A runbook 裁决后显式传入)")
+    ap.add_argument("--ros-readiness-topic", default="/mavlink_external_nav/status",
+                    help="readiness 订阅 topic(负责人裁决 2026-07-20,§11.7)")
     ap.add_argument("--ros-extnav-topic", default="/external_nav/status")
     ap.add_argument("--segment-record-limit", type=int, default=1000)
     ap.add_argument("--flush-interval", type=float, default=1.0)

@@ -82,10 +82,14 @@ rejects("案3b 未验证 topic 拒绝(wm 无发布者)",
                                                       "extnav": "/external_nav/status"},
                                               node_factory=fake_factory()),
         S.RosAdapterUnavailable)
-rejects("案3c readiness topic 未配置(须 runbook 裁决)拒绝",
+rejects("案3c readiness topic 显式置空 → 拒绝(fail-closed 保持)",
         lambda: S.ConcreteRosSubscribeAdapter(ros_domain_id="7", system_domain_id="7",
+                                              topics={"readiness": None,
+                                                      "extnav": "/external_nav/status"},
                                               node_factory=fake_factory()),
         S.RosAdapterUnavailable)
+ck("案3d 默认 topics=负责人裁决值(§11.7)",
+   S.ROS_SUBSCRIBE_TOPICS["readiness"], "/mavlink_external_nav/status")
 
 print("======== 案4/5/6 双域独立来源 ========")
 rejects("案4 sidecar domain 未配置 → fail-closed(禁静默 0)",

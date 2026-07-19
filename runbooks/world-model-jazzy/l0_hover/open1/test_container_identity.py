@@ -99,6 +99,31 @@ ck("案6 各 run 各解析(无缓存)",
    (r1["runtime_container_name"], r2["runtime_container_name"]),
    ("navlab-official-baseline", "navlab-official-baseline-B"))
 
+print("======== live 权威来源(runtime/service_handles.json,wm 上游契约)========")
+rd = mkrun(handles=None)
+os.makedirs(os.path.join(rd, "runtime"))
+open(os.path.join(rd, "runtime", "service_handles.json"), "w").write(json.dumps(
+    {"schema_version": "navlab.runtime.service_handles.v1", "run_id": RID,
+     "handles": [{"service_name": "official_baseline",
+                  "container_name": "navlab-official-baseline",
+                  "identifier": "navlab-official-baseline",
+                  "container_id": "abc123def456"}]}))
+r = S.resolve_container_identity(rd)
+ck("live 来源 RESOLVED(优先于 summary)", r["status"], "RESOLVED")
+ck("live 含真实 container_id", r["container_id"], "abc123def456")
+ck("live 来源标记", (r["source_artifact"], r["live_capable"]),
+   ("runtime/service_handles.json", True))
+d = json.load(open(os.path.join(rd, "runtime", "service_handles.json")))
+d["run_id"] = "OTHER"
+open(os.path.join(rd, "runtime", "service_handles.json"), "w").write(json.dumps(d))
+ck("live run_id 不绑 → CORRUPT", S.resolve_container_identity(rd)["status"], "CORRUPT")
+d["run_id"] = RID; d["schema_version"] = "unknown.v9"
+open(os.path.join(rd, "runtime", "service_handles.json"), "w").write(json.dumps(d))
+ck("live schema 未知 → CORRUPT", S.resolve_container_identity(rd)["status"], "CORRUPT")
+d["schema_version"] = "navlab.runtime.service_handles.v1"; d["handles"] = []
+open(os.path.join(rd, "runtime", "service_handles.json"), "w").write(json.dumps(d))
+ck("live 服务未启动 → UNAVAILABLE(不猜)", S.resolve_container_identity(rd)["status"], "UNAVAILABLE")
+
 print("======== 案11/12/13/14/15 sidecar 接线(fixture CLI)========")
 
 
