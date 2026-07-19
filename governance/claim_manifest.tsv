@@ -1,6 +1,6 @@
 # R003 第一方活跃文档统一注册表 + 逐主张清单(11 字段;真实路径;全 34 覆盖)
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
-# generated_at_head=0a22fd3(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=31 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
+# generated_at_head=a3568d9(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=31 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
 CURRENT_STATUS.md	§一 目标与路线	CURRENT	当前状态唯一权威	固定路线 P0→P1(WP303-308)→P2→P3→P4;并列共存非替换;多层楼梯只做架构预留	E0-CORRECT 逐章节核对	c281f54	CURRENT_CONSISTENT	KEEP	-	c281f54
 CURRENT_STATUS.md	§二 当前位置(一句话)	CURRENT	当前状态唯一权威	P0 收尾+WP304;WP303 实现停点(真实仿真未验);E1 观测方案已交付,下一步 E1 sidecar 实现待放行	E0-CORRECT 逐章节核对	c281f54	CURRENT_CONSISTENT	KEEP	-	c281f54
@@ -30,9 +30,9 @@ governance/README.md	§1 两门协议	CURRENT	治理协议权威	bound/current �
 governance/README.md	§2 第三方锁定判定	CURRENT	治理协议权威	dependencies.yaml 已创建并可解析;17 组件、LOCKED 13/UNVERIFIED 4、八 gitlink SHA/URL 可复核;许可按逐组件证据等级记录,不宣称全部 license 已验证	E0-CORRECT 逐章节核对	4360f38	CURRENT_CONSISTENT	KEEP	-	4360f38
 governance/README.md	§3 构建引用扫描	CURRENT	治理协议权威	静态/构建/镜像零命中+运行时盲区	E0-CORRECT 逐章节核对	4360f38	CURRENT_CONSISTENT	KEEP	-	4360f38
 governance/WP303_monitor生命周期方案_2026-07-16.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
-governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	OPEN-1 因果时间线+E0/E1 收口链+§11 A/A runbook(决策矩阵/身份链/双基线契约/preflight/P2 分层)	人工方案+只读产物提取	c281f54	REFERENCE_MARKED	KEEP_MARKED	-	c281f54
+governance/WP304_OPEN-1因果时间线与实验设计_2026-07-17.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	OPEN-1 因果时间线+E0/E1 收口链+§11 A/A runbook(决策矩阵/身份链/双基线契约/preflight/P2 分层)	人工方案+只读产物提取	a3568d9	REFERENCE_MARKED	KEEP_MARKED	-	a3568d9
 governance/P0_doc_audit_逐份审计_2026-07-18.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	14份文档逐行审计记录(C2字段×14+C3统一核查+C6/G4判定)	R003-E0-EVIDENCE-GATE 包C	33449ff	REFERENCE_MARKED	KEEP_MARKED	-	33449ff
-runbooks/world-model-jazzy/l0_hover/open1/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	WP304 E0 提取器/解码器/schema+§4b 标注门+§7/§7b/§7c E1 sidecar 运行期旁路链(真实仿真未执行)	人工方案+只读产物提取	d75ad70	REFERENCE_MARKED	KEEP_MARKED	-	d75ad70
+runbooks/world-model-jazzy/l0_hover/open1/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	WP304 E0-E1 全链+§7c 运行期旁路+A/A 必阻断项注明+§8 A/A 前置工具(真实仿真未执行)	人工方案+只读产物提取	a3568d9	REFERENCE_MARKED	KEEP_MARKED	-	a3568d9
 runbooks/world-model-jazzy/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	目录导览(现役工具 vs 冻结证据分类)	实测分类 2026-07-18	33449ff	REFERENCE_MARKED	KEEP_MARKED	-	33449ff
 runbooks/diagnostics/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 runbooks/gbplanner_ref/README.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
