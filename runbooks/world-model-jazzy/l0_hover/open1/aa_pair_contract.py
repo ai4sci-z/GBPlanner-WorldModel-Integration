@@ -14,10 +14,14 @@ BASELINE_CLASSES = {
         "note": "不得与未来材料合并统计",
     },
     "FUTURE_CANDIDATE": {
-        "world_model_commit": "750032a3aad8b62b0c8ef2b00f740ee125fdb382",
-        "purpose": "B23/B22/OPEN-2 修复后的候选材料",
+        # 2026-07-20 显式更新(非静默):负责人批准的 AA-PF-02 上游契约把候选链推进到
+        # 750032a→0a5c153→9a1ce95(service_handles 发布);live 容器身份依赖此契约,
+        # 故 A/A 候选基线=9a1ce95。
+        "world_model_commit": "9a1ce95c56e2901aad062e31c9d4a8006474b0fc",
+        "purpose": "B23/B22/OPEN-2 修复 + service_handles 契约后的候选材料",
         "known_baseline_defects": [],
-        "note": "仅 fixture/单测层;未经真实仿真不得称'已验证新基线'",
+        "note": "仅 fixture/单测层;未经真实仿真不得称'已验证新基线';"
+                "companion 镜像须按 jazzy-9a1ce95c56e2 重建后方可真实运行",
     },
 }
 

@@ -12,7 +12,7 @@ import aa_pair_contract as P  # noqa: E402
 
 FAIL = 0
 EAB = "eab0cc6f0d5460cbd2cf20fe9b83857549a1e6b5"
-NEW = "750032a3aad8b62b0c8ef2b00f740ee125fdb382"
+NEW = "9a1ce95c56e2901aad062e31c9d4a8006474b0fc"
 
 
 def ck(name, got, want):
