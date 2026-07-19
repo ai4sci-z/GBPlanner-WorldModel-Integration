@@ -193,6 +193,7 @@ class SegmentStore:
         entry = {
             "segment": n,
             "file": os.path.basename(final),
+            "sealed_monotonic_ns": time.monotonic_ns(),
             "schema_version": C.SCHEMA_VERSION,
             "record_count": len(self._buf),
             "first_utc_ns": self._buf[0]["utc_ns"],
@@ -491,9 +492,17 @@ class CapacityGovernor:
         return True
 
 
+
 # ============================================================================
-# E1C-02 · 正式可执行 sidecar:CLI + 单一主循环(fixture/real 同编排,只换数据源)
+# E1C-02/E1L · 正式可执行 sidecar:CLI + 运行期状态机(fixture/real 同一编排)
+# 状态机:WAIT_IDENTITY → ACTIVE(连续采集+周期封存)→ FINISHING → COMPLETE/
+# INCOMPLETE/CORRUPT;--once=完整处理一个 attempt(PENDING→RESOLVED→FINISHED)
+# 后退出,绝不是"只查一次 registry"。多 run 用 --expected-runs N。
+# 并发:host/top/logs-follow/container-wait/ros 各自独立线程,互不阻塞。
 # ============================================================================
+import queue as _queue
+import threading as _threading
+
 REQUIRED_ARTIFACTS = (
     "telemetry/host.jsonl",
     "telemetry/sitl_proc.jsonl",
@@ -504,12 +513,63 @@ REQUIRED_ARTIFACTS = (
     "telemetry/freeze.json",
 )
 
+REQUIRED_PROBE = {"telemetry/host.jsonl": "host.loadavg",
+                  "telemetry/sitl_proc.jsonl": "sitl.proc",
+                  "telemetry/sitl_console.log": "sitl.console",
+                  "telemetry/official_baseline_container_exit.json":
+                      "official_baseline_container_exit_code",
+                  "telemetry/readiness.jsonl": "readiness",
+                  "telemetry/extnav.jsonl": "extnav",
+                  "telemetry/freeze.json": "freeze"}
+
+
+class RosAdapterUnavailable(Exception):
+    """rclpy 不可用/适配层无法建立:required ROS 采集 → INCOMPLETE,不碰 producer。"""
+
+
+def evaluate_run_evidence(run_dir):
+    """E1C-05.1 required artifact 闭包(正式入口,CLI 主循环调用)。"""
+    statuses = {}
+    for rel, field in REQUIRED_PROBE.items():
+        p = os.path.join(run_dir, rel)
+        if not os.path.exists(p):
+            statuses[field] = "MISSING"
+            continue
+        try:
+            if rel.endswith(".log"):
+                open(p, "rb").read()
+            else:
+                json.load(open(p, encoding="utf-8"))
+            statuses[field] = "PRESENT_VALID"
+        except (OSError, ValueError):
+            statuses[field] = "CORRUPT"
+    business_ok = False
+    biz = "UNKNOWN"
+    sp = os.path.join(run_dir, "summary.json")
+    try:
+        sj = json.load(open(sp, encoding="utf-8"))
+        if isinstance(sj.get("ok"), bool):
+            business_ok = sj["ok"]
+            biz = "OK" if sj["ok"] else "FAILED"
+    except (OSError, ValueError):
+        pass
+    return statuses, business_ok, biz
+
+
+def _interruptible_sleep(sec, *stops):
+    end = time.monotonic() + sec
+    while time.monotonic() < end:
+        if any(e.is_set() for e in stops):
+            return False
+        time.sleep(min(0.02, max(0.0, end - time.monotonic())))
+    return True
+
 
 class FixtureBackend:
-    """fixture 数据源:与 real 走同一主循环,只替换 I/O。输入=JSON 文件:
-    {"proc": {path: [text,...]}, "docker": {...}, "ros": {"readiness": [...], "extnav": [...]},
-     "git": {...}, "images": [...], "config_hash": "...", "container": "name",
-     "host_samples": N}"""
+    """fixture 数据源:与 real 走同一状态机/线程编排,只替换 I/O。
+    输入 JSON:proc{path:[text...]} / docker{inspect,top,logs|logs_chunks,wait,wait_delay_sec,
+    omit_console} / ros_stream{key:[{delay,msg}...]}|ros{key:[msg...]} / git / image_refs /
+    images_by_ref / config_hash / container / host_interval_sec / force_rc。"""
 
     def __init__(self, fixture_path):
         with open(fixture_path, encoding="utf-8") as f:
@@ -524,8 +584,8 @@ class FixtureBackend:
         self._cursors[path] = min(i + 1, len(seq) - 1)
         return seq[min(i, len(seq) - 1)]
 
-    def host_sample_count(self):
-        return int(self.data.get("host_samples", 2))
+    def host_interval_sec(self):
+        return float(self.data.get("host_interval_sec", 0.05))
 
     def git(self, *args):
         key = " ".join(args)
@@ -543,49 +603,76 @@ class FixtureBackend:
     def config_hash(self):
         return self.data.get("config_hash", "UNAVAILABLE")
 
-    def docker_backend(self):
-        d = self.data.get("docker", {})
-
-        class _B:
-            def inspect(self, name, _d=d):
-                return _d.get("inspect", {})
-
-            def top(self, name, _d=d):
-                return _d.get("top", {"Processes": []})
-
-            def logs(self, name, tail=None, _d=d):
-                if _d.get("omit_console"):
-                    raise OSError("fixture: console 不可得")
-                return _d.get("logs", "")
-
-            def wait(self, name, _d=d):
-                return int(_d.get("wait", 0))
-        return _B()
-
     def container_name(self):
         return self.data.get("container", "official_baseline")
 
-    def ros_messages(self, topic_key):
-        return self.data.get("ros", {}).get(topic_key, [])
+    def docker_inspect(self, name):
+        return self.data.get("docker", {}).get("inspect", {})
+
+    def docker_top(self, name):
+        return self.data.get("docker", {}).get("top", {"Processes": []})
+
+    def logs_follow(self, name, should_stop):
+        d = self.data.get("docker", {})
+        if d.get("omit_console"):
+            raise OSError("fixture: console 不可得")
+        chunks = d.get("logs_chunks")
+        if chunks is None:
+            chunks = [{"delay": 0.0, "text": d.get("logs", "")}]
+        for ch in chunks:
+            if should_stop():
+                return
+            if ch.get("delay"):
+                _t = time.monotonic() + float(ch["delay"])
+                while time.monotonic() < _t:
+                    if should_stop():
+                        return
+                    time.sleep(0.01)
+            yield ch.get("text", "")
+
+    def wait_blocking(self, name, should_stop):
+        d = self.data.get("docker", {})
+        delay = float(d.get("wait_delay_sec", 0.0))
+        t = time.monotonic() + delay
+        while time.monotonic() < t:
+            if should_stop():
+                return None
+            time.sleep(0.01)
+        return int(d.get("wait", 0))
+
+    def ros_stream(self, key, should_stop):
+        stream = self.data.get("ros_stream", {}).get(key)
+        if stream is None:
+            stream = [{"delay": 0.0, "msg": m} for m in self.data.get("ros", {}).get(key, [])]
+        for item in stream:
+            if should_stop():
+                return
+            if item.get("delay"):
+                t = time.monotonic() + float(item["delay"])
+                while time.monotonic() < t:
+                    if should_stop():
+                        return
+                    time.sleep(0.01)
+            yield item["msg"]
 
     def force_rc(self):
         return self.data.get("force_rc")
 
 
 class RealBackend:
-    """real 数据源(--backend real 才构造;本轮任何测试/dry-run 不得使用)。
-    Docker 经只读 CLI(inspect/top/logs/wait);ROS 经 rclpy 只订不发。"""
+    """real 数据源(--backend real 才构造;本轮任何测试/dry-run 不得使用/未实测)。"""
 
     def __init__(self, container, ros_domain_id):
         self._container = container
         self._ros_domain = ros_domain_id
+        self._ros_adapter = None
 
     def read_file(self, path):
         with open(path, encoding="utf-8", errors="replace") as f:
             return f.read()
 
-    def host_sample_count(self):
-        return 2
+    def host_interval_sec(self):
+        return 1.0
 
     def git(self, *args):
         import subprocess
@@ -605,35 +692,51 @@ class RealBackend:
     def config_hash(self):
         return "UNAVAILABLE"
 
-    def docker_backend(self):
-        import subprocess
-
-        class _B:
-            def __init__(self, name):
-                self._n = name
-
-            def inspect(self, name):
-                return json.loads(subprocess.run(["docker", "inspect", name],
-                                                 capture_output=True, text=True).stdout or "[]")
-
-            def top(self, name):
-                out = subprocess.run(["docker", "top", name], capture_output=True, text=True)
-                return {"raw": out.stdout}
-
-            def logs(self, name, tail=None):
-                cmd = ["docker", "logs"] + (["--tail", str(tail)] if tail else []) + [name]
-                return subprocess.run(cmd, capture_output=True, text=True).stdout
-
-            def wait(self, name):
-                return int(subprocess.run(["docker", "wait", name],
-                                          capture_output=True, text=True).stdout.strip() or 255)
-        return _B(self._container)
-
     def container_name(self):
         return self._container
 
-    def ros_messages(self, topic_key):
-        raise TelemetryWriteError("real ROS 采集本轮禁用(A/A 未放行)")
+    def docker_inspect(self, name):
+        import subprocess
+        out = subprocess.run(["docker", "inspect", name], capture_output=True, text=True)
+        try:
+            return json.loads(out.stdout or "[]")
+        except ValueError:
+            return {"error": "inspect 不可解析"}
+
+    def docker_top(self, name):
+        import subprocess
+        out = subprocess.run(["docker", "top", name], capture_output=True, text=True)
+        return {"raw": out.stdout}
+
+    def logs_follow(self, name, should_stop):
+        import subprocess
+        proc = subprocess.Popen(["docker", "logs", "--follow", name],
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        try:
+            while not should_stop():
+                line = proc.stdout.readline()
+                if not line:
+                    return
+                yield line
+        finally:
+            proc.terminate()
+
+    def wait_blocking(self, name, should_stop):
+        import subprocess
+        proc = subprocess.Popen(["docker", "wait", name], stdout=subprocess.PIPE, text=True)
+        while proc.poll() is None:
+            if should_stop():
+                proc.terminate()
+                return None
+            time.sleep(0.05)
+        out = (proc.stdout.read() or "").strip()
+        return int(out) if out.isdigit() else None
+
+    def ros_stream(self, key, should_stop):
+        raise RosAdapterUnavailable("concrete ROS 适配层于下一提交实现")
+
+    def force_rc(self):
+        return None
 
 
 def _now_pair():
@@ -651,230 +754,410 @@ def _self_identity(batch_id, run_id):
             "pid_starttime": st, "boot_id": _current_boot_id()}
 
 
-def _rec(cfg, run_id, field, value):
+def _rec(cfg, run_id, field, value, post_run=False):
     utc, mono = _now_pair()
-    return {"schema_version": C.SCHEMA_VERSION, "batch_id": cfg["batch_id"],
-            "run_id": run_id, "utc_ns": utc, "mono_ns": mono,
-            "field": field, "value": value}
+    r = {"schema_version": C.SCHEMA_VERSION, "batch_id": cfg["batch_id"],
+         "run_id": run_id, "utc_ns": utc, "mono_ns": mono,
+         "field": field, "value": value}
+    if post_run:
+        r["post_run_derived"] = True
+    return r
 
 
-def _write_jsonl_records(run_dir, rel, records, cfg, run_id, gov):
-    """经 SegmentStore 落一个 required jsonl(单段封存;容量入 governor)。"""
+def _new_collector(requirement):
+    return {"started": None, "first_sample_mono_ns": None, "last_sample_mono_ns": None,
+            "records": 0, "dropped": 0, "truncated": False,
+            "error_state": None, "stopped": None, "requirement": requirement,
+            "evidence_effect": ("INCOMPLETE" if requirement == "required" else "UNAVAILABLE")}
+
+
+def _process_attempt(cfg, backend, entry, live, batch_final):
+    """单 attempt 状态机:RESOLVED→ACTIVE(连续采集+周期封存)→FINISHING→run final。
+    live=False(启动时已 FINISHED)→ 事后一次性快照,全记录标 post_run_derived。"""
+    run_id = entry["world_model_run_id"]
+    run_dir = entry["world_model_run_dir"]
+    if os.path.basename(os.path.normpath(run_dir)) != run_id:
+        raise TelemetryWriteError(f"run_dir 基名≠run_id: {run_dir}")
+    wm_root = os.path.realpath(cfg["world_model_root"])
+    if not os.path.realpath(run_dir).startswith(wm_root + os.sep):
+        raise TelemetryWriteError(f"run_dir 越出 world-model 根: {run_dir}")
+    os.makedirs(os.path.join(run_dir, "telemetry"), exist_ok=True)
     tdir = os.path.join(run_dir, "telemetry")
-    sub = rel.replace("telemetry/", "").replace(".jsonl", "")
-    store = SegmentStore(tdir, run_root=run_dir, identity=_self_identity(cfg["batch_id"], run_id),
-                        name=f"{sub}-segment")
-    try:
-        dropped = 0
-        for r in records:
-            payload = json.dumps(r, sort_keys=True)
-            if not gov.admit(rel, len(payload) + 1):
-                dropped += 1
+    store = SegmentStore(tdir, run_root=run_dir,
+                         identity=_self_identity(cfg["batch_id"], run_id))
+    gov = CapacityGovernor()
+    recq = _queue.Queue()
+    stop_local = _threading.Event()
+    finished_evt = _threading.Event()
+    collectors = {name: _new_collector("required")
+                  for name in ("host", "sitl_proc", "sitl_console",
+                               "container_exit", "readiness", "extnav")}
+    console_chunks = []
+    console_lock = _threading.Lock()
+    wait_result = {"code": None, "post_run": False}
+    cname = backend.container_name()
+
+    def should_stop():
+        return stop_local.is_set()
+
+    def guard(name, fn):
+        collectors[name]["started"] = time.monotonic_ns()
+        try:
+            fn()
+        except Exception as e:
+            collectors[name]["error_state"] = f"{type(e).__name__}: {e}"
+        finally:
+            collectors[name]["stopped"] = time.monotonic_ns()
+
+    def host_loop():
+        interval = cfg.get("host_interval_sec") or backend.host_interval_sec()
+        prev = None
+        while not stop_local.is_set() and not finished_evt.is_set():
+            try:
+                la = parse_loadavg(backend.read_file("/proc/loadavg"))
+            except OSError:
+                la = C.UNAVAILABLE
+            try:
+                cur = parse_proc_stat(backend.read_file("/proc/stat"))
+            except OSError:
+                cur = C.UNAVAILABLE
+            pct = cpu_pct(prev, cur) if prev is not None else None
+            prev = cur
+            try:
+                mem = parse_meminfo(backend.read_file("/proc/meminfo"))
+            except OSError:
+                mem = C.UNAVAILABLE
+            freq = read_cpu_freq(backend.read_file)
+            recq.put(("host", _rec(cfg, run_id, "host.loadavg", la)))
+            if pct is not None:
+                recq.put(("host", _rec(cfg, run_id, "host.cpu_pct", pct)))
+            recq.put(("host", _rec(cfg, run_id, "host.mem", mem)))
+            recq.put(("host", _rec(cfg, run_id, "host.cpu_freq", freq)))
+            if not _interruptible_sleep(interval, stop_local, finished_evt):
+                return
+
+    def top_loop():
+        interval = (cfg.get("host_interval_sec") or backend.host_interval_sec())
+        while not stop_local.is_set() and not finished_evt.is_set():
+            recq.put(("sitl_proc", _rec(cfg, run_id, "sitl.proc", backend.docker_top(cname))))
+            if not _interruptible_sleep(interval, stop_local, finished_evt):
+                return
+
+    def logs_loop():
+        for chunk in backend.logs_follow(cname, should_stop):
+            data = chunk.encode("utf-8")
+            if gov.admit("telemetry/sitl_console.log", len(data)):
+                with console_lock:
+                    console_chunks.append(chunk)
+                collectors["sitl_console"]["records"] += 1
+                collectors["sitl_console"]["last_sample_mono_ns"] = time.monotonic_ns()
+                if collectors["sitl_console"]["first_sample_mono_ns"] is None:
+                    collectors["sitl_console"]["first_sample_mono_ns"] = \
+                        collectors["sitl_console"]["last_sample_mono_ns"]
+            else:
+                collectors["sitl_console"]["dropped"] += 1
+                collectors["sitl_console"]["truncated"] = True
+
+    def wait_loop():
+        code = backend.wait_blocking(cname, should_stop)
+        if code is not None:
+            wait_result["code"] = code
+            wait_result["post_run"] = finished_evt.is_set()
+            collectors["container_exit"]["records"] += 1
+            collectors["container_exit"]["last_sample_mono_ns"] = time.monotonic_ns()
+            if collectors["container_exit"]["first_sample_mono_ns"] is None:
+                collectors["container_exit"]["first_sample_mono_ns"] = \
+                    collectors["container_exit"]["last_sample_mono_ns"]
+
+    def ros_loop(key):
+        def _run():
+            for msg in backend.ros_stream(key, should_stop):
+                recq.put((key, _rec(cfg, run_id, key, msg)))
+        return _run
+
+    threads = []
+    if live:
+        specs = [("host", host_loop), ("sitl_proc", top_loop),
+                 ("sitl_console", logs_loop), ("container_exit", wait_loop),
+                 ("readiness", ros_loop("readiness")), ("extnav", ros_loop("extnav"))]
+        for name, fn in specs:
+            t = _threading.Thread(target=guard, args=(name, fn), daemon=True)
+            t.start()
+            threads.append(t)
+    else:
+        # 事后模式:一次性快照,全部 post_run_derived
+        try:
+            la = parse_loadavg(backend.read_file("/proc/loadavg"))
+        except OSError:
+            la = C.UNAVAILABLE
+        recq.put(("host", _rec(cfg, run_id, "host.loadavg", la, post_run=True)))
+        try:
+            mem = parse_meminfo(backend.read_file("/proc/meminfo"))
+        except OSError:
+            mem = C.UNAVAILABLE
+        recq.put(("host", _rec(cfg, run_id, "host.mem", mem, post_run=True)))
+        recq.put(("host", _rec(cfg, run_id, "host.cpu_freq",
+                               read_cpu_freq(backend.read_file), post_run=True)))
+        recq.put(("sitl_proc", _rec(cfg, run_id, "sitl.proc",
+                                    backend.docker_top(cname), post_run=True)))
+        try:
+            for chunk in backend.logs_follow(cname, lambda: False):
+                if gov.admit("telemetry/sitl_console.log", len(chunk.encode("utf-8"))):
+                    console_chunks.append(chunk)
+                    collectors["sitl_console"]["records"] += 1
+        except OSError:
+            collectors["sitl_console"]["error_state"] = "console 不可得"
+        code = backend.wait_blocking(cname, lambda: False)
+        if code is not None:
+            wait_result["code"] = code
+            wait_result["post_run"] = True
+        for key in ("readiness", "extnav"):
+            for msg in backend.ros_stream(key, lambda: False):
+                recq.put((key, _rec(cfg, run_id, key, msg, post_run=True)))
+        finished_evt.set()
+
+    # ---- ACTIVE:连续 drain + 周期封存(flush_interval / record limit 先到先封) ----
+    field_counts = {}
+    dropped_counts = {}
+    seg_limit = int(cfg.get("segment_record_limit", 1000))
+    flush = float(cfg.get("flush_interval", 1.0))
+    last_seal = time.monotonic()
+    stop_reported = None
+    reg_poll = 0.0
+
+    def drain_once(post_run_flag=False):
+        n = 0
+        while True:
+            try:
+                name, r = recq.get_nowait()
+            except _queue.Empty:
+                return n
+            if post_run_flag and not r.get("post_run_derived"):
+                r["post_run_derived"] = True
+            rel = C.FIELD_CONTRACTS.get(r["field"], {}).get("artifact_rel", "telemetry/host.jsonl")
+            payload = len(json.dumps(r)) + 1
+            if not gov.admit(rel, payload):
+                dropped_counts[rel] = dropped_counts.get(rel, 0) + 1
+                if name in collectors:
+                    collectors[name]["dropped"] += 1
+                    collectors[name]["truncated"] = True
                 continue
             store.append(r)
-        if store._buf:
-            store.seal(truncated=bool(dropped), dropped_records=dropped)
-        # 目标 rel 文件 = 段清单指针文件(正式 artifact 存在性锚点)
+            field_counts[r["field"]] = field_counts.get(r["field"], 0) + 1
+            if name in collectors:
+                c = collectors[name]
+                c["records"] += 1
+                c["last_sample_mono_ns"] = r["mono_ns"]
+                if c["first_sample_mono_ns"] is None:
+                    c["first_sample_mono_ns"] = r["mono_ns"]
+            n += 1
+
+    while True:
+        drain_once()
+        now = time.monotonic()
+        if store._buf and (len(store._buf) >= seg_limit or (now - last_seal) >= flush):
+            store.seal()
+            last_seal = now
+        if finished_evt.is_set():
+            break
+        if cfg["_stop"].is_set():
+            stop_reported = "signal"
+            break
+        if now - reg_poll >= 0.05:
+            reg_poll = now
+            try:
+                cur = json.load(open(os.path.join(
+                    cfg["run_registry"], f"attempt_{entry['run_index']}.json"),
+                    encoding="utf-8"))
+                if cur.get("phase") == "finished":
+                    entry = cur
+                    finished_evt.set()
+                    break
+            except (OSError, ValueError):
+                pass
+        time.sleep(0.02)
+
+    # ---- FINISHING ----
+    finished_evt.set()
+    stop_local.set()
+    for t in threads:
+        t.join(timeout=1.0)
+    drain_once(post_run_flag=True)   # 结束后到达的记录 → post_run_derived
+    if store._buf:
+        store.seal()
+    # 指针/单文件 artifact
+    for rel in ("telemetry/host.jsonl", "telemetry/sitl_proc.jsonl",
+                "telemetry/readiness.jsonl", "telemetry/extnav.jsonl"):
+        fields = {f: n for f, n in field_counts.items()
+                  if C.FIELD_CONTRACTS.get(f, {}).get("artifact_rel") == rel}
+        if not fields and rel != "telemetry/host.jsonl":
+            fields = {}
         atomic_write(os.path.join(run_dir, rel),
                      json.dumps({"schema_version": C.SCHEMA_VERSION,
-                                 "segments_prefix": f"{sub}-segment",
-                                 "records": len(records) - dropped,
-                                 "dropped_records": dropped},
+                                 "segments_prefix": "segment",
+                                 "field_records": fields,
+                                 "dropped_records": dropped_counts.get(rel, 0)},
                                 sort_keys=True).encode("utf-8"),
-                     run_root=run_dir, overwrite=False)
-    finally:
-        store.close()
-    return dropped
-
-
-REQUIRED_PROBE = {"telemetry/host.jsonl": "host.loadavg",
-                  "telemetry/sitl_proc.jsonl": "sitl.proc",
-                  "telemetry/sitl_console.log": "sitl.console",
-                  "telemetry/official_baseline_container_exit.json":
-                      "official_baseline_container_exit_code",
-                  "telemetry/readiness.jsonl": "readiness",
-                  "telemetry/extnav.jsonl": "extnav",
-                  "telemetry/freeze.json": "freeze"}
-
-
-def evaluate_run_evidence(run_dir):
-    """E1C-05.1 required artifact 闭包(正式入口,CLI 主循环调用):
-    逐项存在性+可解析性 → PRESENT_VALID/MISSING/CORRUPT;业务结果独立读取。"""
-    statuses = {}
-    for rel, field in REQUIRED_PROBE.items():
-        p = os.path.join(run_dir, rel)
-        if not os.path.exists(p):
+                     run_root=run_dir, overwrite=True)
+    with console_lock:
+        console = "".join(console_chunks)
+    if console_chunks or collectors["sitl_console"]["error_state"] is None:
+        atomic_write(os.path.join(run_dir, "telemetry", "sitl_console.log"),
+                     console.encode("utf-8"), run_root=run_dir, overwrite=True)
+    exit_fields = container_exit_fields(wait_result["code"]) if wait_result["code"] is not None \
+        else {"official_baseline_container_exit_code": C.UNAVAILABLE,
+              "sitl_process_exit_code": C.UNAVAILABLE}
+    exit_fields["post_run_derived"] = bool(wait_result["post_run"])
+    atomic_write(os.path.join(run_dir, "telemetry", "official_baseline_container_exit.json"),
+                 json.dumps(exit_fields, sort_keys=True).encode("utf-8"),
+                 run_root=run_dir, overwrite=True)
+    fz = collect_freeze(git_runner=backend.git, image_inspect=backend.image_inspect,
+                        config_hash=backend.config_hash(), batch_id=cfg["batch_id"],
+                        run_id=run_id, image_refs=backend.image_refs())
+    atomic_write(os.path.join(run_dir, "telemetry", "freeze.json"),
+                 json.dumps(fz, ensure_ascii=False, sort_keys=True).encode("utf-8"),
+                 run_root=run_dir, overwrite=True)
+    # required 闭包 → evidence gate → run final(只在 FINISHED 之后)
+    statuses, business_ok, biz = evaluate_run_evidence(run_dir)
+    for name in ("readiness", "extnav", "host", "sitl_proc"):
+        if collectors[name]["error_state"] and collectors[name]["records"] == 0:
+            field = {"host": "host.loadavg", "sitl_proc": "sitl.proc",
+                     "readiness": "readiness", "extnav": "extnav"}[name]
             statuses[field] = "MISSING"
-            continue
-        try:
-            if rel.endswith(".log"):
-                open(p, "rb").read()
-            else:
-                json.load(open(p, encoding="utf-8"))
-            statuses[field] = "PRESENT_VALID"
-        except (OSError, ValueError):
-            statuses[field] = "CORRUPT"
-    business_ok = False
-    biz = "UNKNOWN"
-    sp = os.path.join(run_dir, "summary.json")
-    try:
-        s = json.load(open(sp, encoding="utf-8"))
-        if isinstance(s.get("ok"), bool):
-            business_ok = s["ok"]
-            biz = "OK" if s["ok"] else "FAILED"
-    except (OSError, ValueError):
-        pass
-    return statuses, business_ok, biz
+    gate = C.evidence_gate(statuses, business_ok=business_ok)
+    run_final = {"schema_version": C.SCHEMA_VERSION, "batch_id": cfg["batch_id"],
+                 "run_ids_processed": [run_id], "process_rc": 0,
+                 "evidence_state": gate["status"], "finalization_state": "WRITTEN",
+                 "failure_reasons": [x for x in [stop_reported] if x],
+                 "business_outcome": biz, "evidence_gate": gate,
+                 "live_mode": bool(live),
+                 "attempt_window_monotonic": {"start": entry.get("start_monotonic"),
+                                              "end": entry.get("end_monotonic")},
+                 "collectors": collectors,
+                 "truncated": dict(gov.truncated),
+                 "dropped_records": dropped_counts,
+                 "telemetry_overrun": False,
+                 "finalized_monotonic_ns": time.monotonic_ns()}
+    atomic_write(os.path.join(run_dir, "telemetry", "sidecar_final_status.json"),
+                 json.dumps(run_final, ensure_ascii=False, sort_keys=True,
+                            indent=1).encode("utf-8"),
+                 run_root=run_dir, overwrite=True)
+    store.close()
+    return run_final
 
 
 def run_sidecar(cfg, backend):
-    """唯一主循环(fixture/real 共用):registry→run 身份→采集→原子落盘→
-    evidence gate→final status。返回进程 rc。"""
+    """状态机驱动的唯一主循环(fixture/real 同编排)。
+    --once = 完整处理一个 attempt(等待 PENDING→RESOLVED→FINISHED)后退出;
+    --expected-runs N = 依次完整处理 N 个 attempt。"""
     import run_registry as RR
     art_root = cfg["artifact_root"]
+    stop = _threading.Event()
+    cfg["_stop"] = stop
+    import signal as _signal
+    _signal.signal(_signal.SIGTERM, lambda *_: stop.set())
+    _signal.signal(_signal.SIGINT, lambda *_: stop.set())
+    order = {"COMPLETE": 0, "INCOMPLETE": 1, "CORRUPT": 2}
     final = {"schema_version": C.SCHEMA_VERSION, "batch_id": cfg["batch_id"],
              "run_ids_processed": [], "process_rc": None, "evidence_state": "UNKNOWN",
              "finalization_state": "MISSING", "failure_reasons": [],
-             "truncated": {}, "dropped_records": {}, "telemetry_overrun": False,
-             "business_outcome": "UNKNOWN", "evidence_gate": None}
+             "attempts": [], "truncated": {}, "dropped_records": {},
+             "telemetry_overrun": False, "business_outcome": "UNKNOWN",
+             "evidence_gate": None}
 
     def write_batch_final(rc):
         final["process_rc"] = rc
         final["finalization_state"] = "WRITTEN"
         os.makedirs(os.path.join(art_root, "telemetry"), exist_ok=True)
         atomic_write(os.path.join(art_root, "telemetry", "sidecar_final_status.json"),
-                     json.dumps(final, ensure_ascii=False, sort_keys=True, indent=1).encode("utf-8"),
+                     json.dumps(final, ensure_ascii=False, sort_keys=True,
+                                indent=1).encode("utf-8"),
                      run_root=art_root, overwrite=True)
 
-    stop = {"flag": False}
+    worst = None
 
-    def _sig(_s, _f):
-        stop["flag"] = True
-
-    import signal as _signal
-    _signal.signal(_signal.SIGTERM, _sig)
-    _signal.signal(_signal.SIGINT, _sig)
+    def upd(state):
+        nonlocal worst
+        if worst is None or order.get(state, 1) > order.get(worst, 0):
+            worst = state
 
     try:
-        # 1) run 身份:只从 registry 取,不自行扫描"最新目录"
-        deadline = time.monotonic() + float(cfg.get("registry_wait_sec", 5.0))
-        entries = []
-        while True:
-            reg = RR.load_registry(cfg["run_registry"], cfg["batch_id"])
-            if reg["errors"]:
-                final["failure_reasons"] += reg["errors"]
-                final["evidence_state"] = "INCOMPLETE"
-                write_batch_final(3)
-                return 3
-            entries = [e for e in reg["entries"] if e.get("identity_status") == "RESOLVED"]
-            if entries or cfg.get("once") or time.monotonic() >= deadline or stop["flag"]:
-                break
-            time.sleep(0.05)
-        if not entries:
-            final["failure_reasons"].append("registry 无 RESOLVED run(身份未握手)")
-            final["evidence_state"] = "INCOMPLETE"
-            write_batch_final(4)
-            return 4
-        gov = CapacityGovernor()
-        worst = "COMPLETE"
-        for e in entries:
-            run_id = e["world_model_run_id"]
-            run_dir = e["world_model_run_dir"]
-            if os.path.basename(os.path.normpath(run_dir)) != run_id:
-                raise TelemetryWriteError(f"run_dir 基名≠run_id: {run_dir}")
-            wm_root = os.path.realpath(cfg["world_model_root"])
-            if not os.path.realpath(run_dir).startswith(wm_root + os.sep):
-                raise TelemetryWriteError(f"run_dir 越出 world-model 根: {run_dir}")
-            os.makedirs(os.path.join(run_dir, "telemetry"), exist_ok=True)
-            # 2) 宿主采集(collectors + governor)
-            host_recs = []
-            prev_stat = None
-            for _ in range(backend.host_sample_count()):
-                if stop["flag"]:
+        expected = int(cfg["expected_runs"])
+        processed = set()
+        for _slot in range(expected):
+            # ---- WAIT_IDENTITY:等待(而非只查一次)下一 attempt 达到终态身份 ----
+            deadline = time.monotonic() + float(cfg.get("registry_wait_sec", 5.0))
+            picked = None
+            dir_missing = False
+            while True:
+                reg = RR.load_registry(cfg["run_registry"], cfg["batch_id"])
+                if reg["errors"]:
+                    only_missing = all("registry 目录不存在" in x for x in reg["errors"])
+                    if only_missing:
+                        # 入口时序:launcher 先起 sidecar,bc_run 稍后才 begin——
+                        # 目录未建=继续等待,不是硬错(超时才 INCOMPLETE)
+                        dir_missing = True
+                        reg = {"entries": [], "errors": []}
+                    else:
+                        final["failure_reasons"] += reg["errors"]
+                        final["evidence_state"] = "INCOMPLETE"
+                        upd("INCOMPLETE")
+                        write_batch_final(3)
+                        return 3
+                cand = [e for e in reg["entries"] if e["run_index"] not in processed]
+                terminal = [e for e in cand
+                            if e.get("identity_status") in ("RESOLVED", "UNKNOWN")]
+                if terminal:
+                    picked = sorted(terminal, key=lambda e: e["run_index"])[0]
                     break
-                try:
-                    la = parse_loadavg(backend.read_file("/proc/loadavg"))
-                except OSError:
-                    la = C.UNAVAILABLE
-                try:
-                    cur = parse_proc_stat(backend.read_file("/proc/stat"))
-                except OSError:
-                    cur = C.UNAVAILABLE
-                pct = cpu_pct(prev_stat, cur) if prev_stat is not None else None
-                prev_stat = cur
-                try:
-                    mem = parse_meminfo(backend.read_file("/proc/meminfo"))
-                except OSError:
-                    mem = C.UNAVAILABLE
-                freq = read_cpu_freq(backend.read_file)
-                host_recs.append(_rec(cfg, run_id, "host.loadavg", la))
-                if pct is not None:
-                    host_recs.append(_rec(cfg, run_id, "host.cpu_pct", pct))
-                host_recs.append(_rec(cfg, run_id, "host.mem", mem))
-                host_recs.append(_rec(cfg, run_id, "host.cpu_freq", freq))
-            d = _write_jsonl_records(run_dir, "telemetry/host.jsonl", host_recs, cfg, run_id, gov)
-            if d:
-                final["dropped_records"]["telemetry/host.jsonl"] = d
-            # 3) docker 只读:sitl_proc / console / 容器退出码
-            dk = DockerReadOnlyAdapter(backend.docker_backend())
-            cname = backend.container_name()
-            top = dk.top(cname)
-            _write_jsonl_records(run_dir, "telemetry/sitl_proc.jsonl",
-                                 [_rec(cfg, run_id, "sitl.proc", top)], cfg, run_id, gov)
-            try:
-                logs = dk.logs(cname)
-                if gov.admit("telemetry/sitl_console.log", len(logs.encode("utf-8"))):
-                    atomic_write(os.path.join(run_dir, "telemetry", "sitl_console.log"),
-                                 logs.encode("utf-8"), run_root=run_dir)
-            except OSError:
-                pass  # 不可得 → 闭包判 MISSING → INCOMPLETE(rc=0 也不 OK)
-            code = dk.wait(cname)
-            atomic_write(os.path.join(run_dir, "telemetry", "official_baseline_container_exit.json"),
-                         json.dumps(container_exit_fields(code), sort_keys=True).encode("utf-8"),
-                         run_root=run_dir)
-            # 4) ROS 只订不发(fixture=预录消息;real 本轮禁用)
-            for key, rel in (("readiness", "telemetry/readiness.jsonl"),
-                             ("extnav", "telemetry/extnav.jsonl")):
-                msgs = backend.ros_messages(key)
-                recs = [_rec(cfg, run_id, key, m) for m in msgs]
-                _write_jsonl_records(run_dir, rel, recs, cfg, run_id, gov)
-            # 5) 冻结身份(canonical hash 由 E0 实现算出后经 backend 提供)
-            fz = collect_freeze(git_runner=backend.git, image_inspect=backend.image_inspect,
-                                config_hash=backend.config_hash(), batch_id=cfg["batch_id"],
-                                run_id=run_id, image_refs=backend.image_refs())
-            atomic_write(os.path.join(run_dir, "telemetry", "freeze.json"),
-                         json.dumps(fz, ensure_ascii=False, sort_keys=True).encode("utf-8"),
-                         run_root=run_dir)
-            # 6) required artifact 闭包 → evidence gate(正式调用,非测试专用)
-            statuses, business_ok, biz = evaluate_run_evidence(run_dir)
-            gate = C.evidence_gate(statuses, business_ok=business_ok)
-            final["evidence_gate"] = gate
-            final["business_outcome"] = biz
-            order = {"COMPLETE": 0, "INCOMPLETE": 1, "CORRUPT": 2}
-            if order.get(gate["status"], 1) > order.get(worst, 0):
-                worst = gate["status"]
-            final["run_ids_processed"].append(run_id)
-            # run 级 final status(聚合器消费)
-            run_final = dict(final)
-            run_final["evidence_state"] = gate["status"]
-            run_final["run_ids_processed"] = [run_id]
-            run_final["process_rc"] = 0
-            run_final["finalization_state"] = "WRITTEN"
-            atomic_write(os.path.join(run_dir, "telemetry", "sidecar_final_status.json"),
-                         json.dumps(run_final, ensure_ascii=False, sort_keys=True,
-                                    indent=1).encode("utf-8"),
-                         run_root=run_dir, overwrite=True)
-        final["truncated"] = dict(gov.truncated)
-        for k, v in gov.dropped.items():
-            final["dropped_records"][k] = final["dropped_records"].get(k, 0) + v
-        final["evidence_state"] = worst
+                if stop.is_set():
+                    final["failure_reasons"].append("signal during WAIT_IDENTITY")
+                    final["evidence_state"] = "INCOMPLETE"
+                    upd("INCOMPLETE")
+                    write_batch_final(0)
+                    return 0
+                if time.monotonic() >= deadline:
+                    final["failure_reasons"].append(
+                        ("registry 目录不存在(等待窗口内未出现)" if dir_missing else
+                         f"registry 等待超时(仍 PENDING/无条目,attempt slot={_slot + 1})"))
+                    final["evidence_state"] = "INCOMPLETE"
+                    upd("INCOMPLETE")
+                    write_batch_final(4)
+                    return 4
+                time.sleep(0.05)
+            processed.add(picked["run_index"])
+            if picked.get("identity_status") == "UNKNOWN":
+                # 身份 UNKNOWN:不建 per-run writer,登记 INCOMPLETE
+                final["attempts"].append({"run_index": picked["run_index"],
+                                          "state": "INCOMPLETE",
+                                          "reason": f"identity UNKNOWN({picked.get('discovery_method')})"})
+                final["failure_reasons"].append(
+                    f"attempt {picked['run_index']} identity UNKNOWN,未启动 writer")
+                upd("INCOMPLETE")
+                continue
+            live = picked.get("phase") != "finished"
+            run_final = _process_attempt(cfg, backend, picked, live, final)
+            final["run_ids_processed"] += run_final["run_ids_processed"]
+            final["attempts"].append({"run_index": picked["run_index"],
+                                      "state": run_final["evidence_state"],
+                                      "run_id": run_final["run_ids_processed"][0],
+                                      "live_mode": run_final["live_mode"]})
+            final["business_outcome"] = run_final["business_outcome"]
+            final["evidence_gate"] = run_final["evidence_gate"]
+            for k, v in run_final["truncated"].items():
+                final["truncated"][k] = v
+            for k, v in run_final["dropped_records"].items():
+                final["dropped_records"][k] = final["dropped_records"].get(k, 0) + v
+            upd(run_final["evidence_state"])
+        final["evidence_state"] = worst or "INCOMPLETE"
         rc = 0
         force = getattr(backend, "force_rc", None)
         if callable(force):
             fr = force()
             if fr is not None:
                 rc = int(fr)
-                final["failure_reasons"].append(f"fixture force_rc={fr}(进程失败与证据状态并存)")
+                final["failure_reasons"].append(
+                    f"fixture force_rc={fr}(进程失败与证据状态并存)")
         write_batch_final(rc)
         return rc
     except TelemetryOverrun as e:
@@ -888,7 +1171,7 @@ def run_sidecar(cfg, backend):
         final["failure_reasons"].append(str(e))
         write_batch_final(5)
         return 5
-    except Exception as e:  # 顶层异常必须产出 final status,不静默
+    except Exception as e:
         final["failure_reasons"].append(f"{type(e).__name__}: {e}")
         final["evidence_state"] = "INCOMPLETE"
         try:
@@ -896,13 +1179,15 @@ def run_sidecar(cfg, backend):
         except Exception:
             pass
         return 6
+    finally:
+        final["evidence_state"] = final.get("evidence_state") or (worst or "UNKNOWN")
 
 
 def main(argv=None):
     import argparse
     ap = argparse.ArgumentParser(
         prog="telemetry_sidecar",
-        description="WP304 E1 纯旁路 telemetry sidecar(正式 CLI;fixture/real 同一主循环)")
+        description="WP304 E1 纯旁路 telemetry sidecar(运行期状态机;fixture/real 同一主循环)")
     ap.add_argument("--artifact-root", required=True)
     ap.add_argument("--batch-id", required=True)
     ap.add_argument("--run-registry", required=True)
@@ -912,16 +1197,23 @@ def main(argv=None):
     ap.add_argument("--ros-domain-id", default=None)
     ap.add_argument("--segment-record-limit", type=int, default=1000)
     ap.add_argument("--flush-interval", type=float, default=1.0)
+    ap.add_argument("--host-interval-sec", type=float, default=None)
     ap.add_argument("--registry-wait-sec", type=float, default=5.0)
     ap.add_argument("--once", action="store_true",
-                    help="有限模式:处理 registry 当前 RESOLVED 条目后退出")
+                    help="完整处理一个 attempt(等待 PENDING→RESOLVED→FINISHED)后退出")
+    ap.add_argument("--expected-runs", type=int, default=None,
+                    help="依次完整处理 N 个 attempt(WP303 默认命令使用本模式)")
     ap.add_argument("--validate-only", action="store_true")
     a = ap.parse_args(argv)
+    if a.expected_runs is None and not a.once and not a.validate_only:
+        ap.error("必须指定 --once 或 --expected-runs N")
+    expected = a.expected_runs if a.expected_runs is not None else 1
     cfg = {"artifact_root": a.artifact_root, "batch_id": a.batch_id,
            "run_registry": a.run_registry, "world_model_root": a.world_model_root,
-           "once": a.once, "registry_wait_sec": a.registry_wait_sec,
+           "expected_runs": expected, "registry_wait_sec": a.registry_wait_sec,
            "segment_record_limit": a.segment_record_limit,
-           "flush_interval": a.flush_interval, "ros_domain_id": a.ros_domain_id}
+           "flush_interval": a.flush_interval, "host_interval_sec": a.host_interval_sec,
+           "ros_domain_id": a.ros_domain_id}
     if a.backend == "fixture":
         if not a.fixture_input:
             ap.error("--backend fixture 需要 --fixture-input")
