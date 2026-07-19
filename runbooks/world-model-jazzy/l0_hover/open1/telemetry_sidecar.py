@@ -527,9 +527,60 @@ class RosAdapterUnavailable(Exception):
     """rclpy 不可用/适配层无法建立:required ROS 采集 → INCOMPLETE,不碰 producer。"""
 
 
-def evaluate_run_evidence(run_dir):
-    """E1C-05.1 required artifact 闭包(正式入口,CLI 主循环调用)。"""
+# 各 jsonl 入口指针文件与其 required 字段的对应(段链闭包用)
+_JSONL_REQUIRED_FIELD = {"telemetry/host.jsonl": "host.loadavg",
+                         "telemetry/sitl_proc.jsonl": "sitl.proc",
+                         "telemetry/readiness.jsonl": "readiness",
+                         "telemetry/extnav.jsonl": "extnav"}
+
+
+def _verify_segment_chain(run_dir, batch_id):
+    """E1L-CORRECT-01:入口指针、index.json、段文件三者一致闭包。
+    返回 (chain_corrupt: bool, reasons: list, actual_field_counts: dict)。
+    - 复用 recover():index schema/段存在性/SHA/未登记段/重复段号/tmp 登记;
+    - 逐行解析全部登记段;不可解析 → CORRUPT;
+    - 每条记录 run_id 必须==run 目录基名;batch_id(给定时)必须一致;
+    - 输出段内逐字段真实计数(与入口 field_records 闭包比对)。"""
+    td = os.path.join(run_dir, "telemetry")
+    run_id = os.path.basename(os.path.normpath(run_dir))
+    reasons = []
+    counts = {}
+    rec_report = recover(td)
+    if rec_report["status"] == "CORRUPT":
+        reasons += [f"段链结构: {x}" for x in rec_report["reasons"]]
+    for e in rec_report["segments"]:
+        p = os.path.join(td, e["file"])
+        try:
+            lines = open(p, encoding="utf-8").read().splitlines()
+        except OSError as exc:
+            reasons.append(f"段不可读: {e['file']}: {exc}")
+            continue
+        for ln in lines:
+            try:
+                r = json.loads(ln)
+            except ValueError:
+                reasons.append(f"段行不可解析: {e['file']}")
+                break
+            if r.get("run_id") != run_id:
+                reasons.append(f"段记录 run_id 串写: {e['file']}: "
+                               f"{r.get('run_id')!r} != {run_id!r}")
+                break
+            if batch_id is not None and r.get("batch_id") != batch_id:
+                reasons.append(f"段记录 batch_id 不符: {e['file']}: "
+                               f"{r.get('batch_id')!r} != {batch_id!r}")
+                break
+            f = r.get("field")
+            counts[f] = counts.get(f, 0) + 1
+    return bool(reasons), reasons, counts
+
+
+def evaluate_run_evidence(run_dir, batch_id=None):
+    """E1C-05.1/E1L-CORRECT-01 required artifact 闭包(正式入口,CLI 主循环调用)。
+    不只看入口文件可否 json.load:入口指针/index/段文件必须一致闭包;
+    结构损坏→CORRUPT;required 字段真实零记录→INCOMPLETE(MISSING);
+    业务成功/rc=0/full_pass 均不覆盖证据失败(gate 内规则)。"""
     statuses = {}
+    chain_corrupt, chain_reasons, actual_counts = _verify_segment_chain(run_dir, batch_id)
     for rel, field in REQUIRED_PROBE.items():
         p = os.path.join(run_dir, rel)
         if not os.path.exists(p):
@@ -538,11 +589,32 @@ def evaluate_run_evidence(run_dir):
         try:
             if rel.endswith(".log"):
                 open(p, "rb").read()
-            else:
-                json.load(open(p, encoding="utf-8"))
-            statuses[field] = "PRESENT_VALID"
+                statuses[field] = "PRESENT_VALID"
+                continue
+            pointer = json.load(open(p, encoding="utf-8"))
         except (OSError, ValueError):
             statuses[field] = "CORRUPT"
+            continue
+        if rel in _JSONL_REQUIRED_FIELD:
+            # jsonl 证据:入口指针存在≠证据存在——必须经段链闭包
+            if chain_corrupt:
+                statuses[field] = "CORRUPT"
+                continue
+            declared = pointer.get("field_records")
+            if not isinstance(declared, dict):
+                statuses[field] = "CORRUPT"
+                continue
+            mismatch = [f for f, n in declared.items() if actual_counts.get(f, 0) != n]
+            if mismatch:
+                statuses[field] = "CORRUPT"
+                continue
+            if actual_counts.get(_JSONL_REQUIRED_FIELD[rel], 0) <= 0:
+                # required 字段真实零记录(无论有无 error_state)→ 等同缺失
+                statuses[field] = "MISSING"
+                continue
+            statuses[field] = "PRESENT_VALID"
+        else:
+            statuses[field] = "PRESENT_VALID"
     business_ok = False
     biz = "UNKNOWN"
     sp = os.path.join(run_dir, "summary.json")
