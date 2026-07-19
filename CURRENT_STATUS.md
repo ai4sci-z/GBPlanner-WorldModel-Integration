@@ -18,13 +18,13 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 E1 观测方案已交付;**R003 状态闭环已经 Codex 独立复验 VERIFIED_PASS 关闭(2026-07-19;
 复验基线=CLOSE-05 收口态,精确 HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`)**。分类:VERIFIED_CLOSED=R003-CLOSE-01..05/OPEN-2 环境复验/状态闭环;
 CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependencies 专用语义验收器。
-**A/A-PREFLIGHT 停点(2026-07-20)**:VC-01/VC-02=VERIFIED_CLOSED(独立复锁+套外反例过);
-AA-PF-01=BLOCKED_BY_OWNER_DECISION(宿主无 rclpy/std_msgs;三方案矩阵 §11.1;readiness topic 待裁);
-AA-PF-02=post-run 权威管道闭合,live=BLOCKED_BY_OWNER_DECISION(上游契约提案 §11.3);
-AA-PF-03=固化;AA-PF-04=preflight gate 建成,当前正式输出 OWNER_DECISION_REQUIRED(禁 READY=预期)。
-**禁止启动 A/A**:E1L-CORRECT 代码修复独立通过,但真实 A/A 前置未闭合;待负责人具名裁决
-(ROS 环境方案/readiness topic/容器身份上游契约/P2-OFFLINE-PREP 并行)。
-未运行真实仿真;real Docker/ROS 未实测;OPEN-1 未定位;G6 未关闭;WP307 未解锁。
+**A/A 前置全部闭合(2026-07-20,四项裁决落地)**:方案A 宿主 ROS2 已装(pins 落档,
+source /opt/ros/jazzy 激活;未 source 仍 fail-closed);readiness=/mavlink_external_nav/status;
+wm 上游契约已实现(service.started 原子发布 service_handles.json 含真实 container_id,
+wm@9a1ce95 推 backup);sidecar live 身份消费就绪;FUTURE_CANDIDATE=9a1ce95(显式推进)。
+**preflight(sourced+全计划)可达 READY**。A/A 实验本体待负责人明确启动指令;
+接缝:companion 镜像须按 jazzy-9a1ce95c56e2 重建后方可真实运行。
+P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
 
 ## 三、三仓基线
 
@@ -32,7 +32,7 @@ AA-PF-03=固化;AA-PF-04=preflight gate 建成,当前正式输出 OWNER_DECISION
 |---|---|---|---|
 | GBPlanner-WorldModel-Integration | main(HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`) | 治理/证据/状态入口 | 可改 |
 | gbp-feat | feat/gbplanner-ros2-port@`17db3bae08d7` | ROS2 迁移代码(M1-M5) | 只读 |
-| world-model | fix/world-model-e2e-takeoff@`750032a3aad8`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 授权修复已入(`faadb2a` B23 + `e569ecf` B22 接线 + `750032a` OPEN-2 解耦,fixture 级)并**重新冻结** |
+| world-model | fix/world-model-e2e-takeoff@`9a1ce95c56e2`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 授权链 `faadb2a`→`e569ecf`→`750032a`→`9a1ce95`(service_handles 上游契约,负责人批准);A/A 候选基线 |
 
 ## 四、已证事实(按证据等级)
 
@@ -59,7 +59,7 @@ AA-PF-03=固化;AA-PF-04=preflight gate 建成,当前正式输出 OWNER_DECISION
 | G3 生成器测试 | ✅ | 57/57 |
 | G4 文档闭包 | 🟡 PARTIAL | 14 份逐行审计完成(8 全核/5 部分/1 归档),未核范围见 [审计记录](governance/P0_doc_audit_逐份审计_2026-07-18.md) |
 | G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真未验 |
-| G6 WP304 因果链 | 🟡 A/A-PREFLIGHT 停点 | VC-01/02 复锁过;AA-PF-01/02(live)=BLOCKED_BY_OWNER_DECISION;AA-PF-03/04 固化;preflight=OWNER_DECISION_REQUIRED;禁 A/A 待具名裁决 |
+| G6 WP304 因果链 | 🟢 A/A 前置闭合 | 四裁决落地:ROS 环境(pins)/readiness topic/上游契约(wm@9a1ce95)/双基线推进;preflight sourced 可达 READY;待负责人 A/A 启动指令 |
 | G7 默认 10/10 | ⛔ | 待 WP304-306 |
 | G8 长稳 | ⛔ | 待 G7 |
 | G9 六项收口 | 🔁 持续 | — |
