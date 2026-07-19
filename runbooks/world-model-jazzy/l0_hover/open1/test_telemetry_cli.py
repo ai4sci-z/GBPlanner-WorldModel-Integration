@@ -46,9 +46,9 @@ def make_scene(with_summary_ok=None, omit_console=False, force_rc=None):
     entry = {"schema_version": "wp304.run_registry.v1", "batch_id": "b1", "run_index": 1,
              "world_model_run_id": RID, "world_model_run_dir": run_dir,
              "producer_pid": 1, "producer_pid_starttime": "1", "start_utc": 1.0,
-             "start_monotonic": 1.0, "end_utc": None, "rc": None,
+             "start_monotonic": 1.0, "end_utc": 9.0, "end_monotonic": 9.0, "rc": 0,
              "identity_status": "RESOLVED", "discovery_method": "unique_new_dir_in_window",
-             "watch_dir": watch, "pre_set": [], "phase": "resolved"}
+             "watch_dir": watch, "pre_set": [], "phase": "finished"}
     open(os.path.join(reg, "attempt_1.json"), "w").write(json.dumps(entry))
     if with_summary_ok is not None:
         open(os.path.join(run_dir, "summary.json"), "w").write(
@@ -100,10 +100,10 @@ ck("fixture 缺 --fixture-input → rc=2", cp.returncode, 2)
 empty = tempfile.mkdtemp()
 noreg = os.path.join(empty, "noreg")
 cp = cli(*std_args(art, noreg, wm, fx))
-ck("反例2b registry 不存在 → 明确失败 rc=3(非静默 0)", cp.returncode, 3)
+ck("反例2b registry 不存在 → 有界等待后明确失败 rc=4(非静默 0/非秒退硬错)", cp.returncode, 4)
 fs = json.load(open(os.path.join(art, "telemetry", "sidecar_final_status.json")))
 ck("失败也产出 final status", fs["finalization_state"], "WRITTEN")
-ck("失败原因在档(registry 不存在)",
+ck("失败原因在档(registry 目录未出现)",
    any("registry 目录不存在" in x for x in fs["failure_reasons"]), True)
 # 空 registry 目录(存在但无 RESOLVED)→ rc=4
 os.makedirs(noreg, exist_ok=True)
@@ -111,7 +111,7 @@ art2 = tempfile.mkdtemp()
 cp = cli(*std_args(art2, noreg, wm, fx))
 ck("反例2c 空 registry(无 RESOLVED)→ 明确失败 rc=4", cp.returncode, 4)
 fs = json.load(open(os.path.join(art2, "telemetry", "sidecar_final_status.json")))
-ck("失败原因=身份未握手", any("身份未握手" in x for x in fs["failure_reasons"]), True)
+ck("失败原因=等待超时(仍 PENDING/无条目)", any("等待超时" in x for x in fs["failure_reasons"]), True)
 
 print("======== fixture backend 走真实主循环(反例13/正式产物树)========")
 base, wm, run_dir, art, reg, fx = make_scene(with_summary_ok=True)
@@ -120,7 +120,7 @@ ck("完整 CLI 运行 rc=0", cp.returncode, 0)
 td = os.path.join(run_dir, "telemetry")
 for rel in S.REQUIRED_PROBE:
     ck(f"required 产物在: {rel}", os.path.exists(os.path.join(run_dir, rel)), True)
-ck("段文件存在(host)", any(f.startswith("host-segment-") for f in os.listdir(td)), True)
+ck("段文件存在", any(f.startswith("segment-") and f.endswith(".jsonl") for f in os.listdir(td)), True)
 ck("index 存在", os.path.exists(os.path.join(td, "index.json")), True)
 fs = json.load(open(os.path.join(td, "sidecar_final_status.json")))
 ck("反例13 evidence gate 由 CLI 实际调用", fs["evidence_gate"] is not None, True)
@@ -175,9 +175,9 @@ base, wm, run_dir, art, reg, fx = make_scene(with_summary_ok=True)
 p = subprocess.Popen([sys.executable, SIDECAR, "--artifact-root", art, "--batch-id", "b1",
                       "--run-registry", os.path.join(base, "empty_reg"), "--world-model-root", wm,
                       "--backend", "fixture", "--fixture-input", fx,
-                      "--registry-wait-sec", "60"],
+                      "--registry-wait-sec", "60", "--once"],
                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-time.sleep(0.6)
+time.sleep(1.5)
 p.send_signal(signal.SIGTERM)
 rc = p.wait(timeout=30)
 fs = json.load(open(os.path.join(art, "telemetry", "sidecar_final_status.json")))
