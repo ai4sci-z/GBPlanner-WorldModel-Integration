@@ -127,16 +127,21 @@ python3 test_telemetry_entry.py  # 入口 20 案:默认 CLI/三态/三身份全�
 
 状态词:E1 sidecar 已形成运行期状态机:在 fixture 子进程仍存活时完成真实 run-id 握手、
 连续采集、周期封存和正式 evidence/five-layer dry-run;real Docker/ROS 仅编码及 recording
-fixture,A/A 和真实行为验收未执行。**A/A 当前必阻断项(preflight 实测)**:宿主无
+fixture,A/A 和真实行为验收未执行。~~**A/A 当前必阻断项(preflight 实测)**:宿主无
 rclpy/std_msgs(AA-PF-01);readiness 连续 topic 待裁决;live 容器身份无权威来源
-(AA-PF-02,须上游契约 §11.3)——`aa_preflight.py` 正式输出=OWNER_DECISION_REQUIRED,禁 READY。
+(AA-PF-02,须上游契约 §11.3)——`aa_preflight.py` 正式输出=OWNER_DECISION_REQUIRED,禁 READY。~~
+(SUPERSEDED 2026-07-20:三项裁决已落地,该"禁 READY"状态保留为 test_aa_preflight 04.5
+历史反例;当前门语义见 §8。)
 
 - `run_registry.py watch` = 并发 watcher(producer 存活期 resolve;8 终态);
 - `--once` = 完整处理一个 attempt;多 run = `--expected-runs N`(WP303 默认命令);
 - 状态机 WAIT_IDENTITY→ACTIVE(连续+周期封存)→FINISHING;采集器独立线程互不阻塞;
-- concrete ROS adapter 已编码并过 recording-node fixture;**宿主当前不可执行**
-  (/usr/bin/python3 无 rclpy/std_msgs,实测 ModuleNotFoundError;方案矩阵 WP304 §11.1,
-  BLOCKED_BY_OWNER_DECISION);真实 ROS 图未验;
+- concrete ROS adapter 已编码并过 recording-node fixture;~~宿主当前不可执行
+  (/usr/bin/python3 无 rclpy/std_msgs)~~(SUPERSEDED 2026-07-20:方案A 裁决落地,
+  sourced 宿主可导入;"无 rclpy"改为剥离环境子进程历史反例)。**2026-07-20 补正实修**:
+  adapter 曾把消息类型字符串直传 create_subscription——真实 rclpy 下必
+  AttributeError 崩(裁决前宿主无 rclpy 掩盖了该缺陷);现统一解析为消息类,
+  不可导入=RosAdapterUnavailable fail-closed。真实 ROS 图仍未验;
 - 事后派生一律标 `post_run_derived`。
 
 ```
@@ -144,17 +149,26 @@ python3 test_telemetry_runtime.py   # R1-R15+watcher 终态+SIGKILL 恢复+全�
 python3 test_ros_adapter.py         # concrete 只订不发结构门(12P)
 ```
 
-## 8. A/A 前置工具(2026-07-20)
+## 8. A/A 前置工具(2026-07-20;真实性补正后)
 
-- `aa_pair_contract.py`:双基线(eab0cc6=HISTORICAL/750032a=FUTURE)配对/B23 六态/合并守卫。
-- `aa_preflight.py --input plan.json`:唯一 A/A 预检门(只检查不启动;四态枚举;
-  当前现场=OWNER_DECISION_REQUIRED)。
+- `aa_pair_contract.py`:双基线(eab0cc6=HISTORICAL/9a1ce95=FUTURE)配对/B23 六态/合并守卫。
+- `aa_preflight.py --input plan.json`:唯一 A/A 预检门(只检查不启动;四态枚举)。
+  **真实性门(2026-07-20 补正)**:config_hash/runtime_plan_hash 必须满足 sha256 小写
+  64hex schema 且与已物化文件字节独立重算一致;镜像 digest 必须 `sha256:<64hex>`;
+  pair 成员与顶层冻结值一致;**任何占位符(PLAN_PENDING*/UNKNOWN/TODO/空串)按 schema
+  直接拒绝**——"先占位拿 READY、启动时再补真实值"路径不存在。
+- `aa_launch.py`:**A/A 唯一正式启动入口**。顺序=canonical config+runtime plan 原子
+  落盘(tmp+rename)→文件字节独立算 hash→OFF×2+ON×2 冻结计划→唯一 preflight→仅
+  READY+acceptance_eligible 才进 producer 分支→producer 调用前重算 hash+digest 现值
+  复核(preflight 后任何改动→拒绝启动)。producer 由调用方注入(E1 接线=batch_lifecycle
+  链;测试=计数 fixture);本模块自身零启动。
 - 容器身份:`resolve_container_identity`(本 run summary handles,post-run 权威;
   live 须上游契约);real backend 无默认容器名。
 
 ```
-python3 test_ros_real_path.py        # AA-PF-01 失败关闭 20 案
+python3 test_ros_real_path.py        # AA-PF-01 失败关闭(sourced 正例+剥离环境历史反例+消息类解析补正)
 python3 test_container_identity.py   # AA-PF-02 身份管道 25 案
 python3 test_aa_pair_contract.py     # AA-PF-03 双基线 33 案
-python3 test_aa_preflight.py         # AA-PF-04 门 31 案(含不启动证明)
+python3 test_aa_preflight.py         # AA-PF-04 门 65 案(sourced 运行;历史反例=剥离环境子进程;真实性硬门;不启动证明)
+python3 test_aa_launch.py            # 正式入口 38 案(物化/占位拒/突变拒/零启动)
 ```

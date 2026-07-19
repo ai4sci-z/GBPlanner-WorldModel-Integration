@@ -22,12 +22,16 @@ CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependenci
 source /opt/ros/jazzy 激活;未 source 仍 fail-closed);readiness=/mavlink_external_nav/status;
 wm 上游契约已实现(service.started 原子发布 service_handles.json 含真实 container_id,
 wm@9a1ce95 推 backup);sidecar live 身份消费就绪;FUTURE_CANDIDATE=9a1ce95(显式推进)。
-**preflight(sourced+全计划)可达 READY**。**A/A 环境接线已闭合(2026-07-20)**:
-companion 镜像 `jazzy-9a1ce95c56e2` 已重建在盘(rc=0+docker images 真产物;全层 CACHED=
-内容同上一版,本质为 tag 绑定新 HEAD,非行为验证);preflight 以**真实镜像 digest** 复核
-READY 18/18(证据=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md);
-plan 级占位与"E1 启动时须以当时 HEAD/真实值重跑 preflight"边界见该文 §3.1)。
-A/A 实验本体待负责人明确启动指令。
+**A/A 环境接线=PARTIAL(2026-07-20,Codex 复验裁定)**:
+①镜像接缝已闭合——companion 镜像 `jazzy-9a1ce95c56e2` 在盘(rc=0+docker images
+真产物,Codex 独立确认;全层 CACHED=tag 绑定新 HEAD,非行为验证)。
+②此前"preflight READY 18/18/接线闭合"结论**被 Codex 反例击穿(VERIFIED_FAIL)**:
+旧门对 hash 只验非空,占位符 `PLAN_PENDING_REAL_RUN` 可过;正式测试当时实为 FAIL=5。
+真实性补正四包已施工(hash/digest 严格 schema+物化文件独立重算+pair 一致性;
+`aa_launch.py` 唯一正式入口=物化→真实 hash→preflight→producer guard;测试
+65+38 案全绿,占位符/preflight 后突变→producer 启动恒=0),**preflight 真实性门
+未闭合(待 Codex 独立复验),A/A 尚不具备启动资格**。证据与击穿记录=
+[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5。
 P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
 
 ## 三、三仓基线
@@ -63,7 +67,7 @@ P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未
 | G3 生成器测试 | ✅ | 57/57 |
 | G4 文档闭包 | 🟡 PARTIAL | 14 份逐行审计完成(8 全核/5 部分/1 归档),未核范围见 [审计记录](governance/P0_doc_audit_逐份审计_2026-07-18.md) |
 | G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真未验 |
-| G6 WP304 因果链 | 🟢 A/A 前置闭合 | 四裁决落地:ROS 环境(pins)/readiness topic/上游契约(wm@9a1ce95)/双基线推进;preflight sourced 可达 READY;待负责人 A/A 启动指令 |
+| G6 WP304 因果链 | 🟡 环境接线 PARTIAL | 四裁决落地+镜像接缝闭合;旧 preflight READY 被 Codex 击穿(占位符过门);真实性补正已施工待 Codex 复验;A/A 不具备启动资格 |
 | G7 默认 10/10 | ⛔ | 待 WP304-306 |
 | G8 长稳 | ⛔ | 待 G7 |
 | G9 六项收口 | 🔁 持续 | — |

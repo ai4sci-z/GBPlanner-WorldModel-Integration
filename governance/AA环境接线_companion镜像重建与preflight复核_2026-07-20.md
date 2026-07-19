@@ -1,5 +1,14 @@
 # A/A 环境接线:companion 镜像重建 + preflight 复核(2026-07-20)
 
+> ⛔ **SUPERSEDED(部分,2026-07-20 当日 Codex 复验)**:本文 §3 的"READY 18/18 /
+> acceptance_eligible=true / 接缝②闭合"结论**已被 Codex 反例击穿(VERIFIED_FAIL)**:
+> 当时的 preflight 对 config_hash/runtime_plan_hash 只检查非空,占位符
+> `PLAN_PENDING_REAL_RUN` 即可通过启动门——该 READY 只证明字段非空,不证明实验配置
+> 与运行计划已冻结;且当时正式测试 test_aa_preflight.py 在最终提交上 sourced 运行
+> 实为 FAIL=5/rc=1,本文却宣称"全部实证"。§3/§4 的"闭合"判断作废,降级为历史反例。
+> **§2 镜像重建证据不受影响,仍然有效(Codex 独立确认镜像在盘、digest 一致)。**
+> 补正实现与新证据见本文 §5;当前状态权威=CURRENT_STATUS.md(A/A 环境接线=PARTIAL)。
+
 > 性质:**冻结证据(EVIDENCE)**。状态权威=CURRENT_STATUS.md。
 > 本文只记录"A/A 启动前接缝"的闭合证据:①companion 镜像按候选基线 HEAD 重建;
 > ②preflight(sourced+全计划+真实镜像 digest)复核 READY。
@@ -128,3 +137,56 @@ preflight `pair_plan_frozen_fields_match=PASS` 机器判定,非人工声称。)
  "checks": "18 项全 PASS(main_sha_match / wm_sha_matches_baseline_class / main_worktree_clean / wm_worktree_clean / host_rclpy_available / host_std_msgs_available / readiness_topic_decided_and_verified / extnav_topic_verified / ros_domains_configured / ros_domains_equal / container_identity_live_pipeline / image_digests_present / runtime_plan_hash_present / identity_wait_budget_derived / evidence_contract_current / sample_plan_off2_on2 / pair_plan_frozen_fields_match / no_fake_real_validation_claims)"
 }
 ```
+
+## 5. 真实性补正记录(2026-07-20,Codex 补正令四包)
+
+### 5.1 被击穿的缺陷(VERIFIED_FAIL,Codex 现场复现)
+
+1. **正式测试红着报绿**:最终提交 `edd749a` 上 `source /opt/ros/jazzy/setup.bash`
+   后运行 `test_aa_preflight.py` 实为 **FAIL=5 / rc=1**(04.5 节仍断言裁决前
+   "宿主无 rclpy、禁 READY"),本文却报告"全部实证"。
+2. **占位符通过启动门**:`aa_preflight.py` 对 hash 仅做
+   `bool(plan.get("runtime_plan_hash"))`,`PLAN_PENDING_REAL_RUN` 被当作合法 hash
+   → READY/acceptance_eligible=true/rc=0。非空≠真实。
+
+### 5.2 补正实现(同日,四包全部落地)
+
+- **包1(测试)**:`test_aa_preflight.py` 重构为 65 案:裁决前状态改为 04.5 历史反例
+  (剥离 ROS 环境的子进程复现"未 source 失败关闭",环境无关);新增 04.6 裁决后正例
+  (sourced+真实物化计划→READY;干净 fixture 主仓,不依赖真实仓瞬时树态);04.7 真实性
+  硬门反例(占位符/短 hex/大写/63 位/缺前缀 digest/未物化/物化后被改/pair≠顶层/run_id
+  重复);04.8 脏树→BLOCKED(fixture 仓)。逐条打印真实 expected/actual,末行
+  RAN/PASS/FAIL/SKIP=0,rc 如实。未 source 运行=如实红(实测 rc=1)。
+- **包2(schema 门)**:`aa_preflight.py` 新增 `SHA256_HEX` schema(算法=sha256,
+  输入=已物化文件精确字节,编码=小写 64hex):`config_hash_schema_valid` /
+  `runtime_plan_hash_schema_valid`(格式门,占位符按 schema 拒绝而非黑名单)、
+  `config_materialized` / `runtime_plan_materialized`(文件必须存在=preflight 必须
+  发生在计划物化之后)、`config_hash_matches_file` / `runtime_plan_hash_matches_file`
+  (**独立重算文件字节比对**)、`image_digests_valid`(`sha256:`+64hex 逐项)、
+  `pair_hashes_consistent_with_plan`(四 run 与顶层 config_hash/digest/SHA 一致)、
+  `run_ids_unique_nonempty`。
+- **包3(正式入口)**:新增 `aa_launch.py` = A/A 唯一启动入口,顺序固定:
+  物化(原子 tmp+rename,canonical JSON)→独立算真实 hash→OFF×2+ON×2 冻结计划→唯一
+  preflight→仅 READY 进启动分支→producer 调用前重算 hash+镜像 digest 现值复核,
+  preflight 后任何改动→拒绝启动。`test_aa_launch.py` 38 案:占位符计划 producer
+  启动次数=0;preflight 后改 config/runtime plan/删文件/换 digest→均 0;完整真实
+  计划→恰好 1;入口自身零启动(容器集合不变+源码零启动调用+不写 wm)。
+- **包4(文档)**:本文降级横幅;README/CURRENT_STATUS/TASKS/接力棒/claim/manifest
+  同步为"A/A 环境接线 PARTIAL"。
+- **补正过程中暴露并实修的活路径缺陷(sourced 后才可能暴露)**:
+  ①`telemetry_sidecar.ConcreteRosSubscribeAdapter` 把消息类型**字符串**直传
+  `create_subscription`——真实 rclpy 下 AttributeError 崩(`'str' has no
+  _TYPE_SUPPORT`,sourced 实测);裁决前宿主无 rclpy,该路径不可执行,缺陷被掩盖。
+  修复=统一 `_resolve_msg_class()` 解析为消息类,不可导入=RosAdapterUnavailable
+  fail-closed;`test_ros_real_path.py` 案1c/1d/1e + 剥离环境历史反例覆盖。
+  ②`test_ros_adapter.py` 的 default-factory 案在 sourced 宿主会真实
+  `rclpy.init()` 建 node(违反"零真实 ROS 图")——改为剥离环境子进程复现。
+  live 采集链仍未经真实 ROS 图验证(归 E1/A/A 本体)。
+
+### 5.3 补正后的诚实状态
+
+- 镜像接缝(§2):**已闭合**(Codex 独立确认)。
+- preflight 真实性门:**补正已施工,本地全矩阵绿(独立 rc 见收口报告);
+  VERIFIED 状态待 Codex 独立复验,复验通过前不得称闭合。**
+- A/A:**尚不具备启动资格**。启动资格=Codex 复验通过 + 负责人启动指令 +
+  经 `aa_launch.py` 以真实物化计划过 preflight。
