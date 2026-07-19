@@ -659,6 +659,81 @@ class FixtureBackend:
         return self.data.get("force_rc")
 
 
+# ---------- E1L-05 · concrete ROS 只订不发适配层(real backend 专用) ----------
+ROS_SUBSCRIBE_TOPICS = {"readiness": "/navlab/startup_readiness/status",
+                        "extnav": "/external_nav/status"}
+
+
+class ConcreteRosSubscribeAdapter:
+    """真实 rclpy 只订不发适配层(lazy import;仅 --backend real 构造)。
+    只创建 subscription;callback 只写内部队列(不保留可写 node 引用);
+    有界 spin;shutdown 幂等。rclpy 不可用 → RosAdapterUnavailable
+    (调用方标 readiness/extnav INCOMPLETE,producer 不受影响)。"""
+
+    def __init__(self, ros_domain_id, system_domain_id, topics=None, node_factory=None):
+        if str(ros_domain_id) != str(system_domain_id):
+            raise RosWriteRefused(
+                f"必须与被测系统同一 ROS_DOMAIN_ID(自 {ros_domain_id} ≠ 被测 {system_domain_id})")
+        self._topics = dict(topics or ROS_SUBSCRIBE_TOPICS)
+        self._q = _queue.Queue()
+        self._shut = False
+        factory = node_factory or self._default_factory
+        self._node, self._spin_once, self._do_shutdown = factory()
+        q = self._q          # callback 闭包只捕获队列,不捕获 self/node
+
+        def make_cb(key):
+            def _cb(msg):
+                if not self._shut:
+                    q.put((key, getattr(msg, "data", msg),
+                           time.time_ns(), time.monotonic_ns()))
+            return _cb
+        for key, topic in self._topics.items():
+            self._node.create_subscription("std_msgs/msg/String", topic, make_cb(key), 10)
+
+    @staticmethod
+    def _default_factory():
+        try:
+            import rclpy
+            from rclpy.node import Node  # noqa: F401
+            from std_msgs.msg import String  # noqa: F401
+        except Exception as e:
+            raise RosAdapterUnavailable(f"rclpy 不可用: {e}") from e
+        rclpy.init()
+        node = rclpy.create_node("wp304_telemetry_subonly")
+
+        def spin_once(timeout_sec):
+            rclpy.spin_once(node, timeout_sec=timeout_sec)
+
+        def shutdown():
+            try:
+                node.destroy_node()
+            finally:
+                rclpy.shutdown()
+        return node, spin_once, shutdown
+
+    def spin_bounded(self, duration_sec, should_stop):
+        end = time.monotonic() + duration_sec
+        while time.monotonic() < end and not should_stop() and not self._shut:
+            self._spin_once(0.05)
+
+    def drain(self):
+        out = []
+        while True:
+            try:
+                out.append(self._q.get_nowait())
+            except _queue.Empty:
+                return out
+
+    def shutdown(self):
+        if self._shut:
+            return
+        self._shut = True
+        try:
+            self._do_shutdown()
+        except Exception:
+            pass
+
+
 class RealBackend:
     """real 数据源(--backend real 才构造;本轮任何测试/dry-run 不得使用/未实测)。"""
 
@@ -733,7 +808,16 @@ class RealBackend:
         return int(out) if out.isdigit() else None
 
     def ros_stream(self, key, should_stop):
-        raise RosAdapterUnavailable("concrete ROS 适配层于下一提交实现")
+        if self._ros_adapter is None:
+            self._ros_adapter = ConcreteRosSubscribeAdapter(
+                ros_domain_id=os.environ.get("ROS_DOMAIN_ID", "0"),
+                system_domain_id=os.environ.get("ROS_DOMAIN_ID", "0"))
+        ad = self._ros_adapter
+        while not should_stop():
+            ad.spin_bounded(0.2, should_stop)
+            for k, data, _utc, _mono in ad.drain():
+                if k == key:
+                    yield data
 
     def force_rc(self):
         return None
