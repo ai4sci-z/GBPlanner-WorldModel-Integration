@@ -127,15 +127,34 @@ python3 test_telemetry_entry.py  # 入口 20 案:默认 CLI/三态/三身份全�
 
 状态词:E1 sidecar 已形成运行期状态机:在 fixture 子进程仍存活时完成真实 run-id 握手、
 连续采集、周期封存和正式 evidence/five-layer dry-run;real Docker/ROS 仅编码及 recording
-fixture,A/A 和真实行为验收未执行。
+fixture,A/A 和真实行为验收未执行。**A/A 当前必阻断项(preflight 实测)**:宿主无
+rclpy/std_msgs(AA-PF-01);readiness 连续 topic 待裁决;live 容器身份无权威来源
+(AA-PF-02,须上游契约 §11.3)——`aa_preflight.py` 正式输出=OWNER_DECISION_REQUIRED,禁 READY。
 
 - `run_registry.py watch` = 并发 watcher(producer 存活期 resolve;8 终态);
 - `--once` = 完整处理一个 attempt;多 run = `--expected-runs N`(WP303 默认命令);
 - 状态机 WAIT_IDENTITY→ACTIVE(连续+周期封存)→FINISHING;采集器独立线程互不阻塞;
-- concrete ROS adapter 已编码并过 recording-node fixture(真实 ROS 图未验);
+- concrete ROS adapter 已编码并过 recording-node fixture;**宿主当前不可执行**
+  (/usr/bin/python3 无 rclpy/std_msgs,实测 ModuleNotFoundError;方案矩阵 WP304 §11.1,
+  BLOCKED_BY_OWNER_DECISION);真实 ROS 图未验;
 - 事后派生一律标 `post_run_derived`。
 
 ```
 python3 test_telemetry_runtime.py   # R1-R15+watcher 终态+SIGKILL 恢复+全时序 dry-run(58P)
 python3 test_ros_adapter.py         # concrete 只订不发结构门(12P)
+```
+
+## 8. A/A 前置工具(2026-07-20)
+
+- `aa_pair_contract.py`:双基线(eab0cc6=HISTORICAL/750032a=FUTURE)配对/B23 六态/合并守卫。
+- `aa_preflight.py --input plan.json`:唯一 A/A 预检门(只检查不启动;四态枚举;
+  当前现场=OWNER_DECISION_REQUIRED)。
+- 容器身份:`resolve_container_identity`(本 run summary handles,post-run 权威;
+  live 须上游契约);real backend 无默认容器名。
+
+```
+python3 test_ros_real_path.py        # AA-PF-01 失败关闭 20 案
+python3 test_container_identity.py   # AA-PF-02 身份管道 25 案
+python3 test_aa_pair_contract.py     # AA-PF-03 双基线 33 案
+python3 test_aa_preflight.py         # AA-PF-04 门 31 案(含不启动证明)
 ```

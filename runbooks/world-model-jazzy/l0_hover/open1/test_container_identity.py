@@ -148,6 +148,8 @@ cp = run_cli(art, reg, wm, fx)
 fs = json.load(open(os.path.join(run_dir, "telemetry", "sidecar_final_status.json")))
 ck("案11 fixture 身份显式标 fixture_test_only",
    fs["container_identity"]["fixture_test_only"], True)
+ck("案4 身份记录绑 batch_id", fs["container_identity"]["batch_id"], "b1")
+ck("案4b 身份记录绑 run_index", fs["container_identity"]["run_index"], 1)
 ck("案13/14 producer 语义不受影响(sidecar rc=0,记录齐)", cp.returncode, 0)
 
 run_dir, art, reg, wm, fx = scene(omit_identity=True)

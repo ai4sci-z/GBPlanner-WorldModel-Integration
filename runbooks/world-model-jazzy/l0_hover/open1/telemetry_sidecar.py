@@ -1081,6 +1081,8 @@ def _process_attempt(cfg, backend, entry, live, batch_final):
                           **{k: v for k, v in cident.items() if k != "status"}}
             else:
                 backend.set_container(cident["runtime_container_name"])
+    cident["batch_id"] = cfg["batch_id"]
+    cident["run_index"] = entry.get("run_index")
     container_ok = cident.get("status") == "RESOLVED"
     cname = cident.get("runtime_container_name") if container_ok else None
     if not container_ok:
