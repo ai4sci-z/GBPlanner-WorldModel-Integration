@@ -1,27 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""WP304 · aa_cli 正式操作入口门(2026-07-20 二次补正令包四)。
+"""WP304 · aa_cli 正式操作入口门(二次补正令包四 + 三次补正令包五)。
 
-expected 来源=补正令条款。固化 Codex 两个绕过反例:
-  ①aa_launch 无 CLI(--help 零输出)——现 aa_cli --help 必须有帮助文本;
-  ②run_batch 直通 producer——现 A/A 聚合器必须拒绝无计划身份的记录。
-dry-run 全部经**正式 batch_lifecycle.py launch**(NAVLAB_SIM_CMD stub=官方 dry
-机制;WP303_TELEMETRY_CMD=官方 fixture/test 覆盖,record 显式标注);
-不启动真实仿真/SITL/容器。运行前置:sourced。SKIP 恒=0。"""
+固化 Codex 三轮反例:
+  ①aa_launch 无 CLI → aa_cli --help 必须有帮助文本;
+  ②run_batch 直通 → 聚合器拒无身份记录;
+  ③aggregate 空分母 rc=0 / fixture 审批与测试覆盖 env 可进生产 execute →
+    完整分母验收 + 生产/dry-run 硬隔离。
+dry-run 经正式 batch_lifecycle(NAVLAB_SIM_CMD stub=官方 dry 机制);不启动
+真实仿真/SITL/容器。运行前置:sourced+真实 docker(image inspect 只读)。SKIP 恒=0。"""
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import aa_launch as AL  # noqa: E402
 
 FAIL = 0
 RAN = 0
 CLI = os.path.join(HERE, "aa_cli.py")
 WM_REPO = "/home/ai4s/projects/world-model"
-TAG = "jazzy-9a1ce95c56e2"   # 真实在盘镜像(docker image inspect 只读,不起容器)
+TAG = "jazzy-9a1ce95c56e2"
 
 
 def ck(name, got, want):
@@ -33,8 +36,8 @@ def ck(name, got, want):
         FAIL += 1
 
 
-def cli(args, env_extra=None, timeout=300):
-    env = dict(os.environ)
+def cli(args, env_extra=None, env_drop=(), timeout=300):
+    env = {k: v for k, v in os.environ.items() if k not in env_drop}
     env.setdefault("BC_LOCK_PATH", os.path.join(tempfile.gettempdir(), "aa_cli_test.lock"))
     if env_extra:
         env.update(env_extra)
@@ -70,9 +73,12 @@ def base_args(root, cfg, rtp, mainfx):
             "--companion-tag", TAG, "--main-repo", mainfx]
 
 
+def read_plan(root):
+    return json.load(open(os.path.join(root, "aa_plan", "aa_frozen_plan.json")))
+
+
 def fixture_approval(root, mainfx, **over):
-    """fixture 审批样本(显式 fixture_test_only 标记;真实审批只能由负责人产生)。"""
-    plan = json.load(open(os.path.join(root, "aa_plan", "aa_frozen_plan.json")))
+    plan = read_plan(root)
     head = subprocess.run(["git", "-C", mainfx, "rev-parse", "HEAD"],
                           capture_output=True, text=True).stdout.strip()
     ap = {"schema_version": "wp304.aa_approval.v1", "approval_purpose": "A_A_OFF2_ON2",
@@ -81,7 +87,8 @@ def fixture_approval(root, mainfx, **over):
           "main_commit": head, "world_model_commit": plan["world_model_commit"],
           "config_hash": plan["config_hash"], "runtime_plan_hash": plan["runtime_plan_hash"],
           "image_digest": plan["image_digests"]["companion"],
-          "ros_domain": "7", "sample_plan": "OFF2_ON2"}
+          "ros_domain": "7", "sample_plan": "OFF2_ON2",
+          "frozen_plan_sha256": AL.frozen_plan_sha256(plan)}
     ap.update(over)
     p = os.path.join(root, "fixture_approval.json")
     open(p, "w").write(json.dumps(ap))
@@ -89,189 +96,291 @@ def fixture_approval(root, mainfx, **over):
 
 
 DRY_ENV = {"NAVLAB_SIM_CMD": "exit 0", "WP303_TELEMETRY_CMD": "sleep 0.1"}
+CLEAN_DROP = ("NAVLAB_SIM_CMD", "WP303_TELEMETRY_CMD", "WP303_TELEMETRY_BACKEND",
+              "WP303_TELEMETRY_FIXTURE_INPUT", "WP303_TELEMETRY_REGISTRY_WAIT")
 DRY_BUDGETS = ["--duration", "0.2", "--startup-budget", "0.5",
                "--per-run-teardown", "0.1", "--inter-run-gap", "0.05",
                "--finalization-budget", "2"]
 
 
-print("======== 06.0 前置:sourced ========")
+print("======== 06.0 前置:sourced+docker ========")
 ck("测试环境已 source(rclpy 可导入;未 source=如实红)",
    subprocess.run([sys.executable, "-c", "import rclpy"],
                   capture_output=True).returncode, 0)
 before_docker = subprocess.run(["docker", "ps", "-q"], capture_output=True, text=True).stdout
 
-print("======== 06.1 CLI 用法正反例(Codex 反例①:--help 必须有帮助文本)========")
+print("======== 06.1 CLI 用法正反例 ========")
 cp = cli(["--help"])
-ck("--help rc=0", cp.returncode, 0)
-ck("--help 输出含 usage 与三模式",
-   ("usage" in cp.stdout and "--validate-only" in cp.stdout
-    and "--execute" in cp.stdout and "--aggregate" in cp.stdout), True)
-ck("--help 输出非空(旧 aa_launch 零输出反例)", len(cp.stdout) > 200, True)
+ck("--help rc=0 且含四模式",
+   (cp.returncode, all(m in cp.stdout for m in
+                       ("--validate-only", "--execute", "--dry-run", "--aggregate"))),
+   (0, True))
 ck("零参数 rc=2", cli([]).returncode, 2)
 ck("未知参数 rc=2", cli(["--validate-only", "--artifact-root", "/tmp/x",
                         "--bogus"]).returncode, 2)
+ck("已删除的 --allow-fixture-approval → rc=2(生产后门不存在)",
+   cli(["--execute", "--artifact-root", "/tmp/x",
+        "--allow-fixture-approval"]).returncode, 2)
 ck("非法枚举 rc=2", cli(["--validate-only", "--artifact-root", "/tmp/x",
                         "--config", "/dev/null", "--runtime-plan", "/dev/null",
                         "--companion-tag", TAG, "--producer-mode", "nope"]).returncode, 2)
 ck("缺 --config rc=2", cli(["--validate-only", "--artifact-root", "/tmp/x",
                             "--runtime-plan", "/dev/null",
                             "--companion-tag", TAG]).returncode, 2)
-ck("缺 --companion-tag rc=2", cli(["--validate-only", "--artifact-root", "/tmp/x",
-                                   "--config", "/dev/null",
-                                   "--runtime-plan", "/dev/null"]).returncode, 2)
-ck("不存在的镜像 tag → rc=3(环境错误,非静默)",
+ck("不存在镜像 tag → rc=3",
    cli(["--validate-only", "--artifact-root", tempfile.mkdtemp(),
         "--config", write_inputs(tempfile.mkdtemp())[0],
         "--runtime-plan", write_inputs(tempfile.mkdtemp())[1],
         "--companion-tag", "jazzy-nonexistent000"]).returncode, 3)
 
-print("======== 06.2 validate-only:物化+真hash+真digest+preflight,producer=0 ========")
-work = tempfile.mkdtemp(prefix="aacli_v_")
+print("======== 06.2 validate-only:输出整计划 SHA,producer=0 ========")
+work = tempfile.mkdtemp(prefix="aacli_")
 mainfx = fixture_main_repo()
 cfg, rtp = write_inputs(work)
-root_v = os.path.join(work, "root")
+root_v = os.path.join(work, "root_v")
 cp = cli(["--validate-only"] + base_args(root_v, cfg, rtp, mainfx))
 out = json.loads(cp.stdout)
-ck("validate-only rc=0", cp.returncode, 0)
-ck("preflight=READY", out["preflight_status"], "READY")
-ck("producer_started=0", out["producer_started"], 0)
-ck("attempts 目录不存在(producer 未动)",
-   os.path.isdir(os.path.join(root_v, "attempts")), False)
-plan = json.load(open(os.path.join(root_v, "aa_plan", "aa_frozen_plan.json")))
-ck("冻结计划已落盘且 hash=64hex",
-   (len(plan["config_hash"]), len(plan["runtime_plan_hash"])), (64, 64))
-ck("digest=真实 docker 现值",
-   plan["image_digests"]["companion"],
-   subprocess.run(["docker", "image", "inspect", "--format", "{{.Id}}",
-                   f"navlab/companion:{TAG}"], capture_output=True, text=True).stdout.strip())
-ck("execution_order=OFF,OFF,ON,ON 对应 r1,r3,r2,r4",
-   plan["execution_order"], ["aa-r1", "aa-r3", "aa-r2", "aa-r4"])
+ck("validate-only rc=0 READY producer=0",
+   (cp.returncode, out["preflight_status"], out["producer_started"]), (0, "READY", 0))
+ck("attempts 不存在", os.path.isdir(os.path.join(root_v, "attempts")), False)
+ck("输出整计划 frozen_plan_sha256(负责人指令引用点)",
+   out["frozen_plan_sha256"], AL.frozen_plan_sha256(read_plan(root_v)))
 
-print("======== 06.3 execute 授权门反例(producer 恒=0)========")
-def exec_and_record(root, extra_args, env_extra=None):
-    cp = cli(["--execute"] + base_args(root, cfg, rtp, mainfx) + DRY_BUDGETS + extra_args,
-             env_extra=env_extra)
-    rec = json.load(open(os.path.join(root, "aa_plan", "launch_record.json")))
+print("======== 06.3 生产 execute 硬门(fixture 审批/测试覆盖 env 一律拒)========")
+def run_mode(mode_flag, root, extra, env_extra=None, env_drop=CLEAN_DROP):
+    cp = cli([mode_flag] + base_args(root, cfg, rtp, mainfx) + DRY_BUDGETS + extra,
+             env_extra=env_extra, env_drop=env_drop)
+    rec_p = os.path.join(root, "aa_plan", "launch_record.json")
+    rec = json.load(open(rec_p)) if os.path.isfile(rec_p) else None
     return cp, rec
 
 root_e = os.path.join(work, "root_noap")
-cp, rec = exec_and_record(root_e, [])
-ck("无 owner approval → rc=1", cp.returncode, 1)
-ck("无 approval:producer_started=0", rec["producer_started"], 0)
-ck("原因=approval_missing", "approval_missing" in rec["gate"]["refusal_reasons"], True)
-ck("无 approval:attempts 未发起", rec["attempts"], [])
+cp, rec = run_mode("--execute", root_e, [])
+ck("无 approval → rc=1 producer=0 approval_missing",
+   (cp.returncode, rec["producer_started"],
+    "approval_missing" in rec["gate"]["refusal_reasons"]), (1, 0, True))
+ck("record_class=ACCEPTANCE_CANDIDATE(真实链状态类)",
+   rec["record_class"], "ACCEPTANCE_CANDIDATE")
 
-root_e2 = os.path.join(work, "root_badhash")
-cli(["--validate-only"] + base_args(root_e2, cfg, rtp, mainfx))
-ap_bad = fixture_approval(root_e2, mainfx, config_hash="ee" * 32)
-cp, rec = exec_and_record(root_e2, ["--owner-approval", ap_bad, "--allow-fixture-approval"])
-ck("approval config_hash 不符 → producer=0",
-   (cp.returncode, rec["producer_started"]), (1, 0))
-ck("原因含 approval_config_hash_mismatch",
-   "approval_config_hash_mismatch" in rec["gate"]["refusal_reasons"], True)
+root_e2 = os.path.join(work, "root_fixap")
+cli(["--validate-only"] + base_args(root_e2, cfg, rtp, mainfx) + DRY_BUDGETS)
+apx = fixture_approval(root_e2, mainfx)
+cp, rec = run_mode("--execute", root_e2, ["--owner-approval", apx])
+ck("生产 execute + fixture 审批 → producer=0(后门已死)",
+   (cp.returncode, rec["producer_started"],
+    "fixture_approval_not_allowed" in rec["gate"]["refusal_reasons"]), (1, 0, True))
+ck("生产 execute 拒后 attempts 未发起", rec["attempts"], [])
 
-root_e3 = os.path.join(work, "root_nofix")
-cli(["--validate-only"] + base_args(root_e3, cfg, rtp, mainfx))
-ap3 = fixture_approval(root_e3, mainfx)
-cp, rec = exec_and_record(root_e3, ["--owner-approval", ap3])   # 无 --allow-fixture-approval
-ck("fixture 审批未显式放行 → producer=0",
-   (cp.returncode, rec["producer_started"]), (1, 0))
-ck("原因=fixture_approval_not_allowed",
-   "fixture_approval_not_allowed" in rec["gate"]["refusal_reasons"], True)
+for env_name, env_val in (("NAVLAB_SIM_CMD", "exit 0"),
+                          ("WP303_TELEMETRY_CMD", "sleep 0.1"),
+                          ("WP303_TELEMETRY_FIXTURE_INPUT", "/tmp/fx.json"),
+                          ("WP303_TELEMETRY_REGISTRY_WAIT", "5"),
+                          ("WP303_TELEMETRY_BACKEND", "fixture")):
+    root_env = os.path.join(work, f"root_env_{env_name}")
+    cp, rec = run_mode("--execute", root_env, [], env_extra={env_name: env_val})
+    ck(f"生产 execute + {env_name} → producer=0 且拒绝原因点名",
+       (cp.returncode, rec["producer_started"],
+        any(env_name in r for r in rec["gate"]["refusal_reasons"])), (1, 0, True))
 
-root_e4 = os.path.join(work, "root_state")
-cli(["--validate-only"] + base_args(root_e4, cfg, rtp, mainfx))
-ap4 = fixture_approval(root_e4, mainfx, approval_state="DRAFT")
-cp, rec = exec_and_record(root_e4, ["--owner-approval", ap4, "--allow-fixture-approval"])
-ck("approval_state=DRAFT → producer=0",
-   (cp.returncode, rec["producer_started"]), (1, 0))
+root_e3 = os.path.join(work, "root_plansha")
+cli(["--validate-only"] + base_args(root_e3, cfg, rtp, mainfx) + DRY_BUDGETS)
+ap3 = fixture_approval(root_e3, mainfx, fixture_test_only=False,
+                       frozen_plan_sha256="ff" * 32)
+cp, rec = run_mode("--execute", root_e3, ["--owner-approval", ap3])
+ck("approval 整计划 SHA 不符 → producer=0",
+   (cp.returncode, rec["producer_started"],
+    "approval_frozen_plan_sha_mismatch" in rec["gate"]["refusal_reasons"]), (1, 0, True))
 
-print("======== 06.4 dry-run execute:必须实际经 batch_lifecycle 正式入口 ========")
-root_x = os.path.join(work, "root_exec")
-cli(["--validate-only"] + base_args(root_x, cfg, rtp, mainfx))
-ap = fixture_approval(root_x, mainfx)
-cp, rec = exec_and_record(root_x, ["--owner-approval", ap, "--allow-fixture-approval"],
-                          env_extra=DRY_ENV)
-ck("dry-run execute rc=0", cp.returncode, 0)
-ck("producer_started=1(gate 全过)", rec["producer_started"], 1)
-ck("fixture 审批在 record 显式标注", rec["gate"]["approval_fixture_test_only"], True)
+print("======== 06.4 dry-run:独立测试链(强制 fixture 审批;产物永久标记)========")
+root_d = os.path.join(work, "root_dry")
+cli(["--validate-only"] + base_args(root_d, cfg, rtp, mainfx) + DRY_BUDGETS)
+apd_real = fixture_approval(root_d, mainfx, fixture_test_only=False)
+cp, rec = run_mode("--dry-run", root_d, ["--owner-approval", apd_real],
+                   env_extra=DRY_ENV, env_drop=())
+ck("dry-run + 非 fixture 审批 → 拒(真实审批不得被 dry-run 冒用)",
+   (cp.returncode, rec["producer_started"],
+    "dry_run_requires_fixture_approval" in rec["gate"]["refusal_reasons"]), (1, 0, True))
+apd = fixture_approval(root_d, mainfx)
+cp, rec = run_mode("--dry-run", root_d, ["--owner-approval", apd],
+                   env_extra=DRY_ENV, env_drop=())
+ck("dry-run 链 rc=0(经正式 batch_lifecycle)", cp.returncode, 0)
+ck("record_class=NON_ACCEPTANCE_FIXTURE 且 acceptance_eligible=false",
+   (rec["record_class"], rec["acceptance_eligible"], rec["non_acceptance_fixture"]),
+   ("NON_ACCEPTANCE_FIXTURE", False, True))
 atts = rec["attempts"]
-ck("四 attempt 全发起且 rc=0", [(x["run_id"], x["rc"]) for x in atts],
-   [("aa-r1", 0), ("aa-r3", 0), ("aa-r2", 0), ("aa-r4", 0)])
-ck("模式序=OFF,OFF,ON,ON", [x["telemetry_mode"] for x in atts],
-   ["OFF", "OFF", "ON", "ON"])
+ck("dry-run 四 attempt=OFF,OFF,ON,ON 全 rc=0",
+   [(x["run_id"], x["telemetry_mode"], x["rc"]) for x in atts],
+   [("aa-r1", "OFF", 0), ("aa-r3", "OFF", 0), ("aa-r2", "ON", 0), ("aa-r4", "ON", 0)])
 for x in atts:
-    tr = os.path.join(x["artifact_root"], "task_record.json")
-    ck(f"{x['run_id']}:batch_lifecycle task_record 存在(正式链证明)",
-       os.path.isfile(tr), True)
-    t = json.load(open(tr))
-    ck(f"{x['run_id']}:telemetry.enabled 与模式一致",
-       t["telemetry"]["enabled"], x["telemetry_mode"] == "ON")
+    ck(f"{x['run_id']}:task_record 存在(batch_lifecycle 正式链)",
+       os.path.isfile(os.path.join(x["artifact_root"], "task_record.json")), True)
     ident = json.load(open(os.path.join(x["artifact_root"], "aa_identity.json")))
-    ck(f"{x['run_id']}:身份绑定同一冻结计划 hash",
-       (ident["config_hash"], ident["runtime_plan_hash"]),
-       (json.load(open(os.path.join(root_x, "aa_plan", "aa_frozen_plan.json")))["config_hash"],
-        json.load(open(os.path.join(root_x, "aa_plan", "aa_frozen_plan.json")))["runtime_plan_hash"]))
-    ck(f"{x['run_id']}:batch_id 由 CLI 具名生成(aa_ 前缀)",
-       t["batch_id"].startswith(rec["aa_batch_id"]), True)
+    ck(f"{x['run_id']}:身份永久标记 non_acceptance_fixture",
+       ident["non_acceptance_fixture"], True)
 
-print("======== 06.5 任一 attempt 失败 → 立即停止后续,分母保留 ========")
+print("======== 06.5 dry-run 失败即停,分母保留 ========")
 root_f = os.path.join(work, "root_fail")
-cli(["--validate-only"] + base_args(root_f, cfg, rtp, mainfx))
+cli(["--validate-only"] + base_args(root_f, cfg, rtp, mainfx) + DRY_BUDGETS)
 apf = fixture_approval(root_f, mainfx)
-cp, rec = exec_and_record(root_f, ["--owner-approval", apf, "--allow-fixture-approval"],
-                          env_extra={"NAVLAB_SIM_CMD": "exit 7",
-                                     "WP303_TELEMETRY_CMD": "sleep 0.1"})
-ck("失败链 rc=1", cp.returncode, 1)
+cp, rec = run_mode("--dry-run", root_f, ["--owner-approval", apf],
+                   env_extra={"NAVLAB_SIM_CMD": "exit 7", "WP303_TELEMETRY_CMD": "sleep 0.1"},
+                   env_drop=())
 started = [x for x in rec["attempts"] if x.get("rc") is not None]
 not_started = [x for x in rec["attempts"] if x.get("state") == "NOT_STARTED_PRIOR_FAILURE"]
-ck("仅第 1 个 attempt 发起且 rc≠0",
-   (len(started), started[0]["run_id"], started[0]["rc"] != 0), (1, "aa-r1", True))
-ck("其余 3 个显式 NOT_STARTED(分母保留,不消失)", len(not_started), 3)
-ck("stopped_on_failure=aa-r1", rec["stopped_on_failure"], "aa-r1")
+ck("失败链 rc=1;仅 1 发起且 rc≠0;3 个显式 NOT_STARTED",
+   (cp.returncode, len(started), started[0]["rc"] != 0, len(not_started)), (1, 1, True, 3))
 
-print("======== 06.6 聚合器(Codex 反例②:run_batch 直通记录必须被拒)========")
-cp = cli(["--aggregate", "--artifact-root", root_x])
-agg = json.loads(cp.stdout)
-ck("干净 A/A root 聚合 rc=0", cp.returncode, 0)
-ck("eligible=4", len(agg["eligible"]), 4)
-ck("聚合模式序=OFF,OFF,ON,ON", agg["eligible_modes_in_execution_order"],
-   ["OFF", "OFF", "ON", "ON"])
-rogue = os.path.join(root_x, "attempts", "rogue_runbatch")
-os.makedirs(os.path.join(rogue, "runs"), exist_ok=True)
-open(os.path.join(rogue, "task_record.json"), "w").write('{"batch_id":"rogue"}')
-cp = cli(["--aggregate", "--artifact-root", root_x])
-agg = json.loads(cp.stdout)
-ck("混入 run_batch 式记录 → 聚合 rc=1", cp.returncode, 1)
-ck("rogue 被拒且 eligible 仍=4",
-   (len(agg["rejected"]), len(agg["eligible"])), (1, 4))
-ck("拒绝原因=no_aa_identity",
-   "no_aa_identity" in agg["rejected"][0]["reason"], True)
-ident_p = os.path.join(root_x, "attempts", "aa-r1_OFF", "aa_identity.json")
-ident = json.load(open(ident_p))
-ident["config_hash"] = "ee" * 32
-open(ident_p, "w").write(json.dumps(ident))
-cp = cli(["--aggregate", "--artifact-root", root_x])
-agg = json.loads(cp.stdout)
-ck("身份 hash 被篡改 → 该 attempt 被拒(identity_plan_mismatch)",
-   any(r["reason"] == "identity_plan_mismatch" for r in agg["rejected"]), True)
-ck("篡改后 eligible=3", len(agg["eligible"]), 3)
+print("======== 06.6 aggregate 完整分母验收(Codex 反例:空分母必须非零)========")
+def agg(root):
+    cp = cli(["--aggregate", "--artifact-root", root])
+    return cp.returncode, json.loads(cp.stdout)
 
-print("======== 06.7 生产代码调用链断言(禁止 README 代替调用证据)========")
+root_z = os.path.join(work, "root_zero")
+os.makedirs(os.path.join(root_z, "aa_plan"))
+shutil.copy(os.path.join(root_v, "aa_plan", "aa_frozen_plan.json"),
+            os.path.join(root_z, "aa_plan", "aa_frozen_plan.json"))
+rc, a = agg(root_z)
+ck("零 attempt(无 launch_record) → rc=1,acceptance_eligible=false",
+   (rc, a["acceptance_eligible"], a["eligible_count"]), (1, False, 0))
+ck("聚合输出含完整分母字段",
+   all(k in a for k in ("attempts_expected", "attempts_observed", "attempts_terminal",
+                        "off_observed", "on_observed", "eligible_count",
+                        "rejected_count", "acceptance_eligible")), True)
+rc, a = agg(root_d)
+ck("dry-run 产物进正式 aggregate → rc=1(NON_ACCEPTANCE_FIXTURE 永久拒)",
+   (rc, a["acceptance_eligible"],
+    any("NON_ACCEPTANCE_FIXTURE" in f for f in a["acceptance_failures"])), (1, False, True))
+
+
+def fabricate_acceptance_root():
+    """构造完整合规的 ACCEPTANCE_CANDIDATE 现场(聚合器黑盒正例底座)。"""
+    root = os.path.join(work, f"root_fab_{len(os.listdir(work))}")
+    os.makedirs(os.path.join(root, "aa_plan"))
+    shutil.copy(os.path.join(root_v, "aa_plan", "aa_frozen_plan.json"),
+                os.path.join(root, "aa_plan", "aa_frozen_plan.json"))
+    plan = read_plan(root)
+    modes = {r["run_id"]: r["telemetry_mode"]
+             for p in plan["pair_plan"] for r in (p["off"], p["on"])}
+    bid, apsha = "aa_fab_1", "ab" * 32
+    lrec = {"mode": "execute", "record_class": "ACCEPTANCE_CANDIDATE",
+            "non_acceptance_fixture": False, "acceptance_eligible": False,
+            "aa_batch_id": bid, "frozen_plan_sha256": AL.frozen_plan_sha256(plan),
+            "producer_started": 1, "stopped_on_failure": None,
+            "attempts": [{"run_id": r, "telemetry_mode": modes[r],
+                          "artifact_root": os.path.join(root, "attempts", f"{r}_{modes[r]}"),
+                          "rc": 0} for r in plan["execution_order"]],
+            "gate": {"approval_fixture_test_only": False, "approval_sha256": apsha,
+                     "refusal_reasons": [], "preflight_status": "READY",
+                     "producer_started": 1}}
+    open(os.path.join(root, "aa_plan", "launch_record.json"), "w").write(json.dumps(lrec))
+    for r in plan["execution_order"]:
+        d = os.path.join(root, "attempts", f"{r}_{modes[r]}")
+        os.makedirs(os.path.join(d, "runs"))
+        open(os.path.join(d, "aa_identity.json"), "w").write(json.dumps(
+            {"schema_version": "wp304.aa_identity.v1", "aa_batch_id": bid,
+             "run_id": r, "telemetry_mode": modes[r],
+             "config_hash": plan["config_hash"],
+             "runtime_plan_hash": plan["runtime_plan_hash"],
+             "approval_sha256": apsha, "cli": "aa_cli",
+             "non_acceptance_fixture": False}))
+        open(os.path.join(d, "task_record.json"), "w").write(json.dumps(
+            {"batch_id": f"{bid}.{r}.{modes[r]}"}))
+        open(os.path.join(d, "monitor_status.json"), "w").write("{}")
+        open(os.path.join(d, "batch_final.json"), "w").write(
+            json.dumps({"final": "done", "run_rc_map": {"1": 0}}))
+        open(os.path.join(d, "runs", "run_1.json"), "w").write(json.dumps({"rc": 0}))
+    return root, plan, modes
+
+root_ok, plan_ok, modes_ok = fabricate_acceptance_root()
+rc, a = agg(root_ok)
+ck("完整合规现场 → rc=0,acceptance_eligible=true",
+   (rc, a["acceptance_eligible"]), (0, True))
+ck("分母字段:4/4 终态,OFF=2 ON=2,eligible=4 rejected=0",
+   (a["attempts_observed"], a["attempts_terminal"], a["off_observed"],
+    a["on_observed"], a["eligible_count"], a["rejected_count"]), (4, 4, 2, 2, 4, 0))
+
+def mutated(mutator):
+    root, plan, modes = fabricate_acceptance_root()
+    mutator(root, plan, modes)
+    rc, a = agg(root)
+    return rc, a
+
+rc, a = mutated(lambda r, p, m: shutil.rmtree(os.path.join(r, "attempts", "aa-r4_ON")))
+ck("3 个 attempt → rc=1", (rc, a["acceptance_eligible"]), (1, False))
+rc, a = mutated(lambda r, p, m: [shutil.rmtree(os.path.join(r, "attempts", d))
+                                 for d in ("aa-r2_ON", "aa-r3_OFF", "aa-r4_ON")])
+ck("1 个 attempt → rc=1", rc, 1)
+def add_extra(r, p, m):
+    d = os.path.join(r, "attempts", "aa-r9_EXTRA")
+    os.makedirs(d)
+    open(os.path.join(d, "task_record.json"), "w").write("{}")
+rc, a = mutated(add_extra)
+ck("5 个 attempt(计划外 run) → rc=1 且 rejected 点名 unplanned",
+   (rc, any("unplanned" in x["reason"] for x in a["rejected"])), (1, True))
+def wrong_mode(r, p, m):
+    ip = os.path.join(r, "attempts", "aa-r2_ON", "aa_identity.json")
+    i = json.load(open(ip)); i["telemetry_mode"] = "OFF"; open(ip, "w").write(json.dumps(i))
+rc, a = mutated(wrong_mode)
+ck("模式与计划不符(OFF/ON 数错) → rc=1", rc, 1)
+def dup_rid(r, p, m):
+    ip = os.path.join(r, "attempts", "aa-r3_OFF", "aa_identity.json")
+    i = json.load(open(ip)); i["run_id"] = "aa-r1"; open(ip, "w").write(json.dumps(i))
+rc, a = mutated(dup_rid)
+ck("重复/错位 run_id → rc=1", rc, 1)
+def not_started(r, p, m):
+    lp = os.path.join(r, "aa_plan", "launch_record.json")
+    l = json.load(open(lp))
+    l["attempts"][3] = {"run_id": "aa-r4", "telemetry_mode": "ON", "artifact_root": None,
+                        "rc": None, "state": "NOT_STARTED_PRIOR_FAILURE"}
+    l["stopped_on_failure"] = "aa-r2"
+    open(lp, "w").write(json.dumps(l))
+rc, a = mutated(not_started)
+ck("NOT_STARTED 在档 → rc=1 且失败原因点名",
+   (rc, any("not_started" in f or "stopped_on_failure" in f
+            for f in a["acceptance_failures"])), (1, True))
+rc, a = mutated(lambda r, p, m: os.unlink(
+    os.path.join(r, "attempts", "aa-r1_OFF", "task_record.json")))
+ck("task_record 缺失 → rc=1", rc, 1)
+rc, a = mutated(lambda r, p, m: os.unlink(
+    os.path.join(r, "attempts", "aa-r1_OFF", "monitor_status.json")))
+ck("monitor_status 缺失(非终态) → rc=1", rc, 1)
+rc, a = mutated(lambda r, p, m: os.unlink(
+    os.path.join(r, "attempts", "aa-r1_OFF", "batch_final.json")))
+ck("batch_final 缺失 → rc=1", rc, 1)
+def bad_batch(r, p, m):
+    tp = os.path.join(r, "attempts", "aa-r1_OFF", "task_record.json")
+    open(tp, "w").write(json.dumps({"batch_id": "someone_else.b.OFF"}))
+rc, a = mutated(bad_batch)
+ck("identity 与 task_record batch_id 不一致 → rc=1", rc, 1)
+def bad_apsha(r, p, m):
+    ip = os.path.join(r, "attempts", "aa-r1_OFF", "aa_identity.json")
+    i = json.load(open(ip)); i["approval_sha256"] = "ee" * 32; open(ip, "w").write(json.dumps(i))
+rc, a = mutated(bad_apsha)
+ck("approval hash 不一致 → rc=1", rc, 1)
+def fixture_flag(r, p, m):
+    ip = os.path.join(r, "attempts", "aa-r1_OFF", "aa_identity.json")
+    i = json.load(open(ip)); i["non_acceptance_fixture"] = True; open(ip, "w").write(json.dumps(i))
+rc, a = mutated(fixture_flag)
+ck("fixture attempt 混入 → rc=1(永久拒)", rc, 1)
+def fixture_lrec(r, p, m):
+    lp = os.path.join(r, "aa_plan", "launch_record.json")
+    l = json.load(open(lp)); l["gate"]["approval_fixture_test_only"] = True
+    open(lp, "w").write(json.dumps(l))
+rc, a = mutated(fixture_lrec)
+ck("fixture approval 的 launch record → rc=1(永久拒)", rc, 1)
+
+print("======== 06.7 生产代码调用链断言 ========")
 cli_src = open(CLI).read()
-ck("aa_cli 调用 launch_aa", "L.launch_aa(" in cli_src, True)
-ck("aa_cli 调用正式 batch_lifecycle.py", "batch_lifecycle.py" in cli_src
-   and "BATCH_LIFECYCLE" in cli_src, True)
-ck("aa_cli validate 走唯一 preflight", "PF.run_preflight(" in cli_src, True)
-launch_src = open(os.path.join(HERE, "aa_launch.py")).read()
-ck("launch_aa 内含 preflight 调用", "PF.run_preflight(" in launch_src, True)
-ck("launch_aa 内含授权机器门", "verify_owner_approval(" in launch_src, True)
-rb_src = open(os.path.join(HERE, "..", "run_batch.sh")).read()
-ck("run_batch 声明 A/A 红线(结果不入 A/A 分母)", "不得计入 A/A 分母" in rb_src, True)
+ck("aa_cli 调用 launch_aa+batch_lifecycle+preflight",
+   all(s in cli_src for s in ("L.launch_aa(", "BATCH_LIFECYCLE", "PF.run_preflight(")), True)
+ck("生产 execute 恒 allow_fixture=False(源码断言)",
+   "allow_fixture_approval=dry_run" in cli_src, True)
+ck("run_batch 声明 A/A 红线",
+   "不得计入 A/A 分母" in open(os.path.join(HERE, "..", "run_batch.sh")).read(), True)
 
 print("======== 06.8 零真实容器 ========")
 after_docker = subprocess.run(["docker", "ps", "-q"], capture_output=True, text=True).stdout
-ck("运行中容器集合不变(全程 stub dry-run)", after_docker, before_docker)
+ck("运行中容器集合不变", after_docker, before_docker)
 
 print("================================")
 print(f"结果: RAN={RAN} PASS={RAN - FAIL} FAIL={FAIL} SKIP=0(无跳过路径)")

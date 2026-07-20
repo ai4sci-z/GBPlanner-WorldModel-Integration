@@ -65,7 +65,8 @@ def fixture_approval_file(plan, digest=DIG, **over):
           "config_hash": plan["config_hash"],
           "runtime_plan_hash": plan["runtime_plan_hash"],
           "image_digest": digest, "ros_domain": plan["sidecar_ros_domain"],
-          "sample_plan": "OFF2_ON2"}
+          "sample_plan": "OFF2_ON2",
+          "frozen_plan_sha256": L.frozen_plan_sha256(plan)}
     ap.update(over)
     p = tempfile.mktemp(suffix="_approval.json")
     open(p, "w").write(json.dumps(ap))
@@ -190,6 +191,19 @@ prod = Producer()
 rec = launch(real_plan(head), prod, head, repo=repo, approval=badp)
 ck("approval 损坏 → producer=0",
    (prod.calls, "approval_unparsable" in rec["refusal_reasons"]), (0, True))
+prod = Producer()
+p = real_plan(head)
+rec = launch(p, prod, head, repo=repo,
+             approval=fixture_approval_file(p, frozen_plan_sha256="ff" * 32))
+ck("approval 整计划 SHA 不符 → producer=0(操作防误触门:绑整计划字节)",
+   (prod.calls, "approval_frozen_plan_sha_mismatch" in rec["refusal_reasons"]), (0, True))
+prod = Producer()
+p = real_plan(head)
+apf = fixture_approval_file(p)          # 审批基于当前计划字节
+p["timeout_sec"] = 999                  # 之后计划任何字节变化
+rec = launch(p, prod, head, repo=repo, approval=apf)
+ck("计划字节变化后旧 approval 立即失效 → producer=0",
+   (prod.calls, "approval_frozen_plan_sha_mismatch" in rec["refusal_reasons"]), (0, True))
 try:
     L.launch_aa(real_plan(head), Producer(), lambda name: DIG)
     got = "被放行"

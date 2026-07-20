@@ -123,11 +123,23 @@ def build_frozen_plan(mat, *, main_commit, world_model_commit, companion_digest,
     return plan
 
 
+def frozen_plan_sha256(plan):
+    """整份冻结计划的 canonical 字节 sha256(与 aa_frozen_plan.json 落盘字节一致)。
+    approval 绑定此值 → 计划任何字节变化后旧 approval 立即失效。"""
+    return sha256_bytes(canonical_json_bytes(plan))
+
+
 def verify_owner_approval(approval_path, plan, current_digest, allow_fixture=False):
     """负责人本次 A/A 启动授权 artifact 的机器校验。返回 (ok, reasons, approval)。
-    缺失/损坏/用途错/状态非 APPROVED/任何绑定字段与冻结计划或镜像现值不符 → 拒绝。
-    fixture_test_only=true 的样本仅 allow_fixture=True(测试)时可过,且由调用方在
-    launch record 里显式标注;真实审批文件只能由负责人启动指令产生,本代码不生成。"""
+
+    **性质=具名计划的操作防误触门,不是身份认证**:它证明"有人拿到 validate 输出的
+    整计划 SHA 并显式写进了审批文件",能防误触发/防拿旧计划启动,**不能抵抗恶意
+    伪造**(JSON 里的 approved_by 任何人都能写;若需审批者身份验证须另行引入可信
+    签名或外部批准源)。
+    缺失/损坏/用途错/状态非 APPROVED/任何绑定字段(含整计划 frozen_plan_sha256)
+    与冻结计划或镜像现值不符 → 拒绝。fixture_test_only=true 的样本仅
+    allow_fixture=True(测试/dry-run)时可过,且由调用方在 launch record 里显式
+    标注;真实审批文件只能由负责人启动指令产生,本代码不生成。"""
     if not approval_path or not (isinstance(approval_path, str) and os.path.isfile(approval_path)):
         return False, ["approval_missing"], None
     try:
@@ -161,6 +173,8 @@ def verify_owner_approval(approval_path, plan, current_digest, allow_fixture=Fal
         reasons.append("approval_image_digest_mismatch_plan")
     if ap.get("image_digest") != current_digest:
         reasons.append("approval_image_digest_mismatch_current")
+    if ap.get("frozen_plan_sha256") != frozen_plan_sha256(plan):
+        reasons.append("approval_frozen_plan_sha_mismatch")
     return (not reasons), reasons, ap
 
 
