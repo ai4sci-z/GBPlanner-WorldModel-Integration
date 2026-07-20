@@ -302,3 +302,24 @@ preflight `pair_plan_frozen_fields_match=PASS` 机器判定,非人工声称。)
   击穿后已补正;**验收出口尚未闭合(待 Codex 独立复验)**;A/A 不具备启动资格。
 - 聚合正例的现场为测试**构造**的合规目录(黑盒验收);它证明验收逻辑,不证明
   真实实验——真实 4/4 记录只能来自负责人授权后的真实 execute。
+
+### 7.4 树状令 R003-A/A-ACCEPTANCE-EXIT-CORRECT 复核补正(2026-07-20 同日)
+
+负责人以树状令(P00-P07 后序队列)复核三次补正。基线注记:令文基线 52be1fa 在
+接令前已被三次补正提交链前移至 493fc9e(如实报告,非覆盖)。复核走查发现并
+**先红后绿**补正 4 个真实缺口:
+
+1. **P01.4.4(曾红 rc=0)**:aggregate 不核对 task_record 的 telemetry 证据——
+   identity 说 ON、task_record.telemetry.enabled=false 也过。修=模式证据双源
+   一致门(缺失 telemetry 字段=证据不完整同拒)。
+2. **P01.5.10(曾红 rc=0)**:batch_final.json 损坏(`{corrupt`)只查存在不查
+   可解析——照过。修=monitor_status/batch_final/run_1 全部 parse+schema。
+3. **P01.5.4(曾红 rc=0)**:batch_final.run_rc_map 含非零 rc 照过。修=
+   final=="done"+run_rc_map 非空且全 0+run_1.rc==0,否则非终态拒。
+4. **P02.4.6(静态确认,不活体复现——会启动真实仿真)**:dry-run 未带
+   NAVLAB_SIM_CMD 时 leaf producer 会 `go run navlab-sim` 跑真实仿真。修=
+   dry-run 缺 stub 直接拒(dry_run_requires_sim_stub,producer=0)。
+   目录名≠身份(P01.3.7)复核=已有 identity 交叉核对真拒(目录互换反例入册)。
+
+测试增至 test_aa_cli 64 案(含上述曾红反例+目录互换+缺 stub 拒)。其余节点为
+既有实现的现场验证(证据=P05 矩阵逐项 rc)。

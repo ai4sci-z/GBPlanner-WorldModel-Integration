@@ -41,7 +41,9 @@ schema/launch_record 必在且 producer_started=1/恰好 4 attempt 与计划一�
 审批,产物永久标 NON_ACCEPTANCE_FIXTURE,被正式 aggregate 永久拒,不是真实 A/A);
 approval 增绑**整计划 frozen_plan_sha256**(validate 输出该 SHA 供负责人指令引用;
 计划任何字节变化旧审批立即失效)——授权门性质=**具名计划的操作防误触门,非身份
-认证,不抗恶意伪造**。测试 52(库层)+56(CLI,含 18 项聚合/隔离反例)案全绿。
+认证,不抗恶意伪造**。树状令复核再补 4 缺口(先红后绿):telemetry 证据双源一致/
+batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)。
+测试 52(库层)+64(CLI)案全绿。
 **当前事实:正式 A/A CLI 已接 batch_lifecycle;aggregate 空分母与测试覆盖隔离
 被 Codex 击穿后已补正,验收出口尚未闭合(待 Codex 独立复验);A/A 不具备启动资格。**
 击穿与补正记录=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§7。

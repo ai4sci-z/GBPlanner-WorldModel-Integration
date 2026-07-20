@@ -185,5 +185,5 @@ python3 test_container_identity.py   # AA-PF-02 身份管道 25 案
 python3 test_aa_pair_contract.py     # AA-PF-03 双基线 33 案
 python3 test_aa_preflight.py         # AA-PF-04 门 65 案(sourced 运行;历史反例=剥离环境子进程;真实性硬门;不启动证明)
 python3 test_aa_launch.py            # 启动门库层 52 案(物化/占位拒/授权门/整计划SHA/突变拒/零启动)
-python3 test_aa_cli.py               # 正式操作入口 56 案(四模式正反例/生产-dry-run 隔离/完整分母聚合)
+python3 test_aa_cli.py               # 正式操作入口 64 案(四模式正反例/生产-dry-run 隔离/完整分母聚合/终态 schema)
 ```
