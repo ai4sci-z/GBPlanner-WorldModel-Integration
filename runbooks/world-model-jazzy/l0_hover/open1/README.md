@@ -157,11 +157,18 @@ python3 test_ros_adapter.py         # concrete 只订不发结构门(12P)
   64hex schema 且与已物化文件字节独立重算一致;镜像 digest 必须 `sha256:<64hex>`;
   pair 成员与顶层冻结值一致;**任何占位符(PLAN_PENDING*/UNKNOWN/TODO/空串)按 schema
   直接拒绝**——"先占位拿 READY、启动时再补真实值"路径不存在。
-- `aa_launch.py`:**A/A 唯一正式启动入口**。顺序=canonical config+runtime plan 原子
-  落盘(tmp+rename)→文件字节独立算 hash→OFF×2+ON×2 冻结计划→唯一 preflight→仅
-  READY+acceptance_eligible 才进 producer 分支→producer 调用前重算 hash+digest 现值
-  复核(preflight 后任何改动→拒绝启动)。producer 由调用方注入(E1 接线=batch_lifecycle
-  链;测试=计数 fixture);本模块自身零启动。
+- `aa_launch.py`:启动门**库层**(~~"唯一正式启动入口"~~ SUPERSEDED 2026-07-20 当日
+  Codex 三验:库函数无 CLI、无生产调用方=测试孤岛,run_batch 可绕过——已按二次补正令
+  接线)。顺序=物化→文件字节独立 hash→冻结计划→唯一 preflight→**负责人本次启动授权
+  机器门(approval artifact,keyword-only 必填,库层直调也绕不过)**→hash/digest/HEAD/
+  dirty 最后复核→producer。
+- `aa_cli.py`:**A/A 具名正式操作入口(唯一)**。`--validate-only`(物化+真 hash+
+  docker 真 digest+preflight,绝不启动)/`--execute`(全链+授权门,producer=**正式
+  batch_lifecycle.py launch**×4 attempt,OFF,OFF,ON,ON,每 attempt 盖 aa_identity
+  计划身份;任一失败立即停,分母保留)/`--aggregate`(拒绝无身份记录——直接
+  run_batch 的产物不入 A/A 分母)。坏参/未知参/非法枚举 rc=2。
+  真实审批文件只能由负责人启动指令产生,CLI/测试绝不生成(测试用显式
+  fixture_test_only 样本+--allow-fixture-approval,launch record 标注)。
 - 容器身份:`resolve_container_identity`(本 run summary handles,post-run 权威;
   live 须上游契约);real backend 无默认容器名。
 
@@ -170,5 +177,6 @@ python3 test_ros_real_path.py        # AA-PF-01 失败关闭(sourced 正例+剥�
 python3 test_container_identity.py   # AA-PF-02 身份管道 25 案
 python3 test_aa_pair_contract.py     # AA-PF-03 双基线 33 案
 python3 test_aa_preflight.py         # AA-PF-04 门 65 案(sourced 运行;历史反例=剥离环境子进程;真实性硬门;不启动证明)
-python3 test_aa_launch.py            # 正式入口 38 案(物化/占位拒/突变拒/零启动)
+python3 test_aa_launch.py            # 启动门库层 50 案(物化/占位拒/授权门/突变拒/零启动)
+python3 test_aa_cli.py               # 正式操作入口(CLI 正反例/授权门/batch_lifecycle 链/聚合拒绝)
 ```

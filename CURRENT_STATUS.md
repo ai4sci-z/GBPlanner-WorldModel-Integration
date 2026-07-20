@@ -25,13 +25,19 @@ wm@9a1ce95 推 backup);sidecar live 身份消费就绪;FUTURE_CANDIDATE=9a1ce95(
 **A/A 环境接线=PARTIAL(2026-07-20,Codex 复验裁定)**:
 ①镜像接缝已闭合——companion 镜像 `jazzy-9a1ce95c56e2` 在盘(rc=0+docker images
 真产物,Codex 独立确认;全层 CACHED=tag 绑定新 HEAD,非行为验证)。
-②此前"preflight READY 18/18/接线闭合"结论**被 Codex 反例击穿(VERIFIED_FAIL)**:
-旧门对 hash 只验非空,占位符 `PLAN_PENDING_REAL_RUN` 可过;正式测试当时实为 FAIL=5。
-真实性补正四包已施工(hash/digest 严格 schema+物化文件独立重算+pair 一致性;
-`aa_launch.py` 唯一正式入口=物化→真实 hash→preflight→producer guard;测试
-65+38 案全绿,占位符/preflight 后突变→producer 启动恒=0),**preflight 真实性门
-未闭合(待 Codex 独立复验),A/A 尚不具备启动资格**。证据与击穿记录=
-[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5。
+②此前"preflight READY 18/18/接线闭合"被 Codex 击穿(占位符过 presence 门);
+一次补正(hash/digest schema+物化独立重算)后,**Codex 三验再击穿(VERIFIED_FAIL)**:
+aa_launch 库函数正确但**无 CLI、无生产调用方=测试孤岛**,真实入口 run_batch→
+batch_lifecycle 完全绕过真实性门;且负责人停点只是文档规则非机器规则。
+③二次补正令五包已施工(2026-07-20):**aa_cli.py=A/A 具名正式操作入口**(--help/
+--validate-only/--execute/--aggregate;坏参 rc=2;validate 绝不启动);execute=
+物化→真 hash→docker 真 digest→冻结计划→preflight→**负责人启动授权 approval
+artifact 机器门(库层 keyword-only 必填)**→hash/digest/HEAD/dirty 复核→**正式
+batch_lifecycle.py launch**×4(OFF,OFF,ON,ON,每 attempt 盖 aa_identity 计划身份,
+任一失败停,分母保留);聚合器拒绝直接 run_batch 记录(不入 A/A 分母);Codex 两
+绕过反例已固化为回归+生产调用链断言。测试 50(launch 库层)+66(CLI)案全绿。
+**状态=局部门+正式入口接线已施工,待 Codex 独立复验;A/A 尚不具备启动资格。**
+击穿与补正记录=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§6。
 P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
 
 ## 三、三仓基线

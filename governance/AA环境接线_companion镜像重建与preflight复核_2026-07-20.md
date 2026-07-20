@@ -190,3 +190,61 @@ preflight `pair_plan_frozen_fields_match=PASS` 机器判定,非人工声称。)
   VERIFIED 状态待 Codex 独立复验,复验通过前不得称闭合。**
 - A/A:**尚不具备启动资格**。启动资格=Codex 复验通过 + 负责人启动指令 +
   经 `aa_launch.py` 以真实物化计划过 preflight。
+
+## 6. 二次补正记录(2026-07-20,Codex 三验:正式入口绕过)
+
+### 6.1 被击穿的缺陷(VERIFIED_FAIL,Codex 在 d7ae636 现场复现)
+
+1. **aa_launch 无 CLI**:`python3 open1/aa_launch.py --help` 输出 0 字节、rc=0
+   (无参数解析)。§5 曾称其"唯一正式入口"——README 措辞,非调用事实。
+2. **测试孤岛**:全仓调用关系中 `launch_aa()`/`materialize()` 只有测试调用方;
+   真实操作入口 `run_batch.sh → batch_lifecycle.py launch → producer` 完全不经过
+   计划物化/preflight/hash guard(Codex 以 NAVLAB_SIM_CMD stub dry-run 实证:
+   producer 直接启动并落 run 记录)。测试路径与真实路径是两条不相交的链。
+3. **负责人停点非机器规则**:launch_aa 不检查本次 A/A 启动授权;直接调库+注入
+   producer 即可进入启动分支。
+
+### 6.2 二次补正实现(五包,同日)
+
+- **包一**:`aa_cli.py` = A/A 具名正式操作入口。argparse 全参数
+  (--validate-only/--execute/--aggregate 互斥必选;config/runtime-plan 输入;
+  main/wm repo;companion tag;ROS domain;readiness/extnav topic;OFF×2+ON×2 预算组;
+  artifact root;owner approval;preflight/launch record 输出)。--help 有完整帮助
+  文本 rc=0;未知参/缺参/非法枚举 rc=2(argparse 语义,不静默);镜像/git 不可用
+  rc=3。validate-only=物化+文件字节独立 hash+docker 真实 digest+preflight,
+  **绝不启动 producer**(测试断言 attempts 目录不存在)。
+- **包二**:execute 的 producer=**正式 batch_lifecycle.py launch**(不复制第二套
+  生命周期):每 attempt 独立 artifact root,OFF/ON 经 WP303_TELEMETRY 注入,
+  依 execution_order=OFF,OFF,ON,ON 依次发起,attempt 根先盖 `aa_identity.json`
+  (绑 aa_batch_id/run_id/mode/config_hash/runtime_plan_hash/approval_sha256);
+  任一 attempt rc≠0 立即停止后续,未发起项显式 NOT_STARTED_PRIOR_FAILURE
+  (分母保留)。run_batch.sh 保留为非 A/A 调试入口并写明红线:其结果不入 A/A
+  分母;`--aggregate` 机器强制该红线(无身份/身份 hash 不符/无 task_record 一律拒)。
+- **包三**:负责人启动授权 approval artifact 机器门(schema=wp304.aa_approval.v1;
+  绑 purpose=A_A_OFF2_ON2/main+wm commit/config+runtime plan hash/image digest/
+  ros_domain/sample_plan/approved_by/approved_at/approval_state)。校验在
+  `aa_launch.verify_owner_approval`,由 `launch_aa`(approval_path/repo_state
+  keyword-only 必填——**库层直调也绕不过**,不带参数=TypeError)强制;缺失/损坏/
+  用途错/状态非 APPROVED/任一绑定不符 → producer 恒=0。guard 同时补 HEAD/dirty
+  现值复核。validate-only 不需要授权;execute 必需。fixture 审批样本显式
+  fixture_test_only+--allow-fixture-approval,launch record 标注;真实审批文件
+  只能由负责人启动指令产生,本仓代码与测试均不生成。
+- **包四**:Codex 两反例固化为回归(test_aa_cli.py):--help 有文本;坏参 rc=2;
+  validate-only producer=0;无授权/授权 hash 不符/fixture 未放行/状态非 APPROVED
+  → producer=0;dry-run execute 实际经 batch_lifecycle(每 attempt 断言
+  task_record.json 存在+telemetry.enabled 与模式一致+batch_id 由 CLI 具名生成);
+  失败即停+分母保留;聚合拒 rogue run_batch 记录与篡改身份;生产代码调用链断言
+  (aa_cli→launch_aa→run_preflight;aa_cli→batch_lifecycle.py);全程零真实容器
+  (docker ps 前后一致)。launch 库层套件同步扩至 50 案(授权门反例+HEAD/dirty
+  突变+keyword-only 强制)。
+- **包五**:本节+CURRENT_STATUS/TASKS/接力棒/open1 README/claim/manifest 统一降级
+  措辞;§5"补正后的诚实状态"中"aa_launch=唯一正式入口"表述由本节 SUPERSEDED。
+
+### 6.3 当前诚实状态
+
+- hash/schema 局部门已实现;aa_launch 库层测试通过;**正式操作入口 aa_cli 已建并
+  接通正式 batch_lifecycle 链(dry-run 实证)**;run_batch 直通记录被 A/A 聚合器
+  机器拒绝;负责人停点已是机器门。
+- **以上全部=已施工+本地全绿,待 Codex 独立复验;复验通过前不称闭合。**
+- A/A 尚不具备启动资格。启动资格=Codex 复验通过+负责人明确启动指令+负责人产生的
+  真实 approval artifact+经 aa_cli --execute 全链过门。
