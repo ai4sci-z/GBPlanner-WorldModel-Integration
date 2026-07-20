@@ -284,7 +284,8 @@ def fabricate_acceptance_root():
              "approval_sha256": apsha, "cli": "aa_cli",
              "non_acceptance_fixture": False}))
         open(os.path.join(d, "task_record.json"), "w").write(json.dumps(
-            {"batch_id": f"{bid}.{r}.{modes[r]}"}))
+            {"batch_id": f"{bid}.{r}.{modes[r]}",
+             "telemetry": {"enabled": modes[r] == "ON"}}))
         open(os.path.join(d, "monitor_status.json"), "w").write("{}")
         open(os.path.join(d, "batch_final.json"), "w").write(
             json.dumps({"final": "done", "run_rc_map": {"1": 0}}))
@@ -368,6 +369,52 @@ def fixture_lrec(r, p, m):
     open(lp, "w").write(json.dumps(l))
 rc, a = mutated(fixture_lrec)
 ck("fixture approval 的 launch record → rc=1(永久拒)", rc, 1)
+
+print("======== 06.6b 缺口补正反例(2026-07-20 树状令 P01.4.4/P01.5.4/P01.5.10/P01.3.7)========")
+def tel_mismatch(r, p, m):
+    tp = os.path.join(r, "attempts", "aa-r2_ON", "task_record.json")
+    t = json.load(open(tp)); t["telemetry"]["enabled"] = False
+    open(tp, "w").write(json.dumps(t))
+rc, a = mutated(tel_mismatch)
+ck("task_record telemetry 证据与 identity(ON) 不符 → rc=1(曾红:旧 rc=0)",
+   (rc, any("telemetry_mismatch" in x["reason"] for x in a["rejected"])), (1, True))
+def tel_missing(r, p, m):
+    tp = os.path.join(r, "attempts", "aa-r1_OFF", "task_record.json")
+    t = json.load(open(tp)); del t["telemetry"]
+    open(tp, "w").write(json.dumps(t))
+rc, a = mutated(tel_missing)
+ck("task_record telemetry 证据缺失 → rc=1", rc, 1)
+rc, a = mutated(lambda r, p, m: open(
+    os.path.join(r, "attempts", "aa-r1_OFF", "batch_final.json"), "w").write("{corrupt"))
+ck("batch_final 损坏 → rc=1(曾红:旧 rc=0)",
+   (rc, any("batch_final" in x["reason"] for x in a["rejected"])), (1, True))
+rc, a = mutated(lambda r, p, m: open(
+    os.path.join(r, "attempts", "aa-r1_OFF", "batch_final.json"), "w").write(
+        json.dumps({"final": "done", "run_rc_map": {"1": 7}})))
+ck("batch_final run_rc_map 非零 → rc=1(曾红:旧 rc=0)", rc, 1)
+rc, a = mutated(lambda r, p, m: open(
+    os.path.join(r, "attempts", "aa-r1_OFF", "monitor_status.json"), "w").write("{corrupt"))
+ck("monitor_status 损坏 → rc=1", rc, 1)
+rc, a = mutated(lambda r, p, m: open(
+    os.path.join(r, "attempts", "aa-r1_OFF", "runs", "run_1.json"), "w").write(
+        json.dumps({"rc": 5})))
+ck("run 记录 rc≠0 → rc=1", rc, 1)
+def dir_swap(r, p, m):
+    a1, a3 = (os.path.join(r, "attempts", d) for d in ("aa-r1_OFF", "aa-r3_OFF"))
+    shutil.move(a1, a1 + "_t"); shutil.move(a3, a1); shutil.move(a1 + "_t", a3)
+rc, a = mutated(dir_swap)
+ck("目录互换名(目录名≠身份) → rc=1(身份为准,目录名非唯一依据)", rc, 1)
+
+print("======== 06.6c dry-run 缺 stub → 拒(不得跑真实仿真)========")
+root_ns = os.path.join(work, "root_nostub")
+cli(["--validate-only"] + base_args(root_ns, cfg, rtp, mainfx) + DRY_BUDGETS)
+apns = fixture_approval(root_ns, mainfx)
+cp, rec = run_mode("--dry-run", root_ns, ["--owner-approval", apns],
+                   env_extra=None, env_drop=CLEAN_DROP)   # 无 NAVLAB_SIM_CMD
+ck("dry-run 无 NAVLAB_SIM_CMD → producer=0(fail-closed,防真实仿真)",
+   (cp.returncode, rec["producer_started"],
+    any("dry_run_requires_sim_stub" in r for r in rec["gate"]["refusal_reasons"])),
+   (1, 0, True))
 
 print("======== 06.7 生产代码调用链断言 ========")
 cli_src = open(CLI).read()

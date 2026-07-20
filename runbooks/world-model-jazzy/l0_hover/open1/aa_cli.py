@@ -249,6 +249,13 @@ def _launch_chain(a, dry_run):
         record["gate"] = {"producer_started": 0, "refusal_reasons": refusals}
         record["producer_started"] = 0
         return finish(1)
+    if dry_run and not os.environ.get("NAVLAB_SIM_CMD", "").strip():
+        # dry-run 必须显式带仿真 stub——否则 leaf producer 会 go run 真实
+        # navlab-sim(dry-run 不得启动真实容器/仿真,fail-closed)
+        record["gate"] = {"producer_started": 0,
+                          "refusal_reasons": ["dry_run_requires_sim_stub(NAVLAB_SIM_CMD)"]}
+        record["producer_started"] = 0
+        return finish(1)
     if dry_run and a.owner_approval:
         # dry-run 强制 fixture 审批:真实审批不得被 dry-run 消耗/冒用
         try:
@@ -431,15 +438,47 @@ def cmd_aggregate(a):
                 want_bid = f"{ident.get('aa_batch_id')}.{rid}.{ident.get('telemetry_mode')}"
                 if tr.get("batch_id") != want_bid:
                     reasons.append("task_record_batch_id_mismatch_identity")
+                # 模式证据双源一致:task_record 的 telemetry.enabled 必须与 identity
+                # 的 mode 一致(缺失=证据不完整,同拒)
+                tel = tr.get("telemetry")
+                if not isinstance(tel, dict) or "enabled" not in tel:
+                    reasons.append("task_record_telemetry_evidence_missing")
+                elif bool(tel["enabled"]) != (ident.get("telemetry_mode") == "ON"):
+                    reasons.append("task_record_telemetry_mismatch_identity")
             except (OSError, ValueError):
                 reasons.append("task_record_unparsable")
-        terminal = all(os.path.isfile(os.path.join(d, f)) for f in
-                       ("monitor_status.json", "batch_final.json")) \
-            and os.path.isfile(os.path.join(d, "runs", "run_1.json"))
+        # 终态 required evidence:存在且可解析且通过 schema(损坏/半写/失败 rc 同拒)
+        terminal = True
+        ms_p = os.path.join(d, "monitor_status.json")
+        try:
+            json.load(open(ms_p, encoding="utf-8"))
+        except (OSError, ValueError):
+            terminal = False
+            reasons.append("monitor_status_missing_or_corrupt")
+        bf_p = os.path.join(d, "batch_final.json")
+        try:
+            bf = json.load(open(bf_p, encoding="utf-8"))
+            if bf.get("final") != "done":
+                terminal = False
+                reasons.append("batch_final_not_done")
+            rrm = bf.get("run_rc_map")
+            if not isinstance(rrm, dict) or not rrm or any(v != 0 for v in rrm.values()):
+                terminal = False
+                reasons.append("batch_final_run_rc_map_invalid_or_nonzero")
+        except (OSError, ValueError):
+            terminal = False
+            reasons.append("batch_final_missing_or_corrupt")
+        r1_p = os.path.join(d, "runs", "run_1.json")
+        try:
+            r1 = json.load(open(r1_p, encoding="utf-8"))
+            if r1.get("rc") != 0:
+                terminal = False
+                reasons.append("run_record_rc_nonzero")
+        except (OSError, ValueError):
+            terminal = False
+            reasons.append("run_record_missing_or_corrupt")
         if terminal:
             attempts_terminal += 1
-        else:
-            reasons.append("attempt_not_terminal(缺 monitor_status/batch_final/run 记录)")
         la = lrec_attempts.get(rid)
         if not la or la.get("rc") != 0:
             reasons.append("launch_record_attempt_missing_or_failed")
