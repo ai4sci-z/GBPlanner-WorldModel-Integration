@@ -323,3 +323,40 @@ preflight `pair_plan_frozen_fields_match=PASS` 机器判定,非人工声称。)
 
 测试增至 test_aa_cli 64 案(含上述曾红反例+目录互换+缺 stub 拒)。其余节点为
 既有实现的现场验证(证据=P05 矩阵逐项 rc)。
+
+## 8. 五验击穿:终态语义门(R003-A/A-TERMINAL-EVIDENCE-SEMANTIC-CORRECT)
+
+### 8.1 被击穿判断(VERIFIED_FAIL,Codex 五验;撤回上一轮 P01.5/P04.8/ROOT CLOSED)
+
+- `aa_cli.py` aggregate 对 monitor_status.json **只做 `json.load()`**(击穿时行号 454)
+  ——任何合法 JSON 即视为终态,无 schema/三轴/身份/一致性检查。
+- `test_aa_cli.py` 正例 fixture **亲手把 monitor_status 写成 `{}`**(行 289)并断言
+  rc=0/acceptance_eligible=true/terminal=4(行 297)——用正例把漏洞定义成正确行为。
+- 失败机制与 evidence-gate 前案同型:**只检查表示层(可解析),不检查正式契约(语义)**。
+  "损坏 JSON 会拒"不能证明"合法 JSON 的错误语义会拒"。
+
+### 8.2 权威终态契约(P01 盘点;来源=batch_lifecycle.py 写入点+真实 dry-run 产物,禁想象造字段)
+
+| 产物 | 写入点 | 关键字段 | 合法终态 | 权威性 |
+|---|---|---|---|---|
+| monitor_status.json | batch_lifecycle L547-556(原子写) | schema_version=1;batch_id;readonly;producer_outcome∈{SUCCEEDED,FAILED,TIMED_OUT,CRASHED,CANCELLED};evidence_status∈{COMPLETE,INCOMPLETE};evidence_missing;cleanup_status∈{CLEAN,RESIDUAL,NOT_ATTEMPTED,REFUSED};run_rc_map;telemetry_status{enabled,process_state,sidecar_rc,…} | A/A 合格=SUCCEEDED+COMPLETE+CLEAN+readonly=false+run_rc_map 全0+telemetry.enabled 匹配 mode+(ON)process_state=EXITED_ZERO 且 sidecar_rc=0 | **三轴唯一权威** |
+| batch_final.json | batch_common bc_finalize | schema_version=1;batch_id;final;run_rc_map | final=done+run_rc_map 全0 且==monitor.run_rc_map | 交叉核对 |
+| runs/run_1.json | batch_common bc_run | schema_version=1;batch_id;run_index;start/end;rc | rc=0+run_index=1+batch_id 一致+end≥start | 交叉核对 |
+| task_record.json | batch_lifecycle cmd_launch | batch_id;telemetry.enabled | 与 identity/monitor 一致 | 交叉核对 |
+| sidecar 深层 evidence(five-layer) | telemetry_sidecar/run_registry | — | **权威=既有 run_registry.py aggregate,A/A aggregate 不造第二权威**(P01.4 单一事实源);A/A 层只交叉核对 enabled+process 终态 | 登记 |
+
+三轴表:process=producer_outcome(仅 SUCCEEDED 入分母);evidence=evidence_status
+(仅 COMPLETE);finalization/cleanup=cleanup_status(仅 CLEAN)。任一轴
+UNKNOWN/MISSING/CORRUPT/非法枚举/缺失字段→该 attempt 拒,**不得被其他轴或 rc=0 覆盖**。
+身份契约:monitor.batch_id==task_record.batch_id==f"{launch.aa_batch_id}.{run_id}.{mode}";
+run_1.batch_id 同;目录名只用于定位。
+
+### 8.3 红案冻结(20 案,全部经正式 CLI --aggregate;修复前 actual 全 rc=0)
+
+基线=按 8.2 契约构造的合规现场(rc=0 合理)。R01 `{}`×4/R02 `[]`/R03 仅 status/
+R04 类型错/R05 缺 version/R06 未知 version/R07 缺三轴/R08 SUCCEEDED+INCOMPLETE/
+R09 非法枚举/R10 FAILED+COMPLETE/R11 cleanup=RESIDUAL/R12 run_rc_map 与 final 不一致/
+R13 CANCELLED+final done/R14 batch_id 错(陈旧复制)/R15 telemetry.enabled 矛盾/
+R16 readonly=true/R17 .tmp 残留/R18 ON 臂 sidecar KILLED/R19 monitor mtime 早于
+run 结束/R20 run_index 错——**修复前 actual 全部 rc=0(放行),正确 expected 全部
+rc=1**。原始输出=红案脚本 stdout(本提交为红案冻结提交,先于实现提交)。
