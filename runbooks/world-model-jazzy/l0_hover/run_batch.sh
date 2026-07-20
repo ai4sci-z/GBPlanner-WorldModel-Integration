@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# WP303 正式入口(唯一):操作者只跑本脚本,自动经 batch_lifecycle.py launch
+# WP303 正式入口(非 A/A 调试/常规批):操作者跑本脚本,自动经 batch_lifecycle.py launch
 #   → 独立 session/PGID + task record + monitor,退出码从 monitor 传播给调用者。
+# ⛔ A/A 红线(2026-07-20):直接调用本脚本产生的结果**不得计入 A/A 分母**。
+#   A/A 的 OFF×2+ON×2 四样本只能由 open1/aa_cli.py(--execute)生成——那条链带
+#   计划物化/真实 hash/preflight/负责人授权机器门/aa_identity 计划身份;
+#   A/A 聚合器(aa_cli.py --aggregate)会拒绝无身份记录。
 # 用法:  bash run_batch.sh <l15|l2|l2fix> [RUNS]
 #   real:  BC_ARTIFACT_BASE 默认 $WM/artifacts/sim;需 companion tag 匹配 wm HEAD。
 #   dry:   NAVLAB_SIM_CMD='<stub>' 覆盖真实 go run(测试用,不启动 SITL)。

@@ -15,6 +15,14 @@
      E1 正式接线时注入 batch_lifecycle 启动链,测试注入计数 fixture。
 禁止路径:先用占位符拿 READY、实验启动时再补真实值——占位符在 preflight 的
 schema 门直接非 READY,producer 不会被调用。
+
+2026-07-20 二次补正(Codex 复验:正式入口绕过):
+  - launch_aa 增加**负责人本次启动授权机器门**(approval artifact,必填):缺失/损坏/
+    用途错/SHA-hash-digest 不匹配/未批准 → producer 恒不被调用。文档停点≠机器停点,
+    本参数即机器停点。validate 路径(仅 preflight)不需要授权,execute 必须。
+  - guard 增加 HEAD/dirty 最后复核(repo_state 注入,本模块保持零子进程调用)。
+  - 本模块是库层;操作者入口=同目录 aa_cli.py(argparse CLI,producer=正式
+    batch_lifecycle 链)。直接调用本库也过不了授权门。
 """
 import hashlib
 import json
@@ -27,6 +35,9 @@ import aa_preflight as PF  # noqa: E402
 
 DEFAULT_MAIN_REPO = os.path.realpath(os.path.join(HERE, "..", "..", "..", ".."))
 DEFAULT_WM_REPO = "/home/ai4s/projects/world-model"
+
+APPROVAL_SCHEMA_VERSION = "wp304.aa_approval.v1"
+APPROVAL_PURPOSE = "A_A_OFF2_ON2"
 
 
 def canonical_json_bytes(obj):
@@ -84,7 +95,8 @@ def build_frozen_plan(mat, *, main_commit, world_model_commit, companion_digest,
                 "container_identity_source": "runtime/service_handles.json",
                 "evidence_state": "COMPLETE"}
 
-    plan = {"main_commit": main_commit, "baseline_class": "FUTURE_CANDIDATE",
+    plan = {"main_commit": main_commit, "world_model_commit": world_model_commit,
+            "baseline_class": "FUTURE_CANDIDATE",
             "sidecar_backend": "real",
             "ros_readiness_topic": ros_readiness_topic,
             "ros_extnav_topic": ros_extnav_topic,
@@ -104,13 +116,57 @@ def build_frozen_plan(mat, *, main_commit, world_model_commit, companion_digest,
             "real_validation_claims": {"real_ros_graph": False,
                                        "real_docker_chain": False},
             "owner_approvals": dict(owner_approvals or {})}
+    plan["execution_order"] = ["%s-r1" % run_id_prefix, "%s-r3" % run_id_prefix,
+                               "%s-r2" % run_id_prefix, "%s-r4" % run_id_prefix]
     if identity_wait_budgets:
         plan["identity_wait_budgets"] = dict(identity_wait_budgets)
     return plan
 
 
-def _guard_refusals(plan, digest_provider):
-    """producer 启动前的最后复核:独立重算物化文件 hash + 镜像 digest 现值比对。
+def verify_owner_approval(approval_path, plan, current_digest, allow_fixture=False):
+    """负责人本次 A/A 启动授权 artifact 的机器校验。返回 (ok, reasons, approval)。
+    缺失/损坏/用途错/状态非 APPROVED/任何绑定字段与冻结计划或镜像现值不符 → 拒绝。
+    fixture_test_only=true 的样本仅 allow_fixture=True(测试)时可过,且由调用方在
+    launch record 里显式标注;真实审批文件只能由负责人启动指令产生,本代码不生成。"""
+    if not approval_path or not (isinstance(approval_path, str) and os.path.isfile(approval_path)):
+        return False, ["approval_missing"], None
+    try:
+        with open(approval_path, encoding="utf-8") as f:
+            ap = json.load(f)
+    except (OSError, ValueError):
+        return False, ["approval_unparsable"], None
+    reasons = []
+    if ap.get("schema_version") != APPROVAL_SCHEMA_VERSION:
+        reasons.append("approval_schema_version_mismatch")
+    if ap.get("approval_purpose") != APPROVAL_PURPOSE:
+        reasons.append("approval_purpose_mismatch")
+    if ap.get("approval_state") != "APPROVED":
+        reasons.append("approval_state_not_approved")
+    if ap.get("fixture_test_only") and not allow_fixture:
+        reasons.append("fixture_approval_not_allowed")
+    if not ap.get("approved_by") or not ap.get("approved_at"):
+        reasons.append("approval_actor_or_time_missing")
+    wm_commit = (plan.get("world_model_commit")
+                 or (plan.get("pair_plan") or [{}])[0].get("off", {}).get("world_model_commit"))
+    for key, want in (("main_commit", plan.get("main_commit")),
+                      ("world_model_commit", wm_commit),
+                      ("config_hash", plan.get("config_hash")),
+                      ("runtime_plan_hash", plan.get("runtime_plan_hash")),
+                      ("ros_domain", plan.get("sidecar_ros_domain")),
+                      ("sample_plan", "OFF2_ON2")):
+        if ap.get(key) != want:
+            reasons.append(f"approval_{key}_mismatch")
+    plan_digest = plan.get("image_digests", {}).get("companion")
+    if ap.get("image_digest") != plan_digest:
+        reasons.append("approval_image_digest_mismatch_plan")
+    if ap.get("image_digest") != current_digest:
+        reasons.append("approval_image_digest_mismatch_current")
+    return (not reasons), reasons, ap
+
+
+def _guard_refusals(plan, digest_provider, repo_state):
+    """producer 启动前的最后复核:独立重算物化文件 hash + 镜像 digest 现值 +
+    HEAD/dirty 现值(repo_state 注入,保持本模块零子进程调用)。
     preflight 之后的任何改动在此拒绝——返回非空即禁止启动。"""
     refusals = []
     for path_key, hash_key in (("config_path", "config_hash"),
@@ -122,21 +178,39 @@ def _guard_refusals(plan, digest_provider):
     current = digest_provider("companion")
     if current != plan.get("image_digests", {}).get("companion"):
         refusals.append("image_digest_changed_after_preflight")
+    if repo_state is None:
+        refusals.append("repo_state_provider_missing")
+    else:
+        st = repo_state()
+        wm_commit = (plan.get("world_model_commit")
+                     or (plan.get("pair_plan") or [{}])[0].get("off", {}).get("world_model_commit"))
+        if st.get("main_head") != plan.get("main_commit"):
+            refusals.append("main_head_changed_after_preflight")
+        if st.get("wm_head") != wm_commit:
+            refusals.append("wm_head_changed_after_preflight")
+        if st.get("main_dirty") != 0:
+            refusals.append("main_worktree_dirty_at_launch")
+        if st.get("wm_dirty") != 0:
+            refusals.append("wm_worktree_dirty_at_launch")
     return refusals
 
 
-def launch_aa(plan, producer, digest_provider,
+def launch_aa(plan, producer, digest_provider, *, approval_path, repo_state,
               main_repo=DEFAULT_MAIN_REPO, wm_repo=DEFAULT_WM_REPO,
-              output=None, _post_preflight_hook=None):
-    """唯一启动分支。producer:仅 READY+guard 全过才被调用(注入,本模块零启动)。
-    digest_provider(name)->当前真实镜像 digest(E1 正式接线=docker image inspect;
-    测试=fixture)。_post_preflight_hook 仅供测试注入 preflight 后突变,生产=None。"""
+              output=None, allow_fixture_approval=False, _post_preflight_hook=None):
+    """唯一启动分支。producer:仅 READY+授权+guard 全过才被调用(注入,本模块零启动)。
+    digest_provider(name)->当前真实镜像 digest;repo_state()->{main_head,wm_head,
+    main_dirty,wm_dirty} 现值(CLI=git 实查;测试=fixture)。
+    approval_path=负责人本次启动授权 artifact(机器门,keyword-only 必填——库层直接
+    调用也绕不过);validate 路径请直接用 PF.run_preflight,不要带 producer 调本函数。
+    _post_preflight_hook 仅供测试注入 preflight 后突变,生产=None。"""
     pf = PF.run_preflight(plan, main_repo, wm_repo)
     record = {"preflight_status": pf["preflight_status"],
               "acceptance_eligible": pf["acceptance_eligible"],
               "failed_checks": pf["failed_checks"],
               "owner_decisions_required": pf["owner_decisions_required"],
-              "producer_started": 0, "refusal_reasons": []}
+              "producer_started": 0, "refusal_reasons": [],
+              "approval_fixture_test_only": False}
     if output:
         atomic_write(output, json.dumps(pf, ensure_ascii=False, sort_keys=True,
                                         indent=1).encode("utf-8"))
@@ -145,7 +219,14 @@ def launch_aa(plan, producer, digest_provider,
         return record
     if _post_preflight_hook is not None:
         _post_preflight_hook()
-    refusals = _guard_refusals(plan, digest_provider)
+    ok, why, ap = verify_owner_approval(approval_path, plan, digest_provider("companion"),
+                                        allow_fixture=allow_fixture_approval)
+    if not ok:
+        record["refusal_reasons"] = why
+        return record
+    record["approval_fixture_test_only"] = bool(ap.get("fixture_test_only"))
+    record["approval_sha256"] = PF._sha256_file(approval_path)
+    refusals = _guard_refusals(plan, digest_provider, repo_state)
     if refusals:
         record["refusal_reasons"] = refusals
         return record
