@@ -360,3 +360,25 @@ R13 CANCELLED+final done/R14 batch_id 错(陈旧复制)/R15 telemetry.enabled �
 R16 readonly=true/R17 .tmp 残留/R18 ON 臂 sidecar KILLED/R19 monitor mtime 早于
 run 结束/R20 run_index 错——**修复前 actual 全部 rc=0(放行),正确 expected 全部
 rc=1**。原始输出=红案脚本 stdout(本提交为红案冻结提交,先于实现提交)。
+
+### 8.4 五验补正实现(同日;红案冻结提交 20eedaa → 实现 2a53776 → 正例回归 4f01c94)
+
+- **P03 验证器进正式链**:`validate_monitor_terminal()` 在 `aa_cli.py` aggregate
+  调用链内(源码断言入测试,无测试旁路)。三轴分别解析分别输出(process/evidence/
+  finalization),仅 SUCCEEDED/COMPLETE/CLEAN 三轴齐才 eligible;任一轴非法枚举/
+  缺失/非合格值拒且**不被其他轴或 rc=0 覆盖**;拒因具体到产物+字段。身份绑定
+  (monitor/batch_final/run_1 的 batch_id 全链一致,陈旧复制即拒)、readonly 拒、
+  run_rc_map 三处一致、telemetry.enabled 匹配 mode、ON 臂 sidecar EXITED_ZERO+rc0、
+  .tmp 半写拒、monitor mtime 早于 run 结束拒、run_1 schema/run_index/时间(end≥start)。
+- **P04 正例重建**:`{}` 假正例删除并转正式负例 R01;契约级正例=按写入点真实
+  schema 构造(expected 独立于被测函数);**正式生命周期正例**=真实 dry-run 产物
+  仅去 fixture 隔离标记后过 validator(rc=0,三轴=SUCCEEDED/COMPLETE/CLEAN)——
+  生产者与消费者同契约实证,非两套手写 JSON 互相迎合。单变量判别:R01-R20 逐案
+  仅改一个语义变量即 rc=1,契约正例恒 rc=0。
+- **黑盒重放**(正式 CLI,全 stdout 落档 scratchpad/blackbox_replay.out):
+  {}→rc=1;三轴矛盾→rc=1;完整合规→rc=0/acceptance_eligible=true。
+- **诚实边界/冻结登记(P06.4,不扩包)**:①ON 臂 sidecar 深层 evidence(five-layer)
+  的权威=既有 `run_registry.py aggregate`,A/A aggregate 只交叉核对 enabled+process
+  终态(单一事实源纪律,不造第二权威)——A/A 级深检联动登记下一编号 Review;
+  ②时间闭包用文件 mtime(1s 容差),内容级时间戳(monitor 无时戳字段)登记下一
+  编号 Review;③本轮全部验证为本地自建,真实 A/A 未启动。
