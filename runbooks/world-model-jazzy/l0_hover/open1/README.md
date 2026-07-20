@@ -162,13 +162,20 @@ python3 test_ros_adapter.py         # concrete 只订不发结构门(12P)
   接线)。顺序=物化→文件字节独立 hash→冻结计划→唯一 preflight→**负责人本次启动授权
   机器门(approval artifact,keyword-only 必填,库层直调也绕不过)**→hash/digest/HEAD/
   dirty 最后复核→producer。
-- `aa_cli.py`:**A/A 具名正式操作入口(唯一)**。`--validate-only`(物化+真 hash+
-  docker 真 digest+preflight,绝不启动)/`--execute`(全链+授权门,producer=**正式
-  batch_lifecycle.py launch**×4 attempt,OFF,OFF,ON,ON,每 attempt 盖 aa_identity
-  计划身份;任一失败立即停,分母保留)/`--aggregate`(拒绝无身份记录——直接
-  run_batch 的产物不入 A/A 分母)。坏参/未知参/非法枚举 rc=2。
-  真实审批文件只能由负责人启动指令产生,CLI/测试绝不生成(测试用显式
-  fixture_test_only 样本+--allow-fixture-approval,launch record 标注)。
+- `aa_cli.py`:**A/A 具名正式操作入口(唯一)**,四模式(三次补正后):
+  `--validate-only`(物化+真 hash+docker 真 digest+preflight+输出**整计划
+  frozen_plan_sha256**——负责人启动指令必须引用它;绝不启动)/
+  `--execute`(ACCEPTANCE_CANDIDATE 真实链:**fixture 审批一律拒**、**测试覆盖
+  env(NAVLAB_SIM_CMD/WP303_TELEMETRY_CMD/fixture backend 等)一律拒**;producer=
+  正式 batch_lifecycle.py launch ×4,OFF,OFF,ON,ON,失败即停分母保留)/
+  `--dry-run`(NON_ACCEPTANCE_FIXTURE 测试链:强制 fixture 审批,产物永久标记,
+  被正式 aggregate 永久拒,**不是真实 A/A**)/
+  `--aggregate`(验收出口=**完整分母验收**:恰好 4 个计划内终态 attempt、模式序
+  OFF,OFF,ON,ON、身份/双 hash/approval sha 全链一致、禁 NOT_STARTED、rejected=0,
+  输出 attempts_expected=4 等完整分母;**零次实验不得聚合成功**)。
+  坏参/未知参/非法枚举 rc=2。授权门=**具名计划的操作防误触门,非身份认证**
+  (JSON approved_by 不抗恶意伪造;需身份验证须另引可信签名/外部批准源)。
+  真实审批文件只能由负责人启动指令产生,CLI/测试绝不生成。
 - 容器身份:`resolve_container_identity`(本 run summary handles,post-run 权威;
   live 须上游契约);real backend 无默认容器名。
 
@@ -177,6 +184,6 @@ python3 test_ros_real_path.py        # AA-PF-01 失败关闭(sourced 正例+剥�
 python3 test_container_identity.py   # AA-PF-02 身份管道 25 案
 python3 test_aa_pair_contract.py     # AA-PF-03 双基线 33 案
 python3 test_aa_preflight.py         # AA-PF-04 门 65 案(sourced 运行;历史反例=剥离环境子进程;真实性硬门;不启动证明)
-python3 test_aa_launch.py            # 启动门库层 50 案(物化/占位拒/授权门/突变拒/零启动)
-python3 test_aa_cli.py               # 正式操作入口(CLI 正反例/授权门/batch_lifecycle 链/聚合拒绝)
+python3 test_aa_launch.py            # 启动门库层 52 案(物化/占位拒/授权门/整计划SHA/突变拒/零启动)
+python3 test_aa_cli.py               # 正式操作入口 56 案(四模式正反例/生产-dry-run 隔离/完整分母聚合)
 ```

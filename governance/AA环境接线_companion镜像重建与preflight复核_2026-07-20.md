@@ -248,3 +248,57 @@ preflight `pair_plan_frozen_fields_match=PASS` 机器判定,非人工声称。)
 - **以上全部=已施工+本地全绿,待 Codex 独立复验;复验通过前不称闭合。**
 - A/A 尚不具备启动资格。启动资格=Codex 复验通过+负责人明确启动指令+负责人产生的
   真实 approval artifact+经 aa_cli --execute 全链过门。
+
+## 7. 三次补正记录(2026-07-20,Codex 四验:验收出口与测试后门)
+
+### 7.1 被击穿的缺陷(VERIFIED_FAIL,Codex 在 52be1fa 现场复现)
+
+1. **aggregate 空分母通过**:对只有 aa_plan、零 attempt 的目录执行
+   `aa_cli --aggregate` → eligible=[] rejected=[] **rc=0**。旧实现只以
+   "rejected 非空"为失败条件——零次实验可聚合成功,验收出口失真。
+2. **fixture 审批后门**:生产 `--execute` 接受 `--allow-fixture-approval`,
+   fixture 审批可进真实链。
+3. **测试覆盖 env 可进真实 execute**:NAVLAB_SIM_CMD/WP303_TELEMETRY_CMD/
+   fixture backend 等能把真实链偷换成 dry-run。
+4. **授权措辞越界**:approval JSON 的 approved_by 任何人可写,此前措辞暗示
+   "不可伪造授权"——不成立。
+
+### 7.2 三次补正实现(五包,同日)
+
+- **包一 aggregate=完整分母验收**:成功必须同时满足——冻结计划可解析+schema 过;
+  launch_record 在且 record_class=ACCEPTANCE_CANDIDATE、producer_started=1、无
+  stopped_on_failure、无 NOT_STARTED、四 attempt rc 全 0;attempts 目录恰好 4 个
+  且与计划 run_id 一一对应(缺/多/重复/计划外全拒);模式序=OFF,OFF,ON,ON;每
+  attempt 有 aa_identity+task_record+monitor_status+batch_final+runs/run_1(终态
+  证据),身份的 batch/run/mode/config_hash/runtime_plan_hash/approval_sha256 与
+  计划及 launch_record 全链一致,task_record.batch_id 与身份对应;rejected 必须
+  为空。输出显式含 attempts_expected=4/attempts_observed/attempts_terminal/
+  off_observed/on_observed/eligible_count/rejected_count/acceptance_eligible。
+  任一不满足 → rc=1。
+- **包二 移除 fixture 后门**:`--allow-fixture-approval` 从 CLI 删除(传入=rc=2);
+  生产 execute 恒 allow_fixture=False(源码断言入测试),fixture_test_only 审批
+  → producer=0;fixture 审批/attempt 被 aggregate 永久拒。
+- **包三 env 隔离+独立 dry-run**:execute 启动前拒 NAVLAB_SIM_CMD/
+  WP303_TELEMETRY_CMD/WP303_TELEMETRY_FIXTURE_INPUT/WP303_TELEMETRY_REGISTRY_WAIT/
+  WP303_TELEMETRY_BACKEND=fixture(拒绝原因逐个点名,producer=0);新增
+  `--dry-run`:强制 fixture 审批(真实审批不得被 dry-run 冒用)、record_class=
+  NON_ACCEPTANCE_FIXTURE、身份永久标 non_acceptance_fixture、acceptance_eligible
+  恒 false、被正式 aggregate 永久拒。"execute+环境变量偷跑 dry-run"路径已死。
+- **包四 授权绑整计划 SHA+措辞降级**:validate-only 输出 frozen_plan_sha256
+  (负责人启动指令必须引用);approval 增绑该值,execute 重算审批文件 hash 与
+  整计划 canonical 字节 hash——计划任何字节变化后旧 approval 立即失效(测试:改
+  一个字段→approval_frozen_plan_sha_mismatch→producer=0)。授权门正名=
+  **具名计划的操作防误触门**:防误触发/防旧计划启动,**不验证审批者身份、不抗
+  恶意伪造**;若需身份验证须另行引入可信签名或外部批准源。
+- **包五 反例固化**:零/1/3/5 attempt、模式数错、run_id 重复/错位、计划外 run、
+  NOT_STARTED、缺 task_record/monitor/final、身份-task_record batch 不一致、
+  approval sha 不一致、fixture 审批进生产 execute、五种测试 env 进生产 execute、
+  dry-run 产物进正式 aggregate——全部 producer=0 或 aggregate rc=1,已入正式
+  回归(test_aa_cli 56 案/test_aa_launch 52 案)。
+
+### 7.3 当前诚实状态
+
+- 正式 A/A CLI 已接 batch_lifecycle;aggregate 空分母与测试覆盖隔离被 Codex
+  击穿后已补正;**验收出口尚未闭合(待 Codex 独立复验)**;A/A 不具备启动资格。
+- 聚合正例的现场为测试**构造**的合规目录(黑盒验收);它证明验收逻辑,不证明
+  真实实验——真实 4/4 记录只能来自负责人授权后的真实 execute。

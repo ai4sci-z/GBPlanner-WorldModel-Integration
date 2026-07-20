@@ -29,15 +29,22 @@ wm@9a1ce95 推 backup);sidecar live 身份消费就绪;FUTURE_CANDIDATE=9a1ce95(
 一次补正(hash/digest schema+物化独立重算)后,**Codex 三验再击穿(VERIFIED_FAIL)**:
 aa_launch 库函数正确但**无 CLI、无生产调用方=测试孤岛**,真实入口 run_batch→
 batch_lifecycle 完全绕过真实性门;且负责人停点只是文档规则非机器规则。
-③二次补正令五包已施工(2026-07-20):**aa_cli.py=A/A 具名正式操作入口**(--help/
---validate-only/--execute/--aggregate;坏参 rc=2;validate 绝不启动);execute=
-物化→真 hash→docker 真 digest→冻结计划→preflight→**负责人启动授权 approval
-artifact 机器门(库层 keyword-only 必填)**→hash/digest/HEAD/dirty 复核→**正式
-batch_lifecycle.py launch**×4(OFF,OFF,ON,ON,每 attempt 盖 aa_identity 计划身份,
-任一失败停,分母保留);聚合器拒绝直接 run_batch 记录(不入 A/A 分母);Codex 两
-绕过反例已固化为回归+生产调用链断言。测试 50(launch 库层)+66(CLI)案全绿。
-**状态=局部门+正式入口接线已施工,待 Codex 独立复验;A/A 尚不具备启动资格。**
-击穿与补正记录=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§6。
+③二次补正(aa_cli 正式入口接 batch_lifecycle 链+授权机器门)后,**Codex 四验再击穿
+(VERIFIED_FAIL)**:aggregate 空分母 rc=0(零次实验聚合成功=验收出口失真)+fixture
+审批与测试覆盖 env(NAVLAB_SIM_CMD 等)可进生产 execute。
+④三次补正令五包已施工(2026-07-20):aggregate 重写为**完整分母验收**(冻结计划
+schema/launch_record 必在且 producer_started=1/恰好 4 attempt 与计划一一对应/
+模式序 OFF,OFF,ON,ON/每 attempt 身份+task_record+monitor+final 终态齐+双向 hash
+一致/禁 NOT_STARTED/rejected 必须空;输出 attempts_expected=4 等完整分母字段;
+零/缺/多/乱序/失败均 rc=1);生产 execute **删除 --allow-fixture-approval 后门**
+(fixture 审批一律拒)+启动前拒全部测试覆盖 env;新增独立 `--dry-run`(强制 fixture
+审批,产物永久标 NON_ACCEPTANCE_FIXTURE,被正式 aggregate 永久拒,不是真实 A/A);
+approval 增绑**整计划 frozen_plan_sha256**(validate 输出该 SHA 供负责人指令引用;
+计划任何字节变化旧审批立即失效)——授权门性质=**具名计划的操作防误触门,非身份
+认证,不抗恶意伪造**。测试 52(库层)+56(CLI,含 18 项聚合/隔离反例)案全绿。
+**当前事实:正式 A/A CLI 已接 batch_lifecycle;aggregate 空分母与测试覆盖隔离
+被 Codex 击穿后已补正,验收出口尚未闭合(待 Codex 独立复验);A/A 不具备启动资格。**
+击穿与补正记录=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§7。
 P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
 
 ## 三、三仓基线
