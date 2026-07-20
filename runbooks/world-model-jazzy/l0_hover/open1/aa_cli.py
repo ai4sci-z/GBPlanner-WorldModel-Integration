@@ -302,6 +302,59 @@ def cmd_dry_run(a):
     return _launch_chain(a, dry_run=True)
 
 
+# ---- 终态语义验证器(五验补正;权威契约=batch_lifecycle 写入点,见证据文档 §8.2) ----
+MONITOR_PRODUCER_OUTCOMES = ("SUCCEEDED", "FAILED", "TIMED_OUT", "CRASHED", "CANCELLED")
+MONITOR_EVIDENCE_STATUSES = ("COMPLETE", "INCOMPLETE")
+MONITOR_CLEANUP_STATUSES = ("CLEAN", "RESIDUAL", "NOT_ATTEMPTED", "REFUSED")
+
+
+def validate_monitor_terminal(mon, want_bid, mode):
+    """monitor_status 三轴终态语义门。返回具体拒绝原因列表(空=三轴合格)。
+    只有 producer=SUCCEEDED ∧ evidence=COMPLETE ∧ cleanup=CLEAN 且身份/模式/
+    run_rc_map 全合法才算 A/A 合格终态;表示层可解析≠语义有效。"""
+    reasons = []
+    if not isinstance(mon, dict) or not mon:
+        return ["monitor_not_object_or_empty"]
+    if mon.get("schema_version") != 1:
+        reasons.append(f"monitor_schema_version_invalid:{mon.get('schema_version')!r}")
+    if mon.get("batch_id") != want_bid:
+        reasons.append("monitor_batch_id_mismatch(陈旧复制/他批产物)")
+    if mon.get("readonly") is not False:
+        reasons.append("monitor_readonly_or_missing_flag")
+    po = mon.get("producer_outcome")
+    if po not in MONITOR_PRODUCER_OUTCOMES:
+        reasons.append(f"monitor_producer_outcome_invalid:{po!r}")
+    elif po != "SUCCEEDED":
+        reasons.append(f"process_axis_not_succeeded:{po}")
+    ev = mon.get("evidence_status")
+    if ev not in MONITOR_EVIDENCE_STATUSES:
+        reasons.append(f"monitor_evidence_status_invalid:{ev!r}")
+    elif ev != "COMPLETE":
+        reasons.append(f"evidence_axis_not_complete:{ev}"
+                       f"(missing={mon.get('evidence_missing')!r})")
+    cl = mon.get("cleanup_status")
+    if cl not in MONITOR_CLEANUP_STATUSES:
+        reasons.append(f"monitor_cleanup_status_invalid:{cl!r}")
+    elif cl != "CLEAN":
+        reasons.append(f"finalization_axis_not_clean:{cl}")
+    rrm = mon.get("run_rc_map")
+    if not isinstance(rrm, dict) or set(rrm.keys()) != {"1"} or any(
+            v != 0 for v in rrm.values()):
+        reasons.append(f"monitor_run_rc_map_invalid:{rrm!r}")
+    ts = mon.get("telemetry_status")
+    if not isinstance(ts, dict) or "enabled" not in ts:
+        reasons.append("monitor_telemetry_status_missing")
+    else:
+        if bool(ts.get("enabled")) != (mode == "ON"):
+            reasons.append("monitor_telemetry_enabled_mismatch_mode")
+        if mode == "ON" and bool(ts.get("enabled")):
+            if ts.get("process_state") != "EXITED_ZERO":
+                reasons.append(f"sidecar_process_not_exited_zero:{ts.get('process_state')!r}")
+            if ts.get("sidecar_rc") != 0:
+                reasons.append(f"sidecar_rc_nonzero:{ts.get('sidecar_rc')!r}")
+    return reasons
+
+
 def _plan_schema_ok(plan):
     try:
         return (isinstance(plan.get("execution_order"), list)
@@ -429,35 +482,55 @@ def cmd_aggregate(a):
             reasons.append("identity_batch_mismatch_launch_record")
         if approval_sha is None or ident.get("approval_sha256") != approval_sha:
             reasons.append("identity_approval_sha_mismatch")
+        want_bid = f"{ident.get('aa_batch_id')}.{rid}.{ident.get('telemetry_mode')}"
+        mode = ident.get("telemetry_mode")
+        axes = {"process": "UNKNOWN", "evidence": "UNKNOWN", "finalization": "UNKNOWN"}
         tr_p = os.path.join(d, "task_record.json")
         if not os.path.isfile(tr_p):
             reasons.append("no_batch_lifecycle_task_record")
         else:
             try:
                 tr = json.load(open(tr_p, encoding="utf-8"))
-                want_bid = f"{ident.get('aa_batch_id')}.{rid}.{ident.get('telemetry_mode')}"
                 if tr.get("batch_id") != want_bid:
                     reasons.append("task_record_batch_id_mismatch_identity")
-                # 模式证据双源一致:task_record 的 telemetry.enabled 必须与 identity
-                # 的 mode 一致(缺失=证据不完整,同拒)
                 tel = tr.get("telemetry")
                 if not isinstance(tel, dict) or "enabled" not in tel:
                     reasons.append("task_record_telemetry_evidence_missing")
-                elif bool(tel["enabled"]) != (ident.get("telemetry_mode") == "ON"):
+                elif bool(tel["enabled"]) != (mode == "ON"):
                     reasons.append("task_record_telemetry_mismatch_identity")
             except (OSError, ValueError):
                 reasons.append("task_record_unparsable")
-        # 终态 required evidence:存在且可解析且通过 schema(损坏/半写/失败 rc 同拒)
+        # 半写现场:atomic_write 的 .tmp 残留 → 拒
+        tmps = [f for f in os.listdir(d) if f.endswith(".tmp")]
+        if tmps:
+            reasons.append(f"half_written_tmp_residue:{tmps[:2]}")
+        # monitor_status = 三轴终态唯一权威(表示层可解析≠语义有效,五验补正)
         terminal = True
         ms_p = os.path.join(d, "monitor_status.json")
+        mon = None
         try:
-            json.load(open(ms_p, encoding="utf-8"))
+            mon = json.load(open(ms_p, encoding="utf-8"))
         except (OSError, ValueError):
             terminal = False
             reasons.append("monitor_status_missing_or_corrupt")
+        if mon is not None:
+            mon_reasons = validate_monitor_terminal(mon, want_bid, mode)
+            if mon_reasons:
+                terminal = False
+                reasons += mon_reasons
+            if isinstance(mon, dict):
+                po = mon.get("producer_outcome")
+                axes["process"] = po if po in MONITOR_PRODUCER_OUTCOMES else "INVALID"
+                ev = mon.get("evidence_status")
+                axes["evidence"] = ev if ev in MONITOR_EVIDENCE_STATUSES else "INVALID"
+                cl = mon.get("cleanup_status")
+                axes["finalization"] = cl if cl in MONITOR_CLEANUP_STATUSES else "INVALID"
         bf_p = os.path.join(d, "batch_final.json")
         try:
             bf = json.load(open(bf_p, encoding="utf-8"))
+            if bf.get("schema_version") != 1 or bf.get("batch_id") != want_bid:
+                terminal = False
+                reasons.append("batch_final_schema_or_batch_id_invalid")
             if bf.get("final") != "done":
                 terminal = False
                 reasons.append("batch_final_not_done")
@@ -465,15 +538,35 @@ def cmd_aggregate(a):
             if not isinstance(rrm, dict) or not rrm or any(v != 0 for v in rrm.values()):
                 terminal = False
                 reasons.append("batch_final_run_rc_map_invalid_or_nonzero")
+            elif isinstance(mon, dict) and mon.get("run_rc_map") != rrm:
+                terminal = False
+                reasons.append("monitor_final_run_rc_map_inconsistent")
         except (OSError, ValueError):
             terminal = False
             reasons.append("batch_final_missing_or_corrupt")
         r1_p = os.path.join(d, "runs", "run_1.json")
         try:
             r1 = json.load(open(r1_p, encoding="utf-8"))
+            if (r1.get("schema_version") != 1 or r1.get("batch_id") != want_bid
+                    or r1.get("run_index") != 1):
+                terminal = False
+                reasons.append("run_record_schema_or_identity_invalid")
             if r1.get("rc") != 0:
                 terminal = False
                 reasons.append("run_record_rc_nonzero")
+            if not (isinstance(r1.get("start"), str) and isinstance(r1.get("end"), str)
+                    and r1["end"] >= r1["start"]):
+                terminal = False
+                reasons.append("run_record_time_invalid")
+            # 时间闭包:终态(monitor)不得早于 run 结束落盘(陈旧/伪造终态;
+            # mtime 为文件系统证据,1s 容差)
+            try:
+                if os.path.getmtime(ms_p) + 1.0 < os.path.getmtime(r1_p):
+                    terminal = False
+                    reasons.append("monitor_terminal_predates_run_end(mtime)")
+            except OSError:
+                terminal = False
+                reasons.append("terminal_mtime_unreadable")
         except (OSError, ValueError):
             terminal = False
             reasons.append("run_record_missing_or_corrupt")
@@ -483,11 +576,13 @@ def cmd_aggregate(a):
         if not la or la.get("rc") != 0:
             reasons.append("launch_record_attempt_missing_or_failed")
         if reasons:
-            rejected.append({"dir": name, "reason": ";".join(reasons)})
+            rejected.append({"dir": name, "reason": ";".join(reasons),
+                             "axes": axes, "terminal": terminal})
             continue
         seen_rids.add(rid)
         eligible.append({"dir": name, "run_id": rid,
-                         "telemetry_mode": ident["telemetry_mode"]})
+                         "telemetry_mode": ident["telemetry_mode"],
+                         "axes": axes, "terminal": terminal})
 
     eligible.sort(key=lambda e: plan["execution_order"].index(e["run_id"]))
     obs = [e["telemetry_mode"] for e in eligible]
