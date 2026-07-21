@@ -422,3 +422,15 @@ deep evidence 联动检查」小前置包在 A 完成后立即执行,供 OPEN-1 
 validate-only 产出 frozen_plan_sha256 → 负责人明确批准该 SHA → 落盘真实 approval
 → aa_cli --execute。结论边界预登记:本次 A/A 结论仅允许"sidecar 在候选基线
 未/有观察到不可接受扰动",不得升级为长稳/10-10/真实 telemetry 证据已验证。
+
+### 8.8 负责人裁决更新(2026-07-21,替代 §8.7 顺序):先 B 后 A
+
+负责人改令:**先补「ON 臂 sidecar deep evidence 联动检查」小前置包,再跑受控 A/A**
+——先堵住"ON 开了但没证据也算可判读"的最后一个洞,避免 A/A 跑完卡在"数据到底能
+不能用"。B 包已实现(commit 见上):窄目标=A/A aggregate 不重造五层证据门,只要求
+ON 臂 sidecar final 存在+可解析+evidence_state=COMPLETE+finalization_state=WRITTEN
++绑定本 attempt+与 monitor 分录一致;OFF 臂不要求。S1-S8 反例先红后绿(旧 rc=0
+红案输出=scratchpad/red_deep_evidence.txt)。
+**受控 A/A 完成条件(负责人定义,预登记)**:不是"全部成功",而是①四次 attempt 全部
+入分母;②OFF/ON 可比较(配对契约);③ON 臂未显示 sidecar 扰动;④证据足以继续
+定位 OPEN-1。
