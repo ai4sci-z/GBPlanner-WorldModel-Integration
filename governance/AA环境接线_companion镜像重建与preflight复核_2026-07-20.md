@@ -456,6 +456,8 @@ ON 臂 sidecar final 存在+可解析+evidence_state=COMPLETE+finalization_state
 
 ### 8.10 AA002 结果(2026-07-21):INVALID_OBSERVATION(观测参数未生效,执行者主动取消)
 
+> P00.2 更正(2026-07-22):此前口头报告曾含"零代码修改"类措辞——不准。本轮实际含管理仓 `l2_batch.sh` 的 NAVLAB_SIM_EXTRA_ARGS 透传改动(默认空值,先红后绿,commit 70a842d);它不是 world-model 生产控制逻辑改动,但不是零代码修改。AA002 定性=INVALID_OBSERVATION:参数未进真实 mav.parm,不产生 A/A 扰动结论,也不产生 LOG_DISARMED 失败臂内部证据。
+
 - 启动链全过(负责人批准 frozen_plan_sha=7621f86f…402a;main@70a842d 含 l2_batch
   NAVLAB_SIM_EXTRA_ARGS 透传行,先红后绿)。
 - **分母(全入册)**:aa-r1_OFF rc=0 ✅ / aa-r3_OFF rc=0 ✅(本批 OFF×2 全过——与 AA001
@@ -470,7 +472,7 @@ ON 臂 sidecar final 存在+可解析+evidence_state=COMPLETE+finalization_state
   写 runtime 生成的 `gazebo-iris-rangefinder.parm`(runtime_plan 实证);config.toml
   `[sitl] extra_args` 的 defaults 非该任务参数来源。**不修改 wm 无法注入
   LOG_DISARMED。**
-- 残留处置:CANCEL 后容器归属按契约 NOT_ATTEMPTED,15 容器由执行者 docker stop 清零。
+- 残留处置:CANCEL 后容器归属按契约 NOT_ATTEMPTED,15 个运行中容器由执行者 docker stop 停止(**运行中容器=0;exited 容器保留未删除**,2026-07-22 冻结实测 exited=17)。~~清零~~措辞不准(P00.2 更正:停止≠删除)。
 - **待负责人裁决(AA003 前置)**:
   B1=wm 授权最小 commit(`navlab-sitl-external-nav.parm` 追加一行 `LOG_DISARMED,1`;
   连带:wm HEAD 前移→FUTURE_CANDIDATE 注册表更新+companion 镜像重建+全新计划/审批);
