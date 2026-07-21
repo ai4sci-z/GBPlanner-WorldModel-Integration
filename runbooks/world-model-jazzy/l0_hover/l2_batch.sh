@@ -9,8 +9,11 @@ RUNS=${RUNS:-3}
 DURATION_SEC=${DURATION_SEC:-1500}
 run_cmd() {
   if [ -n "${NAVLAB_SIM_CMD:-}" ]; then ( eval "$NAVLAB_SIM_CMD" ); return $?; fi
+  # NAVLAB_SIM_EXTRA_ARGS:默认空=行为不变;AA002 负责人批准的观测通道
+  # (传 --config <定制编排配置>,例如 LOG_DISARMED=1 的 sitl defaults;见
+  # open1/AA001_r3_定向分析 §4 与 AA002 计划)。值须无空格路径。
   ( cd "$WM/orchestration/sim" &&
-    go run ./cmd/navlab-sim run hover --duration-sec "$DURATION_SEC" )
+    go run ./cmd/navlab-sim ${NAVLAB_SIM_EXTRA_ARGS:-} run hover --duration-sec "$DURATION_SEC" )
 }
 bc_init "l2_default-mainline" || exit $?
 for i in $(seq 1 "$RUNS"); do
