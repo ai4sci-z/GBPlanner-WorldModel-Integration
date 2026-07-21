@@ -35,6 +35,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, L0_HOVER)
 import aa_launch as L  # noqa: E402
 import aa_preflight as PF  # noqa: E402
+import telemetry_contract as TC  # noqa: E402
 
 BATCH_LIFECYCLE = os.path.join(L0_HOVER, "batch_lifecycle.py")
 PRODUCER_SCRIPTS = {"l2": "l2_batch.sh", "l2fix": "l2fix_batch.sh", "l15": "l15_batch.sh"}
@@ -352,6 +353,43 @@ def validate_monitor_terminal(mon, want_bid, mode):
                 reasons.append(f"sidecar_process_not_exited_zero:{ts.get('process_state')!r}")
             if ts.get("sidecar_rc") != 0:
                 reasons.append(f"sidecar_rc_nonzero:{ts.get('sidecar_rc')!r}")
+            # B 包(负责人 2026-07-21 裁决):ON 开了但没证据≠可判读。monitor 分录
+            # (来源=batch_lifecycle._telemetry_evidence_states 读 sidecar final)
+            # 必须 COMPLETE/WRITTEN;UNKNOWN/MISSING/CORRUPT 一律不入 A/A 分母。
+            if ts.get("evidence_state") != "COMPLETE":
+                reasons.append(f"sidecar_evidence_not_complete:{ts.get('evidence_state')!r}")
+            if ts.get("finalization_state") != "WRITTEN":
+                reasons.append(f"sidecar_finalization_not_written:{ts.get('finalization_state')!r}")
+    return reasons
+
+
+def validate_sidecar_final(att_dir, want_bid, mon):
+    """ON 臂 sidecar deep evidence 联动检查(文件级;OFF 臂不适用)。
+    权威=<attempt_root>/telemetry/sidecar_final_status.json(telemetry_sidecar
+    write_batch_final 写出;monitor 分录即派生于此)。缺失/损坏/evidence≠COMPLETE/
+    finalization≠WRITTEN/绑错 attempt/与 monitor 分录不一致 → 不合格。"""
+    reasons = []
+    sf_p = os.path.join(att_dir, "telemetry", "sidecar_final_status.json")
+    if not os.path.isfile(sf_p):
+        return ["sidecar_final_missing(ON 臂无 deep evidence 不可判读)"]
+    try:
+        sf = json.load(open(sf_p, encoding="utf-8"))
+    except (OSError, ValueError):
+        return ["sidecar_final_corrupt"]
+    if not isinstance(sf, dict):
+        return ["sidecar_final_not_object"]
+    if sf.get("schema_version") != TC.SCHEMA_VERSION:
+        reasons.append(f"sidecar_final_schema_version_invalid:{sf.get('schema_version')!r}")
+    if sf.get("batch_id") != want_bid:
+        reasons.append("sidecar_final_batch_id_mismatch(绑定到另一 attempt/批次)")
+    if sf.get("evidence_state") != "COMPLETE":
+        reasons.append(f"sidecar_final_evidence_not_complete:{sf.get('evidence_state')!r}")
+    if sf.get("finalization_state") != "WRITTEN":
+        reasons.append(f"sidecar_final_finalization_not_written:{sf.get('finalization_state')!r}")
+    ts = mon.get("telemetry_status") if isinstance(mon, dict) else None
+    if isinstance(ts, dict) and (ts.get("evidence_state") != sf.get("evidence_state")
+                                 or ts.get("finalization_state") != sf.get("finalization_state")):
+        reasons.append("sidecar_monitor_final_inconsistent")
     return reasons
 
 
@@ -518,6 +556,10 @@ def cmd_aggregate(a):
             if mon_reasons:
                 terminal = False
                 reasons += mon_reasons
+            if mode == "ON":
+                sf_reasons = validate_sidecar_final(d, want_bid, mon)
+                if sf_reasons:
+                    reasons += sf_reasons
             if isinstance(mon, dict):
                 po = mon.get("producer_outcome")
                 axes["process"] = po if po in MONITOR_PRODUCER_OUTCOMES else "INVALID"

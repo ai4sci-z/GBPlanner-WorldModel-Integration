@@ -253,16 +253,30 @@ ck("dry-run 产物进正式 aggregate → rc=1(NON_ACCEPTANCE_FIXTURE 永久拒)
 
 
 def real_monitor(bid_full, mode):
-    """按 batch_lifecycle 真实写出契约构造 monitor(源码 L547-556+真实 dry-run 样本;
-    expected 来源=生产者写入点,非被测 aggregate)。"""
+    """按 batch_lifecycle 真实写出契约构造 monitor(源码 L547-556+finalize_telemetry;
+    expected 来源=生产者写入点,非被测 aggregate)。B 包后:ON 臂 telemetry 分录须
+    COMPLETE/WRITTEN(旧 UNKNOWN/MISSING 现为 S 系列负例);OFF 臂=真实 OFF 形状。"""
+    if mode == "ON":
+        ts = {"enabled": True, "process_state": "EXITED_ZERO", "sidecar_rc": 0,
+              "evidence_state": "COMPLETE", "finalization_state": "WRITTEN"}
+    else:
+        ts = {"enabled": False, "process_state": "OFF", "sidecar_rc": None,
+              "evidence_state": "OFF", "finalization_state": "OFF"}
     return {"schema_version": 1, "batch_id": bid_full, "readonly": False,
             "producer_outcome": "SUCCEEDED", "evidence_status": "COMPLETE",
             "evidence_missing": None, "cleanup_status": "CLEAN",
             "container_cleanup": "NOT_ATTEMPTED", "run_rc_map": {"1": 0},
-            "telemetry_status": {"enabled": mode == "ON",
-                                 "process_state": "EXITED_ZERO", "sidecar_rc": 0,
-                                 "evidence_state": "UNKNOWN",
-                                 "finalization_state": "MISSING"}}
+            "telemetry_status": ts}
+
+
+def real_sidecar_final(bid_full, rid):
+    """按 telemetry_sidecar write_batch_final 真实契约构造(schema=wp304.telemetry.v1)。"""
+    return {"schema_version": "wp304.telemetry.v1", "batch_id": bid_full,
+            "run_ids_processed": [rid], "process_rc": 0,
+            "evidence_state": "COMPLETE", "finalization_state": "WRITTEN",
+            "failure_reasons": [], "attempts": [], "truncated": {},
+            "dropped_records": {}, "telemetry_overrun": False,
+            "business_outcome": "OK", "evidence_gate": {"status": "COMPLETE"}}
 
 
 def fabricate_acceptance_root():
@@ -310,6 +324,10 @@ def fabricate_acceptance_root():
              "run_rc_map": {"1": 0}}))
         open(os.path.join(d, "monitor_status.json"), "w").write(
             json.dumps(real_monitor(bidf, mode)))
+        if mode == "ON":
+            os.makedirs(os.path.join(d, "telemetry"))
+            open(os.path.join(d, "telemetry", "sidecar_final_status.json"), "w").write(
+                json.dumps(real_sidecar_final(bidf, r)))
     return root, plan, modes
 
 root_ok, plan_ok, modes_ok = fabricate_acceptance_root()
@@ -522,6 +540,49 @@ ck("正例逐 attempt 输出三轴",
    all(e.get("axes") == {"process": "SUCCEEDED", "evidence": "COMPLETE",
                          "finalization": "CLEAN"} for e in a["eligible"]), True)
 
+print("======== 06.6f B 包:ON 臂 sidecar deep evidence 联动(先红后绿)========")
+def sf_path(r, rid="aa-r2"):
+    return os.path.join(r, "attempts", f"{rid}_ON", "telemetry", "sidecar_final_status.json")
+
+def mon_tel(r, rid="aa-r2", **over):
+    p = mon_path(r, rid, "ON")
+    mon = json.load(open(p)); mon["telemetry_status"].update(over)
+    open(p, "w").write(json.dumps(mon))
+
+def sf_mut(r, rid="aa-r2", **over):
+    p = sf_path(r, rid)
+    sf = json.load(open(p)); sf.update(over); open(p, "w").write(json.dumps(sf))
+
+rc, a = mutated(lambda r, p, m: [
+    os.unlink(sf_path(r, rid)) or mon_tel(r, rid, evidence_state="UNKNOWN",
+                                          finalization_state="MISSING")
+    for rid in ("aa-r2", "aa-r4")])
+ck("S1 ON 开了但无 sidecar 证据(UNKNOWN/MISSING+无 final 文件) → rc=1(曾红:旧 rc=0)",
+   (rc, a["acceptance_eligible"],
+    any("sidecar_evidence_not_complete" in x["reason"] for x in a["rejected"])), (1, False, True))
+rc, a = mutated(lambda r, p, m: os.unlink(sf_path(r)))
+ck("S2 monitor 称 COMPLETE 但 final 文件缺失 → rc=1(交叉联动)",
+   (rc, any("sidecar_final_missing" in x["reason"] for x in a["rejected"])), (1, True))
+rc, a = mutated(lambda r, p, m: (sf_mut(r, evidence_state="INCOMPLETE"),
+                                 mon_tel(r, evidence_state="INCOMPLETE")))
+ck("S3 evidence_state=INCOMPLETE → rc=1", rc, 1)
+rc, a = mutated(lambda r, p, m: (sf_mut(r, finalization_state="MISSING"),
+                                 mon_tel(r, finalization_state="MISSING")))
+ck("S4 finalization_state≠WRITTEN → rc=1", rc, 1)
+rc, a = mutated(lambda r, p, m: open(sf_path(r), "w").write("{corrupt"))
+ck("S5 sidecar final 损坏 → rc=1",
+   (rc, any("sidecar_final_corrupt" in x["reason"] for x in a["rejected"])), (1, True))
+rc, a = mutated(lambda r, p, m: sf_mut(r, batch_id="aa_fab_1.aa-r4.ON"))
+ck("S6 sidecar final 绑定到另一 attempt → rc=1",
+   (rc, any("sidecar_final_batch_id_mismatch" in x["reason"] for x in a["rejected"])), (1, True))
+rc, a = mutated(lambda r, p, m: sf_mut(r, evidence_state="INCOMPLETE"))
+ck("S7 monitor 分录与 final 文件不一致 → rc=1",
+   (rc, any("inconsistent" in x["reason"] or "not_complete" in x["reason"]
+            for x in a["rejected"])), (1, True))
+rc, a = agg(fabricate_acceptance_root()[0])
+ck("S8 正例:ON 臂带完整 deep evidence、OFF 臂不要求 sidecar → rc=0",
+   (rc, a["acceptance_eligible"], a["eligible_count"]), (0, True, 4))
+
 print("======== 06.6e 正式生命周期正例(生产者-消费者同契约;P04.3)========")
 # 复制真实 dry-run 产物,仅去除 fixture 隔离标记(identity.non_acceptance_fixture/
 # record_class/approval_fixture 标志——只为证明"正式 batch_lifecycle 真实写出的
@@ -534,10 +595,24 @@ l["record_class"] = "ACCEPTANCE_CANDIDATE"
 l["gate"]["approval_fixture_test_only"] = False
 open(lp, "w").write(json.dumps(l))
 for x in l["attempts"]:
-    ip = os.path.join(root_lc, "attempts",
-                      f"{x['run_id']}_{x['telemetry_mode']}", "aa_identity.json")
+    d_lc = os.path.join(root_lc, "attempts", f"{x['run_id']}_{x['telemetry_mode']}")
+    ip = os.path.join(d_lc, "aa_identity.json")
     i = json.load(open(ip)); i["non_acceptance_fixture"] = False
     open(ip, "w").write(json.dumps(i))
+    if x["telemetry_mode"] == "ON":
+        # B 包注记:dry-run 的 WP303_TELEMETRY_CMD 官方覆盖不产 sidecar final
+        # (真实分录=UNKNOWN/MISSING,正确地不可判读)。此处嫁接契约级 ON 臂
+        # deep evidence(schema=telemetry_sidecar 写入点)仅为验证消费端契约;
+        # 真实 A/A 的该证据只能由真实 sidecar 产生。
+        bidf = json.load(open(os.path.join(d_lc, "task_record.json")))["batch_id"]
+        os.makedirs(os.path.join(d_lc, "telemetry"), exist_ok=True)
+        open(os.path.join(d_lc, "telemetry", "sidecar_final_status.json"), "w").write(
+            json.dumps(real_sidecar_final(bidf, x["run_id"])))
+        mp = os.path.join(d_lc, "monitor_status.json")
+        mon = json.load(open(mp))
+        mon["telemetry_status"].update({"evidence_state": "COMPLETE",
+                                        "finalization_state": "WRITTEN"})
+        open(mp, "w").write(json.dumps(mon))
 rc, a = agg(root_lc)
 ck("正式 batch_lifecycle 真实产物(仅去隔离标记)过 validator → rc=0",
    (rc, a["acceptance_eligible"], a["attempts_terminal"]), (0, True, 4))
