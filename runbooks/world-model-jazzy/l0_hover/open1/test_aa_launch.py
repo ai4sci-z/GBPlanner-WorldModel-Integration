@@ -20,7 +20,7 @@ import aa_preflight as PF  # noqa: E402
 
 FAIL = 0
 RAN = 0
-NEW = "9a1ce95c56e2901aad062e31c9d4a8006474b0fc"
+NEW = "6d412a11f152428b5e08e42e66c1583d4dce4219"
 WM_REPO = "/home/ai4s/projects/world-model"
 DIG = "sha256:" + "ab" * 32
 

@@ -24,7 +24,7 @@ FAIL = 0
 RAN = 0
 CLI = os.path.join(HERE, "aa_cli.py")
 WM_REPO = "/home/ai4s/projects/world-model"
-TAG = "jazzy-9a1ce95c56e2"
+TAG = "jazzy-6d412a11f152"
 
 
 def ck(name, got, want):
@@ -619,6 +619,81 @@ ck("正式 batch_lifecycle 真实产物(仅去隔离标记)过 validator → rc=
 ck("真实产物三轴=SUCCEEDED/COMPLETE/CLEAN",
    all(e["axes"] == {"process": "SUCCEEDED", "evidence": "COMPLETE",
                      "finalization": "CLEAN"} for e in a["eligible"]), True)
+
+print("======== 06.9 AA003 观测条件门(失败关闭;AA002 反例转绿)========")
+WM_PROFILE = os.path.join(WM_REPO, "docker/profiles/navlab-sitl-external-nav.parm")
+runtime_parms = sorted(__import__("glob").glob(
+    os.path.join(WM_REPO, "artifacts/sim/hover/*/runtime/config/gazebo-iris-rangefinder.parm")))
+RUNTIME_PARM = runtime_parms[-1] if runtime_parms else None
+ck("前置:存在真实生成链产物(P01.4 dry-run)", RUNTIME_PARM is not None, True)
+import hashlib as _hl
+RT_SHA = _hl.sha256(open(RUNTIME_PARM, "rb").read()).hexdigest() if RUNTIME_PARM else ""
+
+def obs_inputs(d, **cfg_over):
+    c = {"task_id": "hover", "map_id": "iris_maze", "timeout_sec": 1500,
+         "ros_domain_id": "7", "telemetry_arms": ["OFF", "OFF", "ON", "ON"],
+         "ardupilot_params_delta": {"LOG_DISARMED": 1},
+         "observation_evidence": {"source_profile": WM_PROFILE,
+                                  "runtime_generated_parm": RUNTIME_PARM,
+                                  "runtime_parm_sha256": RT_SHA}}
+    c.update(cfg_over)
+    cp_ = os.path.join(d, "c.json"); open(cp_, "w").write(json.dumps(c))
+    rp_ = os.path.join(d, "r.json")
+    open(rp_, "w").write(json.dumps(
+        {"services": ["companion"], "companion_image": f"navlab/companion:{TAG}"}))
+    return cp_, rp_
+
+def obs_validate(**cfg_over):
+    d = tempfile.mkdtemp(prefix="aaobs_")
+    c_, r_ = obs_inputs(d, **cfg_over)
+    root = os.path.join(d, "root")
+    cp = cli(["--validate-only", "--config", c_, "--runtime-plan", r_,
+              "--artifact-root", root, "--companion-tag", TAG, "--main-repo", mainfx])
+    return cp.returncode, json.loads(cp.stdout)
+
+rc, out = obs_validate()
+ck("完整观测证据(真实 profile+真实 dry-run 产物+真 sha) → READY rc=0",
+   (rc, out["preflight_status"]), (0, "READY"))
+rc, out = obs_validate(observation_evidence=None)
+ck("声称 LOG_DISARMED=1 但无 evidence → BLOCKED rc=1(AA002 错误不复发)",
+   (rc, out["preflight_status"],
+    any("observation_evidence_missing" in f for f in out["failed_checks"])), (1, "BLOCKED", True))
+bad_parm = tempfile.mktemp(suffix=".parm")
+open(bad_parm, "w").write("LOG_DISARMED 0\n")
+rc, out = obs_validate(observation_evidence={
+    "source_profile": WM_PROFILE, "runtime_generated_parm": bad_parm,
+    "runtime_parm_sha256": _hl.sha256(open(bad_parm, "rb").read()).hexdigest()})
+ck("runtime 产物 LOG_DISARMED=0(AA002 原始反例) → 拒",
+   (rc, any("log_disarmed_value" in f for f in out["failed_checks"])), (1, True))
+rc, out = obs_validate(observation_evidence={
+    "source_profile": WM_PROFILE, "runtime_generated_parm": "/nonexistent.parm",
+    "runtime_parm_sha256": "00" * 32})
+ck("runtime 产物缺失(只在计划里有) → 拒",
+   (rc, any("runtime_parm_unreadable" in f for f in out["failed_checks"])), (1, True))
+rc, out = obs_validate(observation_evidence={
+    "source_profile": WM_PROFILE, "runtime_generated_parm": RUNTIME_PARM,
+    "runtime_parm_sha256": "ee" * 32})
+ck("runtime 产物 sha 与声明不符 → 拒",
+   (rc, any("runtime_parm_sha_mismatch" in f for f in out["failed_checks"])), (1, True))
+dup_parm = tempfile.mktemp(suffix=".parm")
+open(dup_parm, "w").write("LOG_DISARMED 1\nLOG_DISARMED 0\n")
+rc, out = obs_validate(observation_evidence={
+    "source_profile": WM_PROFILE, "runtime_generated_parm": dup_parm,
+    "runtime_parm_sha256": _hl.sha256(open(dup_parm, "rb").read()).hexdigest()})
+ck("runtime 产物重复矛盾 → 拒",
+   (rc, any("log_disarmed_duplicate" in f for f in out["failed_checks"])), (1, True))
+rc, out = obs_validate(ardupilot_params_delta=None, observation_evidence=None)
+ck("不声称观测参数 → 门不适用(既有链不受影响)", (rc, out["preflight_status"]), (0, "READY"))
+d = tempfile.mkdtemp(prefix="aaobs_x_")
+c_, r_ = obs_inputs(d, observation_evidence=None)
+root_ox = os.path.join(d, "root")
+cp = cli(["--execute", "--config", c_, "--runtime-plan", r_, "--artifact-root", root_ox,
+          "--companion-tag", TAG, "--main-repo", mainfx] + DRY_BUDGETS)
+rec_ox = json.load(open(os.path.join(root_ox, "aa_plan", "launch_record.json")))
+ck("execute 链同门:声称无证据 → producer=0",
+   (cp.returncode, rec_ox["producer_started"],
+    any("observation_evidence_missing" in r for r in rec_ox["gate"]["refusal_reasons"])),
+   (1, 0, True))
 
 print("======== 06.7 生产代码调用链断言 ========")
 cli_src = open(CLI).read()

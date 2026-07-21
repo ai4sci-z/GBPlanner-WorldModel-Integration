@@ -53,6 +53,58 @@ class UsageError(Exception):
     pass
 
 
+def observation_gate(cfg):
+    """AA003 观测条件门(P03.2,失败关闭;AA002 教训:计划声称≠runtime 生效)。
+    canonical config 声称 ardupilot_params_delta.LOG_DISARMED==1 时,必须提供并
+    通过 observation_evidence:①源 profile(wm 仓)含唯一有效 LOG_DISARMED 1;
+    ②真实生成链产物(runtime parm)存在、含唯一有效 LOG_DISARMED 1、且 sha256 与
+    声明一致。缺失/值0/重复矛盾/只在计划里有→返回具体拒因(非空=不得 READY)。
+    不声称 LOG_DISARMED 时本门不适用(返回空)。"""
+    delta = cfg.get("ardupilot_params_delta") or {}
+    if delta.get("LOG_DISARMED") != 1:
+        return []
+    reasons = []
+    ev = cfg.get("observation_evidence")
+    if not isinstance(ev, dict):
+        return ["observation_evidence_missing(声称 LOG_DISARMED=1 但无生效证据)"]
+
+    def parm_ok(path, label):
+        try:
+            lines = open(path, encoding="utf-8").read().splitlines()
+        except OSError:
+            reasons.append(f"{label}_unreadable:{path}")
+            return
+        hits = []
+        for ln in lines:
+            f = ln.split()
+            if f and not f[0].startswith("#") and f[0] == "LOG_DISARMED":
+                hits.append(f[1] if len(f) > 1 else None)
+        if not hits:
+            reasons.append(f"{label}_log_disarmed_missing(计划声称但产物没有=AA002 反例)")
+        elif len(hits) > 1:
+            reasons.append(f"{label}_log_disarmed_duplicate:{hits}")
+        elif hits[0] != "1":
+            reasons.append(f"{label}_log_disarmed_value:{hits[0]!r}(必须 1)")
+
+    sp = ev.get("source_profile")
+    if not sp:
+        reasons.append("observation_source_profile_missing")
+    else:
+        parm_ok(sp, "source_profile")
+    rp = ev.get("runtime_generated_parm")
+    if not rp:
+        reasons.append("observation_runtime_parm_missing(必须走真实生成链,不得只 grep 源)")
+    else:
+        parm_ok(rp, "runtime_parm")
+        want = ev.get("runtime_parm_sha256")
+        if rp and isinstance(rp, str) and os.path.isfile(rp):
+            actual = PF._sha256_file(rp)
+            if actual != want:
+                reasons.append(f"runtime_parm_sha_mismatch(declared={str(want)[:12]} "
+                               f"actual={actual[:12]})")
+    return reasons
+
+
 def _run(argv, timeout=30):
     return subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
 
@@ -208,6 +260,13 @@ def make_official_producer(a, root, plan, aa_batch_id, approval_path, record,
 def cmd_validate(a):
     root, plan_dir, plan, _ = materialize_and_plan(a)
     pf = PF.run_preflight(plan, a.main_repo, a.wm_repo)
+    obs = observation_gate(json.load(open(os.path.join(plan_dir, "aa_config.json"),
+                                          encoding="utf-8")))
+    if obs:
+        # 观测条件门失败关闭:声称的观测参数未在真实生成产物中生效 → 不得 READY
+        pf["preflight_status"] = "BLOCKED"
+        pf["acceptance_eligible"] = False
+        pf["failed_checks"] = list(pf["failed_checks"]) + obs
     out = a.preflight_out or os.path.join(plan_dir, "preflight.json")
     L.atomic_write(out, json.dumps(pf, ensure_ascii=False, sort_keys=True, indent=1).encode())
     print(json.dumps({"mode": "validate-only", "preflight_status": pf["preflight_status"],
@@ -246,6 +305,9 @@ def _launch_chain(a, dry_run):
         print(json.dumps(record, ensure_ascii=False, sort_keys=True, indent=1))
         return rc
 
+    obs = observation_gate(json.load(open(os.path.join(plan_dir, "aa_config.json"),
+                                          encoding="utf-8")))
+    refusals += obs
     if refusals:
         record["gate"] = {"producer_started": 0, "refusal_reasons": refusals}
         record["producer_started"] = 0

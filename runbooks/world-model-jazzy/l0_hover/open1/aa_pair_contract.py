@@ -14,14 +14,17 @@ BASELINE_CLASSES = {
         "note": "不得与未来材料合并统计",
     },
     "FUTURE_CANDIDATE": {
-        # 2026-07-20 显式更新(非静默):负责人批准的 AA-PF-02 上游契约把候选链推进到
-        # 750032a→0a5c153→9a1ce95(service_handles 发布);live 容器身份依赖此契约,
-        # 故 A/A 候选基线=9a1ce95。
-        "world_model_commit": "9a1ce95c56e2901aad062e31c9d4a8006474b0fc",
-        "purpose": "B23/B22/OPEN-2 修复 + service_handles 契约后的候选材料",
+        # 2026-07-22 显式前移(非静默,负责人 B1 裁决):9a1ce95→6d412a11
+        # (docker/profiles/navlab-sitl-external-nav.parm 追加 LOG_DISARMED 1)。
+        # **B1 是观测条件改动(未 arm 也落 BIN),不是飞行稳定修复——不得据此写
+        # OPEN-1 已解。**历史链:750032a→0a5c153→9a1ce95(service_handles 契约)
+        # →6d412a11(观测)。
+        "world_model_commit": "6d412a11f152428b5e08e42e66c1583d4dce4219",
+        "purpose": "B23/B22/OPEN-2 修复 + service_handles 契约 + LOG_DISARMED 观测的候选材料",
         "known_baseline_defects": [],
         "note": "仅 fixture/单测层;未经真实仿真不得称'已验证新基线';"
-                "companion 镜像须按 jazzy-9a1ce95c56e2 重建后方可真实运行",
+                "companion 镜像须按 jazzy-6d412a11f152 重建后方可真实运行;"
+                "OPEN-1 仍 UNKNOWN,候选链未 CONFIRMED",
     },
 }
 
