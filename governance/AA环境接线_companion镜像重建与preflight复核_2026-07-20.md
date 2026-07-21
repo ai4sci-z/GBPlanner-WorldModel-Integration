@@ -453,3 +453,27 @@ ON 臂 sidecar final 存在+可解析+evidence_state=COMPLETE+finalization_state
 - **待负责人裁决(下一步)**:①直接重跑 AA002(接受 OPEN-1 背景失败率,攒 4/4);
   ②先对 aa-r3 失败做 OPEN-1 定向分析(tlog+blocker 时间线,E0 提取器离线)再重跑;
   ③其他。
+
+### 8.10 AA002 结果(2026-07-21):INVALID_OBSERVATION(观测参数未生效,执行者主动取消)
+
+- 启动链全过(负责人批准 frozen_plan_sha=7621f86f…402a;main@70a842d 含 l2_batch
+  NAVLAB_SIM_EXTRA_ARGS 透传行,先红后绿)。
+- **分母(全入册)**:aa-r1_OFF rc=0 ✅ / aa-r3_OFF rc=0 ✅(本批 OFF×2 全过——与 AA001
+  的 1/2 并列,再证间歇性)/ aa-r2_ON=**CANCELLED**(rc=40,执行者发现观测参数未生效后
+  经正式 CANCEL 机制主动取消,非自然失败)/ aa-r4_ON=NOT_STARTED。
+- **判定=无效观测实验**:三个 run 的 mav.parm 实测 `LOG_DISARMED 0.000000`——AA002
+  唯一目的(观测增强)未达成。样本保留,不入 A/A 有效分母,不覆盖。
+- **根因(注入点误判,执行者错误)**:`--config` 定制方案 A 无效——hover 任务的 SITL
+  参数实际链=`navlabFCUParamSource`(runtime_artifacts.go L447)读
+  `workspaceRoot/docker/profiles/navlab-sitl-external-nav.parm`(**路径=代码常量
+  officialExternalNavParamRelativePath 硬编码**)→merge 镜像内置 gazebo-iris.parm→
+  写 runtime 生成的 `gazebo-iris-rangefinder.parm`(runtime_plan 实证);config.toml
+  `[sitl] extra_args` 的 defaults 非该任务参数来源。**不修改 wm 无法注入
+  LOG_DISARMED。**
+- 残留处置:CANCEL 后容器归属按契约 NOT_ATTEMPTED,15 容器由执行者 docker stop 清零。
+- **待负责人裁决(AA003 前置)**:
+  B1=wm 授权最小 commit(`navlab-sitl-external-nav.parm` 追加一行 `LOG_DISARMED,1`;
+  连带:wm HEAD 前移→FUTURE_CANDIDATE 注册表更新+companion 镜像重建+全新计划/审批);
+  B2=wm 代码加 profile 路径覆盖钩子(更通用,代码改动更大);
+  C=放弃参数注入,AA003 原样跑,失败臂判读依赖已验证的 tlog 帧级方法(LP 速率/ready
+  时序;损失=拿不到 EKF 内部 XKF 时序)。
