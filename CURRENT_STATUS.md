@@ -48,7 +48,7 @@ batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)
 **当前事实:正式 A/A CLI 已接 batch_lifecycle;aggregate 空分母与测试覆盖隔离
 被 Codex 击穿后已补正,验收出口尚未闭合(待 Codex 独立复验);A/A 不具备启动资格。**
 击穿与补正记录=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§7。
-P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
+**AA001 受控 A/A 已执行(2026-07-21,首次真实全链)**:2 发起/1 过/1 败(aa-r3_OFF no-BIN+`waiting_for_fcu_external_nav`,OPEN-1 首次受控复现)/ON 臂未启动;§8.8 完成条件未达成,aggregate 裁定不合格(rc=1);样本保留,待负责人裁决 AA002 重跑或先做失败定向分析(§8.9)。P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
 
 ## 三、三仓基线
 

@@ -434,3 +434,22 @@ ON 臂 sidecar final 存在+可解析+evidence_state=COMPLETE+finalization_state
 **受控 A/A 完成条件(负责人定义,预登记)**:不是"全部成功",而是①四次 attempt 全部
 入分母;②OFF/ON 可比较(配对契约);③ON 臂未显示 sidecar 扰动;④证据足以继续
 定位 OPEN-1。
+
+### 8.9 AA001 受控 A/A 结果(2026-07-21;首次真实全链;§8.8 完成条件未达成)
+
+- 启动链全过:validate READY→负责人批准 frozen_plan_sha256=dc700eef…6cc→真实
+  approval 落盘→execute(main@3f5f407/wm@9a1ce95/镜像 digest sha256:2aab04…/域85)。
+- **分母(全入册,无挑样)**:计划 4/发起 2/pass 1/fail 1/NOT_STARTED 2(ON 臂)。
+  aa-r1_OFF ✅(TASK_STATUS_OK,BIN 在);aa-r3_OFF ❌ rc=10:run 墙钟 3m48s,
+  TASK_STATUS_BLOCKED,blockers=`hover_mission_abort:waiting_for_fcu_external_nav`
+  +airborne_seen_missing+altitude_crosscheck_failed,**no-BIN**(同配置成功对照有
+  BIN)——OPEN-1 no-BIN 类的首次受控复现,且带具体 abort 标记(台账已登记)。
+- 机器链行为全符设计:任一 attempt 失败立即停止后续、ON 臂显式 NOT_STARTED、
+  分母保留;正式 aggregate 裁定=不合格(rc=1,observed=2/eligible=1,
+  failures=[stopped_on_failure=aa-r3,…],verdict 落盘 aa_runs/AA001-20260721/)。
+- **结论边界**:本次 A/A 未达成 §8.8 完成条件(四入分母✗→OFF/ON 不可比较,
+  sidecar 扰动无法判读——ON 臂根本未跑);不改判任何门;不得写"A/A 已执行完成"。
+  AA001 样本永久保留,重跑=新批次(AA002),禁止用重跑覆盖本次失败。
+- **待负责人裁决(下一步)**:①直接重跑 AA002(接受 OPEN-1 背景失败率,攒 4/4);
+  ②先对 aa-r3 失败做 OPEN-1 定向分析(tlog+blocker 时间线,E0 提取器离线)再重跑;
+  ③其他。
