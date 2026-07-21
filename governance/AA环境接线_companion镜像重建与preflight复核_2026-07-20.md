@@ -410,3 +410,15 @@ rc=1**。原始输出=红案脚本 stdout(本提交为红案冻结提交,先于�
 > 证据还要用于 OPEN-1 因果分析(需要 ON 臂 telemetry 证据本身可用)。
 > 裁决后:A 路=负责人下达启动指令(须引用 validate-only 输出的 frozen_plan_sha256)
 > +负责人产生真实 approval artifact+经 aa_cli --execute 全链;B 路=下达小前置包令。
+
+### 8.7 负责人裁决(2026-07-21):先 A 后 B
+
+负责人裁决 §8.6:**A 路先行**(按当前边界放行一次受控 A/A,目标=telemetry 旁路
+是否扰动 producer;深层 evidence 不入本次结论),**B 路随后**(「ON 臂 sidecar
+deep evidence 联动检查」小前置包在 A 完成后立即执行,供 OPEN-1 因果分析使用)。
+执行注记:①A/A 计划 ROS 域取真实系统值 **85**(wm config.toml ros_domain_id 权威;
+此前测试中的 "7" 为占位);②本提交为 execute 前最后一次 main 变更——validate 产出
+的计划绑定当时 HEAD,execute 的 preflight/guard 要求 HEAD 不变且树净;③启动仍须:
+validate-only 产出 frozen_plan_sha256 → 负责人明确批准该 SHA → 落盘真实 approval
+→ aa_cli --execute。结论边界预登记:本次 A/A 结论仅允许"sidecar 在候选基线
+未/有观察到不可接受扰动",不得升级为长稳/10-10/真实 telemetry 证据已验证。
