@@ -44,11 +44,11 @@ approval 增绑**整计划 frozen_plan_sha256**(validate 输出该 SHA 供负责
 认证,不抗恶意伪造**。树状令复核再补 4 缺口(先红后绿):telemetry 证据双源一致/
 batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)。
 测试 52(库层)+64(CLI)案全绿。
-⑤**五验击穿(VERIFIED_FAIL)**:aggregate 对 monitor_status 只做 json.load,正例 fixture 用 `{}` 冒充终态并断言通过——"可解析"被误当"三轴语义有效"(撤回上轮 P01.5/P04.8/ROOT CLOSED)。**五验补正已施工**(红案冻结→实现→正例分层提交):monitor 三轴语义验证器进 aggregate 正式链(SUCCEEDED/COMPLETE/CLEAN 三轴齐才入分母,轴间不互覆盖,拒因到字段);{} 假正例删除,重建契约级+正式生命周期双正例(真实 batch_lifecycle 产物过 validator=生产者消费者同契约);20 红案(旧全 rc=0)先冻结后转绿;单变量判别全过。测试 52+90 案。**Codex 独立复验 VERIFIED_PASS(2026-07-21,仅本包:{} monitor 击穿已修,含套件外黑盒复验)**;边界=ON 臂 sidecar 深层 evidence(UNKNOWN/MISSING 可过 A/A 层)为已登记风险,权威归 run_registry aggregate、下一编号 Review;**不升级为启动资格/不升级为真实 telemetry 已验证**。真实 A/A 未启动,A/A 启动资格仍未授予。**负责人已裁决(§8.7):先 A 后 B**(原裁决点:A=按当前边界放行一次受控 A/A(目标仅测旁路扰动)或 B=先补「ON 臂 sidecar deep evidence 联动检查」小前置包(证据须用于 OPEN-1 因果分析时)。
+⑤**五验击穿(VERIFIED_FAIL)**:aggregate 对 monitor_status 只做 json.load,正例 fixture 用 `{}` 冒充终态并断言通过——"可解析"被误当"三轴语义有效"(撤回上轮 P01.5/P04.8/ROOT CLOSED)。**五验补正已施工**(红案冻结→实现→正例分层提交):monitor 三轴语义验证器进 aggregate 正式链(SUCCEEDED/COMPLETE/CLEAN 三轴齐才入分母,轴间不互覆盖,拒因到字段);{} 假正例删除,重建契约级+正式生命周期双正例(真实 batch_lifecycle 产物过 validator=生产者消费者同契约);20 红案(旧全 rc=0)先冻结后转绿;单变量判别全过。测试 52+90 案。**Codex 独立复验 VERIFIED_PASS(2026-07-21,仅本包:{} monitor 击穿已修,含套件外黑盒复验)**;边界=ON 臂 sidecar 深层 evidence(UNKNOWN/MISSING 可过 A/A 层)为已登记风险,权威归 run_registry aggregate、下一编号 Review;**不升级为启动资格/不升级为真实 telemetry 已验证**。真实 A/A 未启动,A/A 启动资格仍未授予。**裁决终态(§8.8 替代 §8.7):先 B 后 A,B 已完成,AA001 已执行未达标**(原裁决点:A=按当前边界放行一次受控 A/A(目标仅测旁路扰动)或 B=先补「ON 臂 sidecar deep evidence 联动检查」小前置包(证据须用于 OPEN-1 因果分析时)。
 **当前事实:正式 A/A CLI 已接 batch_lifecycle;aggregate 空分母与测试覆盖隔离
 被 Codex 击穿后已补正,验收出口尚未闭合(待 Codex 独立复验);A/A 不具备启动资格。**
 击穿与补正记录=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§7。
-**AA001 受控 A/A 已执行(2026-07-21,首次真实全链)**:2 发起/1 过/1 败(aa-r3_OFF no-BIN+`waiting_for_fcu_external_nav`,OPEN-1 首次受控复现)/ON 臂未启动;§8.8 完成条件未达成,aggregate 裁定不合格(rc=1);样本保留,待负责人裁决 AA002 重跑或先做失败定向分析(§8.9)。P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
+**AA001 受控 A/A 已执行(2026-07-21,首次真实全链)**:2 发起/1 过/1 败(aa-r3_OFF no-BIN+`waiting_for_fcu_external_nav`,OPEN-1 首次受控复现)/ON 臂未启动;§8.8 完成条件未达成,aggregate 裁定不合格(rc=1);样本保留。**aa-r3 定向分析已完成(2026-07-21,负责人指令)**:最强候选链=FCU LOCAL_POSITION_NED 慢启动爬升期(帧级判别:前 40s 0.8-2.6Hz vs 成功 1.75-5Hz,60s 后均收敛 5Hz)>等待预算(60s/连续5s)→ready 抖动→abort→未 arm→(LOG_DISARMED=0)no-BIN——一条链候选统一解释 no-BIN/间歇性/同 commit 并存;候选非 CONFIRMED,报告=[runbooks/…/open1/AA001_r3_定向分析_2026-07-21.md](runbooks/world-model-jazzy/l0_hover/open1/AA001_r3_定向分析_2026-07-21.md)。**AA002 建议=调整观测后再跑(LOG_DISARMED=1 进计划),待负责人裁决。**P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
 
 ## 三、三仓基线
 
