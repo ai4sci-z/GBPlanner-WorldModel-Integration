@@ -382,3 +382,31 @@ rc=1**。原始输出=红案脚本 stdout(本提交为红案冻结提交,先于�
   终态(单一事实源纪律,不造第二权威)——A/A 级深检联动登记下一编号 Review;
   ②时间闭包用文件 mtime(1s 容差),内容级时间戳(monitor 无时戳字段)登记下一
   编号 Review;③本轮全部验证为本地自建,真实 A/A 未启动。
+
+### 8.5 Codex 独立复验裁定(2026-07-21):本包 VERIFIED_PASS
+
+- **范围=仅 R003-A/A-TERMINAL-EVIDENCE-SEMANTIC-CORRECT 一个包**:{} monitor 被
+  aggregate 放行的问题已在现场修掉,此理由不再作为打回依据。
+- Codex 现场硬证据:main=dacfaedd7a58(本地净=origin);wm=9a1ce95=backup;
+  feat=17db3ba=远端;validate_monitor_terminal 在正式 cmd_aggregate 路径(非仅测试);
+  {} 假正例已删;**套件外黑盒**:合格 root 四 monitor 全改 {} → 正式 CLI rc=1/
+  acceptance_eligible=false/4 attempt 全 rejected;90/52/65/33 + ros_real_path/
+  container_identity FAIL=0 + batch_common 12/wait_batch 75 全过;doc_closure 六项
+  全 0;两机器门 rc=0;无运行容器。
+- **接受为已登记风险的边界**:aggregate 允许 ON 臂 telemetry_status.evidence_state=
+  UNKNOWN/finalization_state=MISSING 通过(A/A 层只核 enabled+sidecar EXITED_ZERO+
+  rc=0;深层权威=run_registry.py aggregate,已登记下一编号 Review)。
+- **裁定明示的不升级条款**:本 VERIFIED_PASS **不得**升级为"A/A 启动资格已授予",
+  **不得**升级为"真实 telemetry evidence 已验证"。
+- **当前准确状态**:本地终态语义门实现与自建验证已落盘,Codex 独立复验通过;
+  真实 A/A 未启动,A/A 启动资格仍未授予。
+
+### 8.6 OWNER_DECISION_REQUIRED(负责人裁决点,2026-07-21 登记)
+
+> 下一步二选一(Codex 工程判断已附,Claude 不自行裁决):
+> **A. 按当前边界放行一次受控 A/A**——适用条件:A/A 目标仅为"telemetry 旁路是否
+> 扰动 producer 行为"(OFF×2+ON×2 对比,深层 evidence 不入结论)。
+> **B. 先补小前置包「ON 臂 sidecar deep evidence 联动检查」**——适用条件:A/A 的
+> 证据还要用于 OPEN-1 因果分析(需要 ON 臂 telemetry 证据本身可用)。
+> 裁决后:A 路=负责人下达启动指令(须引用 validate-only 输出的 frozen_plan_sha256)
+> +负责人产生真实 approval artifact+经 aa_cli --execute 全链;B 路=下达小前置包令。

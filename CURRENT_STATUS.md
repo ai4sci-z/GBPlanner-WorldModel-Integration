@@ -44,7 +44,7 @@ approval 增绑**整计划 frozen_plan_sha256**(validate 输出该 SHA 供负责
 认证,不抗恶意伪造**。树状令复核再补 4 缺口(先红后绿):telemetry 证据双源一致/
 batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)。
 测试 52(库层)+64(CLI)案全绿。
-⑤**五验击穿(VERIFIED_FAIL)**:aggregate 对 monitor_status 只做 json.load,正例 fixture 用 `{}` 冒充终态并断言通过——"可解析"被误当"三轴语义有效"(撤回上轮 P01.5/P04.8/ROOT CLOSED)。**五验补正已施工**(红案冻结→实现→正例分层提交):monitor 三轴语义验证器进 aggregate 正式链(SUCCEEDED/COMPLETE/CLEAN 三轴齐才入分母,轴间不互覆盖,拒因到字段);{} 假正例删除,重建契约级+正式生命周期双正例(真实 batch_lifecycle 产物过 validator=生产者消费者同契约);20 红案(旧全 rc=0)先冻结后转绿;单变量判别全过。测试 52+90 案。**本地终态语义门实现与自建验证已落盘,等待 Codex 独立复验;真实 A/A 未启动,A/A 启动资格未授予。**
+⑤**五验击穿(VERIFIED_FAIL)**:aggregate 对 monitor_status 只做 json.load,正例 fixture 用 `{}` 冒充终态并断言通过——"可解析"被误当"三轴语义有效"(撤回上轮 P01.5/P04.8/ROOT CLOSED)。**五验补正已施工**(红案冻结→实现→正例分层提交):monitor 三轴语义验证器进 aggregate 正式链(SUCCEEDED/COMPLETE/CLEAN 三轴齐才入分母,轴间不互覆盖,拒因到字段);{} 假正例删除,重建契约级+正式生命周期双正例(真实 batch_lifecycle 产物过 validator=生产者消费者同契约);20 红案(旧全 rc=0)先冻结后转绿;单变量判别全过。测试 52+90 案。**Codex 独立复验 VERIFIED_PASS(2026-07-21,仅本包:{} monitor 击穿已修,含套件外黑盒复验)**;边界=ON 臂 sidecar 深层 evidence(UNKNOWN/MISSING 可过 A/A 层)为已登记风险,权威归 run_registry aggregate、下一编号 Review;**不升级为启动资格/不升级为真实 telemetry 已验证**。真实 A/A 未启动,A/A 启动资格仍未授予。**待负责人裁决(证据文档 §8.6)**:A=按当前边界放行一次受控 A/A(目标仅测旁路扰动)或 B=先补「ON 臂 sidecar deep evidence 联动检查」小前置包(证据须用于 OPEN-1 因果分析时)。
 **当前事实:正式 A/A CLI 已接 batch_lifecycle;aggregate 空分母与测试覆盖隔离
 被 Codex 击穿后已补正,验收出口尚未闭合(待 Codex 独立复验);A/A 不具备启动资格。**
 击穿与补正记录=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§7。
