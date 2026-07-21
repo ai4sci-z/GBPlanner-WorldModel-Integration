@@ -479,3 +479,28 @@ ON 臂 sidecar final 存在+可解析+evidence_state=COMPLETE+finalization_state
   B2=wm 代码加 profile 路径覆盖钩子(更通用,代码改动更大);
   C=放弃参数注入,AA003 原样跑,失败臂判读依赖已验证的 tlog 帧级方法(LP 速率/ready
   时序;损失=拿不到 EKF 内部 XKF 时序)。
+
+## 9. AA003 前置观测条件修正(2026-07-22,负责人 B1 裁决;树状令 P00-P04)
+
+- **P00 补账**:AA002 措辞三处更正(透传≠零代码/停止≠清零/INVALID_OBSERVATION 统一);
+  冻结实测 running=0、exited=17 保留未删;AA001/AA002 样本未覆盖。
+- **P01 wm 最小改动**:参数链行号级定位(runtime_artifacts.go L19 常量
+  `docker/profiles/navlab-sitl-external-nav.parm`、L80-87 merge→runtime overlay;
+  --config 无效原因=该链路径为代码常量非 config 字段)。wm@`6d412a11f152` 仅 +5 行
+  (注释+`LOG_DISARMED 1`,空格分隔匹配 Fields 解析;原文件 0 处 LOG_DISARMED,无去重),
+  推 backup,树净。**红→绿**:正式 `run hover --dry-run` 生成链(零容器)改动前产物无
+  LOG_DISARMED(AA002 反例),改动后产物 L72=`LOG_DISARMED 1`。静态检查器
+  `check_log_disarmed.py`(缺失/0/重复/逗号写法 rc=1,4 反例实测)。
+- **P02 基线/镜像/计划**:FUTURE_CANDIDATE 9a1ce95→6d412a11(**观测条件改动,非飞行
+  稳定修复,不得写 OPEN-1 已解;OPEN-1 仍 UNKNOWN,候选链未 CONFIRMED**);companion
+  `jazzy-6d412a11f152` Id=`sha256:c137d509f15d…`(build rc=0,9 层 CACHED,parm 变更
+  进入构建上下文→新 Id;仍非行为验证);AA003=独立新批次 `~/aa_runs/AA003-20260722`。
+- **P03 观测条件门(失败关闭)**:aa_cli `observation_gate` 进 validate/execute 正式链
+  ——计划声称 LOG_DISARMED=1 必须带 observation_evidence(源 profile+真实生成链
+  runtime parm+sha256),缺失/值0/重复/只在计划有/sha 不符→validate BLOCKED、execute
+  producer=0(AA002"声称≠生效"不复发,9 反例入 test_aa_cli 共 107 案)。AA003
+  validate-only=READY rc=0(观测门在链内通过),attempts 不存在,producer=0,
+  **未生成真实 approval,未代批**。
+- 边界重申:AA001=无 A/A 结论,有 OPEN-1 新证据;AA002=INVALID_OBSERVATION;AA003=
+  仅前置+validate-only,真实 A/A 未启动;LOG_DISARMED=1 只提升失败臂可观测性,
+  ≠修复 OPEN-1。
