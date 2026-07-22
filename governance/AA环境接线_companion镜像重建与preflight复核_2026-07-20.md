@@ -504,3 +504,14 @@ ON 臂 sidecar final 存在+可解析+evidence_state=COMPLETE+finalization_state
 - 边界重申:AA001=无 A/A 结论,有 OPEN-1 新证据;AA002=INVALID_OBSERVATION;AA003=
   仅前置+validate-only,真实 A/A 未启动;LOG_DISARMED=1 只提升失败臂可观测性,
   ≠修复 OPEN-1。
+
+### 9.1 自击穿记录(2026-07-22,执行者对本包的 Codex 式反例攻击)
+
+- 探针1(证据文件被清理):runtime 产物删除后 validate=BLOCKED
+  (`runtime_parm_unreadable`)——fail-closed 成立 ✓
+- 探针2(wm 回滚 profile 但旧产物仍在):source_profile 检查打断
+  (`source_profile_log_disarmed_missing`)——兜底成立 ✓
+- **探针3(真洞,登记下一编号 Review,不扩包)**:观测门验产物"内容+sha256",但不验
+  "该产物由当前 wm HEAD 的生成链产出"——若未来 wm 前移且生成逻辑变化而 profile 行
+  保留,陈旧产物证据仍可过门。当日不构成假 READY(现产物即当前钉死 SHA 所产+三重
+  兜底);风险场景=未来基线再前移时。候选修法=生成产物旁落 wm SHA 戳并入门校验。
