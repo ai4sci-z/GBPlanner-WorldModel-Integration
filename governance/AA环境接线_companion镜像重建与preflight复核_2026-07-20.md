@@ -515,3 +515,22 @@ ON 臂 sidecar final 存在+可解析+evidence_state=COMPLETE+finalization_state
   "该产物由当前 wm HEAD 的生成链产出"——若未来 wm 前移且生成逻辑变化而 profile 行
   保留,陈旧产物证据仍可过门。当日不构成假 READY(现产物即当前钉死 SHA 所产+三重
   兜底);风险场景=未来基线再前移时。候选修法=生成产物旁落 wm SHA 戳并入门校验。
+
+### 9.2 AA003 validate-only 在当前 main HEAD 重生成呈批 SHA(2026-07-22,接手执行者,树状令 P01)
+> 性质:呈批材料。**validate-only 绝不启动仿真(producer_started=0),不是 Review3/主线进展。**
+- 背景:AA003 prep 时 main HEAD=`f5b5a47e`;其后 9 条纯治理提交(manifest/claim/状态归拢)使
+  main 前移至 `4ee61bb`(不碰 plan/wm/证据)。按流程以当前 HEAD 现跑 validate-only 重绑。
+- 命令:`python3 open1/aa_cli.py --validate-only --config <AA003/inputs/config.json>
+  --runtime-plan <AA003/inputs/runtime_plan.json> --artifact-root <AA003> --companion-tag
+  jazzy-6d412a11f152 --ros-domain 85 --task-id hover --map-id iris_maze --timeout-sec 1500
+  --readiness-topic /mavlink_external_nav/status --extnav-topic /external_nav/status
+  --producer-mode l2 --main-repo <integration> --wm-repo <world-model>`(source /opt/ros/jazzy,ROS_DOMAIN_ID=85)
+- 结果:rc=0,preflight_status=**READY**,acceptance_eligible=true,failed_checks=[],producer_started=0。
+  该次复核绑 main=`4ee61bb` 时 frozen_plan_sha256=`e06a7db1…5510cb`(**提交前值,仅证 READY**)。
+  ⚠️ **frozen_plan_sha256 绑 main HEAD;本 §9.2 治理提交会移动 HEAD → 上值失效。最终呈批 SHA
+  须在本治理提交落定后以最终 HEAD 现跑 validate-only 取得,值记于本轮报告/后续追加**。
+- 绑定复核(与 HEAD 无关部分,不因提交变):world_model_commit=`6d412a11f152`、
+  companion digest=`sha256:c137d509…`、config_hash=`8521cda7…`、runtime_plan_hash=`1f03e80a…`、
+  ros_domain 85/85、execution_order aa-r1/aa-r3/aa-r2/aa-r4=OFF/OFF/ON/ON。无 attempts、无 launch_record、无 approval。
+- 停点(树状令 P01.CLOSE 强制):**等负责人明确写"批准执行 AA003,frozen_plan_sha256=e06a7db1…5510cb"**
+  方可进 P02 落盘真实 approval(任何人不得代签)+P03 `--execute`。**A/A 启动资格未授予。**

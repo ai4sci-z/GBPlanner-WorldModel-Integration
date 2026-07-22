@@ -14,10 +14,15 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 
 ## 二、当前位置
 
-**P1 前置 · WP304 · A/A 观测链。停点=等待负责人批准真实 AA003**(批准时以当时 main HEAD
-现跑 `open1/aa_cli.py --validate-only` 取 frozen_plan_sha256,负责人引用该 SHA 签发真实
-approval 后方可 `--execute`)。**A/A 启动资格未授予;OPEN-1 未定位;真实 telemetry
-evidence 未验证。**
+**P1 前置 · WP304 · A/A 观测链。停点=等待负责人批准 exact frozen_plan_sha256。**
+**AA003 validate-only 在当前 HEAD 复核 READY**(2026-07-22;failed_checks=[] / producer_started=0 /
+无 attempts / 无 approval;绑 wm@`6d412a11`+companion `sha256:c137d509`+config_hash `8521cda7`+
+runtime_plan_hash `1f03e80a`+ros_domain 85+execution_order aa-r1/aa-r3/aa-r2/aa-r4=OFF/OFF/ON/ON)。
+**呈批 frozen_plan_sha256 绑 main HEAD,须以本治理提交落定后的最终 HEAD 现跑 validate-only 取得
+(值见本轮报告/证据文档 §9.2),不在此冻结具体值以免 HEAD 前移致 SHA 失效。真实 execute 未启动**——
+负责人须明确写"批准执行 AA003,frozen_plan_sha256=<落定 HEAD 现跑值>"方可落盘真实 approval(任何人
+不得代签)+`--execute`。**validate-only 不是 Review3 进展;A/A 启动资格未授予;OPEN-1 未定位;真实
+telemetry evidence 未验证。**
 
 分项现状:
 
