@@ -7,8 +7,8 @@
 
 | WP | 任务 | 依赖 | 验收门 | 状态 |
 |---|---|---|---|---|
-| **WP303** | monitor 生命周期实现:launcher + task record + 三轴状态 + fixture;batch_id 端到端绑定+拒绝旧现场(stale-evidence 补正);只跑 fixture 不跑真实仿真 | P0 收口 | 正式入口 run_batch.sh e2e dry-run + test_wait_batch **75/75** + test_batch_common 12/12 + test_final_rc 13/13,残留=0 | 🟡 **PARTIAL 实现停点未发布:dry-run 通过,真实仿真未做** |
-| **WP304** | OPEN-1 因果时间线:样本分层 + F1-F5 + H1-H5 + E0/E1/E2;**E0 已收口**(open1/ 离线提取器 + CRC 校验协议解码器 + 观测 schema 草案 + 环境无关 fixture;证伪"accel=判别器";arm/no-BIN 死因=UNKNOWN;运行时埋点未实现;**E0-CORRECT 补正:逐输入 schema 门(UNSUPPORTED_SCHEMA)+ 标注冻结验收门(RAN=5/PASS=5/SKIP=0 + provenance 实绑)+ claim 语义时效门**) | WP303 | 逐阶段放行;E0+证据门/标注补正 done,E1 方案 done,**E1L-CORRECT 完成:证据门段链闭包(入口/index/段一致,损坏→CORRUPT/零记录→INCOMPLETE)与身份等待预算单一来源(launcher 推导,watcher/sidecar 同源)两缺陷红→绿;未运行真实仿真;未验证真实 Docker daemon 采集链;未验证真实 ROS 图;未执行 OFF×2/ON×2 A/A;真实 sidecar 行为仍须 A/A 验证** | 🟡 **A/A 环境接线 PARTIAL:镜像缝闭合;三轮 Codex 击穿(占位符过门/aa_launch 测试孤岛/aggregate 空分母+fixture 后门)均已补正:aa_cli 四模式(validate/execute/dry-run/aggregate),aggregate=完整分母验收,生产 execute 拒 fixture 审批+测试 env,approval 绑整计划 SHA(防误触门,非身份认证);52+64 案绿(树状令复核再补 4 缺口先红后绿)五验补正 **Codex 复验 VERIFIED_PASS**(边界:ON 臂深层 evidence=已登记风险归下一 Review);A/A 启动资格仍未授予;**AA001 已执行(1/2 OFF)+r3 定向分析完成;AA002=INVALID_OBSERVATION;AA003 前置完成(wm@6d412a11+观测门+validate READY)待负责人批准启动**** |
+| **WP303** | monitor 生命周期实现:launcher + task record + 三轴状态 + fixture;batch_id 端到端绑定+拒绝旧现场(stale-evidence 补正);只跑 fixture 不跑真实仿真 | P0 收口 | 正式入口 run_batch.sh e2e dry-run + test_wait_batch **75/75** + test_batch_common 12/12 + test_final_rc 13/13,残留=0 | 🟡 **PARTIAL 实现停点:fixture 全绿;真实仿真级:A/A 五 attempt 经 batch_lifecycle 正式链跑通(monitor 三轴/CANCEL/终态产物真实产出);10/10 级验收归 WP307** |
+| **WP304** | OPEN-1 因果时间线:样本分层 + F1-F5 + H1-H5 + E0/E1/E2;**E0 已收口**(open1/ 离线提取器 + CRC 校验协议解码器 + 观测 schema 草案 + 环境无关 fixture;证伪"accel=判别器";arm/no-BIN 死因=UNKNOWN;运行时埋点未实现;**E0-CORRECT 补正:逐输入 schema 门(UNSUPPORTED_SCHEMA)+ 标注冻结验收门(RAN=5/PASS=5/SKIP=0 + provenance 实绑)+ claim 语义时效门**) | WP303 | 逐阶段放行;E0+证据门/标注补正 done,E1 方案 done,**E1L-CORRECT 完成:证据门段链闭包(入口/index/段一致,损坏→CORRUPT/零记录→INCOMPLETE)与身份等待预算单一来源(launcher 推导,watcher/sidecar 同源)两缺陷红→绿;真实仿真已跑 AA001/AA002(batch_lifecycle 全链,Docker 采集链/容器身份在真实 run 实际走通);完整 OFF×2/ON×2 未跑完(ON 臂未完成),A/A 扰动结论与真实 sidecar evidence 验证仍待 AA003** | 🟡 **进行中:机器门链(四模式 CLI/完整分母 aggregate/防误触授权门/终态三轴门/观测条件门)五轮击穿-补正后 Codex 五验 VERIFIED_PASS;AA001 已执行(OFF 1/2,产出 OPEN-1 受控复现+候选链);AA002=INVALID_OBSERVATION(样本保留);AA003 前置完成(wm@6d412a11+观测门+validate READY);停点=负责人批准 AA003;A/A 启动资格未授予;OPEN-1 上游原因 UNKNOWN** |
 | WP305 | 时钟纪元契约修复(OPEN-2):测试与 pymavlink 环境解耦,补节点重启/来源生命周期反例 | WP303 | 反例矩阵全绿,独立复验通过 | 🟢 **代码/环境独立复验完成**(wm `750032a`,双环境:venv 22P + 容器 ran=22 fails=0);真实仿真验收归 WP307 |
 | WP306 | 三独立单元:GPU 支持矩阵 / IMU covariance(C'=RCRᵀ)+types.go 反注释 / truth audit 混合匹配 fail-closed | WP303 | 各单元反例测试通过 | ⛔ 阻塞 |
 | WP307 | 默认路径连续 10/10:固定 commit/镜像/场景,全 attempts 入分母 | WP304–306 | 10/10 发起/起飞/full-pass,产物完整无残留 | ⛔ 阻塞 |
@@ -30,7 +30,16 @@
 ## 相邻技术债(并入对应 WP,不单列)
 
 - ~~exploration/navigation cartographer 读原始 `/imu`~~ / ~~runner 探针完即 SIGKILL mission~~:
-  **已修(wm `e569ecf`/`faadb2a`,2026-07-18,先红后绿 fixture 级)**;真实仿真验收并入 WP307 默认 10/10。
+  **已修(wm `e569ecf`/`faadb2a`,先红后绿)且 B23 在 AA001/002 真实 run 中实际生效(runner 等待 mission 完成);10/10 级验收并入 WP307。
+
+## 下一编号 Review 积压(冻结期登记,不实现)
+
+- dependencies.yaml 专用 schema/语义验收器(R003-CLOSE 冻结移交)
+- ON 臂 sidecar five-layer 深检与 A/A 聚合联动(五验 PASS 边界;A/A 层 B 包已加浅检)
+- monitor 内容级终态时间戳(现用文件 mtime+1s 容差)
+- runtime 参数产物机器绑定"生成时 wm SHA"(§9.1 自击穿真洞)
+- mission ready 采样 history 全程保留(现滚动 40 条,tlog 帧级可替代)
+- 历史 no-BIN run(205113/210149,eab0cc6 基线)是否同候选链:tlog 批量回放可离线证伪(可随时派)
 
 ## P0 未执行遗留队列(登记,不擅自执行;每项列前置/决策点/验收/最迟门)
 

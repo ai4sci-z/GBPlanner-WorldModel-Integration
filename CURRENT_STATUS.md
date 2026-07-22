@@ -1,4 +1,4 @@
-# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-20)
+# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-22)
 
 > 问题事实源 = [docs/world-model端到端Bug台账_给作者PR.md](docs/world-model端到端Bug台账_给作者PR.md);
 > 任务队列 = [TASKS.md](TASKS.md);交接 = [接力棒_当前值班.md](接力棒_当前值班.md);
@@ -12,43 +12,41 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 **P0 仓库/文档治理 → P1 长时间闭环稳定(WP303-WP308)→ P2 ROS1/ROS2 对齐 → P3 3D 无损 → P4 插件化接入。**
 多层楼梯探索只做架构预留,不写功能代码。
 
-## 二、当前位置(一句话)
+## 二、当前位置
 
-**P0 治理收尾 + P1 前置(WP304)。** WP303 批生命周期已到实现停点;WP304 的离线证据链与
-E1 观测方案已交付;**R003 状态闭环已经 Codex 独立复验 VERIFIED_PASS 关闭(2026-07-19;
-复验基线=CLOSE-05 收口态,精确 HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`)**。分类:VERIFIED_CLOSED=R003-CLOSE-01..05/OPEN-2 环境复验/状态闭环;
-CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependencies 专用语义验收器。
-**A/A 前置全部闭合(2026-07-20,四项裁决落地)**:方案A 宿主 ROS2 已装(pins 落档,
-source /opt/ros/jazzy 激活;未 source 仍 fail-closed);readiness=/mavlink_external_nav/status;
-wm 上游契约已实现(service.started 原子发布 service_handles.json 含真实 container_id,
-wm@9a1ce95 推 backup);sidecar live 身份消费就绪;FUTURE_CANDIDATE=9a1ce95(显式推进;**2026-07-22 再前移=6d412a11,B1 观测,见 §9**)。
-**A/A 环境接线=PARTIAL(2026-07-20,Codex 复验裁定)**:
-①镜像接缝已闭合——companion 镜像 `jazzy-9a1ce95c56e2` 在盘(历史;当前候选镜像=`jazzy-6d412a11f152`,§9)(rc=0+docker images
-真产物,Codex 独立确认;全层 CACHED=tag 绑定新 HEAD,非行为验证)。
-②此前"preflight READY 18/18/接线闭合"被 Codex 击穿(占位符过 presence 门);
-一次补正(hash/digest schema+物化独立重算)后,**Codex 三验再击穿(VERIFIED_FAIL)**:
-aa_launch 库函数正确但**无 CLI、无生产调用方=测试孤岛**,真实入口 run_batch→
-batch_lifecycle 完全绕过真实性门;且负责人停点只是文档规则非机器规则。
-③二次补正(aa_cli 正式入口接 batch_lifecycle 链+授权机器门)后,**Codex 四验再击穿
-(VERIFIED_FAIL)**:aggregate 空分母 rc=0(零次实验聚合成功=验收出口失真)+fixture
-审批与测试覆盖 env(NAVLAB_SIM_CMD 等)可进生产 execute。
-④三次补正令五包已施工(2026-07-20):aggregate 重写为**完整分母验收**(冻结计划
-schema/launch_record 必在且 producer_started=1/恰好 4 attempt 与计划一一对应/
-模式序 OFF,OFF,ON,ON/每 attempt 身份+task_record+monitor+final 终态齐+双向 hash
-一致/禁 NOT_STARTED/rejected 必须空;输出 attempts_expected=4 等完整分母字段;
-零/缺/多/乱序/失败均 rc=1);生产 execute **删除 --allow-fixture-approval 后门**
-(fixture 审批一律拒)+启动前拒全部测试覆盖 env;新增独立 `--dry-run`(强制 fixture
-审批,产物永久标 NON_ACCEPTANCE_FIXTURE,被正式 aggregate 永久拒,不是真实 A/A);
-approval 增绑**整计划 frozen_plan_sha256**(validate 输出该 SHA 供负责人指令引用;
-计划任何字节变化旧审批立即失效)——授权门性质=**具名计划的操作防误触门,非身份
-认证,不抗恶意伪造**。树状令复核再补 4 缺口(先红后绿):telemetry 证据双源一致/
-batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)。
-测试 52(库层)+64(CLI)案全绿。
-⑤**五验击穿(VERIFIED_FAIL)**:aggregate 对 monitor_status 只做 json.load,正例 fixture 用 `{}` 冒充终态并断言通过——"可解析"被误当"三轴语义有效"(撤回上轮 P01.5/P04.8/ROOT CLOSED)。**五验补正已施工**(红案冻结→实现→正例分层提交):monitor 三轴语义验证器进 aggregate 正式链(SUCCEEDED/COMPLETE/CLEAN 三轴齐才入分母,轴间不互覆盖,拒因到字段);{} 假正例删除,重建契约级+正式生命周期双正例(真实 batch_lifecycle 产物过 validator=生产者消费者同契约);20 红案(旧全 rc=0)先冻结后转绿;单变量判别全过。测试 52+90 案。**Codex 独立复验 VERIFIED_PASS(2026-07-21,仅本包:{} monitor 击穿已修,含套件外黑盒复验)**;边界=ON 臂 sidecar 深层 evidence(UNKNOWN/MISSING 可过 A/A 层)为已登记风险,权威归 run_registry aggregate、下一编号 Review;**不升级为启动资格/不升级为真实 telemetry 已验证**。真实 A/A 未启动,A/A 启动资格仍未授予。**裁决终态(§8.8 替代 §8.7):先 B 后 A,B 已完成,AA001 已执行未达标**(原裁决点:A=按当前边界放行一次受控 A/A(目标仅测旁路扰动)或 B=先补「ON 臂 sidecar deep evidence 联动检查」小前置包(证据须用于 OPEN-1 因果分析时)。
-**当前事实:正式 A/A CLI 已接 batch_lifecycle;aggregate 空分母与测试覆盖隔离
-被 Codex 击穿后已补正,验收出口尚未闭合(待 Codex 独立复验);A/A 不具备启动资格。**
-击穿与补正记录=[governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§7。
-**AA001 受控 A/A 已执行(2026-07-21,首次真实全链)**:2 发起/1 过/1 败(aa-r3_OFF no-BIN+`waiting_for_fcu_external_nav`,OPEN-1 首次受控复现)/ON 臂未启动;§8.8 完成条件未达成,aggregate 裁定不合格(rc=1);样本保留。**aa-r3 定向分析已完成(2026-07-21,负责人指令)**:最强候选链=FCU LOCAL_POSITION_NED 慢启动爬升期(帧级判别:前 40s 0.8-2.6Hz vs 成功 1.75-5Hz,60s 后均收敛 5Hz)>等待预算(60s/连续5s)→ready 抖动→abort→未 arm→(LOG_DISARMED=0)no-BIN——一条链候选统一解释 no-BIN/间歇性/同 commit 并存;候选非 CONFIRMED,报告=[runbooks/…/open1/AA001_r3_定向分析_2026-07-21.md](runbooks/world-model-jazzy/l0_hover/open1/AA001_r3_定向分析_2026-07-21.md)。**AA002 已执行(2026-07-21)=INVALID_OBSERVATION**:LOG_DISARMED 注入点实为 wm 代码硬编码常量,--config 方案未进真实 mav.parm(三 run 实测=0);OFF×2 全过(再证间歇性),ON 臂主动取消;无扰动结论、无失败臂内部证据;样本保留(§8.10)。**AA003 前置已完成(2026-07-22,§9)**:wm@6d412a11(仅 LOG_DISARMED 1,观测非修复)推 backup;FUTURE_CANDIDATE 前移;companion jazzy-6d412a11f152 重建(Id c137d509…);观测条件门(失败关闭)进 aa_cli 正式链;AA003 validate-only READY(观测证据链内验证)。**真实 AA003 未启动,等待负责人真实 approval+启动指令。**P2-OFFLINE-PREP 已获准并行(未开工,LIVE 冻结)。OPEN-1 未定位;G6 未关闭;WP307 未解锁。
+**P1 前置 · WP304 · A/A 观测链。停点=等待负责人批准真实 AA003**(批准时以当时 main HEAD
+现跑 `open1/aa_cli.py --validate-only` 取 frozen_plan_sha256,负责人引用该 SHA 签发真实
+approval 后方可 `--execute`)。**A/A 启动资格未授予;OPEN-1 未定位;真实 telemetry
+evidence 未验证。**
+
+分项现状:
+
+- **A/A 机器门链**(preflight/aa_cli 四模式/aggregate 完整分母/授权防误触门/终态三轴
+  语义门/观测条件门):已建成。经五轮 Codex 击穿-补正(占位符过门→测试孤岛→空分母+
+  fixture 后门→复核缺口→`{}` 终态语义),五验包 Codex **VERIFIED_PASS(2026-07-21)**;
+  已登记边界=ON 臂 sidecar 深层 evidence 的 A/A 级联动检查已加(B 包),five-layer 深检
+  权威仍归 `run_registry.py aggregate`。击穿与补正全记录=
+  [证据文档](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§9。
+- **AA001(2026-07-21,首次真实全链 A/A)**:2 发起/1 过/1 败/ON 臂未启动;无 A/A 扰动
+  结论;**产出 OPEN-1 首个受控复现样本**(aa-r3_OFF:no-BIN+
+  `hover_mission_abort:waiting_for_fcu_external_nav`)。样本=`~/aa_runs/AA001-20260721`。
+- **aa-r3 定向分析(2026-07-21,Codex 接受为阶段证据)**:最强候选链=FCU
+  LOCAL_POSITION_NED 慢启动爬升期 ×(墙钟 1000ms 阈值/RTF)有效收紧 → ready 抖动
+  攒不足连续 5s → 60s 预算耗尽 → abort → 未 arm →(LOG_DISARMED=0)no-BIN。
+  一条链候选统一解释 no-BIN/间歇性/同 commit 并存;**候选,未 CONFIRMED**;帧级判别
+  与 RTF 实测(恒 0.30)见[分析报告](runbooks/world-model-jazzy/l0_hover/open1/AA001_r3_定向分析_2026-07-21.md)。
+- **AA002(2026-07-21)=INVALID_OBSERVATION**:LOG_DISARMED 经 --config 注入无效
+  (真实参数链=wm 代码硬编码常量),三 run 实测 mav.parm=0;OFF×2 全过(再证间歇性),
+  ON 臂主动取消;无扰动结论、无失败臂内部证据;样本保留(证据文档 §8.10)。
+- **AA003 前置(2026-07-22,负责人 B1 裁决,已完成;核心技术 Codex 复验通过)**:
+  wm@`6d412a11`(仅 `LOG_DISARMED 1`,观测条件改动,**不是飞行稳定修复**)推 backup;
+  FUTURE_CANDIDATE 前移;companion `jazzy-6d412a11f152` 在盘;观测条件门(失败关闭:
+  计划声称必须有真实生成链产物证据)进 aa_cli 正式链;validate-only READY。
+  真实 AA003 未启动(无 attempts/无 approval)。
+- R003 状态闭环已于 2026-07-19 经 Codex VERIFIED_PASS 关闭(CLOSE-01..05);
+  CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED 与下一编号 Review
+  积压项见 TASKS。
+- P2-OFFLINE-PREP 已获准并行,未开工(LIVE 冻结)。
 
 ## 三、三仓基线
 
@@ -64,16 +62,22 @@ batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)
   修复(wm `908a95a`)后 det≈+1,真值臂反事实 3/3 稳。
 - **B22 候选(强支持)**:iris IMU roll-180 倒装致 SLAM 朝向反 180°;修复候选 wm `eab0cc6`
   (hover 族接线 `eab0cc6`;exploration/navigation 接线已补齐 `e569ecf`,fixture 级,真实仿真未验)。
-- **默认主线分母(2026-07-15,wm eab0cc6)**:attempts 6 / airborne 3 / full-pass 3;
+- **历史默认主线分母(2026-07-15,wm eab0cc6)**:attempts 6 / airborne 3 / full-pass 3;
   诊断臂旁证 4/3/3。10/10 未开跑,禁写"稳定/FIXED/关门"。
-- **OPEN-1 未定位**:同 commit 间歇性 bring-up 失败。已证伪"Accels inconsistent=判别器"
-  (CRC 校验计数在成功与失败 run 均=20);no-BIN 类死因 UNKNOWN(SITL 控制台未落盘是主观测缺口)。
-- **OPEN-2**:OPEN-2 的环境依赖复验失败观测已消除(wm `750032a`);WP305 反例矩阵与双环境
+- **A/A 系列分母(2026-07-21,wm 9a1ce95;与 eab0cc6 历史分母分开统计,不混)**:
+  AA001 OFF 臂 2 攻 1 过;AA002 OFF 臂 2 攻 2 过(观测无效实验,行为数据仍真);
+  合计 OFF 臂 4 攻 3 过——与历史间歇率同量级,再证 OPEN-1 与 commit 无关。
+- **OPEN-1 未定位(有最强候选链)**:同 commit 间歇性 bring-up 失败。已证伪
+  "Accels inconsistent=判别器";**已获受控复现+候选链**(见 §二 aa-r3 定向分析),
+  no-BIN 的候选统一解释=从未 arm(LOG_DISARMED=0 不落盘);上游原因(FCU 慢启动为何)
+  仍 UNKNOWN,待 AA003 失败臂 BIN 证据检验。
+- **OPEN-2**:环境依赖复验失败观测已消除(wm `750032a`);WP305 反例矩阵与双环境
   独立复验通过(宿主 venv 22 passed + companion 容器真 pymavlink 2.4.49 ran=22 fails=0);
   真实仿真行为验收未执行,归 WP307。
 - **M0-M4 = 窄验收**(编译/单测/切片对拍);行为等价与 3D 无损未证,归 P2/P3。
-- **B23 runner 等 mission + B22 exploration/navigation IMU 接线补齐(wm `faadb2a`/`e569ecf`,2026-07-18)**:
-  先红后绿 + 全模块 11 包测试 ok;状态词=**已编码+单测通过,真实仿真未验**,不改判任何门。
+- **B23 runner 等 mission + B22 exploration/navigation IMU 接线补齐(wm `faadb2a`/`e569ecf`)**:
+  先红后绿+全模块 11 包测试 ok;**真实仿真中 B23 修复已实际生效**(AA001/AA002 五个
+  attempt 的 runner 均等待 mission 完成),但 10/10 级验收仍归 WP307。
 
 ## 五、R003 九门
 
@@ -82,8 +86,8 @@ batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)
 | G1/G2 manifest 闭包 | ✅ | 三仓 bound/current rc=0 |
 | G3 生成器测试 | ✅ | 57/57 |
 | G4 文档闭包 | 🟡 PARTIAL | 14 份逐行审计完成(8 全核/5 部分/1 归档),未核范围见 [审计记录](governance/P0_doc_audit_逐份审计_2026-07-18.md) |
-| G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真未验 |
-| G6 WP304 因果链 | 🟡 环境接线 PARTIAL | 四裁决落地+镜像接缝闭合;旧 preflight READY 被 Codex 击穿(占位符过门);真实性补正已施工待 Codex 复验;A/A 不具备启动资格 |
+| G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真级验证:A/A 五 attempt 经 batch_lifecycle 正式链跑通(monitor 三轴/CANCEL/终态产物全真实产出),10/10 级验收归 WP307 |
+| G6 WP304 因果链 | 🟡 进行中 | 机器门链五验 PASS;AA001 受控复现+候选链;AA003 前置就绪;**停点=负责人批准 AA003**;OPEN-1 上游原因未定 |
 | G7 默认 10/10 | ⛔ | 待 WP304-306 |
 | G8 长稳 | ⛔ | 待 G7 |
 | G9 六项收口 | 🔁 持续 | — |
@@ -91,31 +95,32 @@ batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)
 ## 六、推进思路(依赖链)
 
 ```
-当前唯一施工点          下一停点                  解锁                    仍阻塞
+当前停点                 解锁                          之后
 ──────────────────────────────────────────────────────────────────────────
-E1 A/A 实验(OFF×2+ON×2)→  A/A 无扰动门(D6)   →  E1 pilot(≤3,另批) →  E2 负载对照
-(待负责人另行放行;E1L 运行期                        ↳ OPEN-1 新数据
- 旁路链已闭合:watcher 握手/状态机/周期封存/并发采集)
-WP305 epoch 复验    →  已达成(双环境独立复验) →  真实仿真验收归 WP307 →  —
-WP306 三单元        →  各单元反例测试绿         →  与 E1 无依赖,可并行  →  —
+负责人批准 AA003     →  真实 A/A(OFF×2+ON×2):        →  ①A/A 扰动结论(D6 门)
+(approval 绑 plan SHA)   失败臂带 BIN/EKF 内部时序        ②OPEN-1 候选链检验
+WP306 三单元         →  各单元反例测试绿(可并行,未开工) →  —
 ──────────────────────────────────────────────────────────────────────────
 OPEN-1 定位 + WP305/306 完 → WP307 默认 10/10 → WP308 长稳 → P1 关门
 P1 关门 → P2 ROS1/ROS2 对齐(oracle 冻结)→ P3 3D 无损 → P4 插件化接入
 ```
 
-- E1 基线已裁决:`eab0cc6` 独立 detached worktree 复现历史(288b486 原地不动,其上样本=新基线);
-  companion 镜像 `jazzy-eab0cc6f0d54` 已确认在盘(system docker daemon)。
-- E1 前置雷:~~Docker 双 daemon~~(**已排除**:Desktop 于 07-18 卸载,单 system daemon);
-  ~~runner 探针完即 SIGKILL mission~~(**已修 B23**,wm `faadb2a`,fixture 级;真实仿真未验);
-  RTF≈0.08(单 run ≈25 分钟墙钟,批次预算按此排)。
-- ⚠️ 基线注记:E1 历史复现基线仍=`eab0cc6` 独立 worktree(裁决不变);授权修复链在
-  `288b486` 之上(`faadb2a`→`e569ecf`→`750032a`,当前材料),属**未来新基线材料**,
-  不得混入 eab0cc6 历史统计。
+- **A/A 现行基线=FUTURE_CANDIDATE(wm `6d412a11`+companion `jazzy-6d412a11f152`)**,
+  由负责人裁决链显式推进(§三授权链);历史复现基线 `eab0cc6`(独立 worktree+镜像
+  `jazzy-eab0cc6f0d54` 在盘)仍冻结可用,两类样本不混统计。
+- 实测运行参数(AA001 帧级,取代早期估计):**RTF≈0.30 恒定**,hover 单 attempt 墙钟
+  3-4 分钟(成功/失败均短,历史"25 分钟/RTF0.08"为旧栈时代数据,已过时)。
+- E1 前置雷已清:Docker 单 daemon;B23 已修并在真实 run 生效;companion tag 绑 HEAD
+  机制正常(§三)。
 - P2/P3 是论文核心交付(等价性证据);P1 稳定门未过前不启动,但 oracle 资产
   (gbplanner-ref 镜像、桥接期证据)已冻结待用。
 
 ## 七、环境备注
 
-- Docker:单 daemon(system;Desktop 已卸载,config.json credsStore/context 残留已清)。
-- 残留容器 `zealous_curran`(Exited)= 台账登记在案的验尸容器,保留待负责人裁决。
+- Docker:单 daemon(system);运行中容器=0;exited 容器 17 个保留未删(AA001/002 各
+  attempt 收尾产物+历史验尸容器 `zealous_curran`),删除待负责人裁决。
+- 宿主 ROS2 jazzy 按方案A pins([pins](governance/ros2_host_env_pins_2026-07-20.md));
+  A/A 操作须 `source /opt/ros/jazzy/setup.bash`。
+- A/A 样本目录:`~/aa_runs/AA001-20260721`(2 attempt)、`AA002-20260721`(3 attempt)、
+  `AA003-20260722`(仅 plan/inputs,无 attempts)——均永久保留,重跑不覆盖。
 - P0 未执行遗留(tag/分支裁决/依赖清单等 7 项)登记于 [TASKS.md](TASKS.md),不擅自执行。
