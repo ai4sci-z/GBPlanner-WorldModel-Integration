@@ -151,7 +151,7 @@ python3 test_ros_adapter.py         # concrete 只订不发结构门(12P)
 
 ## 8. A/A 前置工具(2026-07-20;真实性补正后)
 
-- `aa_pair_contract.py`:双基线(eab0cc6=HISTORICAL/9a1ce95=FUTURE)配对/B23 六态/合并守卫。
+- `aa_pair_contract.py`:双基线(eab0cc6=HISTORICAL/6d412a11=FUTURE,2026-07-22 B1 观测前移)配对/B23 六态/合并守卫。
 - `aa_preflight.py --input plan.json`:唯一 A/A 预检门(只检查不启动;四态枚举)。
   **真实性门(2026-07-20 补正)**:config_hash/runtime_plan_hash 必须满足 sha256 小写
   64hex schema 且与已物化文件字节独立重算一致;镜像 digest 必须 `sha256:<64hex>`;

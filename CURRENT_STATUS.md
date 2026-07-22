@@ -21,9 +21,9 @@ CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED=dependenci
 **A/A 前置全部闭合(2026-07-20,四项裁决落地)**:方案A 宿主 ROS2 已装(pins 落档,
 source /opt/ros/jazzy 激活;未 source 仍 fail-closed);readiness=/mavlink_external_nav/status;
 wm 上游契约已实现(service.started 原子发布 service_handles.json 含真实 container_id,
-wm@9a1ce95 推 backup);sidecar live 身份消费就绪;FUTURE_CANDIDATE=9a1ce95(显式推进)。
+wm@9a1ce95 推 backup);sidecar live 身份消费就绪;FUTURE_CANDIDATE=9a1ce95(显式推进;**2026-07-22 再前移=6d412a11,B1 观测,见 §9**)。
 **A/A 环境接线=PARTIAL(2026-07-20,Codex 复验裁定)**:
-①镜像接缝已闭合——companion 镜像 `jazzy-9a1ce95c56e2` 在盘(rc=0+docker images
+①镜像接缝已闭合——companion 镜像 `jazzy-9a1ce95c56e2` 在盘(历史;当前候选镜像=`jazzy-6d412a11f152`,§9)(rc=0+docker images
 真产物,Codex 独立确认;全层 CACHED=tag 绑定新 HEAD,非行为验证)。
 ②此前"preflight READY 18/18/接线闭合"被 Codex 击穿(占位符过 presence 门);
 一次补正(hash/digest schema+物化独立重算)后,**Codex 三验再击穿(VERIFIED_FAIL)**:
@@ -56,7 +56,7 @@ batch_final 损坏拒/run_rc_map 非零拒/dry-run 缺 stub 拒(防跑真仿真)
 |---|---|---|---|
 | GBPlanner-WorldModel-Integration | main(HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`) | 治理/证据/状态入口 | 可改 |
 | gbp-feat | feat/gbplanner-ros2-port@`17db3bae08d7` | ROS2 迁移代码(M1-M5) | 只读 |
-| world-model | fix/world-model-e2e-takeoff@`9a1ce95c56e2`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 授权链 `faadb2a`→`e569ecf`→`750032a`→`9a1ce95`(service_handles 上游契约,负责人批准);A/A 候选基线 |
+| world-model | fix/world-model-e2e-takeoff@`6d412a11f152`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 授权链 `faadb2a`→`e569ecf`→`750032a`→`9a1ce95`→`6d412a11`(LOG_DISARMED 观测,负责人 B1 裁决);A/A 候选基线 |
 
 ## 四、已证事实(按证据等级)
 
