@@ -1,6 +1,6 @@
 # R003 第一方活跃文档统一注册表 + 逐主张清单(11 字段;真实路径;全 34 覆盖)
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
-# generated_at_head=f60b33c(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=33 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
+# generated_at_head=10e3e72(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=33 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
 CURRENT_STATUS.md	§一 目标与路线	CURRENT	当前状态唯一权威	固定路线 P0→P1(WP303-308)→P2→P3→P4;并列共存非替换;多层楼梯只做架构预留	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	f60b33c
 CURRENT_STATUS.md	§二 当前位置(一句话)	CURRENT	当前状态唯一权威	P0 收尾+WP304;R003 状态闭环 VERIFIED_PASS;A/A 环境接线 PARTIAL(三轮击穿:占位符/测试孤岛/aggregate 空分母+fixture 后门;五轮击穿全部补正且五验包 Codex 复验 VERIFIED_PASS(边界:ON 臂深层 evidence=登记风险);A/A 启动资格仍未授予;待负责人 A/B 裁决(§8.6));A/A 不具备启动资格;P2-OFFLINE-PREP 获准并行未开工	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	f60b33c
@@ -46,5 +46,5 @@ runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;�
 文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	da695d3	CURRENT_ENTRY	KEEP	-	da695d3
 项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 governance/ros2_host_env_pins_2026-07-20.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	宿主 ROS2 环境 pins(方案A 裁决;版本/回滚/激活;未 source 仍 fail-closed)	宿主 dpkg 实测 2026-07-20	bae00bc	REFERENCE_MARKED	KEEP_MARKED	-	bae00bc
-governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:镜像重建有效;§5-§8=五轮击穿与补正(占位符/测试孤岛/验收出口/终态语义);不改判门	宿主 docker/preflight 实测 2026-07-20	3ee8806	EVIDENCE_FROZEN	KEEP	-	3ee8806
+governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:镜像重建有效;§5-§8=五轮击穿与补正(占位符/测试孤岛/验收出口/终态语义);不改判门	宿主 docker/preflight 实测 2026-07-20	10e3e72	EVIDENCE_FROZEN	KEEP	-	10e3e72
 runbooks/world-model-jazzy/l0_hover/open1/AA001_r3_定向分析_2026-07-21.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:aa-r3 失败定向分析(候选链=FCU 慢启动>预算;候选非CONFIRMED;AA002 观测建议)	只读离线实测 2026-07-21	3ee8806	EVIDENCE_FROZEN	KEEP	-	3ee8806
