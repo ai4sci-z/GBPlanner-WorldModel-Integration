@@ -14,15 +14,18 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 
 ## 二、当前位置
 
-**P1 前置 · WP304 · A/A 观测链。停点=等待负责人批准 exact frozen_plan_sha256。**
-**AA003 validate-only 在当前 HEAD 复核 READY**(2026-07-22;failed_checks=[] / producer_started=0 /
-无 attempts / 无 approval;绑 wm@`6d412a11`+companion `sha256:c137d509`+config_hash `8521cda7`+
-runtime_plan_hash `1f03e80a`+ros_domain 85+execution_order aa-r1/aa-r3/aa-r2/aa-r4=OFF/OFF/ON/ON)。
-**呈批 frozen_plan_sha256 绑 main HEAD,须以本治理提交落定后的最终 HEAD 现跑 validate-only 取得
-(值见本轮报告/证据文档 §9.2),不在此冻结具体值以免 HEAD 前移致 SHA 失效。真实 execute 未启动**——
-负责人须明确写"批准执行 AA003,frozen_plan_sha256=<落定 HEAD 现跑值>"方可落盘真实 approval(任何人
-不得代签)+`--execute`。**validate-only 不是 Review3 进展;A/A 启动资格未授予;OPEN-1 未定位;真实
-telemetry evidence 未验证。**
+**P1 前置 · WP304 · A/A 观测链。真实 AA003 已执行(负责人批准 exact SHA,2026-07-22)。**
+approval 绑 frozen_plan_sha256=`3c41d8e…453144`(机器自校验 ok,P02.3 不可变全过),`--execute`
+正式入口过门(producer_started=1/READY/refusal=[])。**aa-r1 OFF 失败即停(~3m44s,preflight_timeout,
+`S1 wait_nav_ready`,armed_seen=false=从未 arm);aa-r3/aa-r2/aa-r4=NOT_STARTED_PRIOR_FAILURE(入分母)。**
+- **A/A 无结论**:仅 1 OFF 跑完,ON 臂未跑,无 OFF/ON telemetry 扰动对比。
+- **★OPEN-1 新证据(主线推进)**:①**首个"失败样本+BIN"受控复现**——LOG_DISARMED=1 令未 arm 也留
+  BIN(3.1MB,含 XKF0-5/NKF0-5/VISO/VISP/ORGN),**消除 AA001 no-BIN=FCU 内部黑盒的盲区**;②帧级坐实
+  前20s 墙钟 LP 0.9Hz 慢启动+12 次>1000ms 打断,与 AA001-r3 同链强支持。判读见
+  [open1/AA003_result_OPEN1判读_2026-07-22.md](runbooks/world-model-jazzy/l0_hover/open1/AA003_result_OPEN1判读_2026-07-22.md)。
+- **OPEN-1 仍未定位**:上游"为何慢启动"根因 UNKNOWN,须 BIN-EKF(XKF/VISO)内部时序分析(下一步)。
+**A/A 启动资格已就此单次消费(负责人批准该 SHA);是否重跑 AA003 取 ON 臂+多样本待负责人裁决。
+不等于 WorldModel 稳定/10-10/长稳/Review3 完成。**
 
 分项现状:
 
