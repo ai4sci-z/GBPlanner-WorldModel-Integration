@@ -11,9 +11,9 @@ CURRENT_STATUS.md	§六 推进思路(依赖链)	CURRENT	当前状态唯一权威
 CURRENT_STATUS.md	§七 环境备注	CURRENT	当前状态唯一权威	单 docker daemon;残留容器 zealous_curran 留裁决;P0 遗留 7 项登记 TASKS	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	e5a14b1
 HANDOVER_LINUX.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	33449ff	CURRENT_ENTRY	KEEP	-	33449ff
-TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	e5a14b1
-TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	e5a14b1
-TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	e5a14b1
+TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	64709b6
+TASKS.md	当前队列表	CURRENT	工作包队列权威	WP303→WP308 依赖/门/状态	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	64709b6
+TASKS.md	相邻技术债	CURRENT	工作包队列权威	exploration IMU / runner 不等 mission	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	64709b6
 docs/GBPlanner原始论文与代码对应关系.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	论文↔代码对应;桥接=正解结论SUPERSEDED,integration路径改归档位;论文摘录未逐页复核	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_包清单与体量_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结镜像实测盘点;CURRENT降级+scratchpad脚本留存标注;未重跑镜像复核	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_PARTIAL	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
 docs/ros2迁移_直连架构契约_2026-07-07.md	整档(逐行审计)	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	直连契约(M4/M5设计输入);ACTIVE降级+2路径改归档位+TF假设按理解(二)校正	逐份审计表 governance/P0_doc_audit_逐份审计_2026-07-18.md(读取范围/重放核验/未核实范围逐份登记)	19b75b7	REFERENCE_VERIFIED	KEEP_MARKED	CURRENT_STATUS.md	19b75b7
