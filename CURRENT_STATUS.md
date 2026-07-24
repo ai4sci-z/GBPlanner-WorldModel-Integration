@@ -19,11 +19,16 @@ approval 绑 frozen_plan_sha256=`3c41d8e…453144`(机器自校验 ok,P02.3 不�
 正式入口过门(producer_started=1/READY/refusal=[])。**aa-r1 OFF 失败即停(~3m44s,preflight_timeout,
 `S1 wait_nav_ready`,armed_seen=false=从未 arm);aa-r3/aa-r2/aa-r4=NOT_STARTED_PRIOR_FAILURE(入分母)。**
 - **A/A 无结论**:仅 1 OFF 跑完,ON 臂未跑,无 OFF/ON telemetry 扰动对比。
-- **★OPEN-1 新证据(主线推进)**:①**首个"失败样本+BIN"受控复现**——LOG_DISARMED=1 令未 arm 也留
-  BIN(3.1MB,含 XKF0-5/NKF0-5/VISO/VISP/ORGN),**消除 AA001 no-BIN=FCU 内部黑盒的盲区**;②帧级坐实
-  前20s 墙钟 LP 0.9Hz 慢启动+12 次>1000ms 打断,与 AA001-r3 同链强支持。判读见
-  [open1/AA003_result_OPEN1判读_2026-07-22.md](runbooks/world-model-jazzy/l0_hover/open1/AA003_result_OPEN1判读_2026-07-22.md)。
-- **OPEN-1 仍未定位**:上游"为何慢启动"根因 UNKNOWN,须 BIN-EKF(XKF/VISO)内部时序分析(下一步)。
+- **★OPEN-1 主线推进(BIN-EKF+rosbag 分析已做)**:①**首个失败样本+BIN**(LOG_DISARMED=1 生效,消除 no-BIN 盲区);
+  ②BIN 证 FCU/EKF 侧早期健康(external nav 输入 66.9Hz 干净、EKF 3.3s 达完整解、origin 早设)→**CONTRADICTED
+  "输入慢/EKF 融合慢/origin 慢"三子假设**;③rosbag 证 ROS 侧 external nav **全程新鲜**(odom_age≈1ms,RTF=0.30 实测,
+  "sim-40s 硬停"是时钟误读=run 结束点);④**直接观测到 readiness 狂闪**:sender `ready` 每1-2s翻转而 odom 恒新鲜1ms
+  →翻转项=local_position_fresh(FCU LP 输出反馈,推断),tlog 证 LP 输出 0.9Hz(511 限速)。判读见
+  [AA003_BIN_EKF分析](runbooks/world-model-jazzy/l0_hover/open1/AA003_BIN_EKF分析_2026-07-22.md)+[AA003_result](runbooks/world-model-jazzy/l0_hover/open1/AA003_result_OPEN1判读_2026-07-22.md)。
+- **OPEN-1 候选推进但仍未定位**:候选从"external nav readiness 慢启动"**推进到直接证据级**——"FCU LP 输出反馈慢
+  →local_position 新鲜度闪→readiness 零迟滞门狂闪→攒不够5s→timeout",与 AA001-r3/Q2§12 时钟域自洽。**UNKNOWN**:
+  local_position_fresh 为翻转项属推断(status 未直接登记)、511 输出为何慢、是否全样本同此。**不写已定位。** 下一步=
+  离线核 LP gap 与 ready 翻转对齐 + 单变量修复候选(提 LP 率/加迟滞/阈值改 sim 域)待批。
 **A/A 启动资格已就此单次消费(负责人批准该 SHA);是否重跑 AA003 取 ON 臂+多样本待负责人裁决。
 不等于 WorldModel 稳定/10-10/长稳/Review3 完成。**
 

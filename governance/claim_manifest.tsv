@@ -50,3 +50,4 @@ governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md	
 runbooks/world-model-jazzy/l0_hover/open1/AA001_r3_定向分析_2026-07-21.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:aa-r3 失败定向分析(候选链=FCU 慢启动>预算;候选非CONFIRMED;AA002 观测建议)	只读离线实测 2026-07-21	3ee8806	EVIDENCE_FROZEN	KEEP	-	3ee8806
 
 runbooks/world-model-jazzy/l0_hover/open1/AA003_result_OPEN1判读_2026-07-22.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:真实 AA003 aa-r1 OFF 失败(preflight_timeout/never arm);A/A 无结论;OPEN-1 新证据=首个失败样本+BIN(LOG_DISARMED=1 生效,含 XKF/NKF/VISO);OPEN-1 仍未定位(慢启动上游因 UNKNOWN)	只读离线实测 2026-07-22	e5a14b1	EVIDENCE_FROZEN	KEEP	-	e5a14b1
+runbooks/world-model-jazzy/l0_hover/open1/AA003_BIN_EKF分析_2026-07-22.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:aa-r1 BIN(pymavlink)+rosbag 分析;CONTRADICTED 输入慢/EKF慢/origin慢;RTF=0.30(40s硬停=时钟误读);直接观测 sender ready 狂闪(local_position_fresh 推断);候选推进未定位	只读离线实测 2026-07-22	HEAD_PENDING	EVIDENCE_FROZEN	KEEP	-	HEAD_PENDING
