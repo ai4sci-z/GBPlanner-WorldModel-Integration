@@ -2,13 +2,13 @@
 # lifecycle: CURRENT=当前事实源 / REFERENCE=参考 / EVIDENCE=冻结证据 / ARCHIVE=历史归档(不入本表,见 docs/archive) / UNVERIFIED=未逐行核对
 # generated_at_head=e5a14b1(review commit=提交二;精确见 manifest 头 HEAD=) active_first_party_md=33 note=CURRENT 文档逐章节登记;E0-EVIDENCE-GATE-CORRECT 包C 时效重核
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
-CURRENT_STATUS.md	§一 目标与路线	CURRENT	当前状态唯一权威	固定路线 P0→P1(WP303-308)→P2→P3→P4;并列共存非替换;多层楼梯只做架构预留	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	e5a14b1
-CURRENT_STATUS.md	§二 当前位置	CURRENT	当前状态唯一权威	WP304;真实 AA003 已执行(负责人批准 exact SHA):aa-r1 OFF 失败即停(preflight_timeout/S1 wait_nav_ready/never arm),aa-r3/r2/r4=NOT_STARTED 入分母;A/A 无结论(ON 未跑);★OPEN-1 新证据=首个失败样本+BIN(LOG_DISARMED=1 生效,含 XKF/NKF/VISO,消除 no-BIN 盲区);OPEN-1 仍未定位(慢启动上游因 UNKNOWN=待 BIN-EKF 分析);A/A 启动资格单次已消费	E0-CORRECT 逐章节核对	e5a14b1	CURRENT_CONSISTENT	KEEP	-	e5a14b1
-CURRENT_STATUS.md	§三 三仓基线	CURRENT	当前状态唯一权威	三仓分支@HEAD/角色/本轮可改否;wm origin=SZ-surveying 勿推	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	e5a14b1
-CURRENT_STATUS.md	§四 已证事实(按证据等级)	CURRENT	当前状态唯一权威	B21 已验证/B22 候选/默认主线 6/3/3+诊断臂旁证 4/3/3/OPEN-1 未定位/OPEN-2 环境债已消除(行为验收归 WP307)/M0-M4 窄验收	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	e5a14b1
-CURRENT_STATUS.md	§五 R003 九门	CURRENT	当前状态唯一权威	G1-G3 绿;G4 PARTIAL;G5 实现停点;G6=E0 补正落地+E1 方案交付;G7/G8 阻塞	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	e5a14b1
-CURRENT_STATUS.md	§六 推进思路(依赖链)	CURRENT	当前状态唯一权威	E1L 达成:运行期状态机(存活期握手/连续采集/周期封存/证据门 dry-run;real 仅编码+recording fixture),下一=A/A 停点待放行;WP305 双环境复验已达成/WP306 可并行;基线裁决 eab0cc6;P2/P3 未启动	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	e5a14b1
-CURRENT_STATUS.md	§七 环境备注	CURRENT	当前状态唯一权威	单 docker daemon;残留容器 zealous_curran 留裁决;P0 遗留 7 项登记 TASKS	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	e5a14b1
+CURRENT_STATUS.md	§一 目标与路线	CURRENT	当前状态唯一权威	固定路线 P0→P1(WP303-308)→P2→P3→P4;并列共存非替换;多层楼梯只做架构预留	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	58b3d6b
+CURRENT_STATUS.md	§二 当前位置	CURRENT	当前状态唯一权威	WP304;真实 AA003 已执行(负责人批准 exact SHA):aa-r1 OFF 失败即停(preflight_timeout/S1 wait_nav_ready/never arm),aa-r3/r2/r4=NOT_STARTED 入分母;A/A 无结论(ON 未跑);★OPEN-1 新证据=首个失败样本+BIN(LOG_DISARMED=1 生效,含 XKF/NKF/VISO,消除 no-BIN 盲区);OPEN-1 仍未定位(慢启动上游因 UNKNOWN=待 BIN-EKF 分析);A/A 启动资格单次已消费	E0-CORRECT 逐章节核对	e5a14b1	CURRENT_CONSISTENT	KEEP	-	58b3d6b
+CURRENT_STATUS.md	§三 三仓基线	CURRENT	当前状态唯一权威	三仓分支@HEAD/角色/本轮可改否;wm origin=SZ-surveying 勿推	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	58b3d6b
+CURRENT_STATUS.md	§四 已证事实(按证据等级)	CURRENT	当前状态唯一权威	B21 已验证/B22 候选/默认主线 6/3/3+诊断臂旁证 4/3/3/OPEN-1 未定位/OPEN-2 环境债已消除(行为验收归 WP307)/M0-M4 窄验收	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	58b3d6b
+CURRENT_STATUS.md	§五 R003 九门	CURRENT	当前状态唯一权威	G1-G3 绿;G4 PARTIAL;G5 实现停点;G6=E0 补正落地+E1 方案交付;G7/G8 阻塞	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	58b3d6b
+CURRENT_STATUS.md	§六 推进思路(依赖链)	CURRENT	当前状态唯一权威	E1L 达成:运行期状态机(存活期握手/连续采集/周期封存/证据门 dry-run;real 仅编码+recording fixture),下一=A/A 停点待放行;WP305 双环境复验已达成/WP306 可并行;基线裁决 eab0cc6;P2/P3 未启动	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	58b3d6b
+CURRENT_STATUS.md	§七 环境备注	CURRENT	当前状态唯一权威	单 docker daemon;残留容器 zealous_curran 留裁决;P0 遗留 7 项登记 TASKS	E0-CORRECT 逐章节核对	f60b33c	CURRENT_CONSISTENT	KEEP	-	58b3d6b
 HANDOVER_LINUX.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
 README.md	整档	CURRENT	项目入口(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	33449ff	CURRENT_ENTRY	KEEP	-	33449ff
 TASKS.md	下游阻塞任务	CURRENT	工作包队列权威	P2/P3/P4/架构预留 阻塞	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	64709b6
@@ -41,7 +41,7 @@ runbooks/world-model-jazzy/l0_hover/l0_batch_evidence_2026-07-14.md	整档	EVIDE
 runbooks/world-model-jazzy/l0_hover/l15_frame_audit_evidence_2026-07-16.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/l0_hover/l1_bringup_evidence_2026-07-15.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
 runbooks/world-model-jazzy/stage5a_diagnosis.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结原始实验证据(数值不改)	机器分类+人工规则	19b75b7	EVIDENCE_FROZEN	KEEP	-	19b75b7
-接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	e5a14b1
+接力棒_当前值班.md	当前交接块	CURRENT	交接锁	执行者/HEAD/工作包/允许禁止/已知失败/下一停点	E0-CORRECT 逐章节核对	3ee8806	CURRENT_CONSISTENT	KEEP	-	58b3d6b
 工作铁律.md	整档	CURRENT	执行纪律权威(非状态源)	实证/颗粒度/文档/收口/红线五章铁律	E0-CORRECT 逐章节核对	33449ff	CURRENT_CONSISTENT	KEEP	-	33449ff
 文档索引.md	整档	CURRENT	导航(不承载状态)	入口/导航/协议,指向 CURRENT_STATUS	E0-CORRECT 逐章节核对	da695d3	CURRENT_ENTRY	KEEP	-	da695d3
 项目简洁汇报.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
@@ -50,4 +50,4 @@ governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md	
 runbooks/world-model-jazzy/l0_hover/open1/AA001_r3_定向分析_2026-07-21.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:aa-r3 失败定向分析(候选链=FCU 慢启动>预算;候选非CONFIRMED;AA002 观测建议)	只读离线实测 2026-07-21	3ee8806	EVIDENCE_FROZEN	KEEP	-	3ee8806
 
 runbooks/world-model-jazzy/l0_hover/open1/AA003_result_OPEN1判读_2026-07-22.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:真实 AA003 aa-r1 OFF 失败(preflight_timeout/never arm);A/A 无结论;OPEN-1 新证据=首个失败样本+BIN(LOG_DISARMED=1 生效,含 XKF/NKF/VISO);OPEN-1 仍未定位(慢启动上游因 UNKNOWN)	只读离线实测 2026-07-22	e5a14b1	EVIDENCE_FROZEN	KEEP	-	e5a14b1
-runbooks/world-model-jazzy/l0_hover/open1/AA003_BIN_EKF分析_2026-07-22.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:aa-r1 BIN(pymavlink)+rosbag 分析;CONTRADICTED 输入慢/EKF慢/origin慢;RTF=0.30(40s硬停=时钟误读);直接观测 sender ready 狂闪(local_position_fresh 推断);候选推进未定位	只读离线实测 2026-07-22	HEAD_PENDING	EVIDENCE_FROZEN	KEEP	-	HEAD_PENDING
+runbooks/world-model-jazzy/l0_hover/open1/AA003_BIN_EKF分析_2026-07-22.md	整档	EVIDENCE	派生/参考;状态权威=CURRENT_STATUS.md	冻结证据:aa-r1 BIN(pymavlink)+rosbag 分析;CONTRADICTED 输入慢/EKF慢/origin慢;RTF=0.30(40s硬停=时钟误读);直接观测 sender ready 狂闪(local_position_fresh 推断);候选推进未定位	只读离线实测 2026-07-22	58b3d6b	EVIDENCE_FROZEN	KEEP	-	58b3d6b
