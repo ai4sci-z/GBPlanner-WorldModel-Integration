@@ -25,13 +25,12 @@ approval 绑 frozen_plan_sha256=`3c41d8e…453144`(机器自校验 ok,P02.3 不�
   "sim-40s 硬停"是时钟误读=run 结束点);④**直接观测到 readiness 狂闪**:sender `ready` 每1-2s翻转而 odom 恒新鲜1ms
   →翻转项=local_position_fresh(FCU LP 输出反馈,推断),tlog 证 LP 输出 0.9Hz(511 限速)。判读见
   [AA003_BIN_EKF分析](runbooks/world-model-jazzy/l0_hover/open1/AA003_BIN_EKF分析_2026-07-22.md)+[AA003_result](runbooks/world-model-jazzy/l0_hover/open1/AA003_result_OPEN1判读_2026-07-22.md)。
-- **OPEN-1 候选=STRONG_SUPPORT(经 2026-07-26 自检降级,不写"已定位")**:P01(aa-r1 rosbag 255帧)+P02 代码——
-  **VERIFIED**:odom_fresh 255/255 恒 true→**外部导航输入侧排除**;readiness 失败全由 local_position not-fresh 解释,分两半——
-  **FCU LOCAL_POSITION 迟起(msgid32 首帧 sim-boot 5.5s/wall+21s)24帧 + 迟起后仍慢/gappy(4.3Hz/12次>1000ms)20帧**;
-  companion 墙钟1000ms阈值(external_nav.py:590)+零迟滞门(runtime_state.py:379)→迟+慢LP致readiness反复清零→timeout。
-  **级别 STRONG_SUPPORT 非 DIRECT-已定位**("ready==fcu_local_position_ready 44/44"是代码同义反复,不作独立证据,已自检收回)。
-  **UNKNOWN**:FCU LP 为何迟+慢(EKF-解到首输出延迟?511协商?RTF?均候选未验)。**推荐单变量 A(提率),OFF-only,待批**;
-  B加迟滞/C阈值改sim域备选。判读=AA003_BIN_EKF分析 §8.1。
+- **★OPEN-1 单变量修复已实施并经 OFF-only 3/3 验证(2026-07-26;不等于关闭)**:链(FCU LP 输出 RTF 节流+迟起 ×
+  companion 墙钟 1000ms 阈值 × 零迟滞 5s 门)经 §9 钻底(511 假设 CONTRADICTED,RTF 节流坐实)+**干预验证**:
+  wm@`23116ca`(唯一变量 max-local-position-age-ms 1000→4000,先红后绿,推 backup)→OFF-only ×3 **全过**
+  (3/3 armed+airborne+S13;run1 机制核验:首 true 后翻转 0,修复前全程狂闪;age max 3800<4000 余量仅 200ms=薄,
+  耐久修法=阈值改 sim 域,登记)。**OPEN-1 保持 OPEN**:3/3≠10/10,待 WP307 默认 10/10(建议基于 23116ca,
+  FUTURE_CANDIDATE 前移待负责人裁决)。判读=AA003_BIN_EKF分析 §9-§10。
 **A/A 启动资格已就此单次消费(负责人批准该 SHA);是否重跑 AA003 取 ON 臂+多样本待负责人裁决。
 不等于 WorldModel 稳定/10-10/长稳/Review3 完成。**
 
