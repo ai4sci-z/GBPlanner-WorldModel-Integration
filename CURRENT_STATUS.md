@@ -25,10 +25,12 @@ approval 绑 frozen_plan_sha256=`3c41d8e…453144`(机器自校验 ok,P02.3 不�
   "sim-40s 硬停"是时钟误读=run 结束点);④**直接观测到 readiness 狂闪**:sender `ready` 每1-2s翻转而 odom 恒新鲜1ms
   →翻转项=local_position_fresh(FCU LP 输出反馈,推断),tlog 证 LP 输出 0.9Hz(511 限速)。判读见
   [AA003_BIN_EKF分析](runbooks/world-model-jazzy/l0_hover/open1/AA003_BIN_EKF分析_2026-07-22.md)+[AA003_result](runbooks/world-model-jazzy/l0_hover/open1/AA003_result_OPEN1判读_2026-07-22.md)。
-- **OPEN-1 候选推进但仍未定位**:候选从"external nav readiness 慢启动"**推进到直接证据级**——"FCU LP 输出反馈慢
-  →local_position 新鲜度闪→readiness 零迟滞门狂闪→攒不够5s→timeout",与 AA001-r3/Q2§12 时钟域自洽。**UNKNOWN**:
-  local_position_fresh 为翻转项属推断(status 未直接登记)、511 输出为何慢、是否全样本同此。**不写已定位。** 下一步=
-  离线核 LP gap 与 ready 翻转对齐 + 单变量修复候选(提 LP 率/加迟滞/阈值改 sim 域)待批。
+- **OPEN-1 机制层 DIRECT 定位(仍不写"已定位",因最上游未定)**:P01 逐帧对齐(aa-r1 rosbag,255帧)——**`ready=false`
+  的 44 帧 100% 同时 `fcu_local_position_ready=false`,且 odom_fresh=true 44/44**;FCU LOCAL_POSITION 输出实测 4.3Hz/
+  12次>1000ms gap/迟到11.9s。P02 代码坐实(external_nav.py:593-597 墙钟阈值1000ms→ready;runtime_state.py:379 零迟滞)。
+  链=**FCU LP 输出慢→local_position 新鲜度墙钟破阈闪断(DIRECT)→ready+readiness 门狂闪→零迟滞门攒不够5s→timeout**,
+  与 AA001-r3/Q2§12 时钟域自洽。**仅剩最上游 UNKNOWN**:FCU LP 511 输出为何慢/迟到(ArduPilot 侧)。**推荐单变量验证=A
+  (提 FCU LP 输出率消 gap),OFF-only,待负责人批**;B 加迟滞/C 阈值改 sim 域备选。判读=AA003_BIN_EKF分析 §7。
 **A/A 启动资格已就此单次消费(负责人批准该 SHA);是否重跑 AA003 取 ON 臂+多样本待负责人裁决。
 不等于 WorldModel 稳定/10-10/长稳/Review3 完成。**
 
