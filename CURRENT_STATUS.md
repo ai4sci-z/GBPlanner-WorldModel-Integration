@@ -1,4 +1,4 @@
-# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-22)
+# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-28(本会话:起飞不稳三因分解+R3-H修复))
 
 > 问题事实源 = [docs/world-model端到端Bug台账_给作者PR.md](docs/world-model端到端Bug台账_给作者PR.md);
 > 任务队列 = [TASKS.md](TASKS.md);交接 = [接力棒_当前值班.md](接力棒_当前值班.md);
@@ -13,6 +13,21 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 多层楼梯探索只做架构预留,不写功能代码。
 
 ## 二、当前位置
+
+**★2026-07-28 本会话增量(把"起飞不稳"分解为三个有名有据的真因,详见接力棒)**:
+- **①环境 QGC 占 14550(已修·实证)**:本会话遗留 QGroundControl 占 UDP 14550→sim mavlink-router
+  绑定失败→MAVLink 饿死→LP=0→frame_contract_probe 零样本→起飞前被挡。关掉 QGC 干净重跑,
+  **默认档两批共 16 run:起飞 15/16(94%)、完整通过 13/16(81%)**——证明近期"起不了飞"主要是它,
+  **不是 ~50% OPEN-1**(历史 AA003 或亦被污染)。
+- **②R3-H 降落门时序竞态(已修+测试+提交 wm@e16479e,推 backup,待提 PR)**:slam_hover_probe 抢在
+  force_disarm 3s 宽限期内单帧快照→误报 disarm_not_confirmed/motors_not_safe(mission 终态本正常);
+  修=build_landing_summary 视"force-disarm pending"为进行中而非失败,test-first 4 用例(不掩盖真失败)
+  红→绿+现有 5 无回归。×8 端到端验证进行中。
+- **③R3-G IMU 解锁失败(诊断到 WP306,罕见 1/16,未修)**:`Arm: Accels inconsistent`(每 run x20 持续)
+  =两 SITL IMU 加速度计系统不一致(标定参数已相同,根在 Gazebo-ArduPilot 多 IMU 集成层,同 B22 倒装债);
+  不 hack 关 ARMING_CHECK;归 WP306 深做,须负责人排期。
+- **诚实**:9/10≠10/10,**OPEN-1/WP307 未收口**;此前本会话曾误写"OPEN-1 已修复"已撤回(过度声称);
+  本会话自造 3 次回归(QGC占口、band-aid、mavlink-router加固)全认领+回退。
 
 **P1 前置 · WP304 · A/A 观测链。真实 AA003 已执行(负责人批准 exact SHA,2026-07-22)。**
 approval 绑 frozen_plan_sha256=`3c41d8e…453144`(机器自校验 ok,P02.3 不可变全过),`--execute`
