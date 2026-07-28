@@ -1,4 +1,4 @@
-# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-28(本会话:起飞不稳三因分解+R3-H修复))
+# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-28晚(OPEN-1判别器+剂量-响应修复+首次10/10候选;GBPlanner 3/3+切换接口))
 
 > 问题事实源 = [docs/world-model端到端Bug台账_给作者PR.md](docs/world-model端到端Bug台账_给作者PR.md);
 > 任务队列 = [TASKS.md](TASKS.md);交接 = [接力棒_当前值班.md](接力棒_当前值班.md);
@@ -13,6 +13,19 @@ world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
 多层楼梯探索只做架构预留,不写功能代码。
 
 ## 二、当前位置
+
+**★★2026-07-28 晚·OPEN-1 攻坚重大进展(详证据链见接力棒)**:
+- **判别器找到并量化**:FCU 周期遥测流空洞(心跳 max-gap 2.1~284.6s 系统性;洞盖 preflight→LP 缺,
+  盖 arm 段→BIN 证 armed×8 但心跳 0 帧→S3 死循环)←SET_MESSAGE_INTERVAL 双源风暴(mission 9消息×2s
+  =86% + external_nav 3×2s=14%,共 3114 次/run,ACK 风暴挤压 FCU TX)。
+- **单变量修复+剂量-响应确认**:陈旧门控(新鲜不重发/bring-up 与陈旧照常)wm@6981f1d(external_nav,
+  4+22 测试绿)+ wm@4c71a4f(mission,75 测试绿)。三档:全风暴 284.6s → 14%门控 13.8s → 完整门控
+  2.1s(标称周期零空洞)。**决定批 PASS 10/10(全 armed+airborne+task_success)= 默认路径首次连续
+  10/10(候选分支 repro_batch 口径;正式 WP307 验收须官方门链+负责人签署,不写 CLOSED)。**
+- **R3-I 两次纠错后定性**:非 B21 深层、非 B22 翻转(rosbag 可靠取证:slam_yaw 全程贴真值)——
+  =XY 审计在悬停厘米尺度不适定(WP303 域);**裁决材料三案已备**(runbooks/.../XY审计悬停尺度误挡_裁决材料)。
+- **GBPlanner 主线**:决策内核 3/3 可靠驱动 world-model 探索(P4 首个实证);切换接口成型
+  (桌面三选一热插拔+GBPlanner 演示含 Gazebo 显示);P2 rrg 对拍 harness 设计定稿(样本 tap/replay)。
 
 **★2026-07-28 本会话增量(把"起飞不稳"分解为三个有名有据的真因,详见接力棒)**:
 - **①环境 QGC 占 14550(已修·实证)**:本会话遗留 QGroundControl 占 UDP 14550→sim mavlink-router
