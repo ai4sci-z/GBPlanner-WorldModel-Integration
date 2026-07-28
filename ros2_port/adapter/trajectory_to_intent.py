@@ -13,7 +13,13 @@ Stage4·trajectory_to_intent(安全版,按 Review_013 §4 十项清单重写)。
  3. 无 odom(>2s 无更新)→ hold + blockers=[no_odom]。
  4. 轨迹超时(15s 无新轨迹且已跟完)→ hold + blockers=[trajectory_stale],绝不沿旧航点续跑。
  5. frame 校验:轨迹与 odom 必须同为 map,不匹配 → hold + blockers=[frame_mismatch]。
- 6. z 不下发(intent 契约无 z 速度,z 由飞控高度环保持)——天然限高。
+ 6. z 闭环(M5):intent 增加可选字段 "z_m" = 当前目标航点期望绝对高度(米,向上为正,
+    local 系)。运动 intent 带当前目标 wp 的 z;hold intent 在 last_z_m 已知时也带
+    (防悬停高度跳回默认起飞高)。从未有合法 z 时不带该字段——控制器侧回退
+    -takeoff_alt_m,行为与旧契约完全一致(向后兼容)。控制器侧对 z_m 做
+    sanity(0.05<z<100)+ clamp(0.3,3.0),仍有硬限高。
+    背景:m5_20260728T181620 实测,GBPlanner 3D 路径在规划高度过碰撞检查,
+    但 z 被钉在 0.5m 贴地执行 → 蹭墙。
  7. B15 门(fcu_controller 起飞前不转发 intent)为第二道保险。
  8. 每条运动 intent 日志:traj#/wp_idx/odom/目标/限速后速度。
 """
@@ -62,6 +68,29 @@ def yaw_from_quat(x, y, z, w):
     return math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
 
 
+def intent_z(wp_z, last_z):
+    """M5 z闭环:选择 intent 可选字段 "z_m" 的值(纯函数,便于无 ROS 测试)。
+
+    wp_z:  当前目标航点的 z(运动时),hold/无目标时传 None。
+    last_z: 最近一次下发过的合法 z_m(self.last_z_m),从未有则 None。
+    返回 float(应带 "z_m")或 None(不带字段,控制器回退 -takeoff_alt_m)。
+
+    合法性与控制器侧 sanity 同口径:可转 float 且 0.05 < z < 100
+    (NaN 任何比较为 False,天然被排除,无需 math.isnan)。
+    wp_z 非法时回退 last_z(不让坏值把悬停高度打回默认)。
+    """
+    for cand in (wp_z, last_z):
+        if cand is None:
+            continue
+        try:
+            z = float(cand)
+        except (TypeError, ValueError):
+            continue
+        if 0.05 < z < 100.0:
+            return z
+    return None
+
+
 class TrajToIntent(Node):
     def __init__(self):
         super().__init__("gbp_traj_to_intent")
@@ -77,6 +106,7 @@ class TrajToIntent(Node):
         self.wp_prereached = 0        # 轨迹到手时已在起点阈值内的 wp(不计入 accepted_goals)
         self.path_len = 0.0
         self.last_xy = None
+        self.last_z_m = None          # M5 z闭环:最近一次下发过的合法 z_m(hold 时保持)
         # Stage5a 严格 gate 所需的外部事实
         self.controller_ready = False   # /navlab/fcu/controller/status ok(bootstrap 含 takeoff)
         self.mixed_flow = False         # intent 总线上出现过非本适配器来源 → 永久闩锁
@@ -239,6 +269,7 @@ class TrajToIntent(Node):
         if self.slam_frozen():
             blockers = blockers + ["slam_frozen"]
         vx = vy = yaw_rate = 0.0
+        wp_z = None                     # M5 z闭环:当前目标航点 z(仅运动分支置值)
         if not blockers:
             p = self.odom.pose.pose.position
             # waypoint 推进(到达判定;只计运动到达,预到达在 on_traj 已剔除)
@@ -252,6 +283,7 @@ class TrajToIntent(Node):
                     break
             if self.wp_idx < len(self.traj.points):
                 wp = self.traj.points[self.wp_idx].transforms[0].translation
+                wp_z = wp.z             # M5 z闭环:规划高度随 intent 下发(碰撞检查过的高度)
                 dx, dy = wp.x - p.x, wp.y - p.y
                 dist = math.hypot(dx, dy)
                 # 外环 PD(5c run3 验尸:P-only 在 2Hz 指令+1~2s 执行滞后下极限环 ±0.3m,
@@ -288,6 +320,15 @@ class TrajToIntent(Node):
             "goal_id": "gbp_t%d_w%d" % (self.traj_id, self.wp_idx),
             "linear_x_mps": vx, "linear_y_mps": vy, "yaw_rate_radps": yaw_rate,
         }
+        # M5 z闭环:运动带当前目标 wp 的 z;hold 在 last_z_m 已知时保持;
+        # 从未有合法 z 时不带字段(控制器回退 -takeoff_alt_m,向后兼容)。
+        # 对抗验证修正(2026-07-28):z_m 仅在 enabled 且未 killed 时附带——
+        # 否则租约收回/降落期的 hold intent 会带着旧高度顶飞机对抗下降。
+        if self.enabled and not self.killed:
+            z_m = intent_z(wp_z, self.last_z_m)
+            if z_m is not None:
+                intent["z_m"] = z_m
+                self.last_z_m = z_m
         self.pub_intent.publish(String(data=json.dumps(intent)))
 
         # Stage5a 严格 gate(Review_016 §3.3 五条件,Stage4c PASS 后启用):
