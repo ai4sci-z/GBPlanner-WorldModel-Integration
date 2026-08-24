@@ -7,7 +7,9 @@
 #   pci_trigger_node -- periodic planner calls -> /gbp/trajectory
 #   adapter          -- trajectory_to_intent.py (rclpy, bridge-era logic unchanged)
 #   gbp_enabler      -- arms /gbp/enable once the FCU controller is ready
-set -eu -o pipefail
+# ROS 2 setup.bash reads optional variables before assigning defaults, so this
+# entrypoint cannot enable nounset while sourcing the Jazzy environment.
+set -e -o pipefail
 source /opt/ros/jazzy/setup.bash
 source /ws/install/setup.bash
 POINTCLOUD_TOPIC="${GBP_POINTCLOUD_TOPIC:-/wm/cloud3d}"
