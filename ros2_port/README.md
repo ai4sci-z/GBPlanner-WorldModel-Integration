@@ -19,7 +19,8 @@
 > 3/3 和 M4 `TRAJ_POINTS=11`(`VERIFY_RC=0`),但仍须重建运行镜像并完成新的同 run live 复验。
 > `navlab/official-baseline:jazzy-latest` 是运行镜像,不含
 > `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
-> `runbooks/ros2_port/verify_current_ros2.sh`。
+> `runbooks/ros2_port/verify_current_ros2.sh`;M5 运行镜像必须用
+> `runbooks/ros2_port/build_m5_stack.sh` 从固定基镜像重建,不得再用 `docker commit`。
 > 下文 M1/M2 段落为历史施工记录,保留不动。
 
 ## 目录
