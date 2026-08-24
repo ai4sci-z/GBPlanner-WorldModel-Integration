@@ -91,3 +91,16 @@ def test_motion_disabled_is_only_a_pre_gate_blocker():
     assert motion_disabled_blocker_required(False, False) is True
     assert motion_disabled_blocker_required(True, False) is False
     assert motion_disabled_blocker_required(False, True) is False
+
+
+def test_post_gate_runtime_blockers_are_diagnostic_only():
+    import re
+    src = _SRC_PATH.read_text(encoding="utf-8")
+    assert re.search(
+        r"if self\.ok_latched:\s*\n"
+        r"\s*post_gate_blockers = blockers\s*\n"
+        r"\s*gate_blockers = \[blocker for blocker in blockers if blocker == \"killed\"\]",
+        src,
+    )
+    assert '"blockers": gate_blockers' in src
+    assert '"post_gate_blockers": post_gate_blockers' in src

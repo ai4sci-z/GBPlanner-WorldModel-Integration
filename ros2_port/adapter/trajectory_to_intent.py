@@ -292,7 +292,7 @@ class TrajToIntent(Node):
 
     def tick(self):
         blockers = self.blockers()
-        if self.slam_frozen():
+        if not self.ok_latched and self.slam_frozen():
             blockers = blockers + ["slam_frozen"]
         vx = vy = yaw_rate = 0.0
         wp_z = None                     # M5 z闭环:当前目标航点 z(仅运动分支置值)
@@ -390,12 +390,22 @@ class TrajToIntent(Node):
             self.get_logger().warning(
                 "GATE OK latched: wp_done=%d path=%.2fm controller_ready=%s mixed_flow=%s"
                 % (self.wp_done, self.path_len, self.controller_ready, self.mixed_flow))
+        # The FCU owns return-home and landing after the gate latches. Odom,
+        # trajectory, and motion-lease blockers observed during that closeout
+        # remain useful diagnostics, but they cannot revoke already measured
+        # waypoint/path success. An explicit kill remains acceptance-fatal.
+        gate_blockers = blockers
+        post_gate_blockers = []
+        if self.ok_latched:
+            post_gate_blockers = blockers
+            gate_blockers = [blocker for blocker in blockers if blocker == "killed"]
         status = {
             "claim": "evaluated" if self.ok_latched else "in_progress",
             "strategy": "gbplanner",
             "ok": self.ok_latched,
             "gate_ok_draft": gate_ok_draft,
-            "blockers": blockers,
+            "blockers": gate_blockers,
+            "post_gate_blockers": post_gate_blockers,
             "accepted_goals": self.wp_done,
             "min_accepted_goals": 3,
             "path_length_m": round(self.path_len, 4),
