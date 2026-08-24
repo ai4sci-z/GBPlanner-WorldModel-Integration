@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # M5: world-model direct-integration run.
-#   sg docker -c 'bash runbooks/ros2_port/m5_direct_run.sh'
+#   success:          sg docker -c 'bash runbooks/ros2_port/m5_direct_run.sh'
+#   terminal failure: sg docker -c 'M5_MODE=terminal_failure bash runbooks/ros2_port/m5_direct_run.sh'
 # Starts the ROS2 GBPlanner stack container, then a world-model live run of
 # the EXPLORATION task with strategy switched to "external" via the harness's
 # --exploration-strategy run override (world-model 9852e46+; Review_001 P0-3
@@ -12,8 +13,17 @@ set -o pipefail
 WM="${WM:-/home/ai4s/projects/world-model}"
 FEAT="${FEAT:-/home/ai4s/projects/gbp-feat}"
 OUT="${OUT:-$HOME/cmp_out}"
+M5_MODE="${M5_MODE:-success}"
+TERMINAL_INJECTION_DELAY_SEC="${TERMINAL_INJECTION_DELAY_SEC:-3}"
 YAML="$WM/orchestration/sim/configs/tasks/exploration.yaml"
-RUN_ID="m5_$(date +%Y%m%dT%H%M%S)_$$"
+case "$M5_MODE" in
+  success|terminal_failure) ;;
+  *) echo "M5_MODE must be success or terminal_failure" >&2; exit 6 ;;
+esac
+if ! [[ "$TERMINAL_INJECTION_DELAY_SEC" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  echo "TERMINAL_INJECTION_DELAY_SEC must be a non-negative number" >&2; exit 6
+fi
+RUN_ID="m5_${M5_MODE}_$(date +%Y%m%dT%H%M%S)_$$"
 LOCK="$OUT/m5_direct_run.lock"
 RUN_OUT="$OUT/$RUN_ID"
 mkdir -p "$OUT"
@@ -29,8 +39,9 @@ if ! git -C "$WM" diff --quiet -- orchestration/sim/configs/tasks/exploration.ya
   echo "exploration.yaml has local modifications; baseline comparability broken, refusing"; exit 8
 fi
 trap 'docker rm -f gbp_stack >/dev/null 2>&1' EXIT
-echo "RUN_ID=$RUN_ID (strategy override: external, tracked YAML untouched)"
+echo "RUN_ID=$RUN_ID (mode=$M5_MODE, strategy override: external, tracked YAML untouched)"
 {
+  echo "M5_MODE=$M5_MODE"
   echo "MAIN_HEAD=$(git -C /home/ai4s/projects/GBPlanner-WorldModel-Integration rev-parse HEAD)"
   echo "FEAT_HEAD=$(git -C "$FEAT" rev-parse HEAD)"
   echo "WM_HEAD=$(git -C "$WM" rev-parse HEAD)"
@@ -57,6 +68,10 @@ done
   exit 10
 }
 echo "=== gbp_stack up; starting world-model live run (strategy=external) ==="
+if [ "$M5_MODE" = "terminal_failure" ]; then
+  docker exec -d -e "GBP_TERMINAL_DELAY_SEC=$TERMINAL_INJECTION_DELAY_SEC" gbp_stack bash -lc \
+    'python3 /adapter/terminal_failure_injector.py --delay-sec "$GBP_TERMINAL_DELAY_SEC" > /out/m5_terminal_injector.log 2>&1'
+fi
 
 export PATH=/usr/local/go/bin:$PATH
 export NAVLAB_SIM_DISTRO=jazzy
@@ -85,7 +100,11 @@ esac
 
 ACCEPT_RC=20
 if [ -n "$RUNDIR" ] && [ -d "$RUNDIR" ]; then
-  python3 "$FEAT/runbooks/ros2_port/validate_m5_run.py" \
+  VALIDATOR="$FEAT/runbooks/ros2_port/validate_m5_run.py"
+  if [ "$M5_MODE" = "terminal_failure" ]; then
+    VALIDATOR="$FEAT/runbooks/ros2_port/validate_m5_terminal_failure.py"
+  fi
+  python3 "$VALIDATOR" \
     --run-dir "$RUNDIR" \
     --stack-log-dir "$RUN_OUT" \
     --output "$RUN_OUT/m5_acceptance.json"
@@ -94,10 +113,12 @@ else
   echo '{"ok":false,"failures":["run_dir_missing"]}' > "$RUN_OUT/m5_acceptance.json"
 fi
 echo "=== stack logs (tails) ==="
-for f in m5_gbp_node m5_pci m5_adapter m5_enabler; do
+for f in m5_gbp_node m5_pci m5_adapter m5_enabler m5_terminal_injector; do
   echo "-- $f --"
   grep -vE "type hash|USER_DATA" "$RUN_OUT/$f.log" 2>/dev/null | tail -3
 done
 echo "ACCEPT_RC=$ACCEPT_RC"
-[ "$RC" -eq 0 ] || exit "$RC"
+if [ "$M5_MODE" = "success" ]; then
+  [ "$RC" -eq 0 ] || exit "$RC"
+fi
 exit "$ACCEPT_RC"
