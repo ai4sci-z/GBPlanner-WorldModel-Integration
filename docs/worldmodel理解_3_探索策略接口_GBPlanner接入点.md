@@ -140,6 +140,13 @@ if (not self.ok_latched and self.enabled and not self.killed
 
 **fail-closed 纪律**:默认 disabled,须向 `/gbp/enable` 发 `Bool(true)` 才动;`/gbp/kill` 一票永久禁;限速 `SPEED_MAX=0.08`、`YAW_RATE_MAX=0.30`;active trajectory 最长 120s,跟完后 15s 无新轨迹则 hold;trajectory 必须是 `map`,odom 必须是 `map→base_link`,两者任一不符都不运动。
 
+**P1-2 实跑证据(2026-08-24)**:`20260824T075515.387084602Z` 固定
+GBPlanner `887a420` 与 WorldModel `fd4296f`,adapter 只计入 3 个真实运动到达,
+path=4.0871m,gate 最终 `blockers=[]`。FCU 实测返航到 0.32648m(<0.35m),
+随后观测到 LAND ACK accepted、LAND mode、touchdown、disarm 和 motors-safe;
+同一 run 的 summary 为 `TASK_STATUS_OK`,acceptance rc=0。该证据完成直连闭环,
+不代表 M5-c 的多 run/oracle/frontier_lite 对比已完成。
+
 ---
 
 ## 2. ROS2 原生 GBPlanner 接入蓝图

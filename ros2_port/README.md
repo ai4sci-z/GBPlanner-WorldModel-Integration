@@ -6,7 +6,7 @@
 > **当前状态(2026-08-24,事实源=治理主仓 CURRENT_STATUS.md)**:
 > M1 msgs ✅ / M2 voxblox ✅(五切片全过)/ M3 core 剥离 ✅(12k 行,单测 4/4;
 > "3D 行为等价"未证,Review 002 判 NOT PROVEN)/ M4a 合成冒烟 ✅(M4b 真场景 open-loop 未测)/
-> **M5 ⏸ P1-2 尚未通过**。首次固定 SHA run
+> **M5 P1-2 ✅ 直连闭环已通过;M5-c 多 run oracle/同口径对比仍未完成**。首次固定 SHA run
 > `20260824T033655.765292080Z` 因误接旧 2D `/cloud_in` 仅形成 1 顶点/0 边。
 > 第二次 run `20260824T035607.451295836Z` 已用 `/wm/cloud3d` 恢复真实 3D 建图与规划
 > (RRG 最大 489 顶点/2944 边、轨迹最大 23 点),但同一任务窗口内
@@ -42,8 +42,11 @@
 > 4Hz 控制节拍和“当前航点连续命令 8s/2cm”停滞闩锁。
 > `20260824T074701.195741657Z` 证明窗口首尾净位移仍会把换航点后
 > 的制动回撤误判为冻结:窗口内最大位移约 8cm,但首尾仅 1.2cm。
-> 当前候选改为 epoch 起点到窗口内任一样本的最大位移,真正静止仍按
-> 8s/2cm fail-closed,尚待新的 live 复验;不得提前记作 P1-2 PASS。
+> `887a420` 改为 epoch 起点到窗口内任一样本的最大位移,真正静止仍按
+> 8s/2cm fail-closed。随后同一实跑 `20260824T075515.387084602Z`
+> (`FEAT_HEAD=887a420`,`WM_HEAD=fd4296f`) 完成 3 个真实航点、4.0871m 路径、
+> 0.32648m 返航半径、LAND ACK/mode、touchdown、disarm 和 motors-safe;
+> summary=`TASK_STATUS_OK`,acceptance rc=0,因此 P1-2 记 PASS。
 > `navlab/official-baseline:jazzy-latest` 是运行镜像,不含
 > `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
 > `runbooks/ros2_port/verify_current_ros2.sh`;M5 运行镜像必须用
@@ -130,7 +133,7 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
   (接口仍依赖 ROS2 消息/tf2/voxblox_ros);"3D 算法行为等价"未证,需 ROS1 oracle 3D fixture 对拍。
 - **M4a ✅(feat `be7d6e0`)**:节点壳 `src/gbplanner_node/` + 最小 PCI 触发,合成场景 RRG 出 12wp 轨迹。
   PCI 替身只是 smoke 工具(Review 002 §13.1),恢复 M5 前须另做 planning coordinator。
-- **M5 ⏸ P1-2 施工中**:`ea80713` 已恢复 adapter z 闭环;首次 fixed-SHA run
+- **M5 P1-2 ✅ 直连闭环通过;M5-c 🔵 待多 run 对比**:`ea80713` 已恢复 adapter z 闭环;首次 fixed-SHA run
   `20260824T033655.765292080Z` 证明旧 2D 点云入口错误。第二次 run
   `20260824T035607.451295836Z` 证明 `/wm/cloud3d`、SDF 外参和非平凡 3D RRG 已恢复,
   但因规划/执行时序与周期路径刷新,同一窗口仍为 `accepted_goals=0`,不得计作 PASS。
@@ -152,3 +155,10 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
   两次 bag 的 `yaw_map≈0.2°/yaw_ned≈89.95°` 与位置位移共同证明数值关系近似
   `NED=(map_y,map_x)`。当前候选直接按 map→base_link 姿态输出 body forward/right,
   删除位置标定闭环,并保留真实 FCU yaw freshness 门;验收门槛未放宽。
+  最终直连实跑 `20260824T075515.387084602Z` 固定 `887a420`/`fd4296f`,
+  adapter 记录 3 次真实 `WP REACHED`,gate 后 `blockers=[]`,RRG 368 顶点/
+  2259 边、17 点 trajectory、4.0871m 路径;实测返航至 0.32648m < 0.35m,
+  随后 LAND ACK/mode、touchdown、disarm、motors-safe 全部成立。同一 MCAP 为
+  150.174s/174438 messages,summary=`TASK_STATUS_OK`,M5 acceptance rc=0。
+  这只完成 P1-2 直连闭环;任务书 M5-c 要求的至少 3 run 与 oracle/
+  frontier_lite 同口径对比仍未完成,不得把整个 M5 写成完成。

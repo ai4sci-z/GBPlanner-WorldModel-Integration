@@ -469,6 +469,12 @@ odom 发生与 intent 方向相关的运动
 与 frontier_lite 做同口径对照
 ```
 
+2026-08-24 阶段状态:P1-2 直连闭环已由 run
+`20260824T075515.387084602Z` 通过。同一 run 包含 3 个真实运动到达、
+4.0871m path、非平凡 RRG/trajectory、实测返航进入 0.35m 半径、LAND ACK/
+mode、touchdown、disarm/motors-safe 和 `TASK_STATUS_OK`。M5-c 上述至少
+3 run 及 oracle/frontier_lite 同口径对比仍待执行,所以 M5 整体仍是进行中。
+
 ---
 
 ## 8. 文档体系必须同步调整
