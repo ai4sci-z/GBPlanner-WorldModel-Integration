@@ -475,8 +475,10 @@ GBPlanner `32f269f` + WorldModel `6e48597` 只有 2/2 个完全同 SHA PASS；
 真实返航超时，另一个由完成状态未闩锁造成，后者已在 `dc41bc3` 修复。两种策略的
 `accepted_goals` 语义不同，不能据此直接排名；所有 landing PASS 的
 `descent_profile.ok=false`，且 AP LAND 策略当前只审计该字段。受控 terminal failure
-安全收尾尚未实跑。固定 `32f269f` + `dc41bc3` 重建两个 cohort、关闭下降曲线证据和
-terminal failure 硬门之前，M5-c 不得写成完成，也不得进入 P2。完整证据见
+已由 `20260824T101211.945228713Z` 实证：任务保持 `TASK_STATUS_ERROR`，同时返航、
+LAND、touchdown、disarm/motors-safe 全过；该故障样本不计入正常算法分母。固定
+`32f269f` + `dc41bc3` 重建两个 cohort 并关闭下降曲线证据之前，M5-c 不得写成完成，
+也不得进入 P2。完整证据见
 [M5-c 长程 cohort 证据](M5c_cohort_2026-08-24.md)。
 
 ---

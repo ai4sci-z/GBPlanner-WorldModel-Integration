@@ -10,7 +10,9 @@
 > `accepted_goals` 语义不同，不能直接比较该数值；所有成功降落样本的下降曲线审计仍
 > 失败，AP LAND 当前只把它当审计项，不能宣称下降率安全已验证。完整样本、失败和硬门见
 > [M5-c cohort 证据](../docs/M5c_cohort_2026-08-24.md)。下一步必须固定
-> `32f269f` + `dc41bc3` 重建分母、实跑 terminal failure 安全收尾，并解决下降曲线证据。
+> `32f269f` + `dc41bc3` 重建分母并解决下降曲线证据。受控 terminal failure 已由
+> `20260824T101211.945228713Z` 实证：任务保持 ERROR，返航/LAND/touchdown/disarm 全过；
+> 该故障样本不计入正常算法分母。
 >
 > **历史施工流水（截至 P1-2 首次 PASS；以下“当前候选”等仅指当时停点）**：
 > M1 msgs ✅ / M2 voxblox ✅(五切片全过)/ M3 core 剥离 ✅(12k 行,单测 4/4;
@@ -145,8 +147,9 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
 - **M5 P1-2 ✅ 直连闭环通过；M5-c 🔵 进行中**：当前证据与硬门以
   [M5-c cohort 证据](../docs/M5c_cohort_2026-08-24.md)为准。最终高度口径 external
   同 SHA 仅 2/2 PASS；`frontier_lite` 冻结 cohort 为 4/6 PASS，且存在真实返航失败。
-  `accepted_goals` 语义不一致、terminal failure 安全收尾未实跑、AP LAND 下降曲线
-  仅审计且所有成功样本仍为 false，因此不能宣布 M5-c 完成，也不得进入 P2。
+  `accepted_goals` 语义不一致、AP LAND 下降曲线仅审计且所有成功样本仍为 false，
+  因此不能宣布 M5-c 完成，也不得进入 P2。terminal failure 安全收尾已由 `101211`
+  实跑关闭，但它不增加正常算法样本数。
 - **P1-2 历史调试记录（截至首次 PASS）**：`ea80713` 已恢复 adapter z 闭环;首次 fixed-SHA run
   `20260824T033655.765292080Z` 证明旧 2D 点云入口错误。第二次 run
   `20260824T035607.451295836Z` 证明 `/wm/cloud3d`、SDF 外参和非平凡 3D RRG 已恢复,
