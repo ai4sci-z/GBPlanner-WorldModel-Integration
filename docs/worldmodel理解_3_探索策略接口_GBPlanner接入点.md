@@ -85,11 +85,11 @@ configs/tasks/exploration.yaml L20        strategy: frontier_lite      ← 实�
 ### 1.2 平台侧谁消费这些话题(external 方必须喂饱的四张嘴)
 
 **(a) fcu_controller 消费 intent → 双路下发**。`templates/python/fcu_controller_runtime.py.tmpl`:
-- 订阅 `SPEC["setpoint_intent_topic"]`(String,depth 10,L455);
-- 回调 `on_setpoint_intent`(L357-366)只读三个运动字段,随后走**两条路**:
-  - `publish_cmd_vel_from_intent`(L368-377):`TwistStamped` 发 `cmd_vel_topic`,`frame_id=base_link`(L371)——**机体系语义**;
-  - `send_mavlink_local_position_setpoint`(L390-441):`SET_POSITION_TARGET_LOCAL_NED`,`MAV_FRAME_LOCAL_NED`(L424),把 `linear_x/y` **不经任何旋转**用作 NED 位移外推(L403-412,lookahead 2s)——**世界系语义**;
-  - 两路语义不一致是上游模糊点(cmd_vel=机体系,MAVLink 主路=世界系),我们适配器的 R_align 对齐就是为 MAVLink 主路而生(见 §2.4)。
+- 订阅 `SPEC["setpoint_intent_topic"]`(String,depth 10);
+- 回调只读三个运动字段;DDS `cmd_vel` 发布已禁用,避免双控制路;
+- `send_mavlink_local_position_setpoint` 把 `linear_x/y` 视为机体系 FRD,按 FCU
+  ATTITUDE yaw 旋到 NED,再积分 `SET_POSITION_TARGET_LOCAL_NED` 位置目标。
+- adapter 因此先在线解 map→NED,再用 `R(-yaw_fcu)` 转成 controller 所需的 body/FRD。
 - **B15 门**:MAVLink 主路在 bootstrap(GUIDED+arm+takeoff)完成前直接 return(L393 `if not bootstrap_ready(state): return`;`bootstrap_ready` 定义 L586-592)。起飞前 intent 不会进飞控。
 
 **(b) fcu_controller 消费 status → landing 联动**。exploration 任务里 `TaskCompletionStatusTopic` 被接到 exploration status 话题(`internal/tasks/runtime_artifacts.go:162-168`);fcu 侧 `on_task_completion`(fcu 模板 L340-355)判定:`ok==true` **或**(`accepted_goals>=min` 且 `path_length_m>=min` 且 `blockers` 空)→ `task_completed=true` → `landing_status.ok`(L717-735)→ 主循环等 `completion_grace_sec` 后整个任务收尾(L516-524)。**也就是说:外部方把 status 的 ok 置 true 的那一刻,就是触发降落的那一刻**——这就是我们适配器早期把 ok 保守置 False、只报 `gate_ok_draft` 的原因(防误触发 landing)。
@@ -165,7 +165,7 @@ wm/cloud3d(3D 点云)────┘                                            
 | 2 | `wm/cloud3d`(输入,3D 点云) | `sensor_msgs/PointCloud2` | `lidar3d_frame`(SDF `gz_frame_id`,patch_lidar3d.py L55) | 5Hz(`update_rate`,L59) | 来源:我们加的 net-new 3D lidar(360×30 线,±30°,0.3–10m;`runbooks/world-model-jazzy/patch_lidar3d.py` L54-88),gz 话题 `/lidar3d/points` 经 ros_gz_bridge 出 ROS(patch B,L101-107;桥模板本体 `templates/yaml/bridge_override.yaml.tmpl`,cloud_in 前例在 L37-41)。voxblox 的 `pointcloud`/`cloud_in` 直订它,替代桥接期 `/wm/points` |
 | 3 | TF:`map(world)→base_link` | tf2 | — | 与 odom 同步 | ROS1 桥接期由薄桥从 `/wm/odom` 广播 + `wm_planner.launch` 补静态 TF(L18-19:`world→navigation`、`base_link→…/velodyne`);ROS2 原生版需等效提供:从 `/slam/odom` 广播动态 TF,外加 `base_link→lidar3d_frame` 静态 TF(SDF 里传感器挂 base_link 上方 0.10m,patch_lidar3d.py L42) |
 | 4 | `/gbp/trajectory`(输出) | `trajectory_msgs/MultiDOFJointTrajectory` | `map`(适配器 frame 校验 L189-190) | 事件式:每次规划触发一条(桥接期实测 19 条/run,stage26_evidence) | ROS1 版发布者是 pci 的 `command/trajectory`(`integration/ros1_bridge/wm_planner.launch:33` remap);ROS2 版保持同型同 frame 发到 `/gbp/trajectory` 即可。**粉线纪律:只接 pci 输出,绝不接 `/vis/*` 可视化话题**(发布者=pci 已实证) |
-| 5 | `/navlab/fcu/setpoint/intent`(适配器→fcu) | `std_msgs/String`(JSON) | 速度语义:NED 世界系分量(经 R_align) | 2Hz(适配器 L103 `create_timer(0.5)`) | 契约字段见 §1.3;depth 10 |
+| 5 | `/navlab/fcu/setpoint/intent`(适配器→fcu) | `std_msgs/String`(JSON) | 速度语义:机体系 FRD;adapter 用 `R(-yaw_fcu)·R(map→NED)` 生成 | 2Hz | FCU yaw 必须由 `/mavlink_external_nav/status.fcu_attitude_age_ms` 证明 fresh;契约字段见 §1.3;depth 10 |
 | 6 | `/navlab/exploration/status`(适配器→gate/landing) | `std_msgs/String`(JSON) | — | 2Hz 同拍 | `ok` 是 landing 扳机,见 §1.2b |
 | 7 | `/gbp/enable`、`/gbp/kill`(操作面) | `std_msgs/Bool` | — | 一次性 | fail-closed 开关(适配器 L98-99) |
 | 8 | `/navlab/fcu/controller/status`(适配器输入) | `std_msgs/String` | — | ~20Hz(fcu 主循环 L488-537,0.05s) | takeoff ready 证据(适配器 L100) |
@@ -183,7 +183,12 @@ wm/cloud3d(3D 点云)────┘                                            
 
 ### 2.4 R_align 仍然需要(不是桥接遗产)
 
-坐标系错位发生在 **fcu_controller 的 MAVLink 主路**(intent 的 x/y 被直接当 NED 用,fcu 模板 L403-427),与桥接无关。SLAM map 与 AP NED 之间 = 互换/反射 + per-run 不定旋转(SLAM yaw 漂移),所以适配器的"双坐标系累计位移基线一次解 θ 并冻结"(适配器 L39-58 方案史注释、L198-222 实现;冻结前基准 `THETA_BASE_RAD=-π/2`,L55)在 ROS2 原生阶段原样保留。若未来给 world-model 提 PR 统一 fcu 两路语义,这套东西才可能退役。
+坐标系错位与桥接无关,但当前契约已经不是早期的“NED 直通”。SLAM map 与 AP NED
+之间仍有 per-run 旋转,adapter 用累计位移在线估计 `R(map→NED)`;当前
+fcu_controller 将 intent 视为机体系 FRD 并按 FCU yaw 旋到 NED,所以 adapter 还必须
+乘 `R(-yaw_fcu)`。第四次 M5 run `20260824T045937.266250321Z` 的 MCAP 给出
+map→NED=`-171.13°`、yaw_fcu=`+89.95°`,对应 body 命令角 `+98.92°`;旧实现漏掉
+`R(-yaw_fcu)` 后 0.865m 全程远离首航点。FCU yaw 无效或超过 freshness 窗口时必须停住。
 
 ---
 

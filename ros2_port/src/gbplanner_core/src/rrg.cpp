@@ -1095,7 +1095,9 @@ Rrg::GraphStatus Rrg::buildGraph() {
     visualization_->visualizeGeofence(geofence_manager_);
 
   planner_trigger_count_++;
-  ROS_INFO_COND(global_verbosity >= Verbosity::DEBUG, "Formed a graph with [%d] vertices and [%d] edges with [%d] loops",
+  // This is acceptance evidence, not optional debug output. M5 must prove a
+  // non-trivial RRG independently of the returned trajectory length.
+  ROS_INFO("Formed a graph with [%d] vertices and [%d] edges with [%d] loops",
            num_vertices, num_edges, loop_count);
 
   if (planning_params_.type == PlanningModeType::kAdaptiveExploration)

@@ -23,7 +23,15 @@
 > one-shot 路径又在 30s 被主动判超龄。MCAP 同时推翻了 external-nav 已带高度的假设:
 > 首个运动 intent 时 `/external_nav/odom.z=0`,而非真值 FCU EKF 高度为 0.4529m。
 > 当前候选改为 0.10m 起持续校准/0.35m 冻结、active path 寿命覆盖 90s 验收窗,
-> 并用 fresh FCU EKF z 显式融合 planning odom/TF;Python 回归现为 34/34,尚待 live 复验。
+> 并用 fresh FCU EKF z 显式融合 planning odom/TF。第四次 run
+> `20260824T045937.266250321Z` 证明 3D planning 高度成立(`planning_z_max=0.529m`),
+> 但仍为 `accepted_goals=0`、路径 0.865m、未返航降落。MCAP 同步证据为
+> map→NED=`-171.13°`、FCU yaw=`+89.95°`;当前 WorldModel controller 把 intent
+> 当机体系 FRD 后再按 yaw 旋到 NED,而 adapter 错把 map→NED 结果直接当 intent,
+> 因而漏掉约 90° 变换。下一候选显式使用 `R(-yaw_fcu)·R(map→NED)`,并在 FCU yaw
+> 缺失/过期时 fail-closed;新鲜度由 `/mavlink_external_nav/status` 的真实
+> `fcu_attitude_age_ms` 与状态消息年龄共同核算,不能用持续更新的 LOCAL_POSITION
+> 消息替陈旧 ATTITUDE 续命。同时无条件记录 RRG 顶点/边数,尚待重建与 live 复验。
 > `navlab/official-baseline:jazzy-latest` 是运行镜像,不含
 > `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
 > `runbooks/ros2_port/verify_current_ros2.sh`;M5 运行镜像必须用
@@ -124,3 +132,8 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
   且 exploration 的 `/external_nav/odom.z` 实际为 0。下一候选使用 fresh
   `/navlab/fcu/local_position_pose` 的 FCU EKF z(非 simulator truth),并把验收升级为
   `planning_z_max>0.05m`;不得把“planning_odom 有消息”冒充 3D 高度已成立。
+  第四次 run `20260824T045937.266250321Z` 已通过该高度门,但仍 0 accepted goals。
+  MCAP 与当前 fcu_controller 源码共同证明 intent 已是机体系 FRD 契约:controller
+  会按 FCU yaw 转到 LOCAL_NED。adapter 过去只做 map→NED,遗漏 NED→body;本轮
+  `yaw_fcu≈+90°` 时方向误差直接暴露。当前候选补齐 `R(-yaw_fcu)` 并给 yaw 加
+  freshness fail-closed 门;这属于坐标契约修复,不是放宽航点或安全验收。

@@ -162,12 +162,11 @@ fcu_controller(navlab_fcu_controller 节点;控制权唯一属主 /navlab/fcu/ow
  │    (spec 定义 helpers/runtime_specs.go:290-293;跳过声明 tmpl:163-167)
  ├─ 位姿源:/slam/odom 优先(pose_source="slam_odom",tmpl:322-330);/ap/v1/pose/filtered 仅当
  │    require_slam_backend=false 时兜底(tmpl:314-320;默认 true:helpers/runtime_specs.go:333)
- ├─ 收 intent → 双路同时下发(tmpl:357-366):
- │    ① DDS 路:/ap/v1/cmd_vel(TwistStamped,header.frame_id=base_link——**机体系速度**,tmpl:368-377)
- │    ② MAVLink 主路:SET_POSITION_TARGET_LOCAL_NED(frame=MAV_FRAME_LOCAL_NED,type_mask=2552=仅位置+yaw;
+ ├─ 收 intent → MAVLink 单控制路(DDS cmd_vel 发布已禁用,仅保留计数):
+ │    SET_POSITION_TARGET_LOCAL_NED(frame=MAV_FRAME_LOCAL_NED,type_mask=2552=仅位置+yaw;
  │        目标 = 当前 LOCAL_POSITION_NED + v×lookahead(2s),z 恒 = −takeoff_alt;tmpl:390-441)
- │        ⚠️ intent 的 (x,y) 未经任何旋转直接当 NED 世界系偏移——与①的机体系语义**分裂**,见 §5.4
- ├─ ready 时每 50ms 发 hold cmd_vel + hold setpoint(tmpl:443-449、506)
+ │        intent 的 (x,y) 按 FCU ATTITUDE yaw 从机体系 FRD 旋到 NED 后积分位置目标
+ ├─ ready 时每 50ms 发 hold setpoint
  ├─ 订 /navlab/exploration/status 作为任务完成信号(接线:runtime_artifacts.go:162-168;判断:tmpl:340-355)
  └─ 发 status 面:/navlab/fcu/controller|setpoint/output|owner、/navlab/hover/status、/navlab/landing/status
       (tmpl:462-475;topic 名 helpers/runtime_specs.go:285-288、393-394)
@@ -251,12 +250,18 @@ GBPlanner 的轨迹跟踪若直接换算成 intent,必须把这层"位置外推"
 
 - sender 侧 ENU→FRD:`x_frd=y_enu, y_frd=−x_enu, z_frd=−z_enu`(external_nav.py:65-71)。注意注释里写明这依赖"hover world 的 map 约定 x=west, y=north"——**这是对特定世界的硬编码假设**,换世界/换 SLAM 初始朝向后 map 与 NED 的真实关系是 run 相关的旋转(本项目 Procrustes 实测约 −87°)。
 - `ned_to_gazebo_pose` 对 xy **恒等**、只翻 z(stage5a §六)→ `/navlab/fcu/local_position_pose` 的 xy 是裸 NED,别当 ENU 用。
-- fcu MAVLink 主路对 intent (x,y) **不旋转**直接当 NED 偏移(tmpl:411-412、426-427)。
-结论:全链没有一处做"map↔NED 在线标定";任何按论文习惯假设 `x=east/north` 的移植代码都会踩空。接 GBPlanner 时要么在适配器做在线对齐(本项目 v3 Procrustes 方案),要么修上游让 EKF/回灌统一参考系后再谈。
+- 当前 fcu MAVLink 主路把 intent 定义为机体系 FRD,先按 FCU yaw 旋到 NED,再积分
+  LOCAL_NED 位置目标。第四次 M5 run 实测 `yaw_fcu≈+90°`,漏掉该变换会产生约 90°
+  命令误差。
+结论:adapter 必须在线估计 map→NED,再乘 `R(-yaw_fcu)` 输出 body/FRD;任何一段
+缺失或使用陈旧 yaw 都必须 fail-closed。ATTITUDE 的真实年龄取自
+`/mavlink_external_nav/status.fcu_attitude_age_ms`;LOCAL_POSITION 仍在更新不等于 yaw 新鲜。
 
 ### 5.4 fcu_controller 双下发路语义分裂
 
-同一份 intent:①`/ap/v1/cmd_vel` 标 `frame_id=base_link`(机体系速度,tmpl:371);②MAVLink 路当世界系 NED 位置偏移(tmpl:424-427)。两路同时发(tmpl:357-366)。谁真正生效取决于 AP 端消费哪路(实测 GUIDED 下 MAVLink 位置目标主导)。**上游语义模糊**,frontier_lite 的路径混乱与此有关;移植时建议只走一路并显式声明语义。
+当前同一份 intent 在语义上统一为机体系 FRD:MAVLink 路用 FCU yaw 旋到 NED 后积分;
+DDS `cmd_vel` 实际发布已禁用,只保留计数字段,避免双路控制。早期“双下发语义分裂”
+结论属于历史实现,不能用于当前适配器。
 
 ### 5.5 exploration 的 accepted_goals 是时间驱动的,不是空间验收
 

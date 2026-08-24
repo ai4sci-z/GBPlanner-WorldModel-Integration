@@ -50,8 +50,14 @@ go build/vet/test 全绿(每步)。
 - v2 运动响应 EMA 闭环:5a-2 证伪(2~3s 响应滞后×增益=延迟失稳,θ̂ 发散);
 - v3 双坐标系同步观测 Procrustes(零滞后)+ yaw_rate 恒 0(旋转是 SLAM 失锁根因)+ slam_frozen 安全 blocker + 诚实 wp_done(预到达剔除)+ 严格五条件 ok 闩锁 + 混流闩锁:**逻辑已验证诚实**(三跑均正确拒绝),等 EKF 修复后复跑。
 
-## 六、坐标系语义(Stage5cal 定案,不随 EKF 修复变化)
+## 六、坐标系语义(Stage5cal 历史结论;当前实现见订正)
 
-- fcu MAVLink 主路:intent (x,y) 不经旋转直接作 NED (north,east) **位置目标**(GUIP type=2,目标=当前+v×2s);
+> **2026-08-24 订正:**下述“NED 直通”描述对应当时 controller。当前
+> fcu_controller 已把 intent 定义为机体系 FRD,并按 FCU yaw 旋到 LOCAL_NED。
+> 第四次 M5 run MCAP 已实证旧结论不能继续指导当前 adapter。
+> yaw freshness 必须由 `/mavlink_external_nav/status.fcu_attitude_age_ms` 证明;
+> `local_position_pose` 会在 LOCAL_POSITION 更新时重复最后一次 yaw,不能单独作新鲜度证据。
+
+- **历史实现:**fcu MAVLink 主路曾把 intent (x,y) 不经旋转直接作 NED 位置目标;
 - "胡萝卜"机制:实际速度 ~0.3 m/s 由 AP 位置控制器增益决定,**与命令幅值无关**,hold 刹车滑行 0.5~1m(上游语义问题,PR 议题);
 - `ned_to_gazebo_pose` xy 恒等(只翻 z)——lpp xy=裸 NED。
