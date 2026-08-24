@@ -9,6 +9,7 @@ Stage4·trajectory_to_intent(安全版,按 Review_013 §4 十项清单重写)。
 安全设计(fail-closed):
  1. 默认 **disabled**:只打印+发零速 hold(ok=false, blockers 注明),
     须向 /gbp/enable 发 Bool(data: true) 才进入运动模式;/gbp/kill 一票永久禁用。
+    gate 成功闩锁后的 disabled 是返航/降落安全收尾,不再反向制造 gate blocker。
  2. 限速:SPEED_MAX=0.08 m/s(保守)、YAW_RATE_MAX=0.30 rad/s;大偏航先转再走。
  3. 无 odom(>2s 无更新)→ hold + blockers=[no_odom]。
  4. 轨迹超时(15s 无新轨迹且已跟完)→ hold + blockers=[trajectory_stale],绝不沿旧航点续跑。
@@ -84,6 +85,15 @@ def intent_z(wp_z, last_z):
         if 0.05 < z < 100.0:
             return z
     return None
+
+
+def motion_disabled_blocker_required(enabled, ok_latched):
+    """Only pre-gate motion disablement is a gate blocker.
+
+    After the gate has latched, the enabler deliberately revokes the motion
+    lease so the FCU controller can own return-home and landing exclusively.
+    """
+    return not enabled and not ok_latched
 
 
 class TrajToIntent(Node):
@@ -220,7 +230,7 @@ class TrajToIntent(Node):
         b = []
         if self.killed:
             b.append("killed")
-        if not self.enabled:
+        if motion_disabled_blocker_required(self.enabled, self.ok_latched):
             b.append("motion_disabled_fail_closed")
         if self.odom is None or time.monotonic() - self.odom_t > ODOM_STALE_S:
             b.append("no_odom")

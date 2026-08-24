@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""M5 z闭环 adapter 侧纯函数 intent_z 的单元测试(纯函数级,不 import rclpy)。
+"""M5 adapter 纯函数单元测试(不 import rclpy)。
 
 trajectory_to_intent.py 模块级 import rclpy,宿主未必装 ROS;
 故用 ast 只抽取 intent_z 函数定义执行,测试与 ROS 运行时完全解耦。
@@ -10,11 +10,15 @@ import pathlib
 
 _SRC_PATH = pathlib.Path(__file__).with_name("trajectory_to_intent.py")
 _tree = ast.parse(_SRC_PATH.read_text(encoding="utf-8"))
-_fn = next(n for n in _tree.body
-           if isinstance(n, ast.FunctionDef) and n.name == "intent_z")
+_functions = {
+    n.name: n for n in _tree.body
+    if isinstance(n, ast.FunctionDef)
+    and n.name in {"intent_z", "motion_disabled_blocker_required"}
+}
 _ns = {}
-exec(compile(ast.Module(body=[_fn], type_ignores=[]), str(_SRC_PATH), "exec"), _ns)
+exec(compile(ast.Module(body=list(_functions.values()), type_ignores=[]), str(_SRC_PATH), "exec"), _ns)
 intent_z = _ns["intent_z"]
+motion_disabled_blocker_required = _ns["motion_disabled_blocker_required"]
 
 
 # 1) 有 z:运动 intent 带当前目标航点 z
@@ -81,3 +85,9 @@ def test_disabled_gate_contract_note():
     src = open(__file__.replace("test_intent_z.py", "trajectory_to_intent.py")).read()
     assert re.search(r"if self\.enabled and not self\.killed:\s*\n\s*z_m = intent_z", src), \
         "z_m 附带必须由 enabled/killed 门控包裹(对抗验证 2026-07-28)"
+
+
+def test_motion_disabled_is_only_a_pre_gate_blocker():
+    assert motion_disabled_blocker_required(False, False) is True
+    assert motion_disabled_blocker_required(True, False) is False
+    assert motion_disabled_blocker_required(False, True) is False

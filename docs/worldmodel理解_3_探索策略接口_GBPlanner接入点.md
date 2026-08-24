@@ -136,7 +136,7 @@ if (not self.ok_latched and self.enabled and not self.killed
     self.ok_latched = True
 ```
 
-五组条件:① **去混流**——intent 总线上出现过任何 `source != gbp_traj_to_intent` 的消息即永久闩死(`mixed_flow`);② **takeoff/controller ready**——订 `/navlab/fcu/controller/status` 的 ok/ready;③ **诚实 accepted_goals**——`wp_done>=3`,只计"运动到达"的 waypoint,轨迹到手时已在阈值内的 wp 记 `wp_prereached` 不计数;④ **path 达标**——`path_len>=0.35`;⑤ **无运行 blocker**——包括 `killed/motion_disabled_fail_closed/no_odom/odom_frame_mismatch/invalid_map_orientation/no_trajectory/trajectory_max_age/trajectory_stale/frame_mismatch/no_fresh_fcu_yaw/invalid_body_command/slam_frozen`。`slam_frozen` 从连续非零命令或当前航点的 epoch 起算,连续 8s 位移不足 2cm 才闩锁;新轨迹或显式重新使能才可恢复。五条达成即闩锁,尾段轨迹变陈旧不回撤已达成事实。
+五组条件:① **去混流**——intent 总线上出现过任何 `source != gbp_traj_to_intent` 的消息即永久闩死(`mixed_flow`);② **takeoff/controller ready**——订 `/navlab/fcu/controller/status` 的 ok/ready;③ **诚实 accepted_goals**——`wp_done>=3`,只计"运动到达"的 waypoint,轨迹到手时已在阈值内的 wp 记 `wp_prereached` 不计数;④ **path 达标**——`path_len>=0.35`;⑤ **无运行 blocker**——包括 `killed/motion_disabled_fail_closed/no_odom/odom_frame_mismatch/invalid_map_orientation/no_trajectory/trajectory_max_age/trajectory_stale/frame_mismatch/no_fresh_fcu_yaw/invalid_body_command/slam_frozen`。`slam_frozen` 从连续非零命令或当前航点的 epoch 起算,连续 8s 位移不足 2cm 才闩锁;新轨迹或显式重新使能才可恢复。五条达成即闩锁,尾段轨迹变陈旧不回撤已达成事实。特别地,`motion_disabled_fail_closed` 只在成功闩锁前成立;闩锁后 `/gbp/enable=false` 是撤销运动 lease、让 FCU 独占返航/LAND 的预期安全收尾,不得反向把已完成 gate 标成 blocked。`killed` 和其他真实运行 blocker 不受此例外影响。
 
 **fail-closed 纪律**:默认 disabled,须向 `/gbp/enable` 发 `Bool(true)` 才动;`/gbp/kill` 一票永久禁;限速 `SPEED_MAX=0.08`、`YAW_RATE_MAX=0.30`;active trajectory 最长 120s,跟完后 15s 无新轨迹则 hold;trajectory 必须是 `map`,odom 必须是 `map→base_link`,两者任一不符都不运动。
 
