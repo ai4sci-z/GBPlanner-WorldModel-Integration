@@ -57,20 +57,34 @@ def test_body_mapping_requires_exact_map_to_base_link_odometry_frames():
 
 
 def test_stall_detector_does_not_reject_sixth_run_slow_progress():
-    assert motion_is_stalled(0.25, 8.0, 0.08, 0.0) is False
-    assert motion_is_stalled(0.25, 4.0, 0.01, 0.0) is False
+    assert motion_is_stalled(0.25, 8.0, 0.08) is False
+    assert motion_is_stalled(0.25, 4.0, 0.01) is False
 
 
 def test_progress_window_excludes_hover_and_previous_waypoint_epochs():
     samples = [(0.0, 0.0, 0.0), (7.9, 0.0, 0.0), (8.0, 0.0, 0.0), (16.0, 0.08, 0.0)]
-    assert progress_observation(samples, 8.0) == (8.0, 0.08, 0.0)
+    assert progress_observation(samples, 8.0) == (8.0, 0.08)
     assert progress_observation(samples, 16.0) is None
 
 
+def test_progress_window_uses_excursion_not_endpoint_displacement():
+    # M5 20260824T074701 moved 8 cm after the waypoint switch, then returned
+    # close to its epoch start. Endpoint displacement falsely latched a stall.
+    samples = [
+        (0.0, 0.41, 0.0),
+        (4.0, 0.33, 0.0),
+        (8.2, 0.398, 0.0),
+    ]
+    span, progress_m = progress_observation(samples, 0.0)
+    assert math.isclose(span, 8.2)
+    assert math.isclose(progress_m, 0.08)
+    assert motion_is_stalled(0.25, span, progress_m) is False
+
+
 def test_stall_detector_latches_only_after_sustained_no_progress():
-    assert motion_is_stalled(0.25, 8.0, 0.005, 0.004) is True
-    assert motion_is_stalled(2.1, 8.0, 0.0, 0.0) is False
-    assert motion_is_stalled(None, 8.0, 0.0, 0.0) is True
+    assert motion_is_stalled(0.25, 8.0, math.hypot(0.005, 0.004)) is True
+    assert motion_is_stalled(2.1, 8.0, 0.0) is False
+    assert motion_is_stalled(None, 8.0, 0.0) is True
 
 
 def test_map_velocity_uses_ros_body_left_but_emits_frd_right():

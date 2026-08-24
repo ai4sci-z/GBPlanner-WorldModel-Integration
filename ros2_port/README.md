@@ -39,8 +39,11 @@
 > 首次达到 1 个真实航点(`path=1.0199m`),证明 body 方向修复有效;但仍未达 3 个航点。
 > MCAP 证明 adapter 2Hz 低于 controller 的 `dt<=0.25s` 积分契约,使目标推进速度折半;
 > 同时旧 1.5s/2cm `slam_frozen` 在真实低速推进上三次误触发。当前候选改为
-> 4Hz 控制节拍和“当前航点连续命令 8s/2cm”停滞闩锁,尚待第七次
-> live 复验;不得提前记作 P1-2 PASS。
+> 4Hz 控制节拍和“当前航点连续命令 8s/2cm”停滞闩锁。
+> `20260824T074701.195741657Z` 证明窗口首尾净位移仍会把换航点后
+> 的制动回撤误判为冻结:窗口内最大位移约 8cm,但首尾仅 1.2cm。
+> 当前候选改为 epoch 起点到窗口内任一样本的最大位移,真正静止仍按
+> 8s/2cm fail-closed,尚待新的 live 复验;不得提前记作 P1-2 PASS。
 > `navlab/official-baseline:jazzy-latest` 是运行镜像,不含
 > `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
 > `runbooks/ros2_port/verify_current_ros2.sh`;M5 运行镜像必须用

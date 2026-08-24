@@ -277,17 +277,16 @@ class TrajToIntent(Node):
             self.odom_hist, self.progress_epoch_t)
         if observation is None:
             return False
-        span, dx, dy = observation
+        span, progress_m = observation
         self.slam_frozen_latched = motion_is_stalled(
             time.monotonic() - self.last_move_cmd_t,
             span,
-            dx,
-            dy,
+            progress_m,
         )
         if self.slam_frozen_latched:
             self.get_logger().error(
                 "SLAM FROZEN latched: %.1fs progress=%.3fm; require new trajectory "
-                "or explicit re-enable" % (span, math.hypot(dx, dy)))
+                "or explicit re-enable" % (span, progress_m))
         return self.slam_frozen_latched
 
     def tick(self):

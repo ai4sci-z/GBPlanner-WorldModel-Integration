@@ -61,30 +61,34 @@ def valid_odom_frames(frame_id, child_frame_id):
 
 
 def progress_observation(samples, epoch_s):
-    """Return span and displacement for samples belonging to one motion epoch."""
+    """Return span and maximum excursion for one commanded-motion epoch."""
     relevant = [sample for sample in samples if sample[0] >= epoch_s]
     if len(relevant) < 2:
         return None
     t0, x0, y0 = relevant[0]
-    t1, x1, y1 = relevant[-1]
-    return t1 - t0, x1 - x0, y1 - y0
+    t1 = relevant[-1][0]
+    max_excursion_m = max(
+        math.hypot(x - x0, y - y0) for _, x, y in relevant[1:]
+    )
+    return t1 - t0, max_excursion_m
 
 
-def motion_is_stalled(command_age_s, observation_span_s, dx, dy):
+def motion_is_stalled(command_age_s, observation_span_s, progress_m):
     """Detect sustained no-progress while a nonzero command remains active."""
     try:
         values = tuple(
-            float(value) for value in (command_age_s, observation_span_s, dx, dy)
+            float(value) for value in (
+                command_age_s, observation_span_s, progress_m)
         )
     except (TypeError, ValueError):
         return True
     if not all(math.isfinite(value) for value in values):
         return True
-    command_age, span, delta_x, delta_y = values
+    command_age, span, measured_progress = values
     return (
         command_age <= 2.0
         and span >= SLAM_PROGRESS_WINDOW_S
-        and math.hypot(delta_x, delta_y) < SLAM_PROGRESS_MIN_M
+        and measured_progress < SLAM_PROGRESS_MIN_M
     )
 
 
