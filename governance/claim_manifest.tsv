@@ -3,10 +3,10 @@
 # generated_for=2026-08-24-current-worktree active_first_party_md=38 note=当前 P0/P1 状态重核;CURRENT 行以 HEAD 动态绑定
 path	line_or_section	lifecycle	authority	claim_summary	evidence_source	evidence_commit	verification_status	disposition	replacement	last_verified_commit
 CURRENT_STATUS.md	§一 项目章程与固定顺序	CURRENT	当前状态唯一权威	固定路线 P0→P1→P2→P3→P4;GBPlanner 与 frontier_lite 并列;多层楼梯仅架构研究	代码、提交、运行证据与用户章程逐项重核	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
-CURRENT_STATUS.md	§二 当前三仓基线	CURRENT	当前状态唯一权威	main 治理仓、gbp-feat@f9c20f2、world-model@8649ae5 的角色与授权远端边界	三仓 git HEAD/remote 实测	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+CURRENT_STATUS.md	§二 当前三仓基线	CURRENT	当前状态唯一权威	main 治理仓、gbp-feat@f7a9410、world-model@8649ae5 的角色与授权远端边界	三仓 git HEAD/remote 实测	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 CURRENT_STATUS.md	§三 NVIDIA 与容器环境	CURRENT	当前状态唯一权威	驱动595.84/CUDA13.2/RTX5060及宿主和容器 GPU 链通过;本轮无需重启	宿主 nvidia-smi、nvidia-container-cli、Docker GPU 冒烟	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 CURRENT_STATUS.md	§四 ROS 2 构建与测试事实	CURRENT	当前状态唯一权威	Jazzy 11包构建、gtest 4/4、Python 17/17、Go全模块、M4 13航点均通过	/home/ai4s/aa_runs/gbplanner_verify/20260824T031820Z + 三仓测试	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
-CURRENT_STATUS.md	§五 真实运行证据与边界	CURRENT	当前状态唯一权威	P1-2首次run诚实FAIL并定位旧2D点云映射;f9c20f2候选修复待复跑;2D代理不得冒充真GBPlanner	本次与历史 run 目录、summary、probe、ROS日志实测	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
+CURRENT_STATUS.md	§五 真实运行证据与边界	CURRENT	当前状态唯一权威	P1-2首次run诚实FAIL并定位旧2D点云映射;f7a9410已通过镜像内启动复验;2D代理不得冒充真GBPlanner	本次与历史 run 目录、summary、probe、ROS日志实测	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 CURRENT_STATUS.md	§六 阶段门状态	CURRENT	当前状态唯一权威	P0本轮闭包;P1进行中且P1-1完成;P2/P3/P4阻塞	代码提交、测试与阶段依赖重核	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 CURRENT_STATUS.md	§七 当前唯一推进顺序	CURRENT	当前状态唯一权威	下一步=P1-2固定SHA真GBPlanner短闭环;通过后才10/10与长稳	项目章程与可证伪验收条件	HEAD	CURRENT_CONSISTENT	KEEP	-	HEAD
 HANDOVER_LINUX.md	整档	REFERENCE	派生/参考;状态权威=CURRENT_STATUS.md	参考资料,不承载当前状态	机器分类+人工规则	19b75b7	REFERENCE_MARKED	KEEP_MARKED	-	19b75b7
