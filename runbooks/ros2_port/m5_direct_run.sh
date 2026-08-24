@@ -14,7 +14,7 @@ WM="${WM:-/home/ai4s/projects/world-model}"
 FEAT="${FEAT:-/home/ai4s/projects/gbp-feat}"
 OUT="${OUT:-$HOME/cmp_out}"
 M5_MODE="${M5_MODE:-success}"
-TERMINAL_INJECTION_DELAY_SEC="${TERMINAL_INJECTION_DELAY_SEC:-3}"
+TERMINAL_INJECTION_DELAY_SEC="${TERMINAL_INJECTION_DELAY_SEC:-0}"
 YAML="$WM/orchestration/sim/configs/tasks/exploration.yaml"
 case "$M5_MODE" in
   success|terminal_failure) ;;
@@ -70,7 +70,7 @@ done
 echo "=== gbp_stack up; starting world-model live run (strategy=external) ==="
 if [ "$M5_MODE" = "terminal_failure" ]; then
   docker exec -d -e "GBP_TERMINAL_DELAY_SEC=$TERMINAL_INJECTION_DELAY_SEC" gbp_stack bash -lc \
-    'python3 /adapter/terminal_failure_injector.py --delay-sec "$GBP_TERMINAL_DELAY_SEC" > /out/m5_terminal_injector.log 2>&1'
+    'source /opt/ros/jazzy/setup.bash && python3 /adapter/terminal_failure_injector.py --delay-sec "$GBP_TERMINAL_DELAY_SEC" > /out/m5_terminal_injector.log 2>&1'
 fi
 
 export PATH=/usr/local/go/bin:$PATH
