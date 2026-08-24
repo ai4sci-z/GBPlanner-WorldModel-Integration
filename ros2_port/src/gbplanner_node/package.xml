@@ -2,7 +2,7 @@
 <package format="3">
   <name>gbplanner_node</name>
   <version>0.1.0</version>
-  <description>M4: minimal ROS2 shell around the ROS-free gbplanner core —
+  <description>M4: minimal ROS 2 shell around the ROS 1-free gbplanner core —
     one planner node (params bridge, Rrg + voxblox map manager, odometry in,
     planner/homing services, tick timers) plus a minimal PCI-replacement
     trigger node publishing /gbp/trajectory.</description>

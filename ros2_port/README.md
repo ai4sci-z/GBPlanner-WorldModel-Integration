@@ -3,11 +3,14 @@
 > 路线切换后新增(2026-07-08)。**桥接历史资产不动**,ROS 2 port 全部落在本目录隔离。
 > 主线任务书:[../docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](../docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
 >
-> **当前状态(2026-07-15,事实源=main 分支 CURRENT_STATUS.md)**:
+> **当前状态(2026-08-24,事实源=治理主仓 CURRENT_STATUS.md)**:
 > M1 msgs ✅ / M2 voxblox ✅(五切片全过)/ M3 core 剥离 ✅(12k 行,单测 4/4;
 > "3D 行为等价"未证,Review 002 判 NOT PROVEN)/ M4a 合成冒烟 ✅(M4b 真场景 open-loop 未测)/
-> **M5 ⏸ BLOCKED_BY_PLATFORM_STABILITY**(GATE-4b 60s 悬停硬门重开;恢复前必须清
-> Review 001 P0-1 单线程 executor、P0-4 readiness gate、P1-1~P1-8 等债务,见 main)。
+> **M5 ⏸ 尚未正式闭环验收**。当前 `ea80713` 已在
+> `voxblox_ros2_deps:jazzy` 干净构建通过,core gtest 4/4 通过,M4 真 RRG 合成冒烟输出
+> 11 个航点。`navlab/official-baseline:jazzy-latest` 是运行镜像,不含
+> `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
+> `runbooks/ros2_port/verify_current_ros2.sh`。
 > 下文 M1/M2 段落为历史施工记录,保留不动。
 
 ## 目录

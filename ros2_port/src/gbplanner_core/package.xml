@@ -2,7 +2,7 @@
 <package format="3">
   <name>gbplanner_core</name>
   <version>0.1.0</version>
-  <description>GBPlanner algorithm core, stripped ROS-free (M3). Vendored from
+  <description>GBPlanner algorithm core, stripped of ROS 1 and node wrappers (M3). Vendored from
     ntnu-arl/gbplanner_ros@7301b535 (rrg, planner_common, kdtree) and
     ntnu-arl/adaptive_obb_ros@7dc24c9; ROS1 runtime replaced by port/ shims
     and shell-injected I/O.</description>

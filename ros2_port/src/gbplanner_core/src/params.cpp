@@ -199,7 +199,7 @@ bool SensorParamsBase::loadParams(std::string ns) {
       }
       height = h;
       ROS_INFO_COND(global_verbosity >= Verbosity::INFO, 
-          "Computed multiray_endpoints for volumetric gain [kCamera]: [%d] "
+          "Computed multiray_endpoints for volumetric gain [kCamera]: [%zu] "
           "points.",
           frustum_endpoints_B.size());
     }
@@ -232,7 +232,7 @@ bool SensorParamsBase::loadParams(std::string ns) {
     }
     height = h;
     ROS_INFO_COND(global_verbosity >= Verbosity::INFO, 
-        "Computed multiray_endpoints for volumetric gain [kLidar]: [%d] "
+        "Computed multiray_endpoints for volumetric gain [kLidar]: [%zu] "
         "points.",
         frustum_endpoints_B.size());
   }
@@ -319,7 +319,7 @@ void SensorParamsBase::updateFrustumEndpoints() {
       }
     }
     ROS_INFO_COND(global_verbosity >= Verbosity::INFO, 
-        "Computed multiray_endpoints for volumetric gain [kCamera]: [%d] "
+        "Computed multiray_endpoints for volumetric gain [kCamera]: [%zu] "
         "points.",
         frustum_endpoints_B.size());
   } else if (type == SensorType::kLidar) {
@@ -340,9 +340,9 @@ void SensorParamsBase::updateFrustumEndpoints() {
       }
     }
     ROS_INFO_COND(global_verbosity >= Verbosity::INFO, 
-        "Computed multiray_endpoints for volumetric gain [kLidar]: [%d] "
+        "Computed multiray_endpoints for volumetric gain [kLidar]: [%zu] "
         "points.",
-        (int)frustum_endpoints_B.size());
+        frustum_endpoints_B.size());
   }
 }
 
