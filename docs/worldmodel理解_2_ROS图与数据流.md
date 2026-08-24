@@ -246,15 +246,18 @@ fcu_controller 的 MAVLink 主路不是速度控制,而是**位置目标外推**
 - hold(v=0)不是刹停,是"目标=当前位置",有 0.5~1m 滑行。
 GBPlanner 的轨迹跟踪若直接换算成 intent,必须把这层"位置外推"语义算进去(近距按距离比例减速,而不是恒速)。
 
-### 5.3 NED/ENU/map:一条链上三次换系,两处硬编码假设
+### 5.3 NED/ENU/map:位置数值含反射,控制接口应走 body frame
 
-- sender 侧 ENU→FRD:`x_frd=y_enu, y_frd=−x_enu, z_frd=−z_enu`(external_nav.py:65-71)。注意注释里写明这依赖"hover world 的 map 约定 x=west, y=north"——**这是对特定世界的硬编码假设**,换世界/换 SLAM 初始朝向后 map 与 NED 的真实关系是 run 相关的旋转(本项目 Procrustes 实测约 −87°)。
+- sender 侧 ENU→FRD:`x_frd=y_enu, y_frd=−x_enu, z_frd=−z_enu`(external_nav.py:65-71)是外部导航回灌的历史约定,不能拿来给当前 intent 做纯旋转标定。
 - `ned_to_gazebo_pose` 对 xy **恒等**、只翻 z(stage5a §六)→ `/navlab/fcu/local_position_pose` 的 xy 是裸 NED,别当 ENU 用。
 - 当前 fcu MAVLink 主路把 intent 定义为机体系 FRD,先按 FCU yaw 旋到 NED,再积分
   LOCAL_NED 位置目标。第四次 M5 run 实测 `yaw_fcu≈+90°`,漏掉该变换会产生约 90°
   命令误差。
-结论:adapter 必须在线估计 map→NED,再乘 `R(-yaw_fcu)` 输出 body/FRD;任何一段
-缺失或使用陈旧 yaw 都必须 fail-closed。ATTITUDE 的真实年龄取自
+第五次 M5 与第四次 bag 的位置/姿态对拍证明:`yaw_map≈0.2°`,`yaw_ned≈89.95°`,
+位置数值近似 `NED=(map_y,map_x)`(det=-1)。因此纯旋转 `R_align` 模型在方法上错误。
+结论:adapter 用 `/slam/odom` 的 map→base_link 姿态直接把 map 速度变成 body
+forward/right,controller 再用 FCU yaw 变成 NED。downstream yaw 缺失或陈旧必须
+fail-closed。ATTITUDE 的真实年龄取自
 `/mavlink_external_nav/status.fcu_attitude_age_ms`;LOCAL_POSITION 仍在更新不等于 yaw 新鲜。
 
 ### 5.4 fcu_controller 双下发路语义分裂

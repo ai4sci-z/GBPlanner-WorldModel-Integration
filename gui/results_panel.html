@@ -259,9 +259,12 @@ world-model FCU intent / cmd_vel(GBP-SIGNATURE 逐位吻合)
     </div>
   </div>
   <div class="tl-item">
-    <div class="tl-title">2. 坐标对齐 v6b(适配器侧)</div>
+    <div class="tl-title">2. 历史坐标对齐 v6b(已被后续 MCAP 证伪)</div>
     <div class="tl-body">
-      双坐标系同步观测 Procrustes(零滞后)收敛出稳定 map↔AP 映射 <b>R_align = 旋转 −87°(det=+1)</b>;针对"胡萝卜"位置目标越过 wp 导致 0.5m 极限环打圈,加近距按比例减速 <code>forward=min(0.08, 0.4·dist)</code> + 诚实 wp_done(预到达剔除)+ 严格 ok 闩锁。
+      当时单向量 Procrustes 收敛到 <b>−87°(det=+1)</b>,但 2026-08-24
+      两次 M5 MCAP 证明位置数值关系含轴交换反射 <code>NED=(map_y,map_x)</code>
+      (det=-1),所以旧 <code>R_align</code> 不是真实坐标映射并已退出控制链。当前 adapter
+      用 map→base_link yaw 直接输出 body FRD;近距减速、诚实 wp_done 和严格 ok 闩锁保留。
     </div>
   </div>
   <div class="tl-item">

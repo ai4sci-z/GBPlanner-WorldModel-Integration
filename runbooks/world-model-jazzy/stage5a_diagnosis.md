@@ -38,7 +38,8 @@ go build/vet/test 全绿(每步)。
 ## 四·5 第六/七跑(修复 1+2+3 全生效后)
 
 - **EKF 发散消失**:第六跑漂移仅 ~0.03 m/s;第七跑 lpp 数据流畅(Procrustes 396 对),
-  **R_align 稳定收敛 = 旋转 −87°(det=+1)**——修复后系统的真实 map↔AP 映射;
+  当时曾把单向量角差 `−87°(det=+1)` 解释为真实 map↔AP 旋转;
+  2026-08-24 的两次 MCAP 已证伪该解释(见§六订正),不得用于当前控制;
 - 新卡点=纯控制整定:fcu"胡萝卜"位置目标恒在 0.16m 前方,近距越过 wp,
   ~0.3m/s 追赶 + 0.15m 到达圈 → **0.5m 极限环绕 wp 打圈**(第七跑 odom 实测),
   accepted_goals 仍 0;
@@ -57,6 +58,10 @@ go build/vet/test 全绿(每步)。
 > 第四次 M5 run MCAP 已实证旧结论不能继续指导当前 adapter。
 > yaw freshness 必须由 `/mavlink_external_nav/status.fcu_attitude_age_ms` 证明;
 > `local_position_pose` 会在 LOCAL_POSITION 更新时重复最后一次 yaw,不能单独作新鲜度证据。
+> **第五次 M5 继续订正:**两次 MCAP 均为 `yaw_map≈0.2°`,`yaw_ned≈89.95°`,
+> 位置位移近似 `NED=(map_y,map_x)`(det=-1)。此前“R_align=det+1 旋转”的定案错误;
+> 单向量角差随运动方向漂移是模型必然结果。当前 body-FRD controller 下,adapter
+> 应用 map→base_link yaw 直接把 map 速度转为 forward/right,不再在线拟合位置旋转。
 
 - **历史实现:**fcu MAVLink 主路曾把 intent (x,y) 不经旋转直接作 NED 位置目标;
 - "胡萝卜"机制:实际速度 ~0.3 m/s 由 AP 位置控制器增益决定,**与命令幅值无关**,hold 刹车滑行 0.5~1m(上游语义问题,PR 议题);

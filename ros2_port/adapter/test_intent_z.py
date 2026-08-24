@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """M5 z闭环 adapter 侧纯函数 intent_z 的单元测试(纯函数级,不 import rclpy)。
 
-trajectory_to_intent.py 模块级 import rclpy/numpy,宿主未必装 ROS;
+trajectory_to_intent.py 模块级 import rclpy,宿主未必装 ROS;
 故用 ast 只抽取 intent_z 函数定义执行,测试与 ROS 运行时完全解耦。
 """
 import ast

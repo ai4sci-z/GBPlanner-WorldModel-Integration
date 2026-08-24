@@ -37,11 +37,11 @@ from trajectory_msgs.msg import MultiDOFJointTrajectory
 
 from intent_policy import (
     ACTIVE_TRAJECTORY_MAX_AGE_S,
-    command_heading,
     effective_fcu_yaw_age,
-    estimate_alignment,
+    map_velocity_to_body_frd,
     quaternion_yaw,
     valid_fcu_yaw,
+    valid_odom_frames,
 )
 
 SPEED_MAX = 0.08
@@ -51,25 +51,11 @@ ODOM_STALE_S = 2.0
 TRAJ_STALE_S = 15.0     # 跟完后等新轨迹的宽限
 TRAJ_MAX_AGE_S = ACTIVE_TRAJECTORY_MAX_AGE_S
 
-# Stage5cal 实测(stage5cal_axis_evidence + BIN GUIP/XKF1 验尸),并由
-# 20260824T045937 MCAP + 当前 fcu_controller 源码订正:SLAM map 与 AP NED
-# 之间有 per-run 不定旋转;当前 controller 又把 intent 定义为机体系 FRD,
-# 按 FCU yaw 旋到 NED 后才积分位置目标。因此输出必须是
-# R(NED->body) * R(map->NED) * v_map,不能把 map->NED 结果直接当 intent。
-# 方案演进:固定表(5a-1 失败:偏角 per-run 变)→ 运动响应 EMA 闭环(5a-2 失败:
-# 2~3s 响应滞后 × 每tick增益 = 延迟失稳,θ̂ 发散绕圈)→ 现行方案:
-# **双坐标系同步观测**:/slam/odom(map)与 /navlab/fcu/local_position_pose
-# (AP NED)同测同一物理运动,累计位移解 map->NED 旋转;FCU 姿态再解 NED->body。
-# 两者均来自非真值运行数据,无需额外探测机动。yaw_rate 恒 0(X2 360°lidar 无需对头,
-# 持续旋转是 5a-1 SLAM 失锁根因)。
-import numpy as np
-
-# v6c 方向解算·累计位移基线法(v3run2/4 验尸:窗口 Procrustes 低速失稳;±25° 信任域
-# 又会在 per-run 旋转漂出基准时锁死错误值;20260824T043724 证明一次冻结门槛也会死锁):
-# 两坐标系观测同一物理路径 → D_ned = R·D_map 对任意弯曲路径严格成立(线性),
-# 累计位移 0.10m 起持续更新 θ=ang(D_ned)−ang(D_map),到 0.35m 才冻结。
-# 这让错误 fallback 仍能在首航点前自校准,长基线继续提供最终抗噪冻结。
-THETA_BASE_RAD = -math.pi / 2.0
+# Current fcu_controller intent is body FRD and is rotated to LOCAL_NED with
+# FCU yaw downstream. Convert map velocity directly through the odometry
+# map->base_link orientation. Two M5 bags proved that the numeric map/NED
+# position relation contains an axis-swap reflection (det=-1), so a det=+1
+# online rotation estimate is structurally invalid and must not drive motion.
 SLAM_FROZEN_S = 4.0       # 运动指令活跃但 odom 位置基本不动 → slam_frozen blocker
 FROZEN_EPS_M = 0.02       # "基本不动"阈值(SLAM 抖动 ±1cm,5a-2 实测)
 
@@ -103,6 +89,7 @@ class TrajToIntent(Node):
         self.killed = False           # kill 一票永久禁用
         self.odom = None
         self.odom_t = 0.0
+        self.map_yaw = None
         self.traj = None
         self.traj_t = 0.0
         self.traj_id = 0
@@ -116,12 +103,6 @@ class TrajToIntent(Node):
         self.controller_ready = False   # /navlab/fcu/controller/status ok(bootstrap 含 takeoff)
         self.mixed_flow = False         # intent 总线上出现过非本适配器来源 → 永久闩锁
         self.ok_latched = False         # 五条件一旦达成即闩锁(尾段 stale blocker 不回撤已达成事实)
-        # 双坐标系累计位移基线 → 短基线开始更新,长基线冻结
-        self.theta = THETA_BASE_RAD
-        self.R_align = self._rot(self.theta)
-        self.R_frozen = False
-        self.pair_count = 0             # 已接受的累计位移映射估计数
-        self.anchor = None              # (map_xy, ned_xy) 运动起始锚点
         self.fcu_yaw = None             # FCU body yaw in LOCAL_NED
         self.fcu_yaw_t = 0.0            # local-position-pose receive time
         self.fcu_yaw_reported_age_s = None  # true ATTITUDE age from external-nav status
@@ -162,6 +143,9 @@ class TrajToIntent(Node):
     def on_odom(self, m):
         self.odom = m
         self.odom_t = time.monotonic()
+        orientation = m.pose.pose.orientation
+        self.map_yaw = quaternion_yaw(
+            orientation.x, orientation.y, orientation.z, orientation.w)
         p = m.pose.pose.position
         if self.last_xy is not None:
             self.path_len += math.hypot(p.x - self.last_xy[0], p.y - self.last_xy[1])
@@ -228,6 +212,12 @@ class TrajToIntent(Node):
             b.append("motion_disabled_fail_closed")
         if self.odom is None or time.monotonic() - self.odom_t > ODOM_STALE_S:
             b.append("no_odom")
+        elif not valid_odom_frames(
+                self.odom.header.frame_id, self.odom.child_frame_id):
+            b.append("odom_frame_mismatch:%s->%s" % (
+                self.odom.header.frame_id, self.odom.child_frame_id))
+        elif self.map_yaw is None:
+            b.append("invalid_map_orientation")
         if self.traj is None:
             b.append("no_trajectory")
         elif time.monotonic() - self.traj_t > TRAJ_MAX_AGE_S:
@@ -248,11 +238,6 @@ class TrajToIntent(Node):
             now - self.fcu_yaw_status_t,
         )
 
-    @staticmethod
-    def _rot(theta):
-        return np.array([[math.cos(theta), -math.sin(theta)],
-                         [math.sin(theta), math.cos(theta)]])
-
     def on_lpp(self, m):
         orientation = m.pose.orientation
         yaw = quaternion_yaw(
@@ -260,36 +245,6 @@ class TrajToIntent(Node):
         if yaw is not None:
             self.fcu_yaw = yaw
             self.fcu_yaw_t = time.monotonic()
-
-        # 累计位移基线法:运动开始处设锚,双系累计位移够长时更新 map->NED 旋转
-        if self.last_xy is None or self.R_frozen:
-            return
-        ned = (m.pose.position.x, m.pose.position.y)
-        map_xy = self.last_xy
-        if not self.enabled or time.monotonic() - self.last_move_cmd_t > 2.0:
-            # 未在运动期:锚点跟随当前位置(避免把起飞前漂移算进基线)
-            self.anchor = (map_xy, ned)
-            return
-        if self.anchor is None:
-            self.anchor = (map_xy, ned)
-            return
-        (m0, n0) = self.anchor
-        dm = (map_xy[0] - m0[0], map_xy[1] - m0[1])
-        dn = (ned[0] - n0[0], ned[1] - n0[1])
-        estimate = estimate_alignment(m0, n0, map_xy, ned)
-        if estimate is not None:
-            self.theta, map_distance, ned_distance, freeze = estimate
-            self.R_align = self._rot(self.theta)
-            self.pair_count += 1
-            self.R_frozen = freeze
-            level = self.get_logger().warning if freeze else self.get_logger().info
-            state = "FROZEN" if freeze else "UPDATE"
-            level(
-                "R_align %s(baseline) theta=%.1fdeg map=%.2fm ned=%.2fm "
-                "D_map=(%.2f,%.2f) D_ned=(%.2f,%.2f)" % (
-                    state,
-                    math.degrees(self.theta), map_distance, ned_distance,
-                    dm[0], dm[1], dn[0], dn[1]))
 
     def slam_frozen(self):
         # 运动指令活跃但 odom 位置基本不动(SLAM 失锁/顶墙卡死的典型形态)
@@ -339,23 +294,28 @@ class TrajToIntent(Node):
                 ey = 0.35 * dy - 0.5 * voy
                 mag = math.hypot(ex, ey)
                 forward = min(SPEED_MAX, 0.3 * dist, mag)
-                # map PD方向 -> map-to-NED在线标定 -> NED-to-body当前FCU姿态
-                # -> intent(FRD机体系);WorldModel controller 再按同一 yaw 转回NED。
-                d = np.array([ex, ey]) / max(mag, 1e-6)
-                cmd_heading = command_heading(self.theta, self.fcu_yaw)
-                R_command = self._rot(cmd_heading)
-                v_body = R_command @ (d * forward)
-                vx, vy = float(v_body[0]), float(v_body[1])
-                yaw_rate = 0.0  # X2 360°lidar 无需对头;持续旋转曾致 SLAM 失锁(5a-1)
-                self.last_move_cmd_t = time.monotonic()
-                self.get_logger().info(
-                    "INTENT traj#%d wp[%d/%d]=(%.2f,%.2f,%.2f) odom=(%.2f,%.2f) "
-                    "dist=%.2f Rpairs=%d map_ned=%.0f fcu_yaw=%.0f yaw_age=%.2f cmd_body=%.0f "
-                    "det=%.0f -> v=(%.3f,%.3f)" % (
-                        self.traj_id, self.wp_idx, len(self.traj.points), wp.x, wp.y, wp.z,
-                        p.x, p.y, dist, self.pair_count, math.degrees(self.theta),
-                        math.degrees(self.fcu_yaw), self.fcu_yaw_age_s(), math.degrees(cmd_heading),
-                        np.linalg.det(R_command), vx, vy))
+                # map PD direction -> body forward/right (FRD). The controller
+                # owns the subsequent body->NED conversion using fresh FCU yaw.
+                scale = forward / max(mag, 1e-6)
+                vx_map, vy_map = ex * scale, ey * scale
+                body_velocity = map_velocity_to_body_frd(
+                    vx_map, vy_map, self.map_yaw)
+                if body_velocity is None:
+                    blockers = ["invalid_body_command"]
+                    wp_z = None
+                else:
+                    vx, vy = body_velocity
+                    cmd_heading = math.degrees(math.atan2(vy, vx))
+                    yaw_rate = 0.0  # X2 360°lidar 无需对头;持续旋转曾致 SLAM 失锁(5a-1)
+                    self.last_move_cmd_t = time.monotonic()
+                    self.get_logger().info(
+                        "INTENT traj#%d wp[%d/%d]=(%.2f,%.2f,%.2f) odom=(%.2f,%.2f) "
+                        "dist=%.2f map_yaw=%.1f fcu_yaw=%.1f yaw_age=%.2f cmd_body=%.1f "
+                        "-> v=(%.3f,%.3f)" % (
+                            self.traj_id, self.wp_idx, len(self.traj.points), wp.x, wp.y, wp.z,
+                            p.x, p.y, dist, math.degrees(self.map_yaw),
+                            math.degrees(self.fcu_yaw), self.fcu_yaw_age_s(), cmd_heading,
+                            vx, vy))
             else:
                 blockers = ["awaiting_next_trajectory"]
 

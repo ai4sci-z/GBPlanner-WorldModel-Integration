@@ -2,42 +2,12 @@ import math
 
 from intent_policy import (
     ACTIVE_TRAJECTORY_MAX_AGE_S,
-    command_heading,
     effective_fcu_yaw_age,
-    estimate_alignment,
+    map_velocity_to_body_frd,
     quaternion_yaw,
     valid_fcu_yaw,
+    valid_odom_frames,
 )
-
-
-def test_alignment_waits_for_a_measurable_baseline():
-    assert estimate_alignment((0.0, 0.0), (0.0, 0.0), (0.09, 0.0), (0.0, 0.09)) is None
-
-
-def test_alignment_updates_before_freeze_from_live_run_evidence():
-    estimate = estimate_alignment(
-        (0.0, 0.0), (0.0, 0.0), (0.100, -0.011), (0.0, 0.074)
-    )
-    assert estimate is not None
-    theta, map_distance, ned_distance, frozen = estimate
-    assert math.isclose(math.degrees(theta), 96.28, abs_tol=0.2)
-    assert map_distance >= 0.100
-    assert ned_distance == 0.074
-    assert frozen is False
-
-
-def test_alignment_freezes_only_on_the_long_baseline():
-    theta, _, _, frozen = estimate_alignment(
-        (0.0, 0.0), (0.0, 0.0), (0.35, 0.0), (0.0, 0.35)
-    )
-    assert math.isclose(math.degrees(theta), 90.0)
-    assert frozen is True
-
-
-def test_alignment_rejects_inconsistent_position_scale():
-    assert estimate_alignment(
-        (0.0, 0.0), (0.0, 0.0), (0.2, 0.0), (0.01, 0.0)
-    ) is None
 
 
 def test_one_shot_path_lifetime_covers_the_acceptance_window():
@@ -71,15 +41,34 @@ def test_fcu_yaw_age_includes_upstream_attitude_and_status_age():
     assert math.isinf(effective_fcu_yaw_age(0.05, None, 0.10))
 
 
-def test_command_heading_accounts_for_worldmodel_body_frame_contract():
-    # Run 20260824T045937 MCAP: map->NED=-171.13 deg, FCU yaw=+89.95 deg.
-    # The adapter must publish in body/FRD, so the correct command is +98.92 deg.
-    heading = command_heading(math.radians(-171.13), math.radians(89.95))
-    assert math.isclose(math.degrees(heading), 98.92, abs_tol=0.01)
-    # WorldModel rotates body intent by FCU yaw before sending LOCAL_NED.
-    reconstructed_ned = heading + math.radians(89.95)
-    assert math.isclose(
-        math.degrees((reconstructed_ned + math.pi) % (2.0 * math.pi) - math.pi),
-        -171.13,
-        abs_tol=0.01,
+def test_body_mapping_requires_exact_map_to_base_link_odometry_frames():
+    assert valid_odom_frames("map", "base_link") is True
+    assert valid_odom_frames("odom", "base_link") is False
+    assert valid_odom_frames("map", "base_footprint") is False
+    assert valid_odom_frames("map", "") is False
+
+
+def test_map_velocity_uses_ros_body_left_but_emits_frd_right():
+    assert map_velocity_to_body_frd(1.0, 0.0, 0.0) == (1.0, 0.0)
+    assert map_velocity_to_body_frd(0.0, 1.0, 0.0) == (0.0, -1.0)
+    forward, right = map_velocity_to_body_frd(0.0, 1.0, math.pi / 2.0)
+    assert math.isclose(forward, 1.0, abs_tol=1e-12)
+    assert math.isclose(right, 0.0, abs_tol=1e-12)
+
+
+def test_body_mapping_matches_fifth_m5_run_axis_swap_evidence():
+    # Both M5 bags have map yaw ~=0 deg and FCU NED yaw ~=90 deg. A map +x
+    # command must be body-forward; the controller rotates it to NED +y,
+    # matching the observed numeric relation NED=(map_y,map_x).
+    forward, right = map_velocity_to_body_frd(
+        math.cos(math.radians(5.0)),
+        math.sin(math.radians(5.0)),
+        math.radians(0.2),
     )
+    assert math.isclose(math.degrees(math.atan2(right, forward)), -4.8, abs_tol=0.01)
+    fcu_yaw = math.radians(89.95)
+    north = math.cos(fcu_yaw) * forward - math.sin(fcu_yaw) * right
+    east = math.sin(fcu_yaw) * forward + math.cos(fcu_yaw) * right
+    assert math.isclose(north, math.sin(math.radians(5.0)), abs_tol=0.004)
+    assert math.isclose(east, math.cos(math.radians(5.0)), abs_tol=0.004)
+    assert map_velocity_to_body_frd(1.0, 0.0, math.nan) is None

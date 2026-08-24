@@ -70,6 +70,9 @@ def validate(run_dir, stack_log_dir):
     tf_log = (stack_log_dir / "m5_tf_relay.log").read_text(
         encoding="utf-8", errors="replace"
     ) if (stack_log_dir / "m5_tf_relay.log").is_file() else ""
+    adapter_log = (stack_log_dir / "m5_adapter.log").read_text(
+        encoding="utf-8", errors="replace"
+    ) if (stack_log_dir / "m5_adapter.log").is_file() else ""
 
     graphs = [(int(v), int(e)) for v, e in re.findall(
         r"Formed a graph with \[(\d+)\] vertices and \[(\d+)\] edges", gbp_log
@@ -77,6 +80,13 @@ def validate(run_dir, stack_log_dir):
     trajectories = [int(n) for n in re.findall(r"published (\d+) waypoints", pci_log)]
     planning_odom_counts = [int(n) for n in re.findall(r"planning_odom=(\d+)", tf_log)]
     planning_z_maxima = [float(z) for z in re.findall(r"planning_z_max=([0-9.]+)", tf_log)]
+    number = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)"
+    body_frame_intents = re.findall(
+        rf"INTENT .*?map_yaw=({number}) fcu_yaw=({number}) "
+        rf"yaw_age=({number}) cmd_body=({number}) -> "
+        rf"v=\(({number}),({number})\)",
+        adapter_log,
+    )
     checks.update(
         {
             "cloud3d_contract": "POINTCLOUD_TOPIC=/wm/cloud3d" in contract,
@@ -101,6 +111,7 @@ def validate(run_dir, stack_log_dir):
             "voxblox_ready": bool(re.search(r"\[MAPPROBE\].*ready=1", gbp_log)),
             "rrg_nontrivial": any(vertices > 1 and edges > 0 for vertices, edges in graphs),
             "trajectory_published": any(points > 0 for points in trajectories),
+            "adapter_body_frame_observed": bool(body_frame_intents),
         }
     )
 
@@ -117,6 +128,7 @@ def validate(run_dir, stack_log_dir):
             "max_trajectory_points": max(trajectories, default=0),
             "max_planning_odom_count": max(planning_odom_counts, default=0),
             "max_planning_z_m": max(planning_z_maxima, default=0.0),
+            "body_frame_intent_count": len(body_frame_intents),
             "accepted_goals": exploration.get("accepted_goals"),
             "path_length_m": exploration.get("path_length_m"),
         },

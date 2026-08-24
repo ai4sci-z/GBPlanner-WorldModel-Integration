@@ -89,7 +89,8 @@ configs/tasks/exploration.yaml L20        strategy: frontier_lite      ← 实�
 - 回调只读三个运动字段;DDS `cmd_vel` 发布已禁用,避免双控制路;
 - `send_mavlink_local_position_setpoint` 把 `linear_x/y` 视为机体系 FRD,按 FCU
   ATTITUDE yaw 旋到 NED,再积分 `SET_POSITION_TARGET_LOCAL_NED` 位置目标。
-- adapter 因此先在线解 map→NED,再用 `R(-yaw_fcu)` 转成 controller 所需的 body/FRD。
+- adapter 使用 `/slam/odom` 的 map→base_link 姿态直接生成 body forward/right;
+  不再从位置位移估计 map→NED 旋转。
 - **B15 门**:MAVLink 主路在 bootstrap(GUIDED+arm+takeoff)完成前直接 return(L393 `if not bootstrap_ready(state): return`;`bootstrap_ready` 定义 L586-592)。起飞前 intent 不会进飞控。
 
 **(b) fcu_controller 消费 status → landing 联动**。exploration 任务里 `TaskCompletionStatusTopic` 被接到 exploration status 话题(`internal/tasks/runtime_artifacts.go:162-168`);fcu 侧 `on_task_completion`(fcu 模板 L340-355)判定:`ok==true` **或**(`accepted_goals>=min` 且 `path_length_m>=min` 且 `blockers` 空)→ `task_completed=true` → `landing_status.ok`(L717-735)→ 主循环等 `completion_grace_sec` 后整个任务收尾(L516-524)。**也就是说:外部方把 status 的 ok 置 true 的那一刻,就是触发降落的那一刻**——这就是我们适配器早期把 ok 保守置 False、只报 `gate_ok_draft` 的原因(防误触发 landing)。
@@ -165,11 +166,11 @@ wm/cloud3d(3D 点云)────┘                                            
 | 2 | `wm/cloud3d`(输入,3D 点云) | `sensor_msgs/PointCloud2` | `lidar3d_frame`(SDF `gz_frame_id`,patch_lidar3d.py L55) | 5Hz(`update_rate`,L59) | 来源:我们加的 net-new 3D lidar(360×30 线,±30°,0.3–10m;`runbooks/world-model-jazzy/patch_lidar3d.py` L54-88),gz 话题 `/lidar3d/points` 经 ros_gz_bridge 出 ROS(patch B,L101-107;桥模板本体 `templates/yaml/bridge_override.yaml.tmpl`,cloud_in 前例在 L37-41)。voxblox 的 `pointcloud`/`cloud_in` 直订它,替代桥接期 `/wm/points` |
 | 3 | TF:`map(world)→base_link` | tf2 | — | 与 odom 同步 | ROS1 桥接期由薄桥从 `/wm/odom` 广播 + `wm_planner.launch` 补静态 TF(L18-19:`world→navigation`、`base_link→…/velodyne`);ROS2 原生版需等效提供:从 `/slam/odom` 广播动态 TF,外加 `base_link→lidar3d_frame` 静态 TF(SDF 里传感器挂 base_link 上方 0.10m,patch_lidar3d.py L42) |
 | 4 | `/gbp/trajectory`(输出) | `trajectory_msgs/MultiDOFJointTrajectory` | `map`(适配器 frame 校验 L189-190) | 事件式:每次规划触发一条(桥接期实测 19 条/run,stage26_evidence) | ROS1 版发布者是 pci 的 `command/trajectory`(`integration/ros1_bridge/wm_planner.launch:33` remap);ROS2 版保持同型同 frame 发到 `/gbp/trajectory` 即可。**粉线纪律:只接 pci 输出,绝不接 `/vis/*` 可视化话题**(发布者=pci 已实证) |
-| 5 | `/navlab/fcu/setpoint/intent`(适配器→fcu) | `std_msgs/String`(JSON) | 速度语义:机体系 FRD;adapter 用 `R(-yaw_fcu)·R(map→NED)` 生成 | 2Hz | FCU yaw 必须由 `/mavlink_external_nav/status.fcu_attitude_age_ms` 证明 fresh;契约字段见 §1.3;depth 10 |
+| 5 | `/navlab/fcu/setpoint/intent`(适配器→fcu) | `std_msgs/String`(JSON) | 速度语义:机体系 FRD;adapter 用 map→base_link yaw 把 map 速度转为 forward/right | 2Hz | downstream FCU yaw 必须由 `/mavlink_external_nav/status.fcu_attitude_age_ms` 证明 fresh;契约字段见 §1.3;depth 10 |
 | 6 | `/navlab/exploration/status`(适配器→gate/landing) | `std_msgs/String`(JSON) | — | 2Hz 同拍 | `ok` 是 landing 扳机,见 §1.2b |
 | 7 | `/gbp/enable`、`/gbp/kill`(操作面) | `std_msgs/Bool` | — | 一次性 | fail-closed 开关(适配器 L98-99) |
 | 8 | `/navlab/fcu/controller/status`(适配器输入) | `std_msgs/String` | — | ~20Hz(fcu 主循环 L488-537,0.05s) | takeoff ready 证据(适配器 L100) |
-| 9 | `/navlab/fcu/local_position_pose`(适配器输入) | `geometry_msgs/PoseStamped` | AP LOCAL_NED | 连续 | R_align 双坐标系基线解算用(适配器 L102、L198-222) |
+| 9 | `/navlab/fcu/local_position_pose`(适配器输入) | `geometry_msgs/PoseStamped` | AP LOCAL_NED | 连续 | 提供 downstream 实际使用的 FCU NED yaw;adapter 同时以 status 校验其 ATTITUDE 源年龄 |
 
 ### 2.2 planner 栈本体(ROS1→ROS2 对应物)
 
@@ -181,14 +182,15 @@ wm/cloud3d(3D 点云)────┘                                            
 
 适配器的输入输出全部是 ROS2 话题(它本来就跑在 jazzy 容器里,stage5c_run.sh L30-32),桥接期它的上游 `/gbp/trajectory` 是薄桥代发的;换成 ROS2 原生 pci 直发后,消息类型(`MultiDOFJointTrajectory`)、frame(`map`)、语义(waypoint 序列)都不变——适配器感知不到上游从"桥"换成了"原生节点"。唯一要确认的是原生 pci 发出的 `header.frame_id` 必须是 `map`(或改 launch remap/配置对齐),否则适配器 `frame_mismatch` blocker 拦截(L189-190)。
 
-### 2.4 R_align 仍然需要(不是桥接遗产)
+### 2.4 R_align 已退出控制链
 
-坐标系错位与桥接无关,但当前契约已经不是早期的“NED 直通”。SLAM map 与 AP NED
-之间仍有 per-run 旋转,adapter 用累计位移在线估计 `R(map→NED)`;当前
-fcu_controller 将 intent 视为机体系 FRD 并按 FCU yaw 旋到 NED,所以 adapter 还必须
-乘 `R(-yaw_fcu)`。第四次 M5 run `20260824T045937.266250321Z` 的 MCAP 给出
-map→NED=`-171.13°`、yaw_fcu=`+89.95°`,对应 body 命令角 `+98.92°`;旧实现漏掉
-`R(-yaw_fcu)` 后 0.865m 全程远离首航点。FCU yaw 无效或超过 freshness 窗口时必须停住。
+第五次 M5 run `20260824T052332.574642383Z` 中,强制 det=+1 的单向量估计从
+80° 漂到 172°、-150°、-75°,飞机移动 1.3911m 仍未到首航点。与第四次 bag
+交叉核验后,位置数值关系近似 `NED=(map_y,map_x)`(det=-1),所以旧算法并非参数不佳,
+而是模型类型错误。当前 adapter 使用标准姿态变换:
+`forward=cosψ·vx_map+sinψ·vy_map`,`right=sinψ·vx_map-cosψ·vy_map`,其中
+`ψ` 来自 `/slam/odom` 的 map→base_link orientation。fcu_controller 再用 fresh FCU
+yaw 将 body FRD 转到 NED。任何 map 姿态无效或 FCU yaw 超龄时必须停住。
 
 ---
 
@@ -208,7 +210,7 @@ map→NED=`-171.13°`、yaw_fcu=`+89.95°`,对应 body 命令角 `+98.92°`;旧�
 **保留项(不是桥的锅,别顺手删)**:
 - jazzy `ros2 topic echo` CLI 对 rclpy 发布者收不到的工具坑(stage2i 矩阵:rclpy→rclpy 60/60,rclpy→CLI 0)——**验收一律 rclpy 订阅**;
 - DDS 慢发现(后加入订阅对 ArduPilot micro-ROS agent 匹配可达 ~29s)——probe 等待预算与容器时序不要收紧;
-- 适配器全部 fail-closed 纪律与 R_align(§2.4);
+- 适配器全部 fail-closed 纪律与 body-frame 映射(§2.4);
 - B15 门(fcu 起飞前不下发)、B16 probe 预算——都在 clean 分支主线里。
 
 ---

@@ -72,6 +72,12 @@ def passing_fixture(tmp_path):
         "invalid_external_nav=0 height_unavailable=0 planning_z_max=0.453\n",
         encoding="utf-8",
     )
+    (logs / "m5_adapter.log").write_text(
+        "[INFO] [gbp_traj_to_intent]: INTENT traj#1 wp[1/7]=(0.50,0.10,0.45) "
+        "odom=(0.10,0.02) dist=0.41 map_yaw=0.2 fcu_yaw=90.0 yaw_age=0.42 "
+        "cmd_body=-13.8 -> v=(0.078,-0.019)\n",
+        encoding="utf-8",
+    )
     return run_dir, logs
 
 
@@ -130,3 +136,17 @@ def test_rejects_missing_sensor_height_runtime_evidence(tmp_path):
     result = validate(run_dir, logs)
     assert result["ok"] is False
     assert "planning_odom_ready" in result["failures"]
+
+
+def test_rejects_legacy_alignment_adapter_log(tmp_path):
+    run_dir, logs = passing_fixture(tmp_path)
+    (logs / "m5_adapter.log").write_text(
+        "INTENT traj#1 wp[1/7]=(0.50,0.10,0.45) odom=(0.10,0.02) dist=0.41 "
+        "Rpairs=4 map_ned=123 fcu_yaw=90 yaw_age=0.42 cmd_body=33 det=1 "
+        "-> v=(0.067,0.043)\n",
+        encoding="utf-8",
+    )
+    result = validate(run_dir, logs)
+    assert result["ok"] is False
+    assert "adapter_body_frame_observed" in result["failures"]
+    assert result["evidence"]["body_frame_intent_count"] == 0
