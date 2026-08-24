@@ -27,6 +27,7 @@ from tf2_msgs.msg import TFMessage
 
 from planning_frame import (
     WALL_EPOCH_MIN,
+    planning_height_rejection,
     should_forward_tf,
     valid_external_nav_odom,
     valid_planning_height,
@@ -50,7 +51,9 @@ class PlanningFrameRelay(Node):
         self.stats = {'forwarded': 0, 'wall_dropped': 0,
                       'planar_replaced': 0, 'planning_odom': 0,
                       'invalid_external_nav': 0, 'height_unavailable': 0,
-                      'invalid_fcu_height': 0, 'planning_z_max': 0.0}
+                      'invalid_fcu_height': 0, 'low_fcu_height': 0,
+                      'overheight_fcu_height': 0,
+                      'nonfinite_fcu_height': 0, 'planning_z_max': 0.0}
         self.get_logger().info(
             'planning frame relay: /external_nav/odom x/y + FCU EKF z -> '
             '/gbp/planning_odom + map->base_link on /tf_clean')
@@ -65,6 +68,8 @@ class PlanningFrameRelay(Node):
             self.fcu_height = None
             self.fcu_height_time = 0.0
             self.stats['invalid_fcu_height'] += 1
+            reason = planning_height_rejection(height)
+            self.stats['%s_fcu_height' % reason] += 1
 
     def on_tf(self, msg):
         keep = []
@@ -125,12 +130,16 @@ class PlanningFrameRelay(Node):
         self.get_logger().info(
             'forwarded=%d wall_dropped=%d planar_replaced=%d '
             'planning_odom=%d invalid_external_nav=%d height_unavailable=%d '
-            'invalid_fcu_height=%d planning_z_max=%.3f' % (
+            'invalid_fcu_height=%d low_fcu_height=%d '
+            'overheight_fcu_height=%d nonfinite_fcu_height=%d '
+            'planning_z_max=%.3f' % (
                 self.stats['forwarded'], self.stats['wall_dropped'],
                 self.stats['planar_replaced'], self.stats['planning_odom'],
                 self.stats['invalid_external_nav'],
                 self.stats['height_unavailable'],
-                self.stats['invalid_fcu_height'], self.stats['planning_z_max']))
+                self.stats['invalid_fcu_height'], self.stats['low_fcu_height'],
+                self.stats['overheight_fcu_height'],
+                self.stats['nonfinite_fcu_height'], self.stats['planning_z_max']))
 
 
 def main():

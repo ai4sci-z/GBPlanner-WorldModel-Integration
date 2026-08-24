@@ -38,3 +38,18 @@ def valid_planning_height(height_m, age_s):
         and PLANNING_HEIGHT_MIN_M < height <= PLANNING_HEIGHT_MAX_M
         and 0.0 <= age <= PLANNING_HEIGHT_MAX_AGE_S
     )
+
+
+def planning_height_rejection(height_m):
+    """Classify unsafe FCU heights without treating ground as divergence."""
+    try:
+        height = float(height_m)
+    except (TypeError, ValueError):
+        return "nonfinite"
+    if not math.isfinite(height):
+        return "nonfinite"
+    if height <= PLANNING_HEIGHT_MIN_M:
+        return "low"
+    if height > PLANNING_HEIGHT_MAX_M:
+        return "overheight"
+    return None
