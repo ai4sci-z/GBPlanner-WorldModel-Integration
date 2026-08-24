@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""R2 文档闭包机器检查:五指标全 0 才通过。仅只读,不改文件。"""
+"""文档闭包机器检查:六类指标全 0 才通过。仅只读,不改文件。"""
 import os, re, subprocess, sys
 root=os.getcwd()
 files=subprocess.run(["git","ls-files","-z"],capture_output=True,text=True).stdout.split("\0")
@@ -57,26 +57,41 @@ print(f"duplicate_dynamic_authority={len(dup_auth)}")
 for d in dup_auth[:20]: print("  DUPAUTH:",d)
 print(f"lifecycle_missing={len(lifecycle_missing)}")
 for l in lifecycle_missing[:20]: print("  NOLC:",l)
-# --- A5 语义硬门:只防本次已知回归(过期 current 串),非自然语言审查 ---
+# --- 语义硬门:防已知 current 回归,非自然语言全量审查 ---
 def readf(p):
     try: return open(p,encoding="utf-8",errors="replace").read()
     except OSError: return ""
 sem=[]
 cs=readf("CURRENT_STATUS.md")
-for badstr in ("S2-FIX 施工中","C1 生成器","连续授权施工中"):
+for badstr in ("S2-FIX 施工中","C1 生成器","连续授权施工中","第二阶段治理施工中"):
     if badstr in cs: sem.append(f"CURRENT_STATUS 含过期串: {badstr}")
-if "WP303" not in cs or "实现" not in cs:
-    sem.append("CURRENT_STATUS 唯一下一动作未含 'WP303 实现'")
 tk=readf("TASKS.md")
 if "第二阶段治理施工中" in tk: sem.append("TASKS 含过期串: 第二阶段治理施工中")
 bt=readf("接力棒_当前值班.md")
 if "只做 R003-S2-FIX" in bt: sem.append("接力棒 含过期串: 只做 R003-S2-FIX")
+
+# 当前路线和停点:三份状态文档必须同时承认 P0/P1,唯一当前施工项为 P1-2。
+route=("P0","P1","P2","P3","P4")
+pos=[cs.find(x) for x in route]
+if any(x < 0 for x in pos) or pos != sorted(pos):
+    sem.append("CURRENT_STATUS 未按 P0→P1→P2→P3→P4 固定顺序声明路线")
+for nm,txt in (("CURRENT_STATUS",cs),("TASKS",tk),("接力棒",bt)):
+    if "P0" not in txt or "P1" not in txt:
+        sem.append(f"{nm} 未同时包含当前 P0/P1 阶段")
+    if "P1-2" not in txt:
+        sem.append(f"{nm} 未登记当前施工项 P1-2")
+if not re.search(r'P1-1[^\n]{0,40}(完成|已恢复)', cs):
+    sem.append("CURRENT_STATUS 未把 P1-1 登记为完成")
+for token in ("ok=true","RRG","voxblox","adapter","FCU"):
+    if token not in cs and token not in bt:
+        sem.append(f"当前短闭环验收边界缺少 {token}")
+
 # CURRENT 文档不得在 claim manifest 中以 '整档 ... CURRENT_CONSISTENT' 占位(要求逐主张)
 cm_txt=readf("governance/claim_manifest.tsv")
 for line in cm_txt.splitlines():
     if line.startswith("CURRENT_STATUS.md\t整档") and "CURRENT_CONSISTENT" in line:
         sem.append("claim: CURRENT_STATUS 仍为 '整档...CURRENT_CONSISTENT' 占位")
-# A6 最小语义反例:同一文档不得既"申请放行/进入 阶段X"又"宣布 X 已完成/收口/执行完毕"(顶部申请/底部完成冲突)
+# 最小语义反例:同一文档不得既申请阶段又宣布同阶段完成。
 _apply=re.compile(r"申请[^\n]{0,10}(放行|进入)[^\n]{0,6}(E0|E1|E2)")
 _done=re.compile(r"(E0|E1|E2)[^\n]{0,6}(已完成|已收口|收口停点|执行完毕|已交付并|已放行并执行)")
 for f in active_md:
@@ -87,61 +102,46 @@ for f in active_md:
     if conflict:
         sem.append(f"{f}: 同文档既申请放行/进入又宣布完成 阶段 {conflict}")
 
-# A7 D5 机械门(R003-WP304-E0-CORRECT-2):文档事实闭包
-tk=readf("TASKS.md"); bt=readf("接力棒_当前值班.md"); rd=readf("README.md")
+# 文档事实闭包
+rd=readf("README.md")
 cmt=readf("governance/claim_manifest.tsv"); bug=readf("docs/world-model端到端Bug台账_给作者PR.md")
-# 1 三状态文档当前工作包一致(均含 WP304)
-for nm,txt in (("CURRENT_STATUS",cs),("TASKS",tk),("接力棒",bt)):
-    if "WP304" not in txt: sem.append(f"{nm} 未含当前工作包 WP304")
-# 2 README 未历史化的"替换 frontier_lite"
+# README 未历史化的"替换 frontier_lite"
 for i,line in enumerate(rd.splitlines(),1):
     if "替换" in line and "frontier" in line and not any(w in line for w in ("非替换","历史","作废","并列","不指导")):
         sem.append(f"README:{i} 未历史化的'替换 frontier_lite'")
-# 3 claim manifest 当前阶段不得仍是 WP303 施工点
-if "施工点=WP303" in cmt and "WP303 已收口" not in cmt:
-    sem.append("claim: 当前施工点仍写 WP303")
-# 4 状态文档不得内嵌易过期精确 main HEAD(main@<hex>)
+# 状态文档不得把治理主仓写成易过期的 main@<hex>;精确绑定看 manifest 头。
 for nm,txt in (("CURRENT_STATUS",cs),("接力棒",bt)):
-    if re.search(r'main@[`*]{0,2}[0-9a-f]{7,40}\b', txt):
+    if re.search(r'治理[^\n]{0,80}main@[`*]{0,2}[0-9a-f]{7,40}\b', txt):
         sem.append(f"{nm} 内嵌易过期精确 main HEAD(应引用 manifest 头)")
-# 5 阶段状态升级门:WP305 不得写成通过;WP306 三项不得写成完成;WP307/308 不得写成已开始
-if re.search(r'WP305[^\n]{0,16}(通过|完成|CLOSED|已关闭)', cs): sem.append("CURRENT_STATUS 把 WP305 写成通过/完成")
-if re.search(r'WP30[78][^\n]{0,16}(已开始|进行中|运行中|10/10 通过)', cs): sem.append("CURRENT_STATUS 把 WP307/308 写成已开始")
-# 6 "E0/运行时埋点已完成"违规(运行时埋点未实现);逐行 + 否定守卫(排除"不得称…已完成"这类禁止句)
-for nm,txt in (("CURRENT_STATUS",cs),("TASKS",tk),("接力棒",bt),("Bug台账",bug),("open1/README",readf("runbooks/world-model-jazzy/l0_hover/open1/README.md"))):
-    for line in txt.splitlines():
-        if any(x in line for x in ("E0 埋点已完成","运行时埋点已完成","运行时埋点已实现")):
-            if not any(neg in line for neg in ("不得","未实现","尚未","禁止","非","不是","≠","不能")):
-                sem.append(f"{nm} 违规:声称 E0/运行时埋点已完成")
-# 7 活跃 UNVERIFIED md 必须带历史/UNVERIFIED 标记(不得承担 current 权威)
+# 阶段升级门:P1 未关闭时,P2/P3/P4 不得写成正在施工或通过。
+if not re.search(r'P1[^\n]{0,30}(进行中|未通过)', cs):
+    sem.append("CURRENT_STATUS 未明确 P1 仍在进行中/未通过")
+for stage in ("P2","P3","P4"):
+    rows=[line for line in cs.splitlines() if re.match(rf'\| {stage}(?:\s|\||：)',line)]
+    if not rows or not all("阻塞" in line for line in rows):
+        sem.append(f"CURRENT_STATUS 未把 {stage} 阶段门保持为阻塞")
+
+# 活跃 UNVERIFIED md 必须带历史/UNVERIFIED 标记(不得承担 current 权威)
 for line in cmt.splitlines():
     p=line.split("\t")
     if len(p)>2 and p[0].endswith(".md") and p[2]=="UNVERIFIED":
         head="\n".join(readf(p[0]).splitlines()[:4])
         if "UNVERIFIED" not in head and "不构成当前施工指令" not in head:
             sem.append(f"UNVERIFIED 活跃文档缺历史标记: {p[0]}")
-# 8 默认主线 6/3/3 与诊断臂 4/3/3 混写(同行两组分母且未标分层/旁证/诊断臂)
+# 默认主线 6/3/3 与诊断臂 4/3/3 不得无分层混写。
 for nm,txt in (("CURRENT_STATUS",cs),("Bug台账",bug)):
     for line in txt.splitlines():
         z=line.replace(" ","")
         if "6/3/3" in z and "4/3/3" in z and not any(w in line for w in ("分层","旁证","诊断臂")):
             sem.append(f"{nm} 默认主线6/3/3与诊断臂4/3/3混写未分层")
-# A8 claim manifest 语义时效门(R003-WP304-E0-EVIDENCE-GATE-CORRECT 包C):
-# 防"生成头/last_verified 卡死在历史 commit、章节引用失效、跨源结论矛盾"类语义陈旧
-# 1 跨源矛盾:claim 写 "WP303 已收口" 而 CURRENT_STATUS 写 G5 PARTIAL/实现停点
-if "WP303 已收口" in cmt and re.search(r'WP303[^\n]{0,60}(PARTIAL|实现停点)', cs):
-    sem.append("claim: 'WP303 已收口' 与 CURRENT_STATUS 'WP303 实现停点/PARTIAL' 跨源矛盾")
-# 2 下一步矛盾:claim 仍写 进入 E1 方案停点,而 CURRENT_STATUS 已是 E1 sidecar 实现(方案已交付)
-if "E1 方案停点" in cmt and ("E1 sidecar 实现" in cs or "E1 观测方案已交付" in cs):
-    sem.append("claim: 下一动作仍写 'E1 方案停点',与 CURRENT_STATUS 'E1 sidecar 实现' 矛盾")
-# 3 章节引用闭包:CURRENT_STATUS 行引用的章节标题必须真实存在于正文
+# claim manifest 章节引用闭包:CURRENT_STATUS 行引用的标题必须真实存在。
 for line in cmt.splitlines():
     if line.startswith("CURRENT_STATUS.md\t"):
         sec=line.split("\t")[1]
         title=re.sub(r'^§[一二三四五六七八九十]+\s*','',sec)
         if title and title not in cs:
             sem.append(f"claim: CURRENT_STATUS 行引用不存在的章节: {sec}")
-# 4 时效:CURRENT 行 last_verified_commit 不得早于该文件最后变更 commit(短/长 SHA 均可;无效 rev 失败关闭)
+# CURRENT 行 last_verified_commit 不得早于文件最后变更 commit;HEAD 表示随本次 review commit 绑定。
 for line in cmt.splitlines():
     p=line.rstrip("\n").split("\t")
     if line.startswith("#") or line.startswith("path\t") or len(p)<11: continue

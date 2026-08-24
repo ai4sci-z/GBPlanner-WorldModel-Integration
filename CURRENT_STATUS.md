@@ -1,171 +1,110 @@
-# CURRENT_STATUS(唯一当前状态源;最后更新 2026-07-28晚(OPEN-1判别器+剂量-响应修复+首次10/10候选;GBPlanner 3/3+切换接口))
+# CURRENT_STATUS（唯一当前状态源；最后更新 2026-08-24）
 
-> 问题事实源 = [docs/world-model端到端Bug台账_给作者PR.md](docs/world-model端到端Bug台账_给作者PR.md);
-> 任务队列 = [TASKS.md](TASKS.md);交接 = [接力棒_当前值班.md](接力棒_当前值班.md);
-> 执行纪律 = [工作铁律.md](工作铁律.md);审查主令 = `~/桌面/ClaudeCode_Reviews/`(R003 系列)。
+> 任务队列见 [TASKS.md](TASKS.md)，现场交接见
+> [接力棒_当前值班.md](接力棒_当前值班.md)，执行纪律见
+> [工作铁律.md](工作铁律.md)。历史结论保留在 `docs/archive/`，不得回填为当前事实。
 
-## 一、目标与路线
+## 一、项目章程与固定顺序
 
-把 GBPlanner(ROS1)无损迁移到 ROS2,作为独立、可配置选择、可切换、可回滚的探索算法接入
-world-model,与 frontier_lite 等并列共存。固定路线(不跳步):
+目标：将 GBPlanner 从 ROS 1 无损迁移到 ROS 2，作为独立、可配置、可切换、可回滚的
+探索算法接入 world-model，并与 `frontier_lite` 并列。
 
-**P0 仓库/文档治理 → P1 长时间闭环稳定(WP303-WP308)→ P2 ROS1/ROS2 对齐 → P3 3D 无损 → P4 插件化接入。**
-多层楼梯探索只做架构预留,不写功能代码。
+固定路线不得跳步：
 
-## 二、当前位置
+1. P0：清理并治理仓库与文档。
+2. P1：证明长时间闭环稳定。
+3. P2：完成 ROS 1 / ROS 2 像素、参数、消息、I/O 与时序对齐。
+4. P3：证明 3D 行为无损。
+5. P4：把真 GBPlanner 作为独立、可切换 WorldModel 探索算法正式集成。
 
-**★★2026-07-28 晚·OPEN-1 攻坚重大进展(详证据链见接力棒)**:
-- **判别器找到并量化**:FCU 周期遥测流空洞(心跳 max-gap 2.1~284.6s 系统性;洞盖 preflight→LP 缺,
-  盖 arm 段→BIN 证 armed×8 但心跳 0 帧→S3 死循环)←SET_MESSAGE_INTERVAL 双源风暴(mission 9消息×2s
-  =86% + external_nav 3×2s=14%,共 3114 次/run,ACK 风暴挤压 FCU TX)。
-- **单变量修复+剂量-响应确认**:陈旧门控(新鲜不重发/bring-up 与陈旧照常)wm@6981f1d(external_nav,
-  4+22 测试绿)+ wm@4c71a4f(mission,75 测试绿)。三档:全风暴 284.6s → 14%门控 13.8s → 完整门控
-  2.1s(标称周期零空洞)。**决定批 PASS 10/10(全 armed+airborne+task_success)= 默认路径首次连续
-  10/10(候选分支 repro_batch 口径;正式 WP307 验收须官方门链+负责人签署,不写 CLOSED)。**
-- **R3-I 两次纠错后定性**:非 B21 深层、非 B22 翻转(rosbag 可靠取证:slam_yaw 全程贴真值)——
-  =XY 审计在悬停厘米尺度不适定(WP303 域);**裁决材料三案已备**(runbooks/.../XY审计悬停尺度误挡_裁决材料)。
-- **GBPlanner 主线**:决策内核 3/3 可靠驱动 world-model 探索(P4 首个实证);切换接口成型
-  (桌面三选一热插拔+GBPlanner 演示含 Gazebo 显示);P2 rrg 对拍 harness 设计定稿(样本 tap/replay)。
+GPS-denied 多层楼梯探索只做架构研究，不进入当前实现排期。
 
-**★2026-07-28 本会话增量(把"起飞不稳"分解为三个有名有据的真因,详见接力棒)**:
-- **①环境 QGC 占 14550(已修·实证)**:本会话遗留 QGroundControl 占 UDP 14550→sim mavlink-router
-  绑定失败→MAVLink 饿死→LP=0→frame_contract_probe 零样本→起飞前被挡。关掉 QGC 干净重跑,
-  **默认档两批共 16 run:起飞 15/16(94%)、完整通过 13/16(81%)**——证明近期"起不了飞"主要是它,
-  **不是 ~50% OPEN-1**(历史 AA003 或亦被污染)。
-- **②R3-H 降落门时序竞态(已修+测试+提交 wm@e16479e,推 backup,待提 PR)**:slam_hover_probe 抢在
-  force_disarm 3s 宽限期内单帧快照→误报 disarm_not_confirmed/motors_not_safe(mission 终态本正常);
-  修=build_landing_summary 视"force-disarm pending"为进行中而非失败,test-first 4 用例(不掩盖真失败)
-  红→绿+现有 5 无回归。×8 端到端验证进行中。
-- **③R3-G 解锁失败(罕见 1/16;=又一个 OPEN-1 类间歇,判别器仍 UNKNOWN,勿盖章 WP306)**:run5
-  `arm_ack_ok=True 但 armed_seen=False`,tlog "Arming motors→Disarming motors ×8"(arm 被接受后又掉),
-  到 300s 超时。STATUSTEXT 有 `Arm: Accels inconsistent`(每 run x20)+ `PreArm: VisOdom not healthy`,
-  **但二者每个 run 都出现(含全部通过的)——与本 §四"已证伪 Accels inconsistent=判别器"一致,非判别项**。
-  故 run5=OPEN-1 类间歇 arm 失败,真判别器未定;**我此前会话中曾误盖章"WP306/IMU"已纠正**。属 WP304/OPEN-1 调查。
-- **诚实**:9/10≠10/10,**OPEN-1/WP307 未收口**;此前本会话曾误写"OPEN-1 已修复"已撤回(过度声称);
-  本会话自造 3 次回归(QGC占口、band-aid、mavlink-router加固)全认领+回退。
+## 二、当前三仓基线
 
-**P1 前置 · WP304 · A/A 观测链。真实 AA003 已执行(负责人批准 exact SHA,2026-07-22)。**
-approval 绑 frozen_plan_sha256=`3c41d8e…453144`(机器自校验 ok,P02.3 不可变全过),`--execute`
-正式入口过门(producer_started=1/READY/refusal=[])。**aa-r1 OFF 失败即停(~3m44s,preflight_timeout,
-`S1 wait_nav_ready`,armed_seen=false=从未 arm);aa-r3/aa-r2/aa-r4=NOT_STARTED_PRIOR_FAILURE(入分母)。**
-- **A/A 无结论**:仅 1 OFF 跑完,ON 臂未跑,无 OFF/ON telemetry 扰动对比。
-- **★OPEN-1 主线推进(BIN-EKF+rosbag 分析已做)**:①**首个失败样本+BIN**(LOG_DISARMED=1 生效,消除 no-BIN 盲区);
-  ②BIN 证 FCU/EKF 侧早期健康(external nav 输入 66.9Hz 干净、EKF 3.3s 达完整解、origin 早设)→**CONTRADICTED
-  "输入慢/EKF 融合慢/origin 慢"三子假设**;③rosbag 证 ROS 侧 external nav **全程新鲜**(odom_age≈1ms,RTF=0.30 实测,
-  "sim-40s 硬停"是时钟误读=run 结束点);④**直接观测到 readiness 狂闪**:sender `ready` 每1-2s翻转而 odom 恒新鲜1ms
-  →翻转项=local_position_fresh(FCU LP 输出反馈,推断),tlog 证 LP 输出 0.9Hz(511 限速)。判读见
-  [AA003_BIN_EKF分析](runbooks/world-model-jazzy/l0_hover/open1/AA003_BIN_EKF分析_2026-07-22.md)+[AA003_result](runbooks/world-model-jazzy/l0_hover/open1/AA003_result_OPEN1判读_2026-07-22.md)。
-- **★OPEN-1 单变量修复已实施并经 OFF-only 3/3 验证(2026-07-26;不等于关闭)**:链(FCU LP 输出 RTF 节流+迟起 ×
-  companion 墙钟 1000ms 阈值 × 零迟滞 5s 门)经 §9 钻底(511 假设 CONTRADICTED,RTF 节流坐实)+**干预验证**:
-  wm@`23116ca`(唯一变量 max-local-position-age-ms 1000→4000,先红后绿,推 backup)→OFF-only ×3 **全过**
-  (3/3 armed+airborne+S13;run1 机制核验:首 true 后翻转 0,修复前全程狂闪;age max 3800<4000 余量仅 200ms=薄,
-  耐久修法=阈值改 sim 域,登记)。**OPEN-1 保持 OPEN**:3/3≠10/10,待 WP307 默认 10/10(建议基于 23116ca,
-  FUTURE_CANDIDATE 前移待负责人裁决)。判读=AA003_BIN_EKF分析 §9-§10。
-**A/A 启动资格已就此单次消费(负责人批准该 SHA);是否重跑 AA003 取 ON 臂+多样本待负责人裁决。
-不等于 WorldModel 稳定/10-10/长稳/Review3 完成。**
-
-分项现状:
-
-- **A/A 机器门链**(preflight/aa_cli 四模式/aggregate 完整分母/授权防误触门/终态三轴
-  语义门/观测条件门):已建成。经五轮 Codex 击穿-补正(占位符过门→测试孤岛→空分母+
-  fixture 后门→复核缺口→`{}` 终态语义),五验包 Codex **VERIFIED_PASS(2026-07-21)**;
-  已登记边界=ON 臂 sidecar 深层 evidence 的 A/A 级联动检查已加(B 包),five-layer 深检
-  权威仍归 `run_registry.py aggregate`。击穿与补正全记录=
-  [证据文档](governance/AA环境接线_companion镜像重建与preflight复核_2026-07-20.md) §5-§9。
-- **AA001(2026-07-21,首次真实全链 A/A)**:2 发起/1 过/1 败/ON 臂未启动;无 A/A 扰动
-  结论;**产出 OPEN-1 首个受控复现样本**(aa-r3_OFF:no-BIN+
-  `hover_mission_abort:waiting_for_fcu_external_nav`)。样本=`~/aa_runs/AA001-20260721`。
-- **aa-r3 定向分析(2026-07-21,Codex 接受为阶段证据)**:最强候选链=FCU
-  LOCAL_POSITION_NED 慢启动爬升期 ×(墙钟 1000ms 阈值/RTF)有效收紧 → ready 抖动
-  攒不足连续 5s → 60s 预算耗尽 → abort → 未 arm →(LOG_DISARMED=0)no-BIN。
-  一条链候选统一解释 no-BIN/间歇性/同 commit 并存;**候选,未 CONFIRMED**;帧级判别
-  与 RTF 实测(恒 0.30)见[分析报告](runbooks/world-model-jazzy/l0_hover/open1/AA001_r3_定向分析_2026-07-21.md)。
-- **AA002(2026-07-21)=INVALID_OBSERVATION**:LOG_DISARMED 经 --config 注入无效
-  (真实参数链=wm 代码硬编码常量),三 run 实测 mav.parm=0;OFF×2 全过(再证间歇性),
-  ON 臂主动取消;无扰动结论、无失败臂内部证据;样本保留(证据文档 §8.10)。
-- **AA003 前置(2026-07-22,负责人 B1 裁决,已完成;核心技术 Codex 复验通过)**:
-  wm@`6d412a11`(仅 `LOG_DISARMED 1`,观测条件改动,**不是飞行稳定修复**)推 backup;
-  FUTURE_CANDIDATE 前移;companion `jazzy-6d412a11f152` 在盘;观测条件门(失败关闭:
-  计划声称必须有真实生成链产物证据)进 aa_cli 正式链;validate-only READY。
-  真实 AA003 未启动(无 attempts/无 approval)。
-- R003 状态闭环已于 2026-07-19 经 Codex VERIFIED_PASS 关闭(CLOSE-01..05);
-  CARRIED_OPEN=OPEN-1、WP303 真实链路、WP306-308、G4-G8;DEFERRED 与下一编号 Review
-  积压项见 TASKS。
-- P2-OFFLINE-PREP 已获准并行,未开工(LIVE 冻结)。
-
-## 三、三仓基线
-
-| 仓 | 分支@HEAD | 角色 | 本轮 |
-|---|---|---|---|
-| GBPlanner-WorldModel-Integration | main(HEAD 见 `governance/manifest_main.tsv` 头 `HEAD=`) | 治理/证据/状态入口 | 可改 |
-| gbp-feat | feat/gbplanner-ros2-port@`17db3bae08d7` | ROS2 迁移代码(M1-M5) | 只读 |
-| world-model | fix/world-model-e2e-takeoff@`6d412a11f152`(origin=SZ-surveying 上游,勿推;推 backup) | 仿真/运行链 | 授权链 `faadb2a`→`e569ecf`→`750032a`→`9a1ce95`→`6d412a11`(LOG_DISARMED 观测,负责人 B1 裁决);A/A 候选基线 |
-
-## 四、已证事实(按证据等级)
-
-- **B21 已验证**:external_nav 位置换系东轴取负(左手系反射喂入,BIN 帧审计 det≈−0.9);
-  修复(wm `908a95a`)后 det≈+1,真值臂反事实 3/3 稳。
-- **B22 候选(强支持)**:iris IMU roll-180 倒装致 SLAM 朝向反 180°;修复候选 wm `eab0cc6`
-  (hover 族接线 `eab0cc6`;exploration/navigation 接线已补齐 `e569ecf`,fixture 级,真实仿真未验)。
-- **历史默认主线分母(2026-07-15,wm eab0cc6)**:attempts 6 / airborne 3 / full-pass 3;
-  诊断臂旁证 4/3/3。10/10 未开跑,禁写"稳定/FIXED/关门"。
-- **A/A 系列分母(2026-07-21,wm 9a1ce95;与 eab0cc6 历史分母分开统计,不混)**:
-  AA001 OFF 臂 2 攻 1 过;AA002 OFF 臂 2 攻 2 过(观测无效实验,行为数据仍真);
-  合计 OFF 臂 4 攻 3 过——与历史间歇率同量级,再证 OPEN-1 与 commit 无关。
-- **OPEN-1 未定位(有最强候选链)**:同 commit 间歇性 bring-up 失败。已证伪
-  "Accels inconsistent=判别器";**已获受控复现+候选链**(见 §二 aa-r3 定向分析),
-  no-BIN 的候选统一解释=从未 arm(LOG_DISARMED=0 不落盘);上游原因(FCU 慢启动为何)
-  仍 UNKNOWN,待 AA003 失败臂 BIN 证据检验。
-- **OPEN-2**:环境依赖复验失败观测已消除(wm `750032a`);WP305 反例矩阵与双环境
-  独立复验通过(宿主 venv 22 passed + companion 容器真 pymavlink 2.4.49 ran=22 fails=0);
-  真实仿真行为验收未执行,归 WP307。
-- **M0-M4 = 窄验收**(编译/单测/切片对拍);行为等价与 3D 无损未证,归 P2/P3。
-- **B23 runner 等 mission + B22 exploration/navigation IMU 接线补齐(wm `faadb2a`/`e569ecf`)**:
-  先红后绿+全模块 11 包测试 ok;**真实仿真中 B23 修复已实际生效**(AA001/AA002 五个
-  attempt 的 runner 均等待 mission 完成),但 10/10 级验收仍归 WP307。
-
-## 五、R003 九门
-
-| 门 | 状态 | 依据 |
+| 仓库 | 当前基线 | 角色与远端口径 |
 |---|---|---|
-| G1/G2 manifest 闭包 | ✅ | 三仓 bound/current rc=0 |
-| G3 生成器测试 | ✅ | 57/57 |
-| G4 文档闭包 | 🟡 PARTIAL | 14 份逐行审计完成(8 全核/5 部分/1 归档),未核范围见 [审计记录](governance/P0_doc_audit_逐份审计_2026-07-18.md) |
-| G5 WP303 生命周期 | 🟡 实现停点 | fixture 75/12/13 全绿;真实仿真级验证:A/A 五 attempt 经 batch_lifecycle 正式链跑通(monitor 三轴/CANCEL/终态产物全真实产出),10/10 级验收归 WP307 |
-| G6 WP304 因果链 | 🟡 进行中 | 机器门链五验 PASS;AA001 受控复现+候选链;AA003 前置就绪;**停点=负责人批准 AA003**;OPEN-1 上游原因未定 |
-| G7 默认 10/10 | ⛔ | 待 WP304-306 |
-| G8 长稳 | ⛔ | 待 G7 |
-| G9 六项收口 | 🔁 持续 | — |
+| `/home/ai4s/projects/GBPlanner-WorldModel-Integration` | `main` | 治理、状态与证据入口；`origin/main` 是授权远端 |
+| `/home/ai4s/projects/gbp-feat` | `feat/gbplanner-ros2-port@ef4f96fcbffa678ec233fa495b7e2162eddf78a4` | 真 GBPlanner ROS 2 迁移代码；与授权 `origin` 完全一致 |
+| `/home/ai4s/projects/world-model` | `fix/world-model-e2e-takeoff@8649ae553e0b433b867c301b05ca780d49cd2530` | 仿真与运行链；与授权 `backup` 完全一致；禁止向只读平台上游推送 |
 
-## 六、推进思路(依赖链)
+GitHub 来源已于 2026-08-24 直接核验：
 
-```
-当前停点                 解锁                          之后
-──────────────────────────────────────────────────────────────────────────
-负责人批准 AA003     →  真实 A/A(OFF×2+ON×2):        →  ①A/A 扰动结论(D6 门)
-(approval 绑 plan SHA)   失败臂带 BIN/EKF 内部时序        ②OPEN-1 候选链检验
-WP306 三单元         →  各单元反例测试绿(可并行,未开工) →  —
-──────────────────────────────────────────────────────────────────────────
-OPEN-1 定位 + WP305/306 完 → WP307 默认 10/10 → WP308 长稳 → P1 关门
-P1 关门 → P2 ROS1/ROS2 对齐(oracle 冻结)→ P3 3D 无损 → P4 插件化接入
-```
+- 原始平台仓是 `https://github.com/SZ-surveying/world-model`。它是 GitHub Organization
+  下的原生仓库，`fork=false`、`parent=null`，根提交 `c73dfd4` 无父提交；公开上游只有
+  `main` 分支，最后推送于 2026-06-27。
+- 授权修复镜像是 `https://github.com/ai4sci-z/world-model`，包含
+  `fix/world-model-e2e-takeoff@8649ae5`；本轮修复只推送到该镜像。
+- 两仓均无 Tag 和 Release；2026-08-24 未发现遗漏的线上更新。
+- `ntnu-arl/gbplanner_ros` 是 GBPlanner 算法来源，不是 world-model 平台仓。
 
-- **A/A 现行基线=FUTURE_CANDIDATE(wm `6d412a11`+companion `jazzy-6d412a11f152`)**,
-  由负责人裁决链显式推进(§三授权链);历史复现基线 `eab0cc6`(独立 worktree+镜像
-  `jazzy-eab0cc6f0d54` 在盘)仍冻结可用,两类样本不混统计。
-- 实测运行参数(AA001 帧级,取代早期估计):**RTF≈0.30 恒定**,hover 单 attempt 墙钟
-  3-4 分钟(成功/失败均短,历史"25 分钟/RTF0.08"为旧栈时代数据,已过时)。
-- E1 前置雷已清:Docker 单 daemon;B23 已修并在真实 run 生效;companion tag 绑 HEAD
-  机制正常(§三)。
-- P2/P3 是论文核心交付(等价性证据);P1 稳定门未过前不启动,但 oracle 资产
-  (gbplanner-ref 镜像、桥接期证据)已冻结待用。
+## 三、NVIDIA 与容器环境
 
-## 七、环境备注
+2026-08-24 宿主与容器实测：
 
-- Docker:单 daemon(system);运行中容器=0;exited 容器 17 个保留未删(AA001/002 各
-  attempt 收尾产物+历史验尸容器 `zealous_curran`),删除待负责人裁决。
-- 宿主 ROS2 jazzy 按方案A pins([pins](governance/ros2_host_env_pins_2026-07-20.md));
-  A/A 操作须 `source /opt/ros/jazzy/setup.bash`。
-- A/A 样本目录:`~/aa_runs/AA001-20260721`(2 attempt)、`AA002-20260721`(3 attempt)、
-  `AA003-20260722`(仅 plan/inputs,无 attempts)——均永久保留,重跑不覆盖。
-- P0 未执行遗留(tag/分支裁决/依赖清单等 7 项)登记于 [TASKS.md](TASKS.md),不擅自执行。
+- GPU：NVIDIA GeForce RTX 5060 Laptop GPU，8151 MiB VRAM。
+- 驱动：595.84；驱动报告 CUDA 13.2。
+- 宿主 `nvidia-smi` 正常；`nvidia-container-cli info` 正常；Docker 已注册 NVIDIA runtime。
+- `docker run --rm --gpus all navlab/official-baseline:jazzy-latest nvidia-smi` 通过，容器内
+  NVML 和设备映射正常。
+- 本轮没有重启。先前沙箱内看不到 `/dev/nvidia*` 是隔离表现，不能据此宣称宿主驱动损坏。
+
+2026-07-31 的 `NVML: Driver Not Loaded` 当前已不复现，但只说明 GPU 环境门已恢复，不能把
+旧任务结果改判为 PASS。
+
+## 四、ROS 2 构建与测试事实
+
+2026-08-24 在固定镜像 `voxblox_ros2_deps:jazzy`（镜像 ID
+`sha256:5f4a1875...`）中把 `gbp-feat@ef4f96f` 源码只读挂载、复制到容器原生文件系统后验证：
+
+- `colcon build --merge-install --executor sequential --packages-up-to gbplanner_node`：
+  11 个依赖包全部完成，`gbplanner_core` 与 `gbplanner_node` 均成功链接。
+- `gbplanner_core` gtest：4/4 通过。
+- M4 真 RRG 合成场景：`TRAJ_POINTS=13`，`pci_trigger_node` 发布 13 个航点。
+- Python：`test_intent_z.py` 与 `test_enable_lease.py` 共 17/17 通过。
+- world-model：`go test ./...` 全模块通过；回归测试固定
+  `exploration_probe=required`、`slam_hover_probe=optional`、
+  `frame_contract_probe=required`、`exploration_workflow=mission`。
+- 可复核证据目录：`/home/ai4s/aa_runs/gbplanner_verify/20260824T031820Z`，其中
+  `result.txt` 为 `VERIFY_RC=0`。
+
+历史 `voxblox_eval.cc` 缺 `pcl_ros/transforms.hpp` 的根因是用错镜像：
+
+- `voxblox_ros2_deps:jazzy` 中该头文件存在，当前全链构建成功。
+- `navlab/official-baseline:jazzy-latest` 是运行镜像，不安装 `ros-jazzy-pcl-ros`，在其中编译
+  voxblox 必然失败。
+- 正确修复是固定构建入口与镜像职责，不是改掉源码中正确的 include，也不默认膨胀运行镜像。
+
+统一重建入口：`/home/ai4s/projects/gbp-feat/runbooks/ros2_port/verify_current_ros2.sh`。
+
+## 五、真实运行证据与边界
+
+- 真 GBPlanner ROS 2 核心位于 `gbp-feat/ros2_port/`；M4 合成场景已证活，但不等于
+  world-model 正式闭环通过。
+- 2026-07-28 的真 M5 现场曾观察到 RRG 175 顶点、624 边、15 前沿和 PCI 航点输出；当时
+  执行闭环失败，不能算验收。
+- 2026-07-30 长跑证据目录：
+  `world-model/artifacts/sim/exploration/20260730T033541.154997958Z`。rosbag 约 9578.844 秒、
+  8,524,637 条消息；早期探针看到起飞、controller ready、8 goals、1.8245 m 路径，但没有
+  最终 summary，状态仍 `ok=false`，必须判未完成/未验收。
+- 最新正式失败目录：
+  `world-model/artifacts/sim/exploration/20260731T065059.411462422Z`，失败于当时的 NVML 门。
+- `/home/ai4s/aa_runs/gbplanner_strategy_v4.py` 是 2D OccupancyGrid 增益代理，不是真
+  GBPlanner/RRG。桌面入口已在 2026-08-24 将“真 GBPlanner”和“2D 增益代理演示”分轨。
+
+## 六、阶段门状态
+
+| 阶段 | 状态 | 当前判定 |
+|---|---|---|
+| P0 仓库/文档治理 | 本轮闭包完成 | 当前事实源、claim 清单和机器闭包规则已统一；三仓 manifest 按双提交协议绑定 |
+| P1 长时间闭环稳定 | 进行中 | P1-1 正式 required probe 已恢复并有回归测试；当前停点是固定 SHA 的真 GBPlanner 短闭环 |
+| P2 ROS1/ROS2 对齐 | 阻塞 | 等 P1；只允许离线准备，不做通过声明 |
+| P3 3D 无损 | 阻塞 | 等 P2；M4 和单次航点输出不足以证明 3D 等价 |
+| P4 插件化接入 | 阻塞 | 桌面分轨只是入口治理，不等于正式插件化验收 |
+
+## 七、当前唯一推进顺序
+
+1. 执行 P1-2：在固定三仓 SHA 和固定镜像下跑短时真 GBPlanner 闭环，要求正常收尾、summary 完整、
+   `ok=true`、真 RRG/voxblox/adapter 证据同时存在。
+2. 短跑通过后跑正式 10/10；所有 attempts 入分母，禁止挑样本。
+3. 10/10 通过后才运行长稳门。
+4. P1 关闭后按 P2 -> P3 -> P4 推进。
