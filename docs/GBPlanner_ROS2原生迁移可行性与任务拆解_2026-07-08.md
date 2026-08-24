@@ -33,7 +33,7 @@ ROS2 world-model
 
 这不是否定前期桥接工作。桥接工作的价值已经完成：
 
-1. 证明 GBPlanner 接入 world-model 有探索增益；
+1. 证明 GBPlanner 接入 world-model 的闭环链路可行，并产生值得继续验证的探索信号；
 2. 证明 3D lidar、voxblox、trajectory、intent 这一条链路概念上成立；
 3. 暴露 ROS1+ROS2 双栈、TCP 薄桥、双时间域、双 TF 命名、probe 时序和 GUI 调试的长期维护负担；
 4. 为 ROS2 迁移提供 oracle，也就是“原版 ROS1 GBPlanner 行为基准”。
@@ -56,7 +56,7 @@ ROS2 world-model
 | voxblox 3D 建图 | 已证明 | GBPlanner 后端能消费点云 |
 | trajectory 回流 | 已证明 | 规划输出可被转成执行意图 |
 | Stage5b 3D 行为对照 | 已成立 | GBPlanner 行为受 3D 输入影响 |
-| 公平对比 | 已有阶段性结论 | GBPlanner 支路优于 frontier_lite |
+| 公平对比 | 尚未成立 | 当前策略 goal 语义、运行 SHA 和失败样本口径不同，不得声称 GBPlanner 优于 frontier_lite |
 | 三 GUI 阶段演示 | 已初步搭建 | 可用于解释系统结构和迁移动机 |
 
 这些结论可以作为 ROS2 迁移的动机与基线，而不是继续维护桥接方案的理由。
@@ -461,19 +461,23 @@ odom 发生与 intent 方向相关的运动
 #### M5-c：探索对比通过
 
 ```text
-至少 3 run
-记录 accepted_goals
-记录 path_length
-记录 TASK_STATUS
-与桥接期 oracle 做行为对照
-与 frontier_lite 做同口径对照
+固定 GBPlanner 与 WorldModel 精确 SHA
+每种策略至少 6 个独立 run，成功和失败全部保留
+记录 accepted_goals 及其策略内语义，不跨策略直接比较
+记录 path_length，但失败/跑飞里程不得解释为探索收益
+记录 TASK_STATUS、return-home、LAND、touchdown、disarm/motors-safe
+与桥接期 oracle 做行为对照；与 frontier_lite 比较 gate 通过率和安全收尾
 ```
 
-2026-08-24 阶段状态:P1-2 直连闭环已由 run
-`20260824T075515.387084602Z` 通过。同一 run 包含 3 个真实运动到达、
-4.0871m path、非平凡 RRG/trajectory、实测返航进入 0.35m 半径、LAND ACK/
-mode、touchdown、disarm/motors-safe 和 `TASK_STATUS_OK`。M5-c 上述至少
-3 run 及 oracle/frontier_lite 同口径对比仍待执行,所以 M5 整体仍是进行中。
+2026-08-24 阶段状态：P1-2 直连闭环已通过，M5-c 仍在进行中。最终高度口径下，
+GBPlanner `32f269f` + WorldModel `6e48597` 只有 2/2 个完全同 SHA PASS；
+`frontier_lite` 在 WorldModel `6e48597` 的冻结 cohort 为 4/6 PASS，其中一个失败是
+真实返航超时，另一个由完成状态未闩锁造成，后者已在 `dc41bc3` 修复。两种策略的
+`accepted_goals` 语义不同，不能据此直接排名；所有 landing PASS 的
+`descent_profile.ok=false`，且 AP LAND 策略当前只审计该字段。受控 terminal failure
+安全收尾尚未实跑。固定 `32f269f` + `dc41bc3` 重建两个 cohort、关闭下降曲线证据和
+terminal failure 硬门之前，M5-c 不得写成完成，也不得进入 P2。完整证据见
+[M5-c 长程 cohort 证据](M5c_cohort_2026-08-24.md)。
 
 ---
 

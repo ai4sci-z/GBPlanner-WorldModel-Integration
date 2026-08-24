@@ -3,7 +3,16 @@
 > 路线切换后新增(2026-07-08)。**桥接历史资产不动**,ROS 2 port 全部落在本目录隔离。
 > 主线任务书:[../docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md](../docs/GBPlanner_ROS2原生迁移可行性与任务拆解_2026-07-08.md)。
 >
-> **当前状态(2026-08-24,事实源=治理主仓 CURRENT_STATUS.md)**:
+> **当前 M5-c 证据快照（2026-08-24）**：M5 仍为进行中，不能进入 P2。GBPlanner
+> `32f269f` + WorldModel `6e48597` 的最终同 SHA external 样本只有 2/2 PASS，不足以
+> 构成冻结分母；WorldModel `6e48597` 的 `frontier_lite` cohort 为 4/6 PASS，随后
+> `dc41bc3` 修复了其中一个完成状态未闩锁问题，但未消除真实返航失败。两种策略的
+> `accepted_goals` 语义不同，不能直接比较该数值；所有成功降落样本的下降曲线审计仍
+> 失败，AP LAND 当前只把它当审计项，不能宣称下降率安全已验证。完整样本、失败和硬门见
+> [M5-c cohort 证据](../docs/M5c_cohort_2026-08-24.md)。下一步必须固定
+> `32f269f` + `dc41bc3` 重建分母、实跑 terminal failure 安全收尾，并解决下降曲线证据。
+>
+> **历史施工流水（截至 P1-2 首次 PASS；以下“当前候选”等仅指当时停点）**：
 > M1 msgs ✅ / M2 voxblox ✅(五切片全过)/ M3 core 剥离 ✅(12k 行,单测 4/4;
 > "3D 行为等价"未证,Review 002 判 NOT PROVEN)/ M4a 合成冒烟 ✅(M4b 真场景 open-loop 未测)/
 > **M5 P1-2 ✅ 直连闭环已通过;M5-c 多 run oracle/同口径对比仍未完成**。首次固定 SHA run
@@ -133,7 +142,12 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
   (接口仍依赖 ROS2 消息/tf2/voxblox_ros);"3D 算法行为等价"未证,需 ROS1 oracle 3D fixture 对拍。
 - **M4a ✅(feat `be7d6e0`)**:节点壳 `src/gbplanner_node/` + 最小 PCI 触发,合成场景 RRG 出 12wp 轨迹。
   PCI 替身只是 smoke 工具(Review 002 §13.1),恢复 M5 前须另做 planning coordinator。
-- **M5 P1-2 ✅ 直连闭环通过;M5-c 🔵 待多 run 对比**:`ea80713` 已恢复 adapter z 闭环;首次 fixed-SHA run
+- **M5 P1-2 ✅ 直连闭环通过；M5-c 🔵 进行中**：当前证据与硬门以
+  [M5-c cohort 证据](../docs/M5c_cohort_2026-08-24.md)为准。最终高度口径 external
+  同 SHA 仅 2/2 PASS；`frontier_lite` 冻结 cohort 为 4/6 PASS，且存在真实返航失败。
+  `accepted_goals` 语义不一致、terminal failure 安全收尾未实跑、AP LAND 下降曲线
+  仅审计且所有成功样本仍为 false，因此不能宣布 M5-c 完成，也不得进入 P2。
+- **P1-2 历史调试记录（截至首次 PASS）**：`ea80713` 已恢复 adapter z 闭环;首次 fixed-SHA run
   `20260824T033655.765292080Z` 证明旧 2D 点云入口错误。第二次 run
   `20260824T035607.451295836Z` 证明 `/wm/cloud3d`、SDF 外参和非平凡 3D RRG 已恢复,
   但因规划/执行时序与周期路径刷新,同一窗口仍为 `accepted_goals=0`,不得计作 PASS。
