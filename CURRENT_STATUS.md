@@ -24,7 +24,7 @@ GPS-denied 多层楼梯探索只做架构研究，不进入当前实现排期。
 | 仓库 | 当前基线 | 角色与远端口径 |
 |---|---|---|
 | `/home/ai4s/projects/GBPlanner-WorldModel-Integration` | `main` | 治理、状态与证据入口；`origin/main` 是授权远端 |
-| `/home/ai4s/projects/gbp-feat` | `feat/gbplanner-ros2-port@ef4f96fcbffa678ec233fa495b7e2162eddf78a4` | 真 GBPlanner ROS 2 迁移代码；与授权 `origin` 完全一致 |
+| `/home/ai4s/projects/gbp-feat` | `feat/gbplanner-ros2-port@f9c20f296fe629817176cfdbaabc6fc6a31bdb27` | 真 GBPlanner ROS 2 迁移代码；与授权 `origin` 完全一致 |
 | `/home/ai4s/projects/world-model` | `fix/world-model-e2e-takeoff@8649ae553e0b433b867c301b05ca780d49cd2530` | 仿真与运行链；与授权 `backup` 完全一致；禁止向只读平台上游推送 |
 
 GitHub 来源已于 2026-08-24 直接核验：
@@ -66,6 +66,8 @@ GitHub 来源已于 2026-08-24 直接核验：
   `frame_contract_probe=required`、`exploration_workflow=mission`。
 - 可复核证据目录：`/home/ai4s/aa_runs/gbplanner_verify/20260824T031820Z`，其中
   `result.txt` 为 `VERIFY_RC=0`。
+- `f9c20f2` 新增 M5 同 run 结构化验收器并把运行时 Python 回归扩为 20/20；未改 C++，
+  上述 `ef4f96f` 全量构建证据仍是其直接父提交的有效构建基线。
 
 历史 `voxblox_eval.cc` 缺 `pcl_ros/transforms.hpp` 的根因是用错镜像：
 
@@ -80,6 +82,13 @@ GitHub 来源已于 2026-08-24 直接核验：
 
 - 真 GBPlanner ROS 2 核心位于 `gbp-feat/ros2_port/`；M4 合成场景已证活，但不等于
   world-model 正式闭环通过。
+- P1-2 首次固定 SHA run：
+  `world-model/artifacts/sim/exploration/20260824T033655.765292080Z`。最终
+  `ok=false`、`TASK_STATUS_ERROR`、required `exploration_probe` rc=20，诚实判 FAIL。
+  FCU/controller、起飞和 setpoint 链正常；GBPlanner RRG 每轮只有 1 顶点/0 边且无轨迹。
+  直接根因是 M5 仍把 voxblox 接到旧 2D `/cloud_in`（frame=`base_scan`），自由体素只出现在
+  低位，规划高度保持 Unknown。`f9c20f2` 已改接 `/wm/cloud3d`、补
+  `base_link -> lidar3d_frame` 固定外参，并要求同 run 五类证据，等待复跑验证。
 - 2026-07-28 的真 M5 现场曾观察到 RRG 175 顶点、624 边、15 前沿和 PCI 航点输出；当时
   执行闭环失败，不能算验收。
 - 2026-07-30 长跑证据目录：
