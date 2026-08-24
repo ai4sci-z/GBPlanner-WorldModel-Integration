@@ -6,9 +6,13 @@
 > **当前状态(2026-08-24,事实源=治理主仓 CURRENT_STATUS.md)**:
 > M1 msgs ✅ / M2 voxblox ✅(五切片全过)/ M3 core 剥离 ✅(12k 行,单测 4/4;
 > "3D 行为等价"未证,Review 002 判 NOT PROVEN)/ M4a 合成冒烟 ✅(M4b 真场景 open-loop 未测)/
-> **M5 ⏸ 尚未正式闭环验收**。当前 `ea80713` 已在
+> **M5 ⏸ 尚未正式闭环验收**。`ef4f96f` 已在
 > `voxblox_ros2_deps:jazzy` 干净构建通过,core gtest 4/4 通过,M4 真 RRG 合成冒烟输出
-> 11 个航点。`navlab/official-baseline:jazzy-latest` 是运行镜像,不含
+> 13 个航点,Python 回归 20/20 通过。P1-2 首次固定 SHA run
+> `20260824T033655.765292080Z` 诚实失败:RRG 仅 1 顶点/0 边,无轨迹;根因是 M5 仍把
+> voxblox 接到旧 2D `/cloud_in`(base_scan),规划高度保持 Unknown。当前候选修复改接现役
+> 3D `/wm/cloud3d` 并发布 `base_link -> lidar3d_frame` 固定外参,尚待 live 复验。
+> `navlab/official-baseline:jazzy-latest` 是运行镜像,不含
 > `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
 > `runbooks/ros2_port/verify_current_ros2.sh`。
 > 下文 M1/M2 段落为历史施工记录,保留不动。
@@ -93,5 +97,7 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
   (接口仍依赖 ROS2 消息/tf2/voxblox_ros);"3D 算法行为等价"未证,需 ROS1 oracle 3D fixture 对拍。
 - **M4a ✅(feat `be7d6e0`)**:节点壳 `src/gbplanner_node/` + 最小 PCI 触发,合成场景 RRG 出 12wp 轨迹。
   PCI 替身只是 smoke 工具(Review 002 §13.1),恢复 M5 前须另做 planning coordinator。
-- **M5 ⏸ BLOCKED**:数据链已证通(真 odom/点云进、轨迹/intent 出,run 20260714T095739),
-  飞行闭环 FAIL;当前 adapter 丢弃 z,只能算 XY 诊断切片,最终口径必须含 z 闭环(多层 Demo 硬要求)。
+- **M5 ⏸ P1-2 施工中**:`ea80713` 已恢复 adapter z 闭环;首次固定 SHA live run
+  `20260824T033655.765292080Z` 因旧 2D 点云映射只形成低位自由体素而无轨迹。候选改接
+  `/wm/cloud3d` 并补 SDF 传感器外参;`validate_m5_run.py` 要求同一 run 的最终 summary
+  `ok=true`、正常返航降落和 RRG/voxblox/trajectory/adapter/FCU 五类证据全部成立,否则 rc=20。

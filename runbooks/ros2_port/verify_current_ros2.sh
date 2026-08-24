@@ -19,6 +19,11 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 EVIDENCE_ROOT="${EVIDENCE_ROOT:-/home/ai4s/aa_runs/gbplanner_verify/$STAMP}"
 mkdir -p "$EVIDENCE_ROOT"
 
+python3 -m pytest -q \
+  "$FEAT_ROOT/ros2_port/adapter/test_intent_z.py" \
+  "$FEAT_ROOT/ros2_port/wm_mapping/test_enable_lease.py" \
+  "$FEAT_ROOT/runbooks/ros2_port/test_validate_m5_run.py"
+
 echo "FEAT_HEAD=$(git -C "$FEAT_ROOT" rev-parse HEAD)"
 echo "IMAGE=$IMAGE"
 echo "EVIDENCE_ROOT=$EVIDENCE_ROOT"

@@ -15,7 +15,9 @@ OUT="${OUT:-$HOME/cmp_out}"
 YAML="$WM/orchestration/sim/configs/tasks/exploration.yaml"
 RUN_ID="m5_$(date +%Y%m%dT%H%M%S)_$$"
 LOCK="$OUT/m5_direct_run.lock"
+RUN_OUT="$OUT/$RUN_ID"
 mkdir -p "$OUT"
+mkdir -p "$RUN_OUT"
 
 # Exclusive lock: refuse concurrent runs (SITL/DDS cannot be shared).
 exec 9>"$LOCK"
@@ -28,7 +30,13 @@ if ! git -C "$WM" diff --quiet -- orchestration/sim/configs/tasks/exploration.ya
 fi
 trap 'docker rm -f gbp_stack >/dev/null 2>&1' EXIT
 echo "RUN_ID=$RUN_ID (strategy override: external, tracked YAML untouched)"
-sha256sum "$YAML" > "$OUT/exploration.yaml.sha.$RUN_ID"
+{
+  echo "MAIN_HEAD=$(git -C /home/ai4s/projects/GBPlanner-WorldModel-Integration rev-parse HEAD)"
+  echo "FEAT_HEAD=$(git -C "$FEAT" rev-parse HEAD)"
+  echo "WM_HEAD=$(git -C "$WM" rev-parse HEAD)"
+  docker image inspect gbplanner_stack:jazzy --format 'STACK_IMAGE_ID={{.Id}}'
+  sha256sum "$YAML"
+} > "$RUN_OUT/pins.txt"
 
 docker rm -f gbp_stack >/dev/null 2>&1
 docker run -d --name gbp_stack --network=host \
@@ -37,9 +45,17 @@ docker run -d --name gbp_stack --network=host \
   -v "$FEAT/ros2_port/wm_mapping":/wm:ro \
   -v "$FEAT/ros2_port/src/gbplanner_node/config":/gbcfg:ro \
   -v "$FEAT/ros2_port/adapter":/adapter:ro \
-  -v "$OUT":/out \
+  -v "$RUN_OUT":/out \
   gbplanner_stack:jazzy sleep infinity >/dev/null
 docker exec -d gbp_stack bash /wm/gbp_stack.sh
+for _ in $(seq 1 30); do
+  [ -s "$RUN_OUT/m5_stack_contract.log" ] && break
+  sleep 1
+done
+[ -s "$RUN_OUT/m5_stack_contract.log" ] || {
+  echo "GBPlanner stack did not publish its runtime contract" >&2
+  exit 10
+}
 echo "=== gbp_stack up; starting world-model live run (strategy=external) ==="
 
 export PATH=/usr/local/go/bin:$PATH
@@ -47,32 +63,37 @@ export NAVLAB_SIM_DISTRO=jazzy
 export GOFLAGS=-mod=mod
 cd "$WM/orchestration/sim" || exit 9
 timeout 600 go run ./cmd/navlab-sim run exploration --exploration-strategy external \
-  --live-preflight > "$OUT/m5_run.log" 2>&1
+  --live-preflight > "$RUN_OUT/m5_run.log" 2>&1
 RC=$?
 echo "RUN_RC=$RC"
-tail -8 "$OUT/m5_run.log"
+tail -8 "$RUN_OUT/m5_run.log"
 
-RUNDIR=$(ls -dt "$WM"/artifacts/sim/exploration/*/ 2>/dev/null | head -1)
+REL_RUNDIR=$(sed -n 's/^artifact_dir=//p' "$RUN_OUT/m5_run.log" | tail -1)
+RUNDIR=""
+if [ -n "$REL_RUNDIR" ]; then
+  RUNDIR=$(realpath -m "$WM/orchestration/sim/$REL_RUNDIR")
+fi
 echo "RUNDIR=$RUNDIR"
-[ -n "$RUNDIR" ] && python3 - "$RUNDIR" <<'PY'
-import json, sys, glob
-rd = sys.argv[1]
-try:
-    d = json.load(open(rd + '/summary.json'))
-    print('task_status =', d.get('task_status') or d.get('status'))
-    print('blockers    =', sorted(set(b.get('code') for b in (d.get('blockers') or []))))
-except Exception as e:
-    print('summary unavailable:', e)
-for f in glob.glob(rd + '/**/exploration_probe*.json', recursive=True)[:1]:
-    e = json.load(open(f))
-    s = e['samples'].get('/navlab/exploration/status', {}).get('parsed', {})
-    print('[external strategy] strategy=%s accepted=%s path=%sm blockers=%s'
-          % (s.get('strategy'), s.get('accepted_goals'),
-             s.get('path_length_m'), s.get('blockers')))
-PY
+case "$RUNDIR" in
+  "$WM"/artifacts/sim/exploration/*) ;;
+  *) echo "run did not report a valid new exploration artifact directory" >&2; RUNDIR="" ;;
+esac
+
+ACCEPT_RC=20
+if [ -n "$RUNDIR" ] && [ -d "$RUNDIR" ]; then
+  python3 "$FEAT/runbooks/ros2_port/validate_m5_run.py" \
+    --run-dir "$RUNDIR" \
+    --stack-log-dir "$RUN_OUT" \
+    --output "$RUN_OUT/m5_acceptance.json"
+  ACCEPT_RC=$?
+else
+  echo '{"ok":false,"failures":["run_dir_missing"]}' > "$RUN_OUT/m5_acceptance.json"
+fi
 echo "=== stack logs (tails) ==="
 for f in m5_gbp_node m5_pci m5_adapter m5_enabler; do
   echo "-- $f --"
-  grep -vE "type hash|USER_DATA" "$OUT/$f.log" 2>/dev/null | tail -3
+  grep -vE "type hash|USER_DATA" "$RUN_OUT/$f.log" 2>/dev/null | tail -3
 done
-exit $RC
+echo "ACCEPT_RC=$ACCEPT_RC"
+[ "$RC" -eq 0 ] || exit "$RC"
+exit "$ACCEPT_RC"
