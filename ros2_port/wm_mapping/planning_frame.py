@@ -6,6 +6,9 @@ WALL_EPOCH_MIN = 1e8
 PLANNING_PARENT = "map"
 PLANNING_CHILD = "base_link"
 EXTERNAL_NAV_PARENT = "external_nav"
+PLANNING_HEIGHT_MIN_M = 0.05
+PLANNING_HEIGHT_MAX_M = 100.0
+PLANNING_HEIGHT_MAX_AGE_S = 1.0
 
 
 def should_forward_tf(stamp_sec, parent_frame, child_frame):
@@ -21,3 +24,17 @@ def valid_external_nav_odom(parent_frame, child_frame, position, orientation):
         return False
     values = tuple(position) + tuple(orientation)
     return len(values) == 7 and all(math.isfinite(float(value)) for value in values)
+
+
+def valid_planning_height(height_m, age_s):
+    try:
+        height = float(height_m)
+        age = float(age_s)
+    except (TypeError, ValueError):
+        return False
+    return (
+        math.isfinite(height)
+        and math.isfinite(age)
+        and PLANNING_HEIGHT_MIN_M < height < PLANNING_HEIGHT_MAX_M
+        and 0.0 <= age <= PLANNING_HEIGHT_MAX_AGE_S
+    )

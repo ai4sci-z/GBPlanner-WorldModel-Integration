@@ -1,6 +1,10 @@
 import math
 
-from planning_frame import should_forward_tf, valid_external_nav_odom
+from planning_frame import (
+    should_forward_tf,
+    valid_external_nav_odom,
+    valid_planning_height,
+)
 
 
 def test_forwards_sim_time_non_owned_transform():
@@ -28,3 +32,13 @@ def test_rejects_wrong_frame_or_nonfinite_height():
     assert valid_external_nav_odom(
         "external_nav", "base_link", (1.0, 2.0, math.nan), (0.0, 0.0, 0.0, 1.0)
     ) is False
+
+
+def test_accepts_fresh_nonzero_fcu_height():
+    assert valid_planning_height(0.4529, 0.2) is True
+
+
+def test_rejects_zero_stale_or_nonfinite_fcu_height():
+    assert valid_planning_height(0.0, 0.2) is False
+    assert valid_planning_height(0.4529, 1.1) is False
+    assert valid_planning_height(math.nan, 0.2) is False

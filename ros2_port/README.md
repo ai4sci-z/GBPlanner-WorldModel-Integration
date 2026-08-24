@@ -14,9 +14,16 @@
 > `WP REACHED` 出现在 rosbag/任务窗口结束约 25 秒后,不得计入验收。现场证据还表明
 > PCI 在 `/gbp/enable` 前发布路径且周期刷新路径,反复重置 adapter 的航点索引。
 > 当前工作树候选修复改为:规划里程计和 `map -> base_link` 统一取
-> `/external_nav/odom` 的传感器高度、PCI 等待 enable 并在首条非空路径后停止、任务结束
+> `/external_nav/odom` 的 x/y/orientation 与 fresh FCU EKF z、PCI 等待 enable 并在首条非空路径后停止、任务结束
 > 立即停止宿主栈。候选补丁已通过 Python 27/27、11 包 Jazzy 构建、core 4/4、node
-> 3/3 和 M4 `TRAJ_POINTS=11`(`VERIFY_RC=0`),但仍须重建运行镜像并完成新的同 run live 复验。
+> 3/3 和 M4 `TRAJ_POINTS=11`(`VERIFY_RC=0`)。第三次 run
+> `20260824T043724.213476420Z` 使用可复现镜像 `e7d28dd...`,实证 3D topic、enable
+> 门控、21 点 one-shot 路径均生效,但仍为 `accepted_goals=0`。MCAP 对拍定位到两个新根因:
+> adapter 在 0.35m 才校准坐标旋转,而首航点仅 0.32m,错误 fallback 造成校准死锁;
+> one-shot 路径又在 30s 被主动判超龄。MCAP 同时推翻了 external-nav 已带高度的假设:
+> 首个运动 intent 时 `/external_nav/odom.z=0`,而非真值 FCU EKF 高度为 0.4529m。
+> 当前候选改为 0.10m 起持续校准/0.35m 冻结、active path 寿命覆盖 90s 验收窗,
+> 并用 fresh FCU EKF z 显式融合 planning odom/TF;Python 回归现为 34/34,尚待 live 复验。
 > `navlab/official-baseline:jazzy-latest` 是运行镜像,不含
 > `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
 > `runbooks/ros2_port/verify_current_ros2.sh`;M5 运行镜像必须用
@@ -107,7 +114,13 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
   `20260824T033655.765292080Z` 证明旧 2D 点云入口错误。第二次 run
   `20260824T035607.451295836Z` 证明 `/wm/cloud3d`、SDF 外参和非平凡 3D RRG 已恢复,
   但因规划/执行时序与周期路径刷新,同一窗口仍为 `accepted_goals=0`,不得计作 PASS。
-  当前候选进一步统一 `/external_nav/odom` 传感器高度到 `/gbp/planning_odom` 与规划 TF,
-  并让 PCI 等待 enable、首条非空路径后 one-shot 停止。`validate_m5_run.py` 继续要求
+  随后候选曾尝试统一 `/external_nav/odom` 高度到 `/gbp/planning_odom` 与规划 TF,
+  但第三次 run 的 MCAP 已证明该高度仍为 0;PCI 等待 enable、首条非空路径后
+  one-shot 停止的修复则已实证生效。`validate_m5_run.py` 继续要求
   同一 run 的最终 summary `ok=true`、正常返航降落和 RRG/voxblox/trajectory/adapter/FCU
   五类证据全部成立,并新增 3D planning odom/TF 与 PCI one-shot 证据;任一失败仍 rc=20。
+  第三次 run `20260824T043724.213476420Z` 已验证 PCI 修复但仍 0 accepted goals;
+  MCAP 证明 per-run map→NED 旋转需在 0.10m 起持续估计,不能等 0.35m 才一次冻结,
+  且 exploration 的 `/external_nav/odom.z` 实际为 0。下一候选使用 fresh
+  `/navlab/fcu/local_position_pose` 的 FCU EKF z(非 simulator truth),并把验收升级为
+  `planning_z_max>0.05m`;不得把“planning_odom 有消息”冒充 3D 高度已成立。

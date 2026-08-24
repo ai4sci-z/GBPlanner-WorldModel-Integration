@@ -76,21 +76,25 @@ def validate(run_dir, stack_log_dir):
     )]
     trajectories = [int(n) for n in re.findall(r"published (\d+) waypoints", pci_log)]
     planning_odom_counts = [int(n) for n in re.findall(r"planning_odom=(\d+)", tf_log)]
+    planning_z_maxima = [float(z) for z in re.findall(r"planning_z_max=([0-9.]+)", tf_log)]
     checks.update(
         {
             "cloud3d_contract": "POINTCLOUD_TOPIC=/wm/cloud3d" in contract,
             "lidar3d_extrinsic": "EXTRINSIC=base_link:lidar3d_frame:0,0,0.10" in contract,
             "planning_odom_contract": "ODOMETRY_TOPIC=/gbp/planning_odom" in contract,
             "planning_height_contract": (
-                "ODOMETRY_HEIGHT_SOURCE=/external_nav/odom:/height/estimate" in contract
+                "ODOMETRY_HEIGHT_SOURCE=/navlab/fcu/local_position_pose:fcu_ekf_z" in contract
             ),
             "planning_tf_contract": (
-                "PLANNING_TF=map:base_link:external_nav_height" in contract
+                "PLANNING_TF=map:base_link:fcu_ekf_height" in contract
             ),
             "pci_one_shot_contract": (
                 "PCI_POLICY=wait_for_enable,stop_after_first_path" in contract
             ),
-            "planning_odom_ready": any(count > 0 for count in planning_odom_counts),
+            "planning_odom_ready": (
+                any(count > 0 for count in planning_odom_counts)
+                and any(z > 0.05 for z in planning_z_maxima)
+            ),
             "pci_one_shot_observed": (
                 "first non-empty path published; trigger timer stopped" in pci_log
             ),
@@ -112,6 +116,7 @@ def validate(run_dir, stack_log_dir):
             "max_rrg_edges": max((e for _, e in graphs), default=0),
             "max_trajectory_points": max(trajectories, default=0),
             "max_planning_odom_count": max(planning_odom_counts, default=0),
+            "max_planning_z_m": max(planning_z_maxima, default=0.0),
             "accepted_goals": exploration.get("accepted_goals"),
             "path_length_m": exploration.get("path_length_m"),
         },

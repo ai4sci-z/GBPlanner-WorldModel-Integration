@@ -53,8 +53,8 @@ def passing_fixture(tmp_path):
         "POINTCLOUD_TOPIC=/wm/cloud3d\n"
         "EXTRINSIC=base_link:lidar3d_frame:0,0,0.10\n"
         "ODOMETRY_TOPIC=/gbp/planning_odom\n"
-        "ODOMETRY_HEIGHT_SOURCE=/external_nav/odom:/height/estimate\n"
-        "PLANNING_TF=map:base_link:external_nav_height\n"
+        "ODOMETRY_HEIGHT_SOURCE=/navlab/fcu/local_position_pose:fcu_ekf_z\n"
+        "PLANNING_TF=map:base_link:fcu_ekf_height\n"
         "PCI_POLICY=wait_for_enable,stop_after_first_path\n",
         encoding="utf-8",
     )
@@ -69,7 +69,7 @@ def passing_fixture(tmp_path):
     )
     (logs / "m5_tf_relay.log").write_text(
         "forwarded=50 wall_dropped=0 planar_replaced=20 planning_odom=100 "
-        "invalid_external_nav=0\n",
+        "invalid_external_nav=0 height_unavailable=0 planning_z_max=0.453\n",
         encoding="utf-8",
     )
     return run_dir, logs
@@ -96,8 +96,8 @@ def test_rejects_legacy_2d_cloud_contract(tmp_path):
         "POINTCLOUD_TOPIC=/cloud_in\n"
         "EXTRINSIC=base_link:lidar3d_frame:0,0,0.10\n"
         "ODOMETRY_TOPIC=/gbp/planning_odom\n"
-        "ODOMETRY_HEIGHT_SOURCE=/external_nav/odom:/height/estimate\n"
-        "PLANNING_TF=map:base_link:external_nav_height\n"
+        "ODOMETRY_HEIGHT_SOURCE=/navlab/fcu/local_position_pose:fcu_ekf_z\n"
+        "PLANNING_TF=map:base_link:fcu_ekf_height\n"
         "PCI_POLICY=wait_for_enable,stop_after_first_path\n",
         encoding="utf-8",
     )
@@ -124,7 +124,7 @@ def test_rejects_missing_sensor_height_runtime_evidence(tmp_path):
     run_dir, logs = passing_fixture(tmp_path)
     (logs / "m5_tf_relay.log").write_text(
         "forwarded=50 wall_dropped=0 planar_replaced=20 planning_odom=0 "
-        "invalid_external_nav=0\n",
+        "invalid_external_nav=0 height_unavailable=20 planning_z_max=0.000\n",
         encoding="utf-8",
     )
     result = validate(run_dir, logs)

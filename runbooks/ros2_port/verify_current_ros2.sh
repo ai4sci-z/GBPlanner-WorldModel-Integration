@@ -21,6 +21,7 @@ mkdir -p "$EVIDENCE_ROOT"
 
 python3 -m pytest -q \
   "$FEAT_ROOT/ros2_port/adapter/test_intent_z.py" \
+  "$FEAT_ROOT/ros2_port/adapter/test_intent_policy.py" \
   "$FEAT_ROOT/ros2_port/wm_mapping/test_enable_lease.py" \
   "$FEAT_ROOT/ros2_port/wm_mapping/test_planning_frame.py" \
   "$FEAT_ROOT/runbooks/ros2_port/test_validate_m5_run.py"

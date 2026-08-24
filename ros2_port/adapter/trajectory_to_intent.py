@@ -35,12 +35,14 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, String
 from trajectory_msgs.msg import MultiDOFJointTrajectory
 
+from intent_policy import ACTIVE_TRAJECTORY_MAX_AGE_S, estimate_alignment
+
 SPEED_MAX = 0.08
 YAW_RATE_MAX = 0.30
 WP_REACHED_M = 0.15
 ODOM_STALE_S = 2.0
 TRAJ_STALE_S = 15.0     # 跟完后等新轨迹的宽限
-TRAJ_MAX_AGE_S = 30.0   # 轨迹绝对最大年龄:超龄即弃(Review_014-①,防追陈旧轨迹)
+TRAJ_MAX_AGE_S = ACTIVE_TRAJECTORY_MAX_AGE_S
 
 # Stage5cal 实测(stage5cal_axis_evidence + BIN GUIP/XKF1 验尸):
 # fcu_controller MAVLink 主路把 intent (x,y) 不经旋转直接用作 NED (north,east) 位移;
@@ -53,13 +55,12 @@ TRAJ_MAX_AGE_S = 30.0   # 轨迹绝对最大年龄:超龄即弃(Review_014-①,�
 # 持续旋转是 5a-1 SLAM 失锁根因)。
 import numpy as np
 
-# v6b 方向解算·累计位移基线法(v3run2/4 验尸:窗口 Procrustes 低速失稳;±25° 信任域
-# 又会在 per-run 旋转漂出基准时锁死错误值):
+# v6c 方向解算·累计位移基线法(v3run2/4 验尸:窗口 Procrustes 低速失稳;±25° 信任域
+# 又会在 per-run 旋转漂出基准时锁死错误值;20260824T043724 证明一次冻结门槛也会死锁):
 # 两坐标系观测同一物理路径 → D_ned = R·D_map 对任意弯曲路径严格成立(线性),
-# 累计位移 ≥ BASELINE_MIN_M(噪声 ±2cm,信噪比 >15:1)时一次解 θ=ang(D_ned)−ang(D_map)
-# 并冻结;冻结前用历史众数基准 −90°(post-EKF-fix 多数 run 实测值)。
+# 累计位移 0.10m 起持续更新 θ=ang(D_ned)−ang(D_map),到 0.35m 才冻结。
+# 这让错误 fallback 仍能在首航点前自校准,长基线继续提供最终抗噪冻结。
 THETA_BASE_RAD = -math.pi / 2.0
-BASELINE_MIN_M = 0.35
 SLAM_FROZEN_S = 4.0       # 运动指令活跃但 odom 位置基本不动 → slam_frozen blocker
 FROZEN_EPS_M = 0.02       # "基本不动"阈值(SLAM 抖动 ±1cm,5a-2 实测)
 
@@ -111,11 +112,11 @@ class TrajToIntent(Node):
         self.controller_ready = False   # /navlab/fcu/controller/status ok(bootstrap 含 takeoff)
         self.mixed_flow = False         # intent 总线上出现过非本适配器来源 → 永久闩锁
         self.ok_latched = False         # 五条件一旦达成即闩锁(尾段 stale blocker 不回撤已达成事实)
-        # 双坐标系累计位移基线 → theta 一次解并冻结
+        # 双坐标系累计位移基线 → 短基线开始更新,长基线冻结
         self.theta = THETA_BASE_RAD
         self.R_align = self._rot(self.theta)
         self.R_frozen = False
-        self.pair_count = 0             # 兼容日志字段:冻结前=0,冻结后=1
+        self.pair_count = 0             # 已接受的累计位移映射估计数
         self.anchor = None              # (map_xy, ned_xy) 运动起始锚点
         self.odom_hist = []             # [(t,x,y)] 1.5s 滑窗(slam_frozen 判定)
         self.last_move_cmd_t = 0.0      # 最近一次非零运动指令时刻
@@ -241,14 +242,19 @@ class TrajToIntent(Node):
         (m0, n0) = self.anchor
         dm = (map_xy[0] - m0[0], map_xy[1] - m0[1])
         dn = (ned[0] - n0[0], ned[1] - n0[1])
-        if math.hypot(*dm) >= BASELINE_MIN_M and math.hypot(*dn) >= BASELINE_MIN_M * 0.6:
-            self.theta = math.atan2(dn[1], dn[0]) - math.atan2(dm[1], dm[0])
+        estimate = estimate_alignment(m0, n0, map_xy, ned)
+        if estimate is not None:
+            self.theta, map_distance, ned_distance, freeze = estimate
             self.R_align = self._rot(self.theta)
-            self.R_frozen = True
-            self.pair_count = 1
-            self.get_logger().warning(
-                "R_align FROZEN(baseline) theta=%.1fdeg  D_map=(%.2f,%.2f) D_ned=(%.2f,%.2f)" % (
-                    math.degrees((self.theta + math.pi) % (2 * math.pi) - math.pi),
+            self.pair_count += 1
+            self.R_frozen = freeze
+            level = self.get_logger().warning if freeze else self.get_logger().info
+            state = "FROZEN" if freeze else "UPDATE"
+            level(
+                "R_align %s(baseline) theta=%.1fdeg map=%.2fm ned=%.2fm "
+                "D_map=(%.2f,%.2f) D_ned=(%.2f,%.2f)" % (
+                    state,
+                    math.degrees(self.theta), map_distance, ned_distance,
                     dm[0], dm[1], dn[0], dn[1]))
 
     def slam_frozen(self):

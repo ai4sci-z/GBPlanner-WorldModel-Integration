@@ -30,7 +30,7 @@ python3 /wm/tf_clean_relay.py > /out/m5_tf_relay.log 2>&1 &
   --frame-id base_link --child-frame-id lidar3d_frame \
   > /out/m5_lidar3d_static_tf.log 2>&1 &
 
-/ws/install/lib/gbplanner_node/gbplanner_node --ros-args \
+stdbuf -oL -eL /ws/install/lib/gbplanner_node/gbplanner_node --ros-args \
   --params-file /gbcfg/wm_gbplanner.yaml \
   -r /tf:=/tf_clean \
   -r /odometry:=/gbp/planning_odom \
@@ -39,7 +39,7 @@ python3 /wm/tf_clean_relay.py > /out/m5_tf_relay.log 2>&1 &
   > /out/m5_gbp_node.log 2>&1 &
 
 sleep 3
-/ws/install/lib/gbplanner_node/pci_trigger_node --ros-args \
+stdbuf -oL -eL /ws/install/lib/gbplanner_node/pci_trigger_node --ros-args \
   -p trigger_period_sec:=4.0 -p frame_id:=map -p use_sim_time:=true \
   -p wait_for_enable:=true -p stop_after_first_path:=true \
   > /out/m5_pci.log 2>&1 &
@@ -49,7 +49,7 @@ python3 /adapter/trajectory_to_intent.py \
 
 python3 /wm/gbp_enabler.py > /out/m5_enabler.log 2>&1 &
 
-printf 'POINTCLOUD_TOPIC=%s\nPOINTCLOUD_FRAME=lidar3d_frame\nEXTRINSIC=base_link:lidar3d_frame:0,0,0.10\nODOMETRY_TOPIC=/gbp/planning_odom\nODOMETRY_HEIGHT_SOURCE=/external_nav/odom:/height/estimate\nPLANNING_TF=map:base_link:external_nav_height\nPCI_POLICY=wait_for_enable,stop_after_first_path\n' \
+printf 'POINTCLOUD_TOPIC=%s\nPOINTCLOUD_FRAME=lidar3d_frame\nEXTRINSIC=base_link:lidar3d_frame:0,0,0.10\nODOMETRY_TOPIC=/gbp/planning_odom\nODOMETRY_HEIGHT_SOURCE=/navlab/fcu/local_position_pose:fcu_ekf_z\nPLANNING_TF=map:base_link:fcu_ekf_height\nPCI_POLICY=wait_for_enable,stop_after_first_path\n' \
   "$POINTCLOUD_TOPIC" > /out/m5_stack_contract.log
 echo "GBP_STACK_UP"
 wait
