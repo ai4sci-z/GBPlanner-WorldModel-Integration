@@ -5,7 +5,7 @@ set -euo pipefail
 
 FEAT_ROOT="${FEAT_ROOT:-$(git rev-parse --show-toplevel)}"
 IMAGE="${IMAGE:-gbplanner_stack:jazzy}"
-BASE_IMAGE="voxblox_ros2_deps@sha256:5f4a1875a8626aec838ecd51d4844bf4147f743cb981e872f166a8d365a01fca"
+BASE_IMAGE="voxblox_ros2_deps:jazzy"
 BASE_ID="sha256:5f4a1875a8626aec838ecd51d4844bf4147f743cb981e872f166a8d365a01fca"
 FEAT_COMMIT="$(git -C "$FEAT_ROOT" rev-parse HEAD)"
 
@@ -16,6 +16,7 @@ if [ "$ACTUAL_BASE_ID" != "$BASE_ID" ]; then
 fi
 
 docker build --network=host \
+  --pull=false \
   --build-arg "BASE_IMAGE=$BASE_IMAGE" \
   --build-arg "FEAT_COMMIT=$FEAT_COMMIT" \
   --file "$FEAT_ROOT/runbooks/ros2_port/m5_stack.Dockerfile" \

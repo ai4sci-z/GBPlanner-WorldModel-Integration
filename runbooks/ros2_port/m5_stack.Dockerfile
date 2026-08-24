@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=voxblox_ros2_deps@sha256:5f4a1875a8626aec838ecd51d4844bf4147f743cb981e872f166a8d365a01fca
+ARG BASE_IMAGE=voxblox_ros2_deps:jazzy
 
 FROM ${BASE_IMAGE} AS builder
 SHELL ["/bin/bash", "-lc"]
