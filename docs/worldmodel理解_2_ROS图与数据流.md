@@ -245,6 +245,9 @@ fcu_controller 的 MAVLink 主路不是速度控制,而是**位置目标外推**
 - 目标点恒挂在机头前 ~固定距离("胡萝卜"),近距接近 waypoint 时目标会**越过** wp → 配合到达圈判定,出现绕 wp 极限环打圈(stage5a 第七跑实测 0.5m 圈);
 - hold(v=0)不是刹停,是"目标=当前位置",有 0.5~1m 滑行。
 GBPlanner 的轨迹跟踪若直接换算成 intent,必须把这层"位置外推"语义算进去(近距按距离比例减速,而不是恒速)。
+还有一个频率契约:`send_mavlink_local_position_setpoint` 把每条 intent 积分到位置目标,
+但 `dt=min(0.25, actual_dt)`。因此 producer 必须至少 4Hz;第六次 M5 证明 2Hz
+会把 0.08m/s 目标推进实效折半。
 
 ### 5.3 NED/ENU/map:位置数值含反射,控制接口应走 body frame
 

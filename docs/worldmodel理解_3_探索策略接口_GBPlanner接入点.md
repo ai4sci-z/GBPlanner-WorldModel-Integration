@@ -118,7 +118,7 @@ if str(SPEC.get("strategy", "")) == "external":
     return 0
 ```
 
-**让位给谁**:任何在 `/navlab/fcu/setpoint/intent` 上发 JSON intent、并拥有 `/navlab/exploration/status` 的外部进程。我们的现成实现就是适配器 `integration/ros1_bridge/trajectory_to_intent_stage4.py`——**它同时就是 ROS2 原生 GBPlanner 的现成出口**,零改动可复用(发布器在 L94-95,订阅在 L96-102,2Hz 节拍 L103)。
+**让位给谁**:任何在 `/navlab/fcu/setpoint/intent` 上发 JSON intent、并拥有 `/navlab/exploration/status` 的外部进程。当前 ROS2 出口是 `ros2_port/adapter/trajectory_to_intent.py`;桥接时代的 `integration/ros1_bridge/trajectory_to_intent_stage4.py` 只作历史对照,不得再宣称“零改动复用”。
 
 **外部方必须发布什么才能过 gate**(对照 §1.2 四张嘴):
 
@@ -136,9 +136,9 @@ if (not self.ok_latched and self.enabled and not self.killed
     self.ok_latched = True
 ```
 
-五组条件:① **去混流**——intent 总线上出现过任何 `source != gbp_traj_to_intent` 的消息即永久闩死(`mixed_flow`,L164-172);② **takeoff/controller ready**——订 `/navlab/fcu/controller/status` 的 ok/ready(L156-162);③ **诚实 accepted_goals**——`wp_done>=3`,只计"运动到达"的 waypoint,轨迹到手时已在阈值内的 wp 记 `wp_prereached` 不计数(L142-153、L244-250);④ **path 达标**——`path_len>=0.35`(odom 积分,L126-128);⑤ **无运行 blocker**——blockers 含 `killed/motion_disabled_fail_closed/no_odom/no_trajectory/trajectory_max_age/trajectory_stale/frame_mismatch`(L175-191)加 `slam_frozen`(L224-235)。达成即闩锁,尾段轨迹变陈旧不回撤已达成事实(L83 注释)。status 全字段见 L305-321(含 `gate_ok_draft`、`traj_count`、`wp_prereached_excluded`、`mixed_flow` 等取证字段)。
+五组条件:① **去混流**——intent 总线上出现过任何 `source != gbp_traj_to_intent` 的消息即永久闩死(`mixed_flow`);② **takeoff/controller ready**——订 `/navlab/fcu/controller/status` 的 ok/ready;③ **诚实 accepted_goals**——`wp_done>=3`,只计"运动到达"的 waypoint,轨迹到手时已在阈值内的 wp 记 `wp_prereached` 不计数;④ **path 达标**——`path_len>=0.35`;⑤ **无运行 blocker**——包括 `killed/motion_disabled_fail_closed/no_odom/odom_frame_mismatch/invalid_map_orientation/no_trajectory/trajectory_max_age/trajectory_stale/frame_mismatch/no_fresh_fcu_yaw/invalid_body_command/slam_frozen`。`slam_frozen` 从连续非零命令或当前航点的 epoch 起算,连续 8s 位移不足 2cm 才闩锁;新轨迹或显式重新使能才可恢复。五条达成即闩锁,尾段轨迹变陈旧不回撤已达成事实。
 
-**fail-closed 纪律**(适配器安全设计,L9-18):默认 disabled,须向 `/gbp/enable` 发 `Bool(true)` 才动(L109-114);`/gbp/kill` 一票永久禁(L116-120);限速 `SPEED_MAX=0.08`、`YAW_RATE_MAX=0.30`(L32-33);轨迹超龄 30s 即弃(L37、L185-186);frame 校验轨迹必须 `map`(L189-190)。
+**fail-closed 纪律**:默认 disabled,须向 `/gbp/enable` 发 `Bool(true)` 才动;`/gbp/kill` 一票永久禁;限速 `SPEED_MAX=0.08`、`YAW_RATE_MAX=0.30`;active trajectory 最长 120s,跟完后 15s 无新轨迹则 hold;trajectory 必须是 `map`,odom 必须是 `map→base_link`,两者任一不符都不运动。
 
 ---
 
@@ -166,8 +166,8 @@ wm/cloud3d(3D 点云)────┘                                            
 | 2 | `wm/cloud3d`(输入,3D 点云) | `sensor_msgs/PointCloud2` | `lidar3d_frame`(SDF `gz_frame_id`,patch_lidar3d.py L55) | 5Hz(`update_rate`,L59) | 来源:我们加的 net-new 3D lidar(360×30 线,±30°,0.3–10m;`runbooks/world-model-jazzy/patch_lidar3d.py` L54-88),gz 话题 `/lidar3d/points` 经 ros_gz_bridge 出 ROS(patch B,L101-107;桥模板本体 `templates/yaml/bridge_override.yaml.tmpl`,cloud_in 前例在 L37-41)。voxblox 的 `pointcloud`/`cloud_in` 直订它,替代桥接期 `/wm/points` |
 | 3 | TF:`map(world)→base_link` | tf2 | — | 与 odom 同步 | ROS1 桥接期由薄桥从 `/wm/odom` 广播 + `wm_planner.launch` 补静态 TF(L18-19:`world→navigation`、`base_link→…/velodyne`);ROS2 原生版需等效提供:从 `/slam/odom` 广播动态 TF,外加 `base_link→lidar3d_frame` 静态 TF(SDF 里传感器挂 base_link 上方 0.10m,patch_lidar3d.py L42) |
 | 4 | `/gbp/trajectory`(输出) | `trajectory_msgs/MultiDOFJointTrajectory` | `map`(适配器 frame 校验 L189-190) | 事件式:每次规划触发一条(桥接期实测 19 条/run,stage26_evidence) | ROS1 版发布者是 pci 的 `command/trajectory`(`integration/ros1_bridge/wm_planner.launch:33` remap);ROS2 版保持同型同 frame 发到 `/gbp/trajectory` 即可。**粉线纪律:只接 pci 输出,绝不接 `/vis/*` 可视化话题**(发布者=pci 已实证) |
-| 5 | `/navlab/fcu/setpoint/intent`(适配器→fcu) | `std_msgs/String`(JSON) | 速度语义:机体系 FRD;adapter 用 map→base_link yaw 把 map 速度转为 forward/right | 2Hz | downstream FCU yaw 必须由 `/mavlink_external_nav/status.fcu_attitude_age_ms` 证明 fresh;契约字段见 §1.3;depth 10 |
-| 6 | `/navlab/exploration/status`(适配器→gate/landing) | `std_msgs/String`(JSON) | — | 2Hz 同拍 | `ok` 是 landing 扳机,见 §1.2b |
+| 5 | `/navlab/fcu/setpoint/intent`(适配器→fcu) | `std_msgs/String`(JSON) | 速度语义:机体系 FRD;adapter 用 map→base_link yaw 把 map 速度转为 forward/right | 4Hz | 必须不低于 controller 的 `dt<=0.25s` 积分契约;downstream FCU yaw 由 `/mavlink_external_nav/status.fcu_attitude_age_ms` 证明 fresh;契约字段见 §1.3;depth 10 |
+| 6 | `/navlab/exploration/status`(适配器→gate/landing) | `std_msgs/String`(JSON) | — | 4Hz 同拍 | `ok` 是 landing 扳机,见 §1.2b |
 | 7 | `/gbp/enable`、`/gbp/kill`(操作面) | `std_msgs/Bool` | — | 一次性 | fail-closed 开关(适配器 L98-99) |
 | 8 | `/navlab/fcu/controller/status`(适配器输入) | `std_msgs/String` | — | ~20Hz(fcu 主循环 L488-537,0.05s) | takeoff ready 证据(适配器 L100) |
 | 9 | `/navlab/fcu/local_position_pose`(适配器输入) | `geometry_msgs/PoseStamped` | AP LOCAL_NED | 连续 | 提供 downstream 实际使用的 FCU NED yaw;adapter 同时以 status 校验其 ATTITUDE 源年龄 |
@@ -250,7 +250,7 @@ yaw 将 body FRD 转到 NED。任何 map 姿态无效或 FCU yaw 超龄时必须
 - probe 时限:exploration_probe 外层 90s(runtime_specs.go:277-279)、String 采样 35s(Spec `ProbeTimeoutSec`);ROS2 planner 栈启动慢的话把它拉起放在 `navlab-sim run` 之前(stage5c_run.sh 的容器先行启动顺序就是为此);
 - `ok=true` 即触发 landing(§1.2b):新栈调试期先别让适配器 latch(不发 `/gbp/enable` 即可,fail-closed 天然挡住);
 - 混流闩锁是单向的:只要 workflow 让位不彻底(external 分支没生效、yaml 没切到 external、或还原 trap 提前触发),`mixed_flow` 一旦置位整个 run 作废——跑前用 `stage4c_envcheck.sh` 同款检查确认模板补丁与 yaml 状态;
-- 频率适配:pci 事件式出轨迹 + 适配器 2Hz 消费,中间没有队列问题(适配器只保留最新一条轨迹,L134-139),但轨迹超龄 30s 即弃(L185-186)——若 ROS2 planner 触发间隔拉长,要么提高触发频率,要么接受 `trajectory_max_age` hold。
+- 频率适配:pci 事件式 one-shot 出轨迹,adapter 只保留最新一条且以 4Hz 生成 intent。WorldModel controller 每条 intent 的积分 `dt` 上限为 0.25s,低于 4Hz 会按比例丢失目标推进速度。active trajectory 最长 120s,覆盖 90s 验收窗;跟完后 15s 无新轨迹才 hold。
 
 ---
 

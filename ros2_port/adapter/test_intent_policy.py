@@ -2,8 +2,11 @@ import math
 
 from intent_policy import (
     ACTIVE_TRAJECTORY_MAX_AGE_S,
+    CONTROL_PERIOD_S,
     effective_fcu_yaw_age,
     map_velocity_to_body_frd,
+    motion_is_stalled,
+    progress_observation,
     quaternion_yaw,
     valid_fcu_yaw,
     valid_odom_frames,
@@ -12,6 +15,11 @@ from intent_policy import (
 
 def test_one_shot_path_lifetime_covers_the_acceptance_window():
     assert ACTIVE_TRAJECTORY_MAX_AGE_S > 90.0
+
+
+def test_control_period_matches_fcu_setpoint_integration_cap():
+    # WorldModel fcu_controller clamps each intent integration dt to 0.25 s.
+    assert CONTROL_PERIOD_S <= 0.25
 
 
 def test_fcu_yaw_normalizes_quaternion_and_rejects_invalid_input():
@@ -46,6 +54,23 @@ def test_body_mapping_requires_exact_map_to_base_link_odometry_frames():
     assert valid_odom_frames("odom", "base_link") is False
     assert valid_odom_frames("map", "base_footprint") is False
     assert valid_odom_frames("map", "") is False
+
+
+def test_stall_detector_does_not_reject_sixth_run_slow_progress():
+    assert motion_is_stalled(0.25, 8.0, 0.08, 0.0) is False
+    assert motion_is_stalled(0.25, 4.0, 0.01, 0.0) is False
+
+
+def test_progress_window_excludes_hover_and_previous_waypoint_epochs():
+    samples = [(0.0, 0.0, 0.0), (7.9, 0.0, 0.0), (8.0, 0.0, 0.0), (16.0, 0.08, 0.0)]
+    assert progress_observation(samples, 8.0) == (8.0, 0.08, 0.0)
+    assert progress_observation(samples, 16.0) is None
+
+
+def test_stall_detector_latches_only_after_sustained_no_progress():
+    assert motion_is_stalled(0.25, 8.0, 0.005, 0.004) is True
+    assert motion_is_stalled(2.1, 8.0, 0.0, 0.0) is False
+    assert motion_is_stalled(None, 8.0, 0.0, 0.0) is True
 
 
 def test_map_velocity_uses_ros_body_left_but_emits_frd_right():

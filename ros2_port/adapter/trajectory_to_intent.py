@@ -37,8 +37,12 @@ from trajectory_msgs.msg import MultiDOFJointTrajectory
 
 from intent_policy import (
     ACTIVE_TRAJECTORY_MAX_AGE_S,
+    CONTROL_PERIOD_S,
+    SLAM_PROGRESS_WINDOW_S,
     effective_fcu_yaw_age,
     map_velocity_to_body_frd,
+    motion_is_stalled,
+    progress_observation,
     quaternion_yaw,
     valid_fcu_yaw,
     valid_odom_frames,
@@ -50,14 +54,14 @@ WP_REACHED_M = 0.15
 ODOM_STALE_S = 2.0
 TRAJ_STALE_S = 15.0     # 跟完后等新轨迹的宽限
 TRAJ_MAX_AGE_S = ACTIVE_TRAJECTORY_MAX_AGE_S
+ODOM_VELOCITY_WINDOW_S = 1.5
 
 # Current fcu_controller intent is body FRD and is rotated to LOCAL_NED with
 # FCU yaw downstream. Convert map velocity directly through the odometry
 # map->base_link orientation. Two M5 bags proved that the numeric map/NED
 # position relation contains an axis-swap reflection (det=-1), so a det=+1
 # online rotation estimate is structurally invalid and must not drive motion.
-SLAM_FROZEN_S = 4.0       # 运动指令活跃但 odom 位置基本不动 → slam_frozen blocker
-FROZEN_EPS_M = 0.02       # "基本不动"阈值(SLAM 抖动 ±1cm,5a-2 实测)
+
 
 def intent_z(wp_z, last_z):
     """M5 z闭环:选择 intent 可选字段 "z_m" 的值(纯函数,便于无 ROS 测试)。
@@ -107,9 +111,10 @@ class TrajToIntent(Node):
         self.fcu_yaw_t = 0.0            # local-position-pose receive time
         self.fcu_yaw_reported_age_s = None  # true ATTITUDE age from external-nav status
         self.fcu_yaw_status_t = 0.0
-        self.odom_hist = []             # [(t,x,y)] 1.5s 滑窗(slam_frozen 判定)
+        self.odom_hist = []             # [(t,x,y)] 8s 进度窗(slam_frozen 判定)
         self.last_move_cmd_t = 0.0      # 最近一次非零运动指令时刻
-        self.frozen_since = None        # odom 位置基本不动的起始时刻
+        self.progress_epoch_t = time.monotonic()
+        self.slam_frozen_latched = False
 
         self.pub_intent = self.create_publisher(String, "/navlab/fcu/setpoint/intent", 10)
         self.pub_status = self.create_publisher(String, "/navlab/exploration/status", 10)
@@ -121,7 +126,7 @@ class TrajToIntent(Node):
         self.create_subscription(String, "/mavlink_external_nav/status", self.on_external_nav_status, 10)
         self.create_subscription(String, "/navlab/fcu/setpoint/intent", self.on_intent_bus, 50)
         self.create_subscription(PoseStamped, "/navlab/fcu/local_position_pose", self.on_lpp, qos_profile_sensor_data)
-        self.create_timer(0.5, self.tick)   # 2Hz 控制/状态节拍
+        self.create_timer(CONTROL_PERIOD_S, self.tick)
         self.get_logger().info(
             "stage4 traj_to_intent up (DISABLED by default; enable via /gbp/enable, kill via /gbp/kill; "
             "speed<=%.2f yaw<=%.2f)" % (SPEED_MAX, YAW_RATE_MAX))
@@ -131,7 +136,11 @@ class TrajToIntent(Node):
         if self.killed:
             self.get_logger().warning("enable ignored: killed (fail-closed)")
             return
+        was_enabled = self.enabled
         self.enabled = bool(m.data)
+        if self.enabled and not was_enabled:
+            self.progress_epoch_t = time.monotonic()
+            self.slam_frozen_latched = False
         self.get_logger().warning("MOTION %s via /gbp/enable" % ("ENABLED" if self.enabled else "DISABLED"))
 
     def on_kill(self, m):
@@ -152,7 +161,8 @@ class TrajToIntent(Node):
         self.last_xy = (p.x, p.y)
         now = time.monotonic()
         self.odom_hist.append((now, p.x, p.y))
-        while self.odom_hist and now - self.odom_hist[0][0] > 1.5:
+        while (self.odom_hist
+               and now - self.odom_hist[0][0] > SLAM_PROGRESS_WINDOW_S + 0.5):
             self.odom_hist.pop(0)
 
     def on_traj(self, m):
@@ -162,6 +172,8 @@ class TrajToIntent(Node):
         self.traj_t = time.monotonic()
         self.traj_id += 1
         self.wp_idx = 0
+        self.progress_epoch_t = time.monotonic()
+        self.slam_frozen_latched = False
         pre = 0
         # 诚实计数:轨迹到手时就已在阈值内的 wp 直接跳过,不算"到达"
         if self.odom is not None:
@@ -247,17 +259,26 @@ class TrajToIntent(Node):
             self.fcu_yaw_t = time.monotonic()
 
     def slam_frozen(self):
-        # 运动指令活跃但 odom 位置基本不动(SLAM 失锁/顶墙卡死的典型形态)
-        if time.monotonic() - self.last_move_cmd_t > 2.0 or len(self.odom_hist) < 2:
-            self.frozen_since = None
+        if self.slam_frozen_latched:
+            return True
+        # 当前航点的运动指令持续活跃 8s 但 odom 基本不动
+        # (SLAM 失锁/顶墙卡死)才闩锁;不把起飞悬停或上一航点算入窗口。
+        observation = progress_observation(
+            self.odom_hist, self.progress_epoch_t)
+        if observation is None:
             return False
-        (t0, x0, y0), (t1, x1, y1) = self.odom_hist[0], self.odom_hist[-1]
-        if t1 - t0 >= 1.0 and math.hypot(x1 - x0, y1 - y0) < FROZEN_EPS_M:
-            if self.frozen_since is None:
-                self.frozen_since = time.monotonic()
-            return time.monotonic() - self.frozen_since > SLAM_FROZEN_S - 1.0
-        self.frozen_since = None
-        return False
+        span, dx, dy = observation
+        self.slam_frozen_latched = motion_is_stalled(
+            time.monotonic() - self.last_move_cmd_t,
+            span,
+            dx,
+            dy,
+        )
+        if self.slam_frozen_latched:
+            self.get_logger().error(
+                "SLAM FROZEN latched: %.1fs progress=%.3fm; require new trajectory "
+                "or explicit re-enable" % (span, math.hypot(dx, dy)))
+        return self.slam_frozen_latched
 
     def tick(self):
         blockers = self.blockers()
@@ -273,6 +294,7 @@ class TrajToIntent(Node):
                 if math.hypot(wp.x - p.x, wp.y - p.y) < WP_REACHED_M:
                     self.wp_idx += 1
                     self.wp_done += 1
+                    self.progress_epoch_t = time.monotonic()
                     self.get_logger().warning("WP REACHED by motion: wp_done=%d" % self.wp_done)
                 else:
                     break
@@ -286,7 +308,12 @@ class TrajToIntent(Node):
                 # 再叠加"胡萝卜不过 wp"限幅(近距比例减速)。
                 vox = voy = 0.0
                 if len(self.odom_hist) >= 2:
-                    (t0h, x0h, y0h), (t1h, x1h, y1h) = self.odom_hist[0], self.odom_hist[-1]
+                    t1h, x1h, y1h = self.odom_hist[-1]
+                    t0h, x0h, y0h = self.odom_hist[0]
+                    for sample in self.odom_hist:
+                        if t1h - sample[0] <= ODOM_VELOCITY_WINDOW_S:
+                            t0h, x0h, y0h = sample
+                            break
                     if t1h - t0h >= 0.4:
                         vox, voy = (x1h - x0h) / (t1h - t0h), (y1h - y0h) / (t1h - t0h)
                 # v6 = kp0.35/kd0.5(v2run1 wp捕获0→9 的唯一直证参数组;kp0.45 经 v2 批跑证伪)
@@ -307,7 +334,11 @@ class TrajToIntent(Node):
                     vx, vy = body_velocity
                     cmd_heading = math.degrees(math.atan2(vy, vx))
                     yaw_rate = 0.0  # X2 360°lidar 无需对头;持续旋转曾致 SLAM 失锁(5a-1)
-                    self.last_move_cmd_t = time.monotonic()
+                    if math.hypot(vx, vy) > 1e-6:
+                        now = time.monotonic()
+                        if now - self.last_move_cmd_t > 2.0:
+                            self.progress_epoch_t = now
+                        self.last_move_cmd_t = now
                     self.get_logger().info(
                         "INTENT traj#%d wp[%d/%d]=(%.2f,%.2f,%.2f) odom=(%.2f,%.2f) "
                         "dist=%.2f map_yaw=%.1f fcu_yaw=%.1f yaw_age=%.2f cmd_body=%.1f "

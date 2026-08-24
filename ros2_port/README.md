@@ -35,7 +35,12 @@
 > 改用 `/slam/odom` 的 map→base_link yaw 直接把 map 速度表达成 body FRD,并在 FCU yaw
 > 缺失/过期时 fail-closed;新鲜度由 `/mavlink_external_nav/status` 的真实
 > `fcu_attitude_age_ms` 与状态消息年龄共同核算,不能用持续更新的 LOCAL_POSITION
-> 消息替陈旧 ATTITUDE 续命。尚待第六次 live 复验,不得提前记作 P1-2 PASS。
+> 消息替陈旧 ATTITUDE 续命。第六次 run `20260824T055032.238341323Z`
+> 首次达到 1 个真实航点(`path=1.0199m`),证明 body 方向修复有效;但仍未达 3 个航点。
+> MCAP 证明 adapter 2Hz 低于 controller 的 `dt<=0.25s` 积分契约,使目标推进速度折半;
+> 同时旧 1.5s/2cm `slam_frozen` 在真实低速推进上三次误触发。当前候选改为
+> 4Hz 控制节拍和“当前航点连续命令 8s/2cm”停滞闩锁,尚待第七次
+> live 复验;不得提前记作 P1-2 PASS。
 > `navlab/official-baseline:jazzy-latest` 是运行镜像,不含
 > `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
 > `runbooks/ros2_port/verify_current_ros2.sh`;M5 运行镜像必须用
