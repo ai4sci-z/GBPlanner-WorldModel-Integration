@@ -67,15 +67,33 @@ def validate(run_dir, stack_log_dir):
     pci_log = (stack_log_dir / "m5_pci.log").read_text(
         encoding="utf-8", errors="replace"
     ) if (stack_log_dir / "m5_pci.log").is_file() else ""
+    tf_log = (stack_log_dir / "m5_tf_relay.log").read_text(
+        encoding="utf-8", errors="replace"
+    ) if (stack_log_dir / "m5_tf_relay.log").is_file() else ""
 
     graphs = [(int(v), int(e)) for v, e in re.findall(
         r"Formed a graph with \[(\d+)\] vertices and \[(\d+)\] edges", gbp_log
     )]
     trajectories = [int(n) for n in re.findall(r"published (\d+) waypoints", pci_log)]
+    planning_odom_counts = [int(n) for n in re.findall(r"planning_odom=(\d+)", tf_log)]
     checks.update(
         {
             "cloud3d_contract": "POINTCLOUD_TOPIC=/wm/cloud3d" in contract,
             "lidar3d_extrinsic": "EXTRINSIC=base_link:lidar3d_frame:0,0,0.10" in contract,
+            "planning_odom_contract": "ODOMETRY_TOPIC=/gbp/planning_odom" in contract,
+            "planning_height_contract": (
+                "ODOMETRY_HEIGHT_SOURCE=/external_nav/odom:/height/estimate" in contract
+            ),
+            "planning_tf_contract": (
+                "PLANNING_TF=map:base_link:external_nav_height" in contract
+            ),
+            "pci_one_shot_contract": (
+                "PCI_POLICY=wait_for_enable,stop_after_first_path" in contract
+            ),
+            "planning_odom_ready": any(count > 0 for count in planning_odom_counts),
+            "pci_one_shot_observed": (
+                "first non-empty path published; trigger timer stopped" in pci_log
+            ),
             "voxblox_ready": bool(re.search(r"\[MAPPROBE\].*ready=1", gbp_log)),
             "rrg_nontrivial": any(vertices > 1 and edges > 0 for vertices, edges in graphs),
             "trajectory_published": any(points > 0 for points in trajectories),
@@ -93,6 +111,7 @@ def validate(run_dir, stack_log_dir):
             "max_rrg_vertices": max((v for v, _ in graphs), default=0),
             "max_rrg_edges": max((e for _, e in graphs), default=0),
             "max_trajectory_points": max(trajectories, default=0),
+            "max_planning_odom_count": max(planning_odom_counts, default=0),
             "accepted_goals": exploration.get("accepted_goals"),
             "path_length_m": exploration.get("path_length_m"),
         },

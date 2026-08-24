@@ -4,13 +4,17 @@
 // the exact ingress the world-model adapter consumed in the bridge era
 // (docs/ros2迁移_直连架构契约: adapter zero-change condition).
 #include <chrono>
+#include <exception>
 #include <memory>
 #include <string>
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <trajectory_msgs/msg/multi_dof_joint_trajectory.hpp>
 #include <planner_msgs/srv/planner_srv.hpp>
+
+#include "gbplanner_node/pci_trigger_policy.hpp"
 
 using namespace std::chrono_literals;
 
@@ -21,21 +25,41 @@ class PciTriggerNode : public rclcpp::Node {
     frame_id_ = declare_parameter<std::string>("frame_id", "map");
     bound_mode_ =
         static_cast<int>(declare_parameter<int64_t>("bound_mode", 0));
+    wait_for_enable_ = declare_parameter<bool>("wait_for_enable", false);
+    stop_after_first_path_ =
+        declare_parameter<bool>("stop_after_first_path", false);
+    policy_.configure(wait_for_enable_, stop_after_first_path_);
 
     client_ = create_client<planner_msgs::srv::PlannerSrv>("gbplanner");
     traj_pub_ = create_publisher<trajectory_msgs::msg::MultiDOFJointTrajectory>(
         "/gbp/trajectory", 10);
     path_pub_ = create_publisher<nav_msgs::msg::Path>("/gbp/path", 10);
+    if (wait_for_enable_) {
+      enable_sub_ = create_subscription<std_msgs::msg::Bool>(
+          "/gbp/enable", rclcpp::QoS(1).reliable(),
+          [this](const std_msgs::msg::Bool& msg) {
+            policy_.observeEnable(msg.data);
+          });
+    }
 
     timer_ = create_wall_timer(std::chrono::duration<double>(period_sec_),
                                [this] { trigger(); });
-    RCLCPP_INFO(get_logger(), "pci_trigger: every %.1fs -> gbplanner srv",
-                period_sec_);
+    RCLCPP_INFO(
+        get_logger(),
+        "pci_trigger: every %.1fs -> gbplanner srv wait_for_enable=%s "
+        "stop_after_first_path=%s",
+        period_sec_, wait_for_enable_ ? "true" : "false",
+        stop_after_first_path_ ? "true" : "false");
   }
 
  private:
   void trigger() {
     if (busy_) return;  // one outstanding request at a time
+    if (!policy_.mayTrigger()) {
+      RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 10000,
+                           "waiting for /gbp/enable before planning");
+      return;
+    }
     if (!client_->service_is_ready()) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 10000,
                            "gbplanner service not ready yet");
@@ -50,12 +74,24 @@ class PciTriggerNode : public rclcpp::Node {
         req, [this](rclcpp::Client<planner_msgs::srv::PlannerSrv>::SharedFuture
                         future) {
           busy_ = false;
-          const auto res = future.get();
+          planner_msgs::srv::PlannerSrv::Response::SharedPtr res;
+          try {
+            res = future.get();
+          } catch (const std::exception& error) {
+            RCLCPP_ERROR(get_logger(), "gbplanner request failed: %s",
+                         error.what());
+            return;
+          }
           if (!res || res->path.empty()) {
             RCLCPP_WARN(get_logger(), "planner returned empty path");
             return;
           }
           publishPath(*res);
+          if (policy_.markNonEmptyPathPublished()) {
+            timer_->cancel();
+            RCLCPP_INFO(get_logger(),
+                        "first non-empty path published; trigger timer stopped");
+          }
         });
   }
 
@@ -94,8 +130,12 @@ class PciTriggerNode : public rclcpp::Node {
   double period_sec_ = 2.0;
   std::string frame_id_ = "map";
   int bound_mode_ = 0;
+  bool wait_for_enable_ = false;
+  bool stop_after_first_path_ = false;
   bool busy_ = false;
+  gbplanner_node::PciTriggerPolicy policy_;
   rclcpp::Client<planner_msgs::srv::PlannerSrv>::SharedPtr client_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr enable_sub_;
   rclcpp::Publisher<trajectory_msgs::msg::MultiDOFJointTrajectory>::SharedPtr
       traj_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;

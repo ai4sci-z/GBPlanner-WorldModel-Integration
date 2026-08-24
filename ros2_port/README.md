@@ -6,12 +6,17 @@
 > **当前状态(2026-08-24,事实源=治理主仓 CURRENT_STATUS.md)**:
 > M1 msgs ✅ / M2 voxblox ✅(五切片全过)/ M3 core 剥离 ✅(12k 行,单测 4/4;
 > "3D 行为等价"未证,Review 002 判 NOT PROVEN)/ M4a 合成冒烟 ✅(M4b 真场景 open-loop 未测)/
-> **M5 ⏸ 尚未正式闭环验收**。`ef4f96f` 已在
-> `voxblox_ros2_deps:jazzy` 干净构建通过,core gtest 4/4 通过,M4 真 RRG 合成冒烟输出
-> 13 个航点,Python 回归 20/20 通过。P1-2 首次固定 SHA run
-> `20260824T033655.765292080Z` 诚实失败:RRG 仅 1 顶点/0 边,无轨迹;根因是 M5 仍把
-> voxblox 接到旧 2D `/cloud_in`(base_scan),规划高度保持 Unknown。当前候选修复改接现役
-> 3D `/wm/cloud3d` 并发布 `base_link -> lidar3d_frame` 固定外参,尚待 live 复验。
+> **M5 ⏸ P1-2 尚未通过**。首次固定 SHA run
+> `20260824T033655.765292080Z` 因误接旧 2D `/cloud_in` 仅形成 1 顶点/0 边。
+> 第二次 run `20260824T035607.451295836Z` 已用 `/wm/cloud3d` 恢复真实 3D 建图与规划
+> (RRG 最大 489 顶点/2944 边、轨迹最大 23 点),但同一任务窗口内
+> `accepted_goals=0`、summary/probe/返航降落均未通过,所以仍是 FAIL。唯一一次
+> `WP REACHED` 出现在 rosbag/任务窗口结束约 25 秒后,不得计入验收。现场证据还表明
+> PCI 在 `/gbp/enable` 前发布路径且周期刷新路径,反复重置 adapter 的航点索引。
+> 当前工作树候选修复改为:规划里程计和 `map -> base_link` 统一取
+> `/external_nav/odom` 的传感器高度、PCI 等待 enable 并在首条非空路径后停止、任务结束
+> 立即停止宿主栈。候选补丁已通过 Python 27/27、11 包 Jazzy 构建、core 4/4、node
+> 3/3 和 M4 `TRAJ_POINTS=11`(`VERIFY_RC=0`),但仍须重建运行镜像并完成新的同 run live 复验。
 > `navlab/official-baseline:jazzy-latest` 是运行镜像,不含
 > `ros-jazzy-pcl-ros`,不得用它编译 voxblox/GBPlanner。统一验证入口为
 > `runbooks/ros2_port/verify_current_ros2.sh`。
@@ -97,7 +102,11 @@ docker run --rm -v <ros2_port 绝对路径>:/ws -w /ws <jazzy镜像> \
   (接口仍依赖 ROS2 消息/tf2/voxblox_ros);"3D 算法行为等价"未证,需 ROS1 oracle 3D fixture 对拍。
 - **M4a ✅(feat `be7d6e0`)**:节点壳 `src/gbplanner_node/` + 最小 PCI 触发,合成场景 RRG 出 12wp 轨迹。
   PCI 替身只是 smoke 工具(Review 002 §13.1),恢复 M5 前须另做 planning coordinator。
-- **M5 ⏸ P1-2 施工中**:`ea80713` 已恢复 adapter z 闭环;首次固定 SHA live run
-  `20260824T033655.765292080Z` 因旧 2D 点云映射只形成低位自由体素而无轨迹。候选改接
-  `/wm/cloud3d` 并补 SDF 传感器外参;`validate_m5_run.py` 要求同一 run 的最终 summary
-  `ok=true`、正常返航降落和 RRG/voxblox/trajectory/adapter/FCU 五类证据全部成立,否则 rc=20。
+- **M5 ⏸ P1-2 施工中**:`ea80713` 已恢复 adapter z 闭环;首次 fixed-SHA run
+  `20260824T033655.765292080Z` 证明旧 2D 点云入口错误。第二次 run
+  `20260824T035607.451295836Z` 证明 `/wm/cloud3d`、SDF 外参和非平凡 3D RRG 已恢复,
+  但因规划/执行时序与周期路径刷新,同一窗口仍为 `accepted_goals=0`,不得计作 PASS。
+  当前候选进一步统一 `/external_nav/odom` 传感器高度到 `/gbp/planning_odom` 与规划 TF,
+  并让 PCI 等待 enable、首条非空路径后 one-shot 停止。`validate_m5_run.py` 继续要求
+  同一 run 的最终 summary `ok=true`、正常返航降落和 RRG/voxblox/trajectory/adapter/FCU
+  五类证据全部成立,并新增 3D planning odom/TF 与 PCI one-shot 证据;任一失败仍 rc=20。

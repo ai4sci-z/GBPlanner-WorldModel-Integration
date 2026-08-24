@@ -22,5 +22,12 @@ target_link_libraries(gbplanner_node
   protobuf::libprotobuf glog gflags)
 
 ament_auto_add_executable(pci_trigger_node src/pci_trigger_node.cpp)
+target_include_directories(pci_trigger_node PRIVATE include)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_pci_trigger_policy test/test_pci_trigger_policy.cpp)
+  target_include_directories(test_pci_trigger_policy PRIVATE include)
+endif()
 
 ament_auto_package()

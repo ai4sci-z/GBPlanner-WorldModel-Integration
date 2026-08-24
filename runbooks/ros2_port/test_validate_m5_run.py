@@ -50,14 +50,28 @@ def passing_fixture(tmp_path):
         },
     )
     (logs / "m5_stack_contract.log").write_text(
-        "POINTCLOUD_TOPIC=/wm/cloud3d\nEXTRINSIC=base_link:lidar3d_frame:0,0,0.10\n",
+        "POINTCLOUD_TOPIC=/wm/cloud3d\n"
+        "EXTRINSIC=base_link:lidar3d_frame:0,0,0.10\n"
+        "ODOMETRY_TOPIC=/gbp/planning_odom\n"
+        "ODOMETRY_HEIGHT_SOURCE=/external_nav/odom:/height/estimate\n"
+        "PLANNING_TF=map:base_link:external_nav_height\n"
+        "PCI_POLICY=wait_for_enable,stop_after_first_path\n",
         encoding="utf-8",
     )
     (logs / "m5_gbp_node.log").write_text(
         "[MAPPROBE] res=0.20 ready=1\nFormed a graph with [12] vertices and [20] edges\n",
         encoding="utf-8",
     )
-    (logs / "m5_pci.log").write_text("published 7 waypoints\n", encoding="utf-8")
+    (logs / "m5_pci.log").write_text(
+        "published 7 waypoints\n"
+        "first non-empty path published; trigger timer stopped\n",
+        encoding="utf-8",
+    )
+    (logs / "m5_tf_relay.log").write_text(
+        "forwarded=50 wall_dropped=0 planar_replaced=20 planning_odom=100 "
+        "invalid_external_nav=0\n",
+        encoding="utf-8",
+    )
     return run_dir, logs
 
 
@@ -79,9 +93,40 @@ def test_rejects_missing_trajectory(tmp_path):
 def test_rejects_legacy_2d_cloud_contract(tmp_path):
     run_dir, logs = passing_fixture(tmp_path)
     (logs / "m5_stack_contract.log").write_text(
-        "POINTCLOUD_TOPIC=/cloud_in\nEXTRINSIC=base_link:lidar3d_frame:0,0,0.10\n",
+        "POINTCLOUD_TOPIC=/cloud_in\n"
+        "EXTRINSIC=base_link:lidar3d_frame:0,0,0.10\n"
+        "ODOMETRY_TOPIC=/gbp/planning_odom\n"
+        "ODOMETRY_HEIGHT_SOURCE=/external_nav/odom:/height/estimate\n"
+        "PLANNING_TF=map:base_link:external_nav_height\n"
+        "PCI_POLICY=wait_for_enable,stop_after_first_path\n",
         encoding="utf-8",
     )
     result = validate(run_dir, logs)
     assert result["ok"] is False
     assert "cloud3d_contract" in result["failures"]
+
+
+def test_rejects_planar_odom_or_missing_one_shot_evidence(tmp_path):
+    run_dir, logs = passing_fixture(tmp_path)
+    contract = (logs / "m5_stack_contract.log").read_text(encoding="utf-8")
+    (logs / "m5_stack_contract.log").write_text(
+        contract.replace("ODOMETRY_TOPIC=/gbp/planning_odom", "ODOMETRY_TOPIC=/slam/odom"),
+        encoding="utf-8",
+    )
+    (logs / "m5_pci.log").write_text("published 7 waypoints\n", encoding="utf-8")
+    result = validate(run_dir, logs)
+    assert result["ok"] is False
+    assert "planning_odom_contract" in result["failures"]
+    assert "pci_one_shot_observed" in result["failures"]
+
+
+def test_rejects_missing_sensor_height_runtime_evidence(tmp_path):
+    run_dir, logs = passing_fixture(tmp_path)
+    (logs / "m5_tf_relay.log").write_text(
+        "forwarded=50 wall_dropped=0 planar_replaced=20 planning_odom=0 "
+        "invalid_external_nav=0\n",
+        encoding="utf-8",
+    )
+    result = validate(run_dir, logs)
+    assert result["ok"] is False
+    assert "planning_odom_ready" in result["failures"]

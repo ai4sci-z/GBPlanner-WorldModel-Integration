@@ -22,6 +22,7 @@ mkdir -p "$EVIDENCE_ROOT"
 python3 -m pytest -q \
   "$FEAT_ROOT/ros2_port/adapter/test_intent_z.py" \
   "$FEAT_ROOT/ros2_port/wm_mapping/test_enable_lease.py" \
+  "$FEAT_ROOT/ros2_port/wm_mapping/test_planning_frame.py" \
   "$FEAT_ROOT/runbooks/ros2_port/test_validate_m5_run.py"
 
 echo "FEAT_HEAD=$(git -C "$FEAT_ROOT" rev-parse HEAD)"
@@ -50,7 +51,7 @@ docker run --rm \
       --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
     source /work/install/setup.bash
-    colcon test --merge-install --packages-select gbplanner_core \
+    colcon test --merge-install --packages-select gbplanner_core gbplanner_node \
       --event-handlers console_cohesion+
     colcon test-result --test-result-base /work/build --verbose
     ros2 pkg executables gbplanner_node

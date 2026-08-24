@@ -65,6 +65,10 @@ cd "$WM/orchestration/sim" || exit 9
 timeout 600 go run ./cmd/navlab-sim run exploration --exploration-strategy external \
   --live-preflight > "$RUN_OUT/m5_run.log" 2>&1
 RC=$?
+# Freeze host-stack evidence before validation. In the previous failed run the
+# adapter kept flying after the task rosbag/probe window, which made later log
+# events look like same-run acceptance evidence even though they were out of band.
+docker stop -t 5 gbp_stack >/dev/null 2>&1 || true
 echo "RUN_RC=$RC"
 tail -8 "$RUN_OUT/m5_run.log"
 
