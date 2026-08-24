@@ -1,10 +1,10 @@
 # worldmodel 理解(一):Go 编排层与任务生命周期
 
-> 状态:CURRENT(2026-07-07)
+> 状态:CURRENT(2026-08-24)
 > 读者:准备把 GBPlanner 移植成 ROS2 原生节点并接进 world-model 的人。
 > 依据:精读 `orchestration/sim/`(cmd/navlab-sim、internal/tasks/、internal/tasks/helpers/、internal/runtime/)。
 >
-> **⚠️ 行号基准**:本文行号以 **WSL `~/ws-clean/world-model`、分支 `fix/world-model-e2e-takeoff` @ `e7ca9fc`** 为准(= 我们实跑通过的现状,含 B16 探针修复与预算调整)。
+> **⚠️ 行号基准**:本文行号最初以 **WSL `~/ws-clean/world-model`、分支 `fix/world-model-e2e-takeoff` @ `e7ca9fc`** 为准;2026-08-24 已按本机当前分支复核 exploration 完成、返航、降落和 deadline 语义。精确行号可能继续漂移,以符号名和当前源码为准。
 > Windows 镜像 `sources\world-model-源码\` 有 **3 个文件是旧版**(不含 45→90/35→90/容器150 与 QoS 内省):
 > `orchestration/sim/internal/tasks/runtime_specs.go`、`internal/tasks/helpers/runtime_specs.go`、`internal/tasks/helpers/templates/python/ros_probe.py.tmpl`。其余本文引用的文件(runtime_runner.go、gate_evaluation.go、live_summary.go、helpers/execution_plan.go、cmd/navlab-sim/main.go)两处内容一致。
 > 下文路径均相对仓库根 `world-model/orchestration/sim/`。
@@ -61,7 +61,7 @@ exploration 一次 run 渲染的产物(`runtime_artifacts.go`,模板都在 `inte
 
 ### 阶段 C:执行(runLiveTask → ExecuteRuntimeSpecs)
 
-`runLiveTask`(main.go:1138-1260)以如下选项调 `ExecuteRuntimeSpecs`(main.go:1149-1162):`WaitForRosbags=true`、`RosbagPostTaskGraceSec=5`(`internal/tasks/runtime_runner.go:30`)、**`TaskDeadlineSec = plan.DurationSec`**(exploration = **150s**,`configs/tasks/exploration.yaml:11`)。
+`runLiveTask` 以如下选项调 `ExecuteRuntimeSpecs`:`WaitForRosbags=true`、`RosbagPostTaskGraceSec=5`,exploration 的 Go watchdog 由 `RuntimeTaskDeadlineSec` 取 `max(plan.DurationSec, exploration_probe脚本预算+10s)`。默认配置为 **178s**,不再被 YAML 的 150s 在返航/降落证据完成前抢先清理;其他任务仍沿用配置 duration。
 
 `ExecuteRuntimeSpecs`(runtime_runner.go:74-234)的时间线:
 
@@ -85,7 +85,7 @@ t2  ├─ 任务结束:等 5s 后停录制(waitPostTaskRosbagGrace L596-607)
     │    → finalizeRosbags:SIGINT 停 ros2 bag record、校验 metadata/mcap(L609-637)
     ├─ cleanup:逆序 stop 全部容器(L84-90,711-724)
 t3  run.completed / run.blocked
-全程:每个阶段前检查 deadline(150s);超时 → 写兜底 mission_summary.json
+全程:每个阶段前检查配置派生 deadline(exploration 默认178s);超时 → 写兜底 mission_summary.json
      (reason=task_runtime_timeout,L658-683)+ 抓容器日志 + cleanup(L91-98)
 ```
 
@@ -108,7 +108,7 @@ t3  run.completed / run.blocked
 | 3 | official_maze_overlay(navlab-official-maze-overlay) | images.runtime | 把官方 maze.sdf 栅格化后周期发布(GUI/Foxglove 审查用,不参与控制) | 出:overlay occupancy topic | runtime_specs.go:643-679 |
 | 4 | gazebo_sensor(见 GazeboSensorContainer) | navlab/gazebo-sensor | 传感器管线:X2 激光虚拟串口仿真,`/lidar` → **`/scan`**;测距计 range/status | 入:`/lidar`;出:`/scan` `/sim/x2/status` `/rangefinder/down/range` `/rangefinder/down/status`(默认值 helpers/runtime_specs.go:102-127) | execution_plan.go:198-215 |
 | 5 | slam_backend(SlamBackendContainer) | navlab/slam-cartographer | Cartographer SLAM | 入:`/scan` `/navlab/slam/imu`;出:**`/slam/odom`** `/navlab/slam/status`(默认 helpers/slam.go:87-97) | execution_plan.go:219-243 |
-| 6 | fcu_controller(FCUControllerContainer) | images.runtime | 起飞/控制闭环:消费 **`/navlab/fcu/setpoint/intent`**(JSON String)→ 下发 `/ap/v1/cmd_vel` + MAVLink;监督任务完成(读 `/navlab/exploration/status`)与降落 | 入:intent、`/slam/odom`、rangefinder、`/ap/v1/*`;出:`/navlab/fcu/controller/status` `/navlab/fcu/setpoint/output` `/navlab/fcu/owner/status` | execution_plan.go:245-275;参数注入 runtime_artifacts.go:157-200 |
+| 6 | fcu_controller(FCUControllerContainer) | images.runtime | 起飞/控制闭环:消费 **`/navlab/fcu/setpoint/intent`**(JSON String)→ 仅走 MAVLink LOCAL_NED 位置目标;严格复核 `/navlab/exploration/status` 的本地 goal/path 下限,随后实测返航并执行 LAND/touchdown/disarm 闭环 | 入:intent、`/slam/odom`、rangefinder、MAVLink FCU 状态;出:`/navlab/fcu/controller/status` `/navlab/fcu/setpoint/output` `/navlab/fcu/owner/status` `/navlab/landing/status` | execution_plan.go;runtime_artifacts.go;`fcu_controller_runtime.py.tmpl` |
 | 7 | exploration_workflow(navlab-exploration-workflow) | images.runtime | 探索策略本体(frontier_lite 内建;`strategy=external` 时整体让位,见 §5) | 出:`/navlab/fcu/setpoint/intent`、**`/navlab/exploration/status`** 及 goal/coverage/frontiers/path/markers 审查族;入:`/navlab/fcu/controller/status` `/slam/odom` | execution_plan.go:489-540 |
 | 8 | mavlink_external_nav(MAVLinkExternalNavContainer) | images.runtime | `/external_nav/odom` → MAVLink 视觉/外部导航注入 SITL(udpin:14553);现状 `--no-align-yaw-to-fcu`(EKF yaw 源修复,commit 99bcfa1) | 入:`/external_nav/odom` `/navlab/fcu/local_position_pose`;出:`/mavlink_external_nav/status` | runtime_specs.go:447-495(参数 458-472) |
 | 9 | height_estimator(navlab-height-estimator) | images.runtime | 测距计 → 高度估计 | 入:`/rangefinder/down/range`;出:`/height/estimate` `/height/status` | runtime_specs.go:497-542 |
@@ -145,7 +145,7 @@ t3  run.completed / run.blocked
 | rangefinder_probe | `/rangefinder/down/range` `/rangefinder/down/status` 有数据 | 30s(默认,runtime_specs.go:300) | 8s(spec 无 ProbeTimeoutSec 字段,tmpl:10 默认) | helpers/runtime_specs.go:176-183 |
 | imu_probe | `/imu` 有数据 | 30s | 8s | execution_plan.go:214 |
 | frame_contract_probe | **8 个 topic**:`/tf` `/tf_static` `/scan` `/imu` `/rangefinder/down/range` `/ap/v1/pose/filtered` `/slam/odom` `/navlab/slam/status`(即"frame_contract 8/8 话题") | **150s**(runtime_specs.go:277-281,注释:90s per-topic 预算 + 慢的 micro-ROS 话题的余量) | **90s**(was 45;FrameContractSpec.ProbeTimeoutSec,helpers/runtime_specs.go:439-443 字段注释、475-477 取值注释:单独实测 ~29s、满载 48.96s,45s 偶发不够) | helpers/runtime_specs.go:488-493 |
-| exploration_probe | `/navlab/fcu/controller/status` `/navlab/fcu/setpoint/output` **`/navlab/exploration/status`** `/slam/odom` `/navlab/landing/status`(5 个,无 optional) | **150s**(runtime_specs.go:282-287,注释:容器必须严格大于脚本预算,否则脚本没来得及写结果就被杀) | **90s**(was 35;helpers/runtime_specs.go:1129-1132,注释:探针与服务同时启动,必须活到探索完成 ≈ readiness ~45s + 26s 窗口) | helpers/runtime_specs.go:1148-1157 |
+| exploration_probe | `/navlab/fcu/controller/status` `/navlab/fcu/setpoint/output` **`/navlab/exploration/status`** `/slam/odom` `/navlab/landing/status`(5 个,无 optional) | 默认 **180s**(`max(150,duration+30)`) | 默认 **168s**=`15 DDS余量 + 45 FCU readiness + 26 exploration + 2 pre-land hold + 45 return + 35 landing`;由运行配置动态派生 | `explorationSpec`;`probeTimeoutSec`;`RuntimeTaskDeadlineSec` |
 
 其他任务参考:`navigation_status_probe = max(duration,90)`、`slam_hover_probe = max(duration+30,120)`(runtime_specs.go:271-276,294-299)。⚠️ 小瑕疵:`probeTimeoutSec` 里 L288-293 还有第二个 `frame_contract_probe` 分支(返回 90),被 L277 的分支遮蔽,是死代码,读代码时别被绕进去。
 
@@ -175,7 +175,7 @@ gate 对 exploration 指标**只是复读**:`metricSummaryFromEvidence` 从探�
 - **path_length_m 从 `/slam/odom` 积分**,单步 >1m 的跳变丢弃(tmpl:50-65);controller 首次 ready 时全部清零重计(tmpl:38-48)。
 - **完成后**:发 stop intent、保持 5s,广播最终 status(tmpl:107-115,129-134)。
 
-另外注意**双重消费**:fcu_controller 也被注入了同一组阈值并订阅 `/navlab/exploration/status` 作为任务完成信号(runtime_artifacts.go:162-168)→ 触发 return_home_then_land;所以探索 status 造假/缺失不但挡 gate,还会导致不降落 → landing blockers 连锁。
+另外注意**双重消费**:fcu_controller 也被注入同一组阈值并订阅 `/navlab/exploration/status`。现在只有 JSON 布尔 `ok=true`、本地配置的 goal/path 下限、上报下限以及空 blockers 同时满足才触发 `return_home_then_land`;外部 status 不能通过把自己的 minimum 调低来提前收工。status 造假/缺失会保持 fail-closed,并最终形成 landing/timeout blocker。
 
 ---
 
@@ -187,7 +187,7 @@ gate 对 exploration 指标**只是复读**:`metricSummaryFromEvidence` 从探�
    - 发 `/navlab/exploration/status`(JSON,**必须含** `ok/claim/strategy/accepted_goals/min_accepted_goals/path_length_m/min_path_length_m/blockers`,gate 摘取字段见 gate_evaluation.go:224,ok 判定见 ros_probe.py.tmpl:58-64);claim 需为 `evaluated`;
    - 保证 rosbag required 集里的 topic 有流量(尤其 `/navlab/exploration/status`、`/navlab/fcu/setpoint/intent`,§4 第 3 条)—— 只要满足这三条,**gate、探针、rosbag、summary 全链路零改动复用**。
 3. **原生接入(替代薄桥)时的新服务位**:照 `execution_plan.go:502-512` 的样式给计划加一个 RuntimeServicePlan(镜像可用 `images.runtime` 或自建 jazzy+gbplanner 镜像),即可被编排层自动纳入启动/停止/日志/deadline 管理;探针照 `ExplorationProbeScript` 的写法加 topic 即可。
-4. **预算经验直接复用**:micro-ROS/晚加入订阅的 DDS 发现 ~30-50s 是常态,新探针一律用"类型发现全预算 + QoS 内省 + 容器超时 > 脚本预算"的现行模式(§3),别退回 8s/30s 旧默认。
+4. **预算经验直接复用**:micro-ROS/晚加入订阅的 DDS 发现 ~30-50s 是常态,新探针一律用"类型发现全预算 + QoS 内省 + 容器超时 > 脚本预算 + Go watchdog 再外包一层"的现行模式(§3),且必须把任务体后的返航/降落计入,别退回 8s/30s 旧默认。
 
 ---
 

@@ -1,8 +1,7 @@
 # worldmodel 理解(二):运行时 ROS2 图与数据流
 
-> [REFERENCE] 2026-07-07 精读产物。读者定位:**要把 GBPlanner 移植成 ROS2 原生节点并接进 world-model 的人**。
-> 依据源码快照:`sources/world-model-源码\`(与 WSL `~/ws-clean/world-model` 上游基线一致;行号以该快照为准)。
-> 注意:本快照是**上游原样**,不含本项目在 clean 分支上的修复(EKF yaw 源、IMU 回声等);凡涉及处会显式标注。
+> [REFERENCE] 2026-07-07 精读产物,2026-08-24 按本机 WorldModel 当前分支复核 exploration 返航/降落链。读者定位:**要把 GBPlanner 移植成 ROS2 原生节点并接进 world-model 的人**。
+> 初始依据源码快照:`sources/world-model-源码\`;涉及 2026-08-24 closeout 的段落以 `/home/ai4s/projects/world-model` 当前源码为准,行号仅作定位提示。
 > 主线以 `exploration` 任务(`orchestration/sim/configs/tasks/exploration.yaml`)为例,这是 GBPlanner 要替换的 frontier_lite 所在的工作流。
 
 ---
@@ -11,7 +10,7 @@
 
 Gazebo 出传感 → ros_gz_bridge/自研 relay 进 ROS2 → cartographer 2D 出 `map→base_link` → 适配器变 `/slam/odom` → 兵分两路:
 ① **回灌**:`/external_nav/odom` → MAVLink ODOMETRY → ArduPilot EKF(飞控的位置估计来自 SLAM);
-② **决策**:exploration_workflow 读 `/slam/odom` 出 intent(JSON)→ fcu_controller 双路下发(DDS `/ap/v1/cmd_vel` + MAVLink 位置 setpoint)→ SITL 动 → Gazebo 动 → 传感变 → 闭环。
+② **决策**:exploration_workflow/GBPlanner 读 `/slam/odom` 出 intent(JSON)→ fcu_controller 用 MAVLink LOCAL_NED 单路下发 → SITL 动 → Gazebo 动 → 传感变 → 闭环;任务体达标后同一控制器实测返航并完成 LAND/touchdown/disarm。
 GBPlanner 移植的落点就是替换"决策"框(intent 的生产者),其余链路原样复用。
 
 ---
@@ -144,7 +143,7 @@ ArduPilot EKF3:EK3_SRC1_POSXY=6(ExternalNav)、POSZ=2(RangeFinder)、VELXY=0、Y
 ⚠️ YAW=1 是本项目 stage5a 定位的发散根因,修复(YAW→6、COMPASS_USE→0、--no-align-yaw-to-fcu)在本项目 clean 分支,上游快照仍是旧值。见 §5.1。
 ```
 
-### 2.4 控制链(intent → FCU 双路)
+### 2.4 控制链(intent → FCU 单路 + 实测返航/降落)
 
 ```
 exploration_workflow(navlab_exploration_workflow 节点)
@@ -164,10 +163,13 @@ fcu_controller(navlab_fcu_controller 节点;控制权唯一属主 /navlab/fcu/ow
  │    require_slam_backend=false 时兜底(tmpl:314-320;默认 true:helpers/runtime_specs.go:333)
  ├─ 收 intent → MAVLink 单控制路(DDS cmd_vel 发布已禁用,仅保留计数):
  │    SET_POSITION_TARGET_LOCAL_NED(frame=MAV_FRAME_LOCAL_NED,type_mask=2552=仅位置+yaw;
- │        目标 = 当前 LOCAL_POSITION_NED + v×lookahead(2s),z 恒 = −takeoff_alt;tmpl:390-441)
+ │        目标锚定实测 LOCAL_POSITION_NED 后按 intent 速度积分,限制目标领先距离,可带 z_m;)
  │        intent 的 (x,y) 按 FCU ATTITUDE yaw 从机体系 FRD 旋到 NED 后积分位置目标
  ├─ ready 时每 50ms 发 hold setpoint
- ├─ 订 /navlab/exploration/status 作为任务完成信号(接线:runtime_artifacts.go:162-168;判断:tmpl:340-355)
+ ├─ 订 /navlab/exploration/status;严格要求 ok=true + 本地 goal/path 下限 + 空 blockers
+ ├─ 完成后撤销 controller_ready/运动 lease,忽略后续 intent,持续发 home LOCAL_NED 目标
+ ├─ 进入 home_radius 后 hold,重试 MAV_CMD_NAV_LAND;读取 ACK/LAND mode/EXTENDED_SYS_STATE/
+ │    HEARTBEAT/LOCAL_POSITION_NED,确认 touchdown + disarm + motors-safe;超时显式失败
  └─ 发 status 面:/navlab/fcu/controller|setpoint/output|owner、/navlab/hover/status、/navlab/landing/status
       (tmpl:462-475;topic 名 helpers/runtime_specs.go:285-288、393-394)
         │
@@ -238,13 +240,12 @@ frame 语义速查:
 上游默认参数:`EK3_SRC1_POSXY=6`(位置=ExternalNav,即 SLAM map 系)而 `EK3_SRC1_YAW=1`(yaw=罗盘,即物理世界系)(`docker/profiles/navlab-sitl-external-nav.parm:19-24`)。SLAM map 系的朝向由**开机瞬间机头方向**决定,与罗盘世界系差固定偏角 δ,每 run 不同。静止时无感;一运动,EKF 在两个参考系之间强行对齐("in-flight yaw alignment")→ 位置环正反馈 → 估计发散("stopped aiding"→"position lost",BIN 日志实证)。叠加雪上加霜的一刀:sender 默认 `--align-yaw-to-fcu`(把 FCU 自己的 yaw 喂回 FCU,循环自证;`tasks/runtime_specs.go:453`)。
 **修复口径(本项目 clean 分支,上游快照未含)**:YAW 1→6、COMPASS_USE 全 0、`--no-align-yaw-to-fcu`;修复后实测漂移 0.25-0.4 m/s → 0.03 m/s。**移植 GBPlanner 后凡出现"固定方向逃逸",先查这组参数,不要先怀疑规划器。**
 
-### 5.2 "胡萝卜"位置目标:命令速度≠实际速度
+### 5.2 累积位置目标:命令速度≠实际速度
 
-fcu_controller 的 MAVLink 主路不是速度控制,而是**位置目标外推**:`目标 = 当前位置 + v×lookahead(2s)`,z 恒定(tmpl:406-415)。后果:
-- 实际速度由 AP 位置控制器增益决定(实测 ~0.3 m/s),**与 intent 里的速度幅值基本无关**;
-- 目标点恒挂在机头前 ~固定距离("胡萝卜"),近距接近 waypoint 时目标会**越过** wp → 配合到达圈判定,出现绕 wp 极限环打圈(stage5a 第七跑实测 0.5m 圈);
-- hold(v=0)不是刹停,是"目标=当前位置",有 0.5~1m 滑行。
-GBPlanner 的轨迹跟踪若直接换算成 intent,必须把这层"位置外推"语义算进去(近距按距离比例减速,而不是恒速)。
+fcu_controller 的 MAVLink 主路不是速度控制,而是**累积位置目标**:首次锚定实测 LOCAL_POSITION_NED,之后按 `v×dt` 推进目标,并限制目标相对实测位置的领先距离。早期"每拍当前位置+lookahead"会形成追逐胡萝卜和正反馈,已被实测否定并移除。当前后果:
+- intent 速度是位置目标推进率,实际速度仍由 AP 位置控制器、滞后和领先上限共同决定;
+- 近 waypoint 仍必须由 adapter 按距离和观测速度减速,否则会因执行滞后越过捕获圈;
+- hold(v=0)冻结最后位置目标,不是速度刹车,飞机仍可能在收敛到该目标时继续滑行。
 还有一个频率契约:`send_mavlink_local_position_setpoint` 把每条 intent 积分到位置目标,
 但 `dt=min(0.25, actual_dt)`。因此 producer 必须至少 4Hz;第六次 M5 证明 2Hz
 会把 0.08m/s 目标推进实效折半。
@@ -280,7 +281,7 @@ DDS `cmd_vel` 实际发布已禁用,只保留计数字段,避免双路控制。�
 ### 5.7 其他驻点(短)
 
 - **`/rangefinder/down/range` 双发布者**:range_projection(真链,range_projection.py:52)与 fcu_controller(由 pose.z 合成的影子版,tmpl:469、535、840-854)同时发——消费端拿到的是混流。验收探针没炸只因两者数值接近;移植后加消费者时先确认要哪个源。
-- **landing 在 exploration 任务是 claim 级**:fcu tmpl 的 landing_status 仅由 `pose 存在 + task_completed` 置 ok(tmpl:717-735),不发真实 LAND 指令;真降落逻辑在 hover/mission 管线(`navlab/common/companion/mission/`)。看到 `landing ok` 别当成"电机停了"。
+- **旧的 claim-only exploration landing 已作废**:2026-08-24 起,fcu controller 必须有实测返航半径、`MAV_CMD_NAV_LAND` accepted ACK、动态解析的 LAND mode、touchdown 和 disarm/motors-safe 证据才发布 landing `ok=true`。缺一项或超时都会带 blocker,不能再把 `pose + task_completed` 当降落。
 - **`/cartographer/odometry_input` 在 exploration 是死话题**:lua `use_odometry=false`(L13),该口只在 hover 诊断链被 scan_reference 使用(`helpers/runtime_specs.go:710-717`)。
 - **DDS 慢发现**:`/ap/v1/pose/filtered` 等 AP 话题对后加入订阅者可能要 ~29s 才完成 endpoint 匹配(本项目受控实验),探针要给发现预算;`ros2 topic echo`(CLI)对 rclpy 发布者可能收不到,**验收一律 rclpy 订阅**(项目实测教训,CURRENT_STATUS.md)。
 - **诊断真值红线**:`/odometry`、`/gazebo/*` 只准进 rosbag/评估,不准进控制或 SLAM 输入(`helpers/slam.go:16-19` 命名即 Diagnostic;exploration status 里专门带 `uses_gazebo_truth_as_input:false` 字段自证,tmpl:154)。
@@ -295,8 +296,8 @@ DDS `cmd_vel` 实际发布已禁用,只保留计数字段,避免双路控制。�
 | 3D 点云 | `cloud_in`(gz `/lidar/points`,bridge 口子已预留,override L37-41) | 需把模型换回 lidar_3d(撤销 `navlab_models.go:35` 的替换)或改 override |
 | 2D scan(可选) | `/scan`(vendor 保真链) | 频率 7Hz,别假设 10Hz |
 | TF | `/tf` 上的 map→base_link(adapter 过门版)+ `/tf_static` 两条静态边 | 无 map→odom;传感帧见 §3 |
-| 输出:轨迹/速度 | 折算成 intent JSON 发 `/navlab/fcu/setpoint/intent`(格式 tmpl:141-158) | 经 fcu_controller 双路下发;或长期方案:改 fcu_controller 增加轨迹接口 |
-| 完成信号 | 发 `/navlab/exploration/status`(JSON,含 ok/accepted_goals/path_length_m/blockers,tmpl:175-207) | fcu_controller 以此触发 landing 链(runtime_artifacts.go:167) |
+| 输出:轨迹/速度 | 折算成 intent JSON 发 `/navlab/fcu/setpoint/intent` | 经 fcu_controller 的 MAVLink LOCAL_NED 单路下发;DDS cmd_vel 已停用 |
+| 完成信号 | 发 `/navlab/exploration/status`(JSON,含严格布尔 ok/accepted_goals/min_accepted_goals/path_length_m/min_path_length_m/blockers) | 只有本地门槛也满足才触发真实 return-home/LAND 链 |
 | 替换位置 | `exploration_workflow` 服务(容器 `navlab-exploration-workflow`,execution_plan.go:502-512);config 入口 `orchestration/sim/configs/tasks/exploration.yaml:20`(strategy) | 本项目已有 external 让位补丁与 `/gbp/*` 适配器先例(CURRENT_STATUS.md) |
 
 坑位自查表(上线前逐条过):§5.1 EKF yaw 源已改 6?§5.2 近 wp 减速?§5.3 map↔NED 对齐策略?§5.4 只走一条下发路?§5.5 对比指标口径?§5.6 IMU 接线劈开?
