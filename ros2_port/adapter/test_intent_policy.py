@@ -3,11 +3,15 @@ import math
 from intent_policy import (
     ACTIVE_TRAJECTORY_MAX_AGE_S,
     CONTROL_PERIOD_S,
+    EXPLORATION_STAGE_TIMEOUT_S,
     effective_fcu_yaw_age,
+    exploration_stage_timed_out,
+    exploration_status_outcome,
     map_velocity_to_body_frd,
     motion_is_stalled,
     progress_observation,
     quaternion_yaw,
+    terminal_failure_blockers,
     valid_fcu_yaw,
     valid_odom_frames,
 )
@@ -20,6 +24,38 @@ def test_one_shot_path_lifetime_covers_the_acceptance_window():
 def test_control_period_matches_fcu_setpoint_integration_cap():
     # WorldModel fcu_controller clamps each intent integration dt to 0.25 s.
     assert CONTROL_PERIOD_S <= 0.25
+
+
+def test_external_stage_timeout_starts_only_after_controller_ready():
+    assert exploration_stage_timed_out(None, 999.0) is False
+    assert exploration_stage_timed_out(
+        10.0, 10.0 + EXPLORATION_STAGE_TIMEOUT_S - 0.01) is False
+    assert exploration_stage_timed_out(
+        10.0, 10.0 + EXPLORATION_STAGE_TIMEOUT_S) is True
+
+
+def test_terminal_failures_are_pre_gate_and_explicit():
+    assert terminal_failure_blockers(
+        ok_latched=False,
+        killed=False,
+        mixed_flow=True,
+        slam_frozen=True,
+        stage_timed_out=True,
+    ) == ["mixed_flow", "slam_frozen", "exploration_stage_timeout"]
+    assert terminal_failure_blockers(
+        ok_latched=True,
+        killed=True,
+        mixed_flow=True,
+        slam_frozen=True,
+        stage_timed_out=True,
+    ) == []
+
+
+def test_terminal_status_contract_is_failed_not_evaluated():
+    assert exploration_status_outcome(False, ["slam_frozen"]) == (
+        "failed", True)
+    assert exploration_status_outcome(False, []) == ("in_progress", False)
+    assert exploration_status_outcome(True, []) == ("evaluated", False)
 
 
 def test_fcu_yaw_normalizes_quaternion_and_rejects_invalid_input():

@@ -4,11 +4,51 @@ import math
 
 ACTIVE_TRAJECTORY_MAX_AGE_S = 120.0
 CONTROL_PERIOD_S = 0.25
+EXPLORATION_STAGE_TIMEOUT_S = 120.0
 FCU_YAW_MAX_AGE_S = 2.0
 ODOM_FRAME_ID = "map"
 ODOM_CHILD_FRAME_ID = "base_link"
 SLAM_PROGRESS_WINDOW_S = 8.0
 SLAM_PROGRESS_MIN_M = 0.02
+
+
+def exploration_stage_timed_out(controller_ready_since_s, now_s):
+    """Bound external exploration after the controller first becomes ready."""
+    if controller_ready_since_s is None:
+        return False
+    try:
+        ready_since = float(controller_ready_since_s)
+        now = float(now_s)
+    except (TypeError, ValueError):
+        return True
+    if not all(math.isfinite(value) for value in (ready_since, now)):
+        return True
+    return now - ready_since >= EXPLORATION_STAGE_TIMEOUT_S
+
+
+def terminal_failure_blockers(
+        *, ok_latched, killed, mixed_flow, slam_frozen, stage_timed_out):
+    """Return irreversible pre-gate failures that require safe closeout."""
+    if ok_latched:
+        return []
+    reasons = []
+    if killed:
+        reasons.append("killed")
+    if mixed_flow:
+        reasons.append("mixed_flow")
+    if slam_frozen:
+        reasons.append("slam_frozen")
+    if stage_timed_out:
+        reasons.append("exploration_stage_timeout")
+    return reasons
+
+
+def exploration_status_outcome(ok_latched, terminal_blockers):
+    """Return the externally published claim and terminal flag."""
+    terminal = bool(terminal_blockers)
+    claim = "failed" if terminal else (
+        "evaluated" if ok_latched else "in_progress")
+    return claim, terminal
 
 
 def quaternion_yaw(x, y, z, w):

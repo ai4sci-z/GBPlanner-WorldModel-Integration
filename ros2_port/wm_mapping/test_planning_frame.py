@@ -36,9 +36,11 @@ def test_rejects_wrong_frame_or_nonfinite_height():
 
 def test_accepts_fresh_nonzero_fcu_height():
     assert valid_planning_height(0.4529, 0.2) is True
+    assert valid_planning_height(3.0, 0.2) is True
 
 
 def test_rejects_zero_stale_or_nonfinite_fcu_height():
     assert valid_planning_height(0.0, 0.2) is False
     assert valid_planning_height(0.4529, 1.1) is False
+    assert valid_planning_height(3.001, 0.2) is False
     assert valid_planning_height(math.nan, 0.2) is False

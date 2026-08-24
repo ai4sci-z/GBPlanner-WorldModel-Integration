@@ -7,7 +7,7 @@ PLANNING_PARENT = "map"
 PLANNING_CHILD = "base_link"
 EXTERNAL_NAV_PARENT = "external_nav"
 PLANNING_HEIGHT_MIN_M = 0.05
-PLANNING_HEIGHT_MAX_M = 100.0
+PLANNING_HEIGHT_MAX_M = 3.0
 PLANNING_HEIGHT_MAX_AGE_S = 1.0
 
 
@@ -35,6 +35,6 @@ def valid_planning_height(height_m, age_s):
     return (
         math.isfinite(height)
         and math.isfinite(age)
-        and PLANNING_HEIGHT_MIN_M < height < PLANNING_HEIGHT_MAX_M
+        and PLANNING_HEIGHT_MIN_M < height <= PLANNING_HEIGHT_MAX_M
         and 0.0 <= age <= PLANNING_HEIGHT_MAX_AGE_S
     )

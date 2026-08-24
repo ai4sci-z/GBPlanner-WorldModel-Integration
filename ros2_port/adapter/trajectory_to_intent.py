@@ -41,10 +41,13 @@ from intent_policy import (
     CONTROL_PERIOD_S,
     SLAM_PROGRESS_WINDOW_S,
     effective_fcu_yaw_age,
+    exploration_stage_timed_out,
+    exploration_status_outcome,
     map_velocity_to_body_frd,
     motion_is_stalled,
     progress_observation,
     quaternion_yaw,
+    terminal_failure_blockers,
     valid_fcu_yaw,
     valid_odom_frames,
 )
@@ -115,6 +118,7 @@ class TrajToIntent(Node):
         self.last_z_m = None          # M5 z闭环:最近一次下发过的合法 z_m(hold 时保持)
         # Stage5a 严格 gate 所需的外部事实
         self.controller_ready = False   # /navlab/fcu/controller/status ok(bootstrap 含 takeoff)
+        self.controller_ready_t = None  # 首次 ready 时刻;external 阶段预算从此计时
         self.mixed_flow = False         # intent 总线上出现过非本适配器来源 → 永久闩锁
         self.ok_latched = False         # 五条件一旦达成即闩锁(尾段 stale blocker 不回撤已达成事实)
         self.fcu_yaw = None             # FCU body yaw in LOCAL_NED
@@ -205,6 +209,8 @@ class TrajToIntent(Node):
         except Exception:
             return
         if d.get("ok") or d.get("ready"):
+            if not self.controller_ready:
+                self.controller_ready_t = time.monotonic()
             self.controller_ready = True
 
     def on_external_nav_status(self, m):
@@ -291,8 +297,20 @@ class TrajToIntent(Node):
 
     def tick(self):
         blockers = self.blockers()
-        if not self.ok_latched and self.slam_frozen():
-            blockers = blockers + ["slam_frozen"]
+        now = time.monotonic()
+        stage_timed_out = exploration_stage_timed_out(
+            self.controller_ready_t, now)
+        slam_frozen = self.slam_frozen() if not self.ok_latched else False
+        terminal_blockers = terminal_failure_blockers(
+            ok_latched=self.ok_latched,
+            killed=self.killed,
+            mixed_flow=self.mixed_flow,
+            slam_frozen=slam_frozen,
+            stage_timed_out=stage_timed_out,
+        )
+        for blocker in terminal_blockers:
+            if blocker not in blockers:
+                blockers.append(blocker)
         vx = vy = yaw_rate = 0.0
         wp_z = None                     # M5 z闭环:当前目标航点 z(仅运动分支置值)
         if not blockers:
@@ -398,10 +416,13 @@ class TrajToIntent(Node):
         if self.ok_latched:
             post_gate_blockers = blockers
             gate_blockers = [blocker for blocker in blockers if blocker == "killed"]
+        claim, terminal = exploration_status_outcome(
+            self.ok_latched, terminal_blockers)
         status = {
-            "claim": "evaluated" if self.ok_latched else "in_progress",
+            "claim": claim,
             "strategy": "gbplanner",
             "ok": self.ok_latched,
+            "terminal": terminal,
             "gate_ok_draft": gate_ok_draft,
             "blockers": gate_blockers,
             "post_gate_blockers": post_gate_blockers,
@@ -414,6 +435,9 @@ class TrajToIntent(Node):
             "traj_count": self.traj_id,
             "wp_prereached_excluded": self.wp_prereached,
             "controller_ready": self.controller_ready,
+            "exploration_stage_elapsed_sec": (
+                None if self.controller_ready_t is None
+                else round(max(0.0, now - self.controller_ready_t), 3)),
             "mixed_flow": self.mixed_flow,
         }
         self.pub_status.publish(String(data=json.dumps(status)))

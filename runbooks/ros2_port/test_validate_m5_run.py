@@ -69,7 +69,8 @@ def passing_fixture(tmp_path):
     )
     (logs / "m5_tf_relay.log").write_text(
         "forwarded=50 wall_dropped=0 planar_replaced=20 planning_odom=100 "
-        "invalid_external_nav=0 height_unavailable=0 planning_z_max=0.453\n",
+        "invalid_external_nav=0 height_unavailable=0 invalid_fcu_height=0 "
+        "planning_z_max=0.453\n",
         encoding="utf-8",
     )
     (logs / "m5_adapter.log").write_text(
@@ -130,12 +131,27 @@ def test_rejects_missing_sensor_height_runtime_evidence(tmp_path):
     run_dir, logs = passing_fixture(tmp_path)
     (logs / "m5_tf_relay.log").write_text(
         "forwarded=50 wall_dropped=0 planar_replaced=20 planning_odom=0 "
-        "invalid_external_nav=0 height_unavailable=20 planning_z_max=0.000\n",
+        "invalid_external_nav=0 height_unavailable=20 invalid_fcu_height=0 "
+        "planning_z_max=0.000\n",
         encoding="utf-8",
     )
     result = validate(run_dir, logs)
     assert result["ok"] is False
     assert "planning_odom_ready" in result["failures"]
+
+
+def test_rejects_unbounded_planning_height_runtime_evidence(tmp_path):
+    run_dir, logs = passing_fixture(tmp_path)
+    (logs / "m5_tf_relay.log").write_text(
+        "forwarded=50 wall_dropped=0 planar_replaced=20 planning_odom=100 "
+        "invalid_external_nav=0 height_unavailable=0 invalid_fcu_height=1 "
+        "planning_z_max=25.621\n",
+        encoding="utf-8",
+    )
+    result = validate(run_dir, logs)
+    assert result["ok"] is False
+    assert "planning_odom_ready" in result["failures"]
+    assert result["evidence"]["max_planning_z_m"] == 25.621
 
 
 def test_rejects_legacy_alignment_adapter_log(tmp_path):

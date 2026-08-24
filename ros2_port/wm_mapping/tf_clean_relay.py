@@ -50,7 +50,7 @@ class PlanningFrameRelay(Node):
         self.stats = {'forwarded': 0, 'wall_dropped': 0,
                       'planar_replaced': 0, 'planning_odom': 0,
                       'invalid_external_nav': 0, 'height_unavailable': 0,
-                      'planning_z_max': 0.0}
+                      'invalid_fcu_height': 0, 'planning_z_max': 0.0}
         self.get_logger().info(
             'planning frame relay: /external_nav/odom x/y + FCU EKF z -> '
             '/gbp/planning_odom + map->base_link on /tf_clean')
@@ -60,6 +60,11 @@ class PlanningFrameRelay(Node):
         if valid_planning_height(height, 0.0):
             self.fcu_height = float(height)
             self.fcu_height_time = time.monotonic()
+        else:
+            # Do not retain a previously valid sample after FCU z diverges.
+            self.fcu_height = None
+            self.fcu_height_time = 0.0
+            self.stats['invalid_fcu_height'] += 1
 
     def on_tf(self, msg):
         keep = []
@@ -120,11 +125,12 @@ class PlanningFrameRelay(Node):
         self.get_logger().info(
             'forwarded=%d wall_dropped=%d planar_replaced=%d '
             'planning_odom=%d invalid_external_nav=%d height_unavailable=%d '
-            'planning_z_max=%.3f' % (
+            'invalid_fcu_height=%d planning_z_max=%.3f' % (
                 self.stats['forwarded'], self.stats['wall_dropped'],
                 self.stats['planar_replaced'], self.stats['planning_odom'],
                 self.stats['invalid_external_nav'],
-                self.stats['height_unavailable'], self.stats['planning_z_max']))
+                self.stats['height_unavailable'],
+                self.stats['invalid_fcu_height'], self.stats['planning_z_max']))
 
 
 def main():

@@ -8,6 +8,10 @@ import sys
 from pathlib import Path
 
 
+PLANNING_HEIGHT_MIN_M = 0.05
+PLANNING_HEIGHT_MAX_M = 3.0
+
+
 def nested(data, *keys):
     for key in keys:
         if not isinstance(data, dict) or key not in data:
@@ -79,6 +83,8 @@ def validate(run_dir, stack_log_dir):
     )]
     trajectories = [int(n) for n in re.findall(r"published (\d+) waypoints", pci_log)]
     planning_odom_counts = [int(n) for n in re.findall(r"planning_odom=(\d+)", tf_log)]
+    invalid_fcu_height_counts = [int(n) for n in re.findall(
+        r"invalid_fcu_height=(\d+)", tf_log)]
     planning_z_maxima = [float(z) for z in re.findall(r"planning_z_max=([0-9.]+)", tf_log)]
     number = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)"
     body_frame_intents = re.findall(
@@ -103,7 +109,13 @@ def validate(run_dir, stack_log_dir):
             ),
             "planning_odom_ready": (
                 any(count > 0 for count in planning_odom_counts)
-                and any(z > 0.05 for z in planning_z_maxima)
+                and any(
+                    PLANNING_HEIGHT_MIN_M < z <= PLANNING_HEIGHT_MAX_M
+                    for z in planning_z_maxima
+                )
+                and all(z <= PLANNING_HEIGHT_MAX_M for z in planning_z_maxima)
+                and bool(invalid_fcu_height_counts)
+                and all(count == 0 for count in invalid_fcu_height_counts)
             ),
             "pci_one_shot_observed": (
                 "first non-empty path published; trigger timer stopped" in pci_log
@@ -128,6 +140,8 @@ def validate(run_dir, stack_log_dir):
             "max_trajectory_points": max(trajectories, default=0),
             "max_planning_odom_count": max(planning_odom_counts, default=0),
             "max_planning_z_m": max(planning_z_maxima, default=0.0),
+            "max_invalid_fcu_height_count": max(
+                invalid_fcu_height_counts, default=0),
             "body_frame_intent_count": len(body_frame_intents),
             "accepted_goals": exploration.get("accepted_goals"),
             "path_length_m": exploration.get("path_length_m"),
